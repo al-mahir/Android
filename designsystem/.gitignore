@@ -1,0 +1,59 @@
+/build
+# -------------------------------------------------------------------------
+# Build & Compiled Files
+# -------------------------------------------------------------------------
+*.apk
+*.ap_
+*.aab
+*.aar
+*.dex
+*.class
+**/build/
+captures/
+.externalNativeBuild
+.cxx/
+
+# -------------------------------------------------------------------------
+# Local Configuration & Sensitive Data
+# -------------------------------------------------------------------------
+local.properties
+*.jks
+*.keystore
+# Ignore publishing properties (if you use a separate file for Maven/GPR keys)
+secret.properties
+publishing.properties
+
+# -------------------------------------------------------------------------
+# Gradle
+# -------------------------------------------------------------------------
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# -------------------------------------------------------------------------
+# IntelliJ IDEA / Android Studio
+# -------------------------------------------------------------------------
+.idea/
+*.iml
+*.iws
+*.ipr
+/out/
+
+# -------------------------------------------------------------------------
+# OS Specific
+# -------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# -------------------------------------------------------------------------
+# Testing & Reports
+# -------------------------------------------------------------------------
+/lint/
+/lint-baseline.xml
+**/reports/
+**/test-results/
