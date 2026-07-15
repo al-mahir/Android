@@ -1,15 +1,102 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# ============================================================
+# Android / Jetpack Compose — comprehensive .gitignore
+# ============================================================
+
+# ──────────────────────────────────────────────────────────
+# Build outputs
+# ──────────────────────────────────────────────────────────
+/build/
+**/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# ──────────────────────────────────────────────────────────
+# Gradle
+# ──────────────────────────────────────────────────────────
+.gradle/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+!gradlew
+!gradlew.bat
+
+# ──────────────────────────────────────────────────────────
+# Local / machine-specific
+# ──────────────────────────────────────────────────────────
 local.properties
+keystore.properties
+*.keystore
+*.jks
+
+# ──────────────────────────────────────────────────────────
+# IntelliJ IDEA / Android Studio — machine-specific files
+# (Keep: gradle.xml, misc.xml, vcs.xml, AndroidProjectSystem.xml, .name)
+# ──────────────────────────────────────────────────────────
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/assetWizardSettings.xml
+.idea/navEditor.xml
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/compiler.xml
+.idea/runConfigurations.xml
+.idea/inspectionProfiles/
+.idea/sonarlint/
+.idea/uiDesigner.xml
+.idea/dictionaries/
+
+# ──────────────────────────────────────────────────────────
+# External native build
+# ──────────────────────────────────────────────────────────
+.externalNativeBuild/
+.cxx/
+*.so
+
+# ──────────────────────────────────────────────────────────
+# Captures / profiling
+# ──────────────────────────────────────────────────────────
+/captures/
+
+# ──────────────────────────────────────────────────────────
+# IntelliJ module files — generated per-machine
+# ──────────────────────────────────────────────────────────
+*.iml
+
+# ──────────────────────────────────────────────────────────
+# OS-generated
+# ──────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+# ──────────────────────────────────────────────────────────
+# Kotlin / Compose compiler caches
+# ──────────────────────────────────────────────────────────
+**/.kotlin/
+**/kotlin-build-statistics.bin
+
+# ──────────────────────────────────────────────────────────
+# Test results / reports
+# ──────────────────────────────────────────────────────────
+**/test-results/
+**/reports/
+
+# ──────────────────────────────────────────────────────────
+# Signing / secrets — NEVER commit these
+# ──────────────────────────────────────────────────────────
+*.p12
+*.pfx
+google-services.json
+GoogleService-Info.plist
+secrets.properties

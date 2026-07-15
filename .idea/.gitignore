@@ -1,3 +1,17 @@
-# Default ignored files
+# IntelliJ IDEA / Android Studio — local IDE state
+# These are already covered by the root .gitignore but kept here
+# as a safety net for nested .gitignore resolution.
 /shelf/
 /workspace.xml
+/tasks.xml
+/caches/
+/libraries/
+/modules.xml
+/deploymentTargetSelector.xml
+/deviceManager.xml
+/compiler.xml
+/runConfigurations.xml
+/inspectionProfiles/
+/sonarlint/
+/dictionaries/
+/uiDesigner.xml
