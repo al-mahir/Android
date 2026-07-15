@@ -100,3 +100,6 @@ Desktop.ini
 google-services.json
 GoogleService-Info.plist
 secrets.properties
+/.idea/firebender/chat_history.db-shm
+/.idea/firebender/chat_history.db
+/.idea/firebender/chat_history.db-wal
