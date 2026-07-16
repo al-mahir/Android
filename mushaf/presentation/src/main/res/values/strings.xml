@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Page navigation -->
+    <string name="mushaf_page_indicator">Page %1$d / %2$d</string>
+
+    <!-- Loading / error states -->
+    <string name="mushaf_loading">Loading page…</string>
+    <string name="mushaf_error_title">Couldn\'t load this page</string>
+    <string name="mushaf_error_message">Something went wrong while opening the Mushaf.</string>
+    <string name="mushaf_retry">Retry</string>
+
+    <!-- Tajweed toggle -->
+    <string name="mushaf_tajweed_label">Tajweed</string>
+    <string name="mushaf_tajweed_on">Tajweed coloring on</string>
+    <string name="mushaf_tajweed_off">Tajweed coloring off</string>
+
+    <!-- Follow-along (highlighting) -->
+    <string name="mushaf_follow_along_start">Start follow-along</string>
+    <string name="mushaf_follow_along_stop">Stop follow-along</string>
+</resources>
