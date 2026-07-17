@@ -27,10 +27,9 @@ fun MushafWordGlyph(
     val isHighlighted by remember(word.id) {
         derivedStateOf { highlightedWordId() == word.id }
     }
-    val glyph = remember(word.glyphCode) { String(Character.toChars(word.glyphCode)) }
 
     Text(
-        text = glyph,
+        text = word.glyphs,
         style = TextStyle(
             fontFamily = fontFamily,
             fontSize = fontSize,

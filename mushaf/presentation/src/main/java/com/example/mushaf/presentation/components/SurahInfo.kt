@@ -5,12 +5,13 @@ object SurahInfo {
 
     const val BASMALLAH = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
 
+    const val BASMALLAH_LIGATURE = "﷽"
+
     fun headerFor(surahNumber: Int?): String {
         val name = surahNumber?.let { NAMES.getOrNull(it - 1) }
         return if (name != null) "سُورَةُ $name" else "سُورَة ${surahNumber ?: ""}".trim()
     }
 
-    /** The 114 surah names in order (index 0 = Al-Fatihah). */
     private val NAMES = listOf(
         "الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال",
         "التوبة", "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء",

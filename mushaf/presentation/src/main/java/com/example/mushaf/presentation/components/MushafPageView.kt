@@ -1,10 +1,12 @@
 package com.example.mushaf.presentation.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -13,24 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.MushafConstants
-import com.example.mushaf.domain.model.MushafLine
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.ReadingMode
 import com.example.mushaf.presentation.font.rememberPageFontFamily
-
-private const val MIN_FONT_SP = 14f
-private const val MAX_FONT_SP = 44f
-
-private const val MEASURE_REF_SP = 40f
-
-
-private const val FILL_SAFETY = 0.985f
+import com.example.mushaf.presentation.font.rememberSurahNameFontFamily
 
 
 @Composable
@@ -41,8 +35,10 @@ fun MushafPageView(
     modifier: Modifier = Modifier,
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
+    val surahNameFontFamily = rememberSurahNameFontFamily()
     val highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
     val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
 
     BoxWithConstraints(
         modifier = modifier
@@ -51,69 +47,67 @@ fun MushafPageView(
     ) {
         val availableWidthPx = constraints.maxWidth
         val availableHeightPx = constraints.maxHeight
+        val slotHeightPx = availableHeightPx.toFloat() / MushafConstants.LINES_PER_PAGE
 
-        val pageFontSize: TextUnit =
-            remember(page.pageNumber, mode, availableWidthPx, availableHeightPx) {
-                uniformPageFontSize(
-                    page = page,
+        val slotHeightSp = slotHeightPx / density.density / density.fontScale
+        val heightLimitSp = slotHeightSp / MushafLayoutMath.LINE_HEIGHT_EM
+        val lineSizes: Map<Int, Float> =
+            remember(page.pageNumber, mode, availableWidthPx, heightLimitSp) {
+                val measureWordWidth: (String) -> Int = { glyphs ->
+                    measurer.measure(
+                        text = AnnotatedString(glyphs),
+                        style = TextStyle(fontFamily = fontFamily, fontSize = MushafLayoutMath.REF_SP.sp),
+                        softWrap = false,
+                        maxLines = 1,
+                    ).size.width
+                }
+                val ayahWidths = page.lines
+                    .filter { it.type == LineType.AYAH && it.words.isNotEmpty() }
+                    .associate { line -> line.lineNumber to line.words.sumOf { measureWordWidth(it.glyphs) } }
+                // Centered/short lines and non-ayah lines use the widest justified line's size so
+                // they read at the same scale as the surrounding text instead of being stretched.
+                val baseSize = MushafLayoutMath.uniformAyahSizeSp(
+                    lineWidthsPx = ayahWidths.values.toList(),
                     maxWidthPx = availableWidthPx,
-                    maxHeightPx = availableHeightPx,
-                    measure = { text ->
-                        measurer.measure(
-                            text = AnnotatedString(text),
-                            style = TextStyle(fontFamily = fontFamily, fontSize = MEASURE_REF_SP.sp),
-                            softWrap = false,
-                            maxLines = 1,
-                        ).size
-                    },
+                    heightLimitSp = heightLimitSp,
                 )
+                page.lines.associate { line ->
+                    val justified = line.type == LineType.AYAH && !line.isCentered && line.words.size > 1
+                    val width = ayahWidths[line.lineNumber]
+                    val size = if (justified && width != null) {
+                        MushafLayoutMath.fillLineSizeSp(width, availableWidthPx, heightLimitSp)
+                    } else {
+                        baseSize
+                    }
+                    line.lineNumber to size
+                }
             }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            for (slot in 1..MushafConstants.LINES_PER_PAGE) {
-                val line: MushafLine? = page.lines.firstOrNull { it.lineNumber == slot }
+        val slotHeightDp = with(density) { slotHeightPx.toDp() }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            page.lines.sortedBy { it.lineNumber }.forEach { line ->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .height(slotHeightDp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (line != null) {
-                        MushafLineRow(
-                            line = line,
-                            fontFamily = fontFamily,
-                            fontSize = pageFontSize,
-                            highlightColor = highlightColor,
-                            highlightedWordId = highlightedWordId,
-                        )
-                    }
+                    MushafLineRow(
+                        line = line,
+                        fontFamily = fontFamily,
+                        fontSize = (lineSizes[line.lineNumber] ?: MushafLayoutMath.MIN_SP).sp,
+                        surahNameFontFamily = surahNameFontFamily,
+                        measurer = measurer,
+                        maxWidthPx = availableWidthPx,
+                        slotHeightPx = slotHeightPx,
+                        highlightColor = highlightColor,
+                        highlightedWordId = highlightedWordId,
+                    )
                 }
             }
         }
     }
-}
-
-
-private fun uniformPageFontSize(
-    page: MushafPage,
-    maxWidthPx: Int,
-    maxHeightPx: Int,
-    measure: (String) -> androidx.compose.ui.unit.IntSize,
-): TextUnit {
-    val sizes = page.lines
-        .filter { it.type == LineType.AYAH && it.words.isNotEmpty() }
-        .map { line ->
-            measure(line.words.joinToString("") { String(Character.toChars(it.glyphCode)) })
-        }
-        .filter { it.width > 0 && it.height > 0 }
-    if (sizes.isEmpty()) return MAX_FONT_SP.sp
-
-    val widestPx = sizes.maxOf { it.width }
-    val tallestPx = sizes.maxOf { it.height }
-    val slotHeightPx = maxHeightPx.toFloat() / MushafConstants.LINES_PER_PAGE
-
-    val byWidth = MEASURE_REF_SP * (maxWidthPx.toFloat() / widestPx) * FILL_SAFETY
-    val byHeight = MEASURE_REF_SP * (slotHeightPx / tallestPx)
-
-    return minOf(byWidth, byHeight).coerceIn(MIN_FONT_SP, MAX_FONT_SP).sp
 }
