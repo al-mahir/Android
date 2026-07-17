@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -23,6 +22,7 @@ import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.ReadingMode
+import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.font.rememberPageFontFamily
 import com.example.mushaf.presentation.font.rememberSurahNameFontFamily
 
@@ -36,7 +36,8 @@ fun MushafPageView(
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
-    val highlightColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+    val contentColor = Theme.colors.onSurface
+    val highlightColor = Theme.colors.primary.copy(alpha = 0.20f)
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
 
@@ -103,6 +104,7 @@ fun MushafPageView(
                         measurer = measurer,
                         maxWidthPx = availableWidthPx,
                         slotHeightPx = slotHeightPx,
+                        contentColor = contentColor,
                         highlightColor = highlightColor,
                         highlightedWordId = highlightedWordId,
                     )

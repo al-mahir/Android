@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
 
 @Composable
@@ -23,10 +23,11 @@ fun MushafLoading(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(color = Theme.colors.primary)
         Text(
             text = stringResource(R.string.mushaf_loading),
-            style = MaterialTheme.typography.bodyMedium,
+            style = Theme.typography.body.medium,
+            color = Theme.colors.onSurface,
             modifier = Modifier.padding(top = 16.dp),
         )
     }
@@ -46,20 +47,21 @@ fun MushafErrorState(
     ) {
         Text(
             text = stringResource(R.string.mushaf_error_title),
-            style = MaterialTheme.typography.titleMedium,
+            style = Theme.typography.title,
+            color = Theme.colors.onSurface,
             textAlign = TextAlign.Center,
         )
         Text(
             text = stringResource(R.string.mushaf_error_message),
-            style = MaterialTheme.typography.bodyMedium,
+            style = Theme.typography.body.medium,
+            color = Theme.colors.secondaryFont,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
-        Button(
+        PrimaryButton(
+            caption = stringResource(R.string.mushaf_retry),
             onClick = onRetry,
             modifier = Modifier.padding(top = 16.dp),
-        ) {
-            Text(text = stringResource(R.string.mushaf_retry))
-        }
+        )
     }
 }

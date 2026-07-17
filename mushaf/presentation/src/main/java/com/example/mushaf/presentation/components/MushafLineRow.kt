@@ -3,7 +3,6 @@ package com.example.mushaf.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -31,6 +30,7 @@ fun MushafLineRow(
     measurer: TextMeasurer,
     maxWidthPx: Int,
     slotHeightPx: Float,
+    contentColor: Color,
     highlightColor: Color,
     highlightedWordId: () -> String?,
     modifier: Modifier = Modifier,
@@ -49,6 +49,7 @@ fun MushafLineRow(
                         word = word,
                         fontFamily = fontFamily,
                         fontSize = fontSize,
+                        contentColor = contentColor,
                         highlightColor = highlightColor,
                         highlightedWordId = highlightedWordId,
                     )
@@ -68,7 +69,7 @@ fun MushafLineRow(
                     style = TextStyle(
                         fontFamily = surahNameFontFamily,
                         fontSize = size,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = contentColor,
                         textAlign = TextAlign.Center,
                     ),
                     softWrap = false,
@@ -81,7 +82,7 @@ fun MushafLineRow(
                     style = TextStyle(
                         fontFamily = FontFamily.Default,
                         fontSize = 22.sp,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = contentColor,
                         textAlign = TextAlign.Center,
                     ),
                     maxLines = 1,
@@ -101,7 +102,7 @@ fun MushafLineRow(
                 style = TextStyle(
                     fontFamily = FontFamily.Default,
                     fontSize = size,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = contentColor,
                     textAlign = TextAlign.Center,
                 ),
                 softWrap = false,

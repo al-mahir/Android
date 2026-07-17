@@ -1,7 +1,6 @@
 package com.example.mushaf.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -20,6 +19,7 @@ fun MushafWordGlyph(
     word: MushafWord,
     fontFamily: FontFamily,
     fontSize: TextUnit,
+    contentColor: Color,
     highlightColor: Color,
     highlightedWordId: () -> String?,
     modifier: Modifier = Modifier,
@@ -33,7 +33,7 @@ fun MushafWordGlyph(
         style = TextStyle(
             fontFamily = fontFamily,
             fontSize = fontSize,
-            color = LocalContentColor.current,
+            color = contentColor,
         ),
         softWrap = false,
         maxLines = 1,

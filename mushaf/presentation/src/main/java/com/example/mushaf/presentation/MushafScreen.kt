@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.components.MushafChrome
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
@@ -45,7 +47,11 @@ fun MushafScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Theme.colors.backGround),
+    ) {
         MushafChrome(
             currentPage = state.currentPage,
             pageCount = state.pageCount,
