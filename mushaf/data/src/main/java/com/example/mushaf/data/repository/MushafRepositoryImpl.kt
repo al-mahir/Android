@@ -15,8 +15,9 @@ class MushafRepositoryImpl(
 
     override fun getPage(pageNumber: Int): Flow<MushafPage> = flow {
         Log.d(MushafLog.TAG, "getPage($pageNumber) requested")
-        val rows = dataSource.getLinesForPage(pageNumber)
-        val page = MushafMapper.toDomain(pageNumber, rows)
+        val lineRows = dataSource.getLinesForPage(pageNumber)
+        val wordRows = dataSource.getWordsForPage(pageNumber)
+        val page = MushafMapper.toDomain(pageNumber, lineRows, wordRows)
         Log.d(
             MushafLog.TAG,
             "getPage($pageNumber) mapped: ${page.lines.size} lines, " +

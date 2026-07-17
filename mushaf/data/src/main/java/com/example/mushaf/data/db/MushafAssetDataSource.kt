@@ -25,9 +25,11 @@ class MushafAssetDataSource(
 
     private fun openDatabase(): SQLiteDatabase {
         val target = context.getDatabasePath(DB_NAME)
-        Log.d(MushafLog.TAG, "Opening Mushaf DB at ${target.absolutePath} (exists=${target.exists()})")
-        if (!target.exists() || target.length() == 0L) {
+        val stale = isStale(target)
+        Log.d(MushafLog.TAG, "Opening Mushaf DB at ${target.absolutePath} (exists=${target.exists()}, stale=$stale)")
+        if (!target.exists() || target.length() == 0L || stale) {
             copyAssetTo(target)
+            markVersion(target)
         }
         return SQLiteDatabase.openDatabase(
             target.absolutePath,
@@ -36,6 +38,20 @@ class MushafAssetDataSource(
         ).also {
             Log.d(MushafLog.TAG, "Mushaf DB opened (version=${it.version})")
         }
+    }
+
+    private fun isStale(target: File): Boolean {
+        if (!target.exists()) return false
+        val marker = versionFile()
+        val current = runCatching { marker.readText().trim().toInt() }.getOrNull()
+        return current != DB_VERSION
+    }
+
+    private fun versionFile(): File = File(context.getDatabasePath(DB_NAME).parentFile, "$DB_NAME.version")
+
+    private fun markVersion(target: File) {
+        runCatching { versionFile().writeText(DB_VERSION.toString()) }
+            .onFailure { Log.w(MushafLog.TAG, "Failed to write Mushaf DB version marker", it) }
     }
 
     private fun copyAssetTo(target: File) {
@@ -64,14 +80,28 @@ class MushafAssetDataSource(
                 }
             }
         } catch (t: Throwable) {
-            Log.e(MushafLog.TAG, "Query failed for page $page", t)
+            Log.e(MushafLog.TAG, "Line query failed for page $page", t)
             throw t
         }
         if (rows.isEmpty()) {
             Log.w(MushafLog.TAG, "No lines found for page $page (out of range or empty asset)")
-        } else {
-            Log.d(MushafLog.TAG, "Loaded ${rows.size} lines for page $page")
         }
+        rows
+    }
+
+    suspend fun getWordsForPage(page: Int): List<MushafWordEntity> = withContext(Dispatchers.IO) {
+        val rows = ArrayList<MushafWordEntity>(LINES_PER_PAGE_HINT * 8)
+        try {
+            database().rawQuery(QUERY_WORDS_FOR_PAGE, arrayOf(page.toString())).use { c ->
+                while (c.moveToNext()) {
+                    rows += c.toWordEntity()
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Word query failed for page $page", t)
+            throw t
+        }
+        Log.d(MushafLog.TAG, "Loaded ${rows.size} words for page $page")
         rows
     }
 
@@ -95,9 +125,16 @@ class MushafAssetDataSource(
         lineNumber = getIntByName("line_number") ?: 0,
         lineType = getStringByName("line_type").orEmpty(),
         isCentered = getIntByName("is_centered") ?: 0,
-        firstWordId = getIntByName("first_word_id"),
-        lastWordId = getIntByName("last_word_id"),
         surahNumber = getIntByName("surah_number"),
+    )
+
+    private fun Cursor.toWordEntity(): MushafWordEntity = MushafWordEntity(
+        pageNumber = getIntByName("page_number") ?: 0,
+        lineNumber = getIntByName("line_number") ?: 0,
+        position = getIntByName("position") ?: 0,
+        wordKey = getStringByName("word_key").orEmpty(),
+        charType = getStringByName("char_type").orEmpty(),
+        glyphText = getStringByName("glyph_text").orEmpty(),
     )
 
     private fun Cursor.getIntByName(name: String): Int? {
@@ -117,13 +154,18 @@ class MushafAssetDataSource(
     private companion object {
         const val DB_NAME = "mushaf_v4_layout.db"
         const val ASSET_PATH = "databases/mushaf_v4_layout.db"
+
+        const val DB_VERSION = 2
+
         const val DEFAULT_PAGE_COUNT = 604
         const val LINES_PER_PAGE_HINT = 15
 
         const val QUERY_LINES_FOR_PAGE =
-            "SELECT page_number, line_number, line_type, is_centered, " +
-                "first_word_id, last_word_id, surah_number " +
+            "SELECT page_number, line_number, line_type, is_centered, surah_number " +
                 "FROM pages WHERE page_number = ? ORDER BY line_number ASC"
+        const val QUERY_WORDS_FOR_PAGE =
+            "SELECT page_number, line_number, position, word_key, char_type, glyph_text " +
+                "FROM words WHERE page_number = ? ORDER BY line_number ASC, position ASC"
         const val QUERY_PAGE_COUNT = "SELECT number_of_pages FROM info LIMIT 1"
     }
 }

@@ -6,7 +6,14 @@ data class MushafLineEntity(
     val lineNumber: Int,
     val lineType: String,
     val isCentered: Int,
-    val firstWordId: Int?,
-    val lastWordId: Int?,
     val surahNumber: Int?,
+)
+
+data class MushafWordEntity(
+    val pageNumber: Int,
+    val lineNumber: Int,
+    val position: Int,
+    val wordKey: String,
+    val charType: String,
+    val glyphText: String,
 )
