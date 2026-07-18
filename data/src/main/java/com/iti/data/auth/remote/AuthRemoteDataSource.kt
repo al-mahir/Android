@@ -9,52 +9,46 @@ import com.iti.data.auth.remote.dto.RegisterRequest
 import com.iti.data.auth.remote.dto.ResetPasswordRequest
 import com.iti.data.auth.remote.dto.UserDto
 
-// Dummy implementation since Ktor client is not fully set up in the provided structure
-// and we are to wire with mocks for missing endpoints as per user approval.
-class AuthRemoteDataSource {
+import com.iti.data.auth.local.TokenStorage
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+
+class AuthRemoteDataSource(
+    private val client: HttpClient,
+    private val tokenStorage: TokenStorage
+) {
 
     suspend fun register(request: RegisterRequest): ApiResponse<UserDto> {
-        // Mock
-        return ApiResponse(
-            success = true,
-            message = "Registered successfully",
-            data = UserDto(1, request.username, request.firstName, request.lastName, request.email, request.phoneNumber)
-        )
+        return client.post("auth/register") {
+            setBody(request)
+        }.body()
     }
 
     suspend fun login(request: LoginRequest): ApiResponse<AuthDataDto> {
-        // Mock
-        return ApiResponse(
-            success = true,
-            message = "Login successful",
-            data = AuthDataDto(
-                accessToken = "mock_access_token",
-                refreshToken = "mock_refresh_token",
-                isNewUser = false,
-                user = UserDto(1, "mockuser", "Mock", "User", request.email)
-            )
-        )
+        return client.post("auth/login") {
+            setBody(request)
+        }.body()
     }
 
     suspend fun loginWithGoogle(request: GoogleAuthRequest): ApiResponse<AuthDataDto> {
-        return ApiResponse(
-            success = true,
-            message = "Google login successful",
-            data = AuthDataDto(
-                accessToken = "mock_access_token",
-                refreshToken = "mock_refresh_token",
-                isNewUser = true,
-                user = UserDto(2, "googleuser", "Google", "User", "google@example.com")
-            )
-        )
+        return client.post("auth/google") {
+            setBody(request)
+        }.body()
     }
 
     suspend fun forgotPassword(request: ForgotPasswordRequest): ApiResponse<Unit> {
-        return ApiResponse(success = true, message = "Reset link sent")
+        return client.post("auth/forgot-password") {
+            setBody(request)
+        }.body()
     }
 
     suspend fun resetPassword(request: ResetPasswordRequest): ApiResponse<Unit> {
-        return ApiResponse(success = true, message = "Password reset successfully")
+        return client.post("auth/reset-password") {
+            setBody(request)
+        }.body()
     }
 
     // Mocked for the UI flow as requested
@@ -63,6 +57,11 @@ class AuthRemoteDataSource {
     }
 
     suspend fun logout(): ApiResponse<Unit> {
-         return ApiResponse(success = true, message = "Logged out successfully")
+        val token = tokenStorage.getAccessToken()
+        return client.post("auth/logout") {
+            if (token != null) {
+                header("Authorization", "Bearer $token")
+            }
+        }.body()
     }
 }
