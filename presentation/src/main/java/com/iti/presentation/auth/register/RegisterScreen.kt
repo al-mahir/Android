@@ -30,6 +30,7 @@ fun RegisterScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Theme.colors.backGround)
+            .imePadding()
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

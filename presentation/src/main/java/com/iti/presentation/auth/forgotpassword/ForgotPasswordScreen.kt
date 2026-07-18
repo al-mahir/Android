@@ -15,6 +15,9 @@ import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun ForgotPasswordScreen(
     state: ForgotPasswordState,
@@ -22,10 +25,13 @@ fun ForgotPasswordScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Theme.colors.backGround)
+            .imePadding()
+            .verticalScroll(scrollState)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
