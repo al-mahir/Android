@@ -32,7 +32,7 @@ val authDataModule = module {
                 level = LogLevel.ALL
             }
             defaultRequest {
-                url("https://virtserver.swaggerhub.com/iti-ff4/AuthN-AuthZ-API/1.5.0")
+                url("https://virtserver.swaggerhub.com/iti-ff4/AuthN-AuthZ-API/1.4.0")
                 contentType(ContentType.Application.Json)
             }
         }
