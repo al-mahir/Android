@@ -2,6 +2,7 @@ package com.example.mushaf.presentation.font
 
 import android.content.Context
 import android.util.Log
+import android.util.LruCache
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -14,7 +15,10 @@ object PageFontProvider {
 
     private const val TAG = "Mushaf"
 
-    /** Ornamental surah-name font: one decorative frame glyph per surah at PUA [SURAH_NAME_PUA_BASE]. */
+
+    private const val FONT_CACHE_SIZE = 24
+    private val fontCache = LruCache<String, FontFamily>(FONT_CACHE_SIZE)
+
     const val SURAH_NAME_FONT_PATH = "fonts/ornament/surah_names.ttf"
 
     const val SURAH_NAME_PUA_BASE = 0xE900
@@ -56,6 +60,13 @@ object PageFontProvider {
 
     fun create(context: Context, pageNumber: Int, mode: ReadingMode): FontFamily {
         val path = assetPath(pageNumber, mode)
+        fontCache.get(path)?.let { return it }
+        val resolved = resolve(context, pageNumber, mode, path)
+        fontCache.put(path, resolved)
+        return resolved
+    }
+
+    private fun resolve(context: Context, pageNumber: Int, mode: ReadingMode, path: String): FontFamily {
         if (assetExists(context, path)) {
             return FontFamily(Font(path = path, assetManager = context.assets))
         }
