@@ -26,3 +26,6 @@ rootProject.name = "Al-Mahir"
 include(":app")
 include(":mushaf")
 include(":designsystem")
+include(":domain")
+include(":data")
+include(":presentation")
