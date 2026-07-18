@@ -105,6 +105,28 @@ depend on another presentation module. The copies are ~30 lines each and **MUST 
 identical** — change one, change the other in the same commit. A new layered feature module
 gets its own `core/mvi` copy the same way.
 
+### 3b. Model the business, never the screen (`domain` / `data`)
+
+`domain` and `data` describe **what the app is**, not **what a screen shows**. A screen is one
+consumer of the business layer; it must never dictate its shape.
+
+- ❌ **No screen names below `presentation`.** No `model/home/`, `dto/home/`, `HomeDataSource`,
+  `HomeSummaryDto`, `GetHomeSummaryUseCase`. If deleting a screen would force a rename in
+  `domain` or `data`, the layering is wrong.
+- **One file per entity**, named for the business concept: `User`, `Sheikh`, `StudyCircle`,
+  `ReadingProgress` — not one file bundling "everything screen X needs".
+- **DTOs are per resource** (`UserDto`, `SheikhDto`, …), so any endpoint that embeds a user
+  reuses `UserDto`. ❌ No screen-shaped envelope DTO.
+- **Data sources expose one member per endpoint.** A screen showing four sections reads four
+  streams; it does not get a bespoke `observeXScreen()` that bundles them.
+- **Repositories are capability-oriented** — one member per resource, plus writes. Adding a
+  section to a screen must not change a repository contract.
+- **Use cases are single-purpose** and own product rules (ordering, filtering, validation), so
+  every surface inherits the same behaviour. ❌ No `GetEverythingForScreenXUseCase`.
+- **The screen aggregate lives in `presentation`.** Combine the streams in the ViewModel into
+  that screen's UI state; if a typed carrier is needed for `combine`, keep it `internal` to the
+  feature package — it is not a domain model.
+
 ### 4. Design System First (UI)
 
 - Presentation modules build UI **only** from `:designsystem` components and `Theme.*` tokens
@@ -162,8 +184,9 @@ when in doubt, check `designsystem/src`).
 
 | Group | Components |
 |-------|-----------|
-| Buttons | `PrimaryButton`, `SecondaryButton`, `IconButton` (loaders via Lottie) |
-| Inputs | `TextField`, `OtpField`, `SearchBar`, `SearchOverlapHeader` |
+| Buttons | `PrimaryButton`, `SecondaryButton`, `IconButton` (loaders via Lottie; `height`/`shape`/`captionStyle` params for compact inline variants) |
+| Inputs | `TextField`, `OtpField`, `SearchBar`, `ClickableSearchBar`, `SearchOverlapHeader` |
+| Identity & meta | `InitialsAvatar`, `SectionHeader`, `StatusDot`, `StatusLabel`, `RatingLabel` |
 | Cards | `SectionedCard`, `ExpandableSection`, `ExpandableAccentCard`, `InnerContentCard`, `SettingsActionCard` |
 | Nav & bars | `AppBottomNavBar`, `BackTitleTopBar`, `BackTitleNotificationTopBar`, `AppBottomSheet` |
 | Tabs | `DayTabRow`, `TabSelector` |
@@ -199,9 +222,10 @@ when in doubt, check `designsystem/src`).
 - **Data flow shape**: features follow `data source → repository → use case → ViewModel → UI`.
   Every data source is declared as an **interface** in `:data` and bound in a Koin module, so a
   stand-in can be swapped for the real one without touching any layer above. While a backend is
-  unfinished, bind a `Fake*DataSource` that returns realistic data (and realistic delays) — the
-  screen then exercises the production path, not a special case, and going live is a one-line
-  change to the binding. The app-wide non-Mushaf repository is **`AlmahirRepository`**.
+  unfinished, bind a `*FakeDataSource` that returns realistic data (and realistic per-resource
+  delays) — the screen then exercises the production path, not a special case, and going live is
+  a one-line change to the binding. The app-wide non-Mushaf source/repository pair is
+  **`AlmahirDataSource` / `AlmahirFakeDataSource` / `AlmahirRepository`**.
 - **Error handling**: data sources surface failures as typed results/domain errors; the UI
   renders explicit **loading / empty / error** states (use `Shimmer`, placeholder screens,
   and `StatusOverlay`).
