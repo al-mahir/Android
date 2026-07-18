@@ -39,6 +39,9 @@ android {
 
 dependencies {
     implementation(project(":designsystem"))
+    implementation(project(":mushaf:domain"))
+    implementation(project(":mushaf:data"))
+    implementation(project(":mushaf:presentation"))
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":presentation"))
@@ -52,6 +55,16 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+    // DI
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+
+    // Navigation 3
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+
     implementation(libs.androidx.navigation.compose)
 
     implementation(platform(libs.koin.bom))
