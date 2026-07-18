@@ -86,6 +86,8 @@ class MushafViewModel(
         requestPage(clamped)
         requestPage(clamped - 1)
         requestPage(clamped + 1)
+        requestPage(clamped - 2)
+        requestPage(clamped + 2)
 
         viewModelScope.launch {
             runCatching { saveLastPage(clamped) }

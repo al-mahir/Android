@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
@@ -69,11 +70,11 @@ fun MushafScreen(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             HorizontalPager(
                 state = pagerState,
-                beyondViewportPageCount = 1,
+                beyondViewportPageCount = 2,
                 modifier = Modifier.fillMaxSize(),
             ) { pageIndex ->
                 val pageNumber = pageIndex + 1
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxSize().graphicsLayer()) {
                     when (val pageState = state.pageState(pageNumber)) {
                         is PageLoadState.Loaded ->
                             MushafPageView(
@@ -82,6 +83,16 @@ fun MushafScreen(
                                 highlightedWordId = {
                                     if (pageNumber == state.currentPage) state.highlightedWordId
                                     else null
+                                },
+                                prefetchPages = if (pageNumber == state.currentPage) {
+                                    listOfNotNull(
+                                        state.pages[pageNumber - 2],
+                                        state.pages[pageNumber - 1],
+                                        state.pages[pageNumber + 1],
+                                        state.pages[pageNumber + 2],
+                                    )
+                                } else {
+                                    emptyList()
                                 },
                             )
 

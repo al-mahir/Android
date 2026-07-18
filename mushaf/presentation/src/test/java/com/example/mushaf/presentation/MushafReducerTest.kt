@@ -124,9 +124,10 @@ class MushafReducerTest {
         val vm = buildViewModel(prefs, repo)
         advanceUntilIdle()
 
-        // Page 10 plus both neighbours are cached so an adjacent swipe never reloads.
+        // Page 10 plus a two-page window each side are cached, so the presentation layer can
+        // prefetch ±2 and a fast multi-page fling never reloads.
         val pages = vm.state.value.pages.keys
-        assertTrue(pages.containsAll(listOf(9, 10, 11)))
+        assertTrue(pages.containsAll(listOf(8, 9, 10, 11, 12)))
     }
 
     @Test
