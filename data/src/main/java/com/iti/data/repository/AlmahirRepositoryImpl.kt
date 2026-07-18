@@ -1,25 +1,33 @@
 package com.iti.data.repository
 
-import com.iti.data.datasource.home.HomeDataSource
-import com.iti.data.mapper.home.toDomain
-import com.iti.domain.model.home.HomeSummary
+import com.iti.data.datasource.AlmahirDataSource
+import com.iti.data.mapper.toDomain
+import com.iti.domain.model.ReadingProgress
+import com.iti.domain.model.Sheikh
+import com.iti.domain.model.StudyCircle
+import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/**
- * Binds [AlmahirRepository] to a [HomeDataSource]. Deliberately thin: it maps DTO -> domain
- * and nothing else, so replacing [com.iti.data.datasource.home.FakeHomeDataSource] with the
- * real remote source requires no change here.
- */
+
 class AlmahirRepositoryImpl(
-    private val homeDataSource: HomeDataSource,
+    private val dataSource: AlmahirDataSource,
 ) : AlmahirRepository {
 
-    override fun observeHomeSummary(): Flow<HomeSummary> =
-        homeDataSource.observeHomeSummary().map { dto -> dto.toDomain() }
+    override fun observeCurrentUser(): Flow<User> =
+        dataSource.observeCurrentUser().map { dto -> dto.toDomain() }
 
-    override suspend fun joinCircle(circleId: String) {
-        homeDataSource.joinCircle(circleId)
+    override fun observeReadingProgress(): Flow<ReadingProgress?> =
+        dataSource.observeReadingProgress().map { dto -> dto?.toDomain() }
+
+    override fun observeSheikhs(): Flow<List<Sheikh>> =
+        dataSource.observeSheikhs().map { dtos -> dtos.map { it.toDomain() } }
+
+    override fun observeStudyCircles(): Flow<List<StudyCircle>> =
+        dataSource.observeStudyCircles().map { dtos -> dtos.map { it.toDomain() } }
+
+    override suspend fun joinStudyCircle(circleId: String) {
+        dataSource.joinStudyCircle(circleId)
     }
 }

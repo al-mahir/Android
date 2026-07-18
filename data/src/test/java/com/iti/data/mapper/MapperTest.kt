@@ -1,16 +1,18 @@
-package com.iti.data.mapper.home
+package com.iti.data.mapper
 
-import com.iti.data.dto.home.SheikhDto
-import com.iti.data.dto.home.UserDto
-import com.iti.domain.model.home.SheikhAvailability
+import com.iti.data.dto.SheikhDto
+import com.iti.data.dto.StudyCircleDto
+import com.iti.data.dto.UserDto
+import com.iti.domain.model.SheikhAvailability
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
-class HomeMapperTest {
+class MapperTest {
 
     @Test
     fun `two-word latin name maps to one initial per word`() {
-        assertEquals("JD", UserDto(displayName = "Jamal Darwish").toDomain().initials)
+        assertEquals("JD", user(displayName = "Jamal Darwish").initials)
     }
 
     @Test
@@ -26,7 +28,12 @@ class HomeMapperTest {
 
     @Test
     fun `extra whitespace does not produce blank initials`() {
-        assertEquals("JD", UserDto(displayName = "  Jamal   Darwish  ").toDomain().initials)
+        assertEquals("JD", user(displayName = "  Jamal   Darwish  ").initials)
+    }
+
+    @Test
+    fun `user and sheikh abbreviate the same name identically`() {
+        assertEquals(user(displayName = "Omar Al-Fadl").initials, sheikhNamed("Omar Al-Fadl").initials)
     }
 
     @Test
@@ -40,6 +47,16 @@ class HomeMapperTest {
     fun `unknown availability token degrades to offline`() {
         assertEquals(SheikhAvailability.OFFLINE, sheikhWithAvailability("on_holiday").availability)
     }
+
+    @Test
+    fun `study circle defaults to not joined`() {
+        val circle = StudyCircleDto(id = "c1", title = "t", hostName = "h").toDomain()
+        assertFalse(circle.isJoined)
+        assertEquals("c1", circle.id)
+    }
+
+    private fun user(displayName: String) =
+        UserDto(id = "u1", displayName = displayName).toDomain()
 
     private fun sheikhNamed(name: String) =
         SheikhDto(id = "id", name = name, rating = 5.0, availability = "available").toDomain()
