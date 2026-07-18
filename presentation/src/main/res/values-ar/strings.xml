@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_brand_title">المَاهِر</string>
+    <string name="home_greeting">أهلاً بعودتك</string>
+    <string name="home_greeting_subtitle">واصل رحلتك على نور من الهدى.</string>
+    <string name="home_search_hint">ابحث عن سورة أو جزء أو صفحة…</string>
+    <string name="home_avatar_content_description">فتح الملف الشخصي</string>
+
+    <string name="home_section_continue_reading">متابعة القراءة</string>
+    <string name="home_section_sheikhs">تعلّم مع شيخ</string>
+    <string name="home_section_circles">الحلقات النشطة</string>
+    <string name="home_see_all">عرض الكل</string>
+
+    <string name="home_last_read">آخر قراءة</string>
+    <!-- %1$d = ayah number, %2$d = page number -->
+    <string name="home_ayah_page">الآية %1$d • صفحة %2$d</string>
+    <string name="home_continue_reading_content_description">متابعة القراءة</string>
+
+    <!-- %1$s = sheikh name -->
+    <string name="home_sheikh_avatar_content_description">صورة %1$s</string>
+    <string name="home_rating_content_description">التقييم</string>
+    <string name="home_status_available">متاح</string>
+    <string name="home_status_in_session">في جلسة</string>
+    <string name="home_status_offline">غير متصل</string>
+
+    <string name="home_join">انضم</string>
+    <string name="home_joined">تم الانضمام</string>
+
+    <string name="home_error_generic">تعذّر تحميل محتوى الصفحة الرئيسية. حاول مرة أخرى.</string>
+    <string name="home_join_failed">تعذّر الانضمام إلى الحلقة. حاول مرة أخرى.</string>
+</resources>
