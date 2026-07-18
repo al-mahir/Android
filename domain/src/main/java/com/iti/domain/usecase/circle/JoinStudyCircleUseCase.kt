@@ -1,12 +1,12 @@
-package com.iti.domain.usecase.home
+package com.iti.domain.usecase.circle
 
 import com.iti.domain.repository.AlmahirRepository
 
-class JoinCircleUseCase(
+class JoinStudyCircleUseCase(
     private val repository: AlmahirRepository,
 ) {
     suspend operator fun invoke(circleId: String) {
         require(circleId.isNotBlank()) { "circleId must not be blank" }
-        repository.joinCircle(circleId)
+        repository.joinStudyCircle(circleId)
     }
 }
