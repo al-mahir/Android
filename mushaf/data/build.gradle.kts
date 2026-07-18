@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     // DI
+    implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
 
     testImplementation(libs.junit)
