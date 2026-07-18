@@ -20,8 +20,9 @@ import kotlinx.coroutines.flow.asStateFlow
 
 import io.ktor.client.plugins.ResponseException
 import com.iti.data.auth.remote.dto.ApiResponse
+import com.iti.data.auth.remote.dto.AuthDataDto
 import io.ktor.client.call.body
-
+import com.iti.data.auth.remote.dto.ApiErrorResponse
 class AuthRepositoryImpl(
     private val remoteDataSource: AuthRemoteDataSource,
     private val tokenStorage: TokenStorage
@@ -48,7 +49,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<UserDto>(e)
+            handleException(e)
         }
     }
 
@@ -74,7 +75,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<AuthDataDto>(e)
+            handleException(e)
         }
     }
 
@@ -100,7 +101,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<AuthDataDto>(e)
+            handleException(e)
         }
     }
 
@@ -111,7 +112,7 @@ class AuthRepositoryImpl(
             _authState.value = false
             Result.Success(Unit)
         } catch (e: Exception) {
-            handleException<Unit>(e)
+            handleException(e)
         }
     }
 
@@ -132,7 +133,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<Unit>(e)
+            handleException(e)
         }
     }
 
@@ -145,7 +146,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<Unit>(e)
+            handleException(e)
         }
     }
 
@@ -158,15 +159,15 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            handleException<Unit>(e)
+            handleException(e)
         }
     }
 
-    private suspend inline fun <reified T> handleException(e: Exception): Result<Nothing> {
+    private suspend inline fun handleException(e: Exception): Result<Nothing> {
         val domainError = when (e) {
             is ResponseException -> {
                 try {
-                    val errorBody = e.response.body<ApiResponse<T>>()
+                    val errorBody = e.response.body<ApiErrorResponse>()
                     when (e.response.status.value) {
                         400 -> DomainError.ValidationError(errorBody.message, errorBody.fieldErrors ?: emptyMap())
                         409 -> DomainError.ConflictError(errorBody.message, errorBody.fieldErrors ?: emptyMap())

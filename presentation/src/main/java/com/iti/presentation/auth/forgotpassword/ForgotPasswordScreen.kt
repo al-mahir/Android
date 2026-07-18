@@ -14,6 +14,8 @@ import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.iti.presentation.R
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,14 +40,14 @@ fun ForgotPasswordScreen(
     ) {
         
         Text(
-            text = "Forgot Password",
+            text = stringResource(id = R.string.auth_forgot_password_title),
             style = Theme.typography.h4,
             color = Theme.colors.primaryFont,
             modifier = Modifier.padding(bottom = Theme.spacing.small)
         )
         
         Text(
-            text = "Enter your email to receive a reset link/OTP",
+            text = stringResource(id = R.string.auth_enter_email_reset),
             style = Theme.typography.body.large,
             color = Theme.colors.secondaryFont,
             modifier = Modifier.padding(bottom = Theme.spacing.large)
@@ -54,8 +56,8 @@ fun ForgotPasswordScreen(
         TextField(
             text = state.email,
             onTextChange = { onIntent(ForgotPasswordIntent.EmailChanged(it)) },
-            title = "Email Address",
-            hint = "Enter your email",
+            title = stringResource(id = R.string.auth_email_address),
+            hint = stringResource(id = R.string.auth_enter_email),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = state.emailError != null,
             errorMessage = state.emailError,
@@ -65,7 +67,7 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.large))
         
         PrimaryButton(
-            caption = "Send Reset Link",
+            caption = stringResource(id = R.string.auth_send_reset_link),
             onClick = { onIntent(ForgotPasswordIntent.Submit) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth()
@@ -74,7 +76,7 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.medium))
         
         Text(
-            text = "Back to Sign In",
+            text = stringResource(id = R.string.auth_back_to_sign_in),
             style = Theme.typography.body.medium,
             color = Theme.colors.primary,
             modifier = Modifier.clickable { onNavigateBack() }

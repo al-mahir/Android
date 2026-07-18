@@ -1,0 +1,39 @@
+<resources>
+    <!-- Login Screen -->
+    <string name="auth_welcome_back">مرحباً بعودتك</string>
+    <string name="auth_sign_in_to_continue">سجل الدخول للمتابعة</string>
+    <string name="auth_email_address">البريد الإلكتروني</string>
+    <string name="auth_enter_email">أدخل بريدك الإلكتروني</string>
+    <string name="auth_password">كلمة المرور</string>
+    <string name="auth_enter_password">أدخل كلمة المرور</string>
+    <string name="auth_forgot_password">هل نسيت كلمة المرور؟</string>
+    <string name="auth_sign_in">تسجيل الدخول</string>
+    <string name="auth_continue_with_google">المتابعة باستخدام جوجل</string>
+    <string name="auth_dont_have_account">ليس لديك حساب؟ </string>
+    <string name="auth_sign_up">إنشاء حساب</string>
+
+    <!-- Register Screen -->
+    <string name="auth_create_account">إنشاء حساب</string>
+    <string name="auth_sign_up_to_start">سجل للبدء</string>
+    <string name="auth_username">اسم المستخدم</string>
+    <string name="auth_enter_username">أدخل اسم المستخدم</string>
+    <string name="auth_first_name">الاسم الأول</string>
+    <string name="auth_last_name">الاسم الأخير</string>
+    <string name="auth_phone_number">رقم الهاتف</string>
+    <string name="auth_enter_phone_number">أدخل رقم الهاتف</string>
+    <string name="auth_register_with_google">التسجيل باستخدام جوجل</string>
+    <string name="auth_already_have_account">لديك حساب بالفعل؟ </string>
+
+    <!-- OTP Screen -->
+    <string name="auth_check_email">تحقق من بريدك</string>
+    <string name="auth_sent_code_to">أرسلنا رمزاً من 6 أرقام إلى\n%1$s</string>
+    <string name="auth_verify_code">تحقق من الرمز</string>
+    <string name="auth_resend_code">إعادة إرسال الرمز</string>
+    <string name="auth_resend_code_in">إعادة الإرسال بعد %1$s</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="auth_forgot_password_title">نسيت كلمة المرور</string>
+    <string name="auth_enter_email_reset">أدخل بريدك الإلكتروني لتلقي رابط إعادة التعيين/الرمز</string>
+    <string name="auth_send_reset_link">إرسال رابط إعادة التعيين</string>
+    <string name="auth_back_to_sign_in">العودة لتسجيل الدخول</string>
+</resources>

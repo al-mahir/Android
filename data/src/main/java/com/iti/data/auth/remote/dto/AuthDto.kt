@@ -27,3 +27,10 @@ data class ApiResponse<T>(
     val data: T? = null,
     val fieldErrors: Map<String, String>? = null
 )
+
+@Serializable
+data class ApiErrorResponse(
+    val success: Boolean,
+    val message: String,
+    val fieldErrors: Map<String, String>? = null
+)

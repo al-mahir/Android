@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.textfield.OtpField
 import com.example.designsystem.theme.Theme
+import androidx.compose.ui.res.stringResource
+import com.iti.presentation.R
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -36,14 +38,14 @@ fun OtpScreen(
     ) {
         
         Text(
-            text = "Check Your Email",
+            text = stringResource(id = R.string.auth_check_email),
             style = Theme.typography.h4,
             color = Theme.colors.primaryFont,
             modifier = Modifier.padding(bottom = Theme.spacing.small)
         )
         
         Text(
-            text = "We sent a 6-digit code to\n${state.email}",
+            text = stringResource(id = R.string.auth_sent_code_to, state.email),
             style = Theme.typography.body.large,
             color = Theme.colors.secondaryFont,
             textAlign = TextAlign.Center,
@@ -59,7 +61,7 @@ fun OtpScreen(
         )
         
         PrimaryButton(
-            caption = "Verify Code",
+            caption = stringResource(id = R.string.auth_verify_code),
             onClick = { onIntent(OtpIntent.Submit) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
@@ -67,7 +69,7 @@ fun OtpScreen(
 
         if (state.canResend) {
             Text(
-                text = "Resend Code",
+                text = stringResource(id = R.string.auth_resend_code),
                 style = Theme.typography.body.medium,
                 color = Theme.colors.primary,
                 modifier = Modifier.clickable { onIntent(OtpIntent.ResendOtp) }
@@ -75,7 +77,7 @@ fun OtpScreen(
         } else {
             val formattedTime = String.format("00:%02d", state.timerSeconds)
             Text(
-                text = "Resend Code in $formattedTime",
+                text = stringResource(id = R.string.auth_resend_code_in, formattedTime),
                 style = Theme.typography.body.medium,
                 color = Theme.colors.secondaryFont
             )

@@ -19,6 +19,12 @@ import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.iti.presentation.R
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -44,14 +50,14 @@ fun LoginScreen(
     ) {
         
         Text(
-            text = "Welcome Back",
+            text = stringResource(id = R.string.auth_welcome_back),
             style = Theme.typography.h4,
             color = Theme.colors.primaryFont,
             modifier = Modifier.padding(bottom = Theme.spacing.small)
         )
         
         Text(
-            text = "Sign in to continue",
+            text = stringResource(id = R.string.auth_sign_in_to_continue),
             style = Theme.typography.body.large,
             color = Theme.colors.secondaryFont,
             modifier = Modifier.padding(bottom = Theme.spacing.large)
@@ -60,8 +66,8 @@ fun LoginScreen(
         TextField(
             text = state.email,
             onTextChange = { onIntent(LoginIntent.EmailChanged(it)) },
-            title = "Email Address",
-            hint = "Enter your email",
+            title = stringResource(id = R.string.auth_email_address),
+            hint = stringResource(id = R.string.auth_enter_email),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = state.emailError != null,
             errorMessage = state.emailError,
@@ -73,10 +79,10 @@ fun LoginScreen(
         TextField(
             text = state.password,
             onTextChange = { onIntent(LoginIntent.PasswordChanged(it)) },
-            title = "Password",
-            hint = "Enter your password",
+            title = stringResource(id = R.string.auth_password),
+            hint = stringResource(id = R.string.auth_enter_password),
             visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = painterResource(id = android.R.drawable.ic_menu_view), // placeholder for eye icon
+            trailingIcon = rememberVectorPainter(image = if (state.isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff),
             onClickTrailingIcon = { onIntent(LoginIntent.TogglePasswordVisibility) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             isError = state.passwordError != null,
@@ -87,7 +93,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.small))
         
         Text(
-            text = "Forgot Password?",
+            text = stringResource(id = R.string.auth_forgot_password),
             style = Theme.typography.body.medium,
             color = Theme.colors.primary,
             textAlign = TextAlign.End,
@@ -100,7 +106,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.large))
         
         PrimaryButton(
-            caption = "Sign In",
+            caption = stringResource(id = R.string.auth_sign_in),
             onClick = { onIntent(LoginIntent.SubmitLogin) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth()
@@ -109,7 +115,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.medium))
         
         SecondaryButton(
-            caption = "Continue with Google",
+            caption = stringResource(id = R.string.auth_continue_with_google),
             onClick = { onIntent(LoginIntent.GoogleSignInClicked) },
             iconPainter = painterResource(id = com.example.designsystem.R.drawable.ic_google),
             tintIcon = false,
@@ -123,12 +129,12 @@ fun LoginScreen(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Don't have an account? ",
+                text = stringResource(id = R.string.auth_dont_have_account),
                 style = Theme.typography.body.medium,
                 color = Theme.colors.secondaryFont
             )
             Text(
-                text = "Sign Up",
+                text = stringResource(id = R.string.auth_sign_up),
                 style = Theme.typography.body.medium,
                 color = Theme.colors.primary,
                 modifier = Modifier.clickable { onNavigateToRegister() }

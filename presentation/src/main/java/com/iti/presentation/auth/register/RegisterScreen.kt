@@ -18,6 +18,12 @@ import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
+import com.iti.presentation.R
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 
 @Composable
 fun RegisterScreen(
@@ -36,14 +42,14 @@ fun RegisterScreen(
     ) {
         item {
             Text(
-                text = "Create Account",
+                text = stringResource(id = R.string.auth_create_account),
                 style = Theme.typography.h4,
                 color = Theme.colors.primaryFont,
                 modifier = Modifier.padding(top = Theme.spacing.large, bottom = Theme.spacing.small)
             )
             
             Text(
-                text = "Sign up to get started",
+                text = stringResource(id = R.string.auth_sign_up_to_start),
                 style = Theme.typography.body.large,
                 color = Theme.colors.secondaryFont,
                 modifier = Modifier.padding(bottom = Theme.spacing.large)
@@ -54,8 +60,8 @@ fun RegisterScreen(
             TextField(
                 text = state.username,
                 onTextChange = { onIntent(RegisterIntent.UsernameChanged(it)) },
-                title = "Username",
-                hint = "Enter your username",
+                title = stringResource(id = R.string.auth_username),
+                hint = stringResource(id = R.string.auth_enter_username),
                 isError = state.usernameError != null,
                 errorMessage = state.usernameError,
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
@@ -67,8 +73,8 @@ fun RegisterScreen(
                 TextField(
                     text = state.firstName,
                     onTextChange = { onIntent(RegisterIntent.FirstNameChanged(it)) },
-                    title = "First Name",
-                    hint = "First Name",
+                    title = stringResource(id = R.string.auth_first_name),
+                    hint = stringResource(id = R.string.auth_first_name),
                     isError = state.firstNameError != null,
                     errorMessage = state.firstNameError,
                     modifier = Modifier.weight(1f)
@@ -76,8 +82,8 @@ fun RegisterScreen(
                 TextField(
                     text = state.lastName,
                     onTextChange = { onIntent(RegisterIntent.LastNameChanged(it)) },
-                    title = "Last Name",
-                    hint = "Last Name",
+                    title = stringResource(id = R.string.auth_last_name),
+                    hint = stringResource(id = R.string.auth_last_name),
                     isError = state.lastNameError != null,
                     errorMessage = state.lastNameError,
                     modifier = Modifier.weight(1f)
@@ -89,8 +95,8 @@ fun RegisterScreen(
             TextField(
                 text = state.email,
                 onTextChange = { onIntent(RegisterIntent.EmailChanged(it)) },
-                title = "Email Address",
-                hint = "Enter your email",
+                title = stringResource(id = R.string.auth_email_address),
+                hint = stringResource(id = R.string.auth_enter_email),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = state.emailError != null,
                 errorMessage = state.emailError,
@@ -102,8 +108,8 @@ fun RegisterScreen(
             TextField(
                 text = state.phoneNumber,
                 onTextChange = { onIntent(RegisterIntent.PhoneNumberChanged(it)) },
-                title = "Phone Number",
-                hint = "Enter your phone number",
+                title = stringResource(id = R.string.auth_phone_number),
+                hint = stringResource(id = R.string.auth_enter_phone_number),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 isError = state.phoneNumberError != null,
                 errorMessage = state.phoneNumberError,
@@ -115,10 +121,10 @@ fun RegisterScreen(
             TextField(
                 text = state.password,
                 onTextChange = { onIntent(RegisterIntent.PasswordChanged(it)) },
-                title = "Password",
-                hint = "Enter your password",
+                title = stringResource(id = R.string.auth_password),
+                hint = stringResource(id = R.string.auth_enter_password),
                 visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = painterResource(id = android.R.drawable.ic_menu_view), // placeholder for eye icon
+                trailingIcon = rememberVectorPainter(image = if (state.isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff),
                 onClickTrailingIcon = { onIntent(RegisterIntent.TogglePasswordVisibility) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 isError = state.passwordError != null,
@@ -129,7 +135,7 @@ fun RegisterScreen(
 
         item {
             PrimaryButton(
-                caption = "Sign Up",
+                caption = stringResource(id = R.string.auth_sign_up),
                 onClick = { onIntent(RegisterIntent.SubmitRegistration) },
                 isLoading = state.isLoading,
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
@@ -138,7 +144,7 @@ fun RegisterScreen(
 
         item {
             SecondaryButton(
-                caption = "Register with Google",
+                caption = stringResource(id = R.string.auth_register_with_google),
                 onClick = { onIntent(RegisterIntent.GoogleSignInClicked) },
                 iconPainter = painterResource(id = com.example.designsystem.R.drawable.ic_google),
                 tintIcon = false,
@@ -152,12 +158,12 @@ fun RegisterScreen(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Already have an account? ",
+                    text = stringResource(id = R.string.auth_already_have_account),
                     style = Theme.typography.body.medium,
                     color = Theme.colors.secondaryFont
                 )
                 Text(
-                    text = "Sign In",
+                    text = stringResource(id = R.string.auth_sign_in),
                     style = Theme.typography.body.medium,
                     color = Theme.colors.primary,
                     modifier = Modifier.clickable { onNavigateToLogin() }
