@@ -2,6 +2,7 @@ package com.iti.al_mahir.navigation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -37,7 +38,11 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         backStack.add(root)
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+    ) {
         NavDisplay(
             backStack = backStack,
             modifier = Modifier.weight(1f),
