@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,14 +23,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
-
-private val CardShape = RoundedCornerShape(20.dp)
-private val IconBoxShape = RoundedCornerShape(14.dp)
-private val IconBoxSize = 52.dp
 
 private const val SupportingAlpha = 0.75f
 private const val IconBoxAlpha = 0.15f
@@ -50,7 +44,7 @@ fun ContinueReadingCard(
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
         modifier = modifier
             .fillMaxWidth()
-            .clip(CardShape)
+            .clip(Theme.shapes.extraLarge)
             .background(Theme.colors.primary)
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) { role = Role.Button }
@@ -59,8 +53,8 @@ fun ContinueReadingCard(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(IconBoxSize)
-                .clip(IconBoxShape)
+                .size(Theme.size.iconContainer)
+                .clip(Theme.shapes.large)
                 .background(Theme.colors.onPrimary.copy(alpha = IconBoxAlpha)),
         ) {
             Image(

@@ -18,18 +18,11 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
+import com.example.designsystem.components.avatar.InitialsAvatar
 import com.iti.presentation.R
 
-private val AvatarSize = 40.dp
 
-/**
- * Brand row (logo + profile avatar) above the localized greeting.
- *
- * [initials] and [avatarUrl] are null-safe: before the first load resolves the avatar renders
- * empty rather than the header jumping in once data arrives.
- */
 @Composable
 fun HomeHeader(
     initials: String?,
@@ -62,7 +55,7 @@ fun HomeHeader(
                 contentDescription = stringResource(R.string.home_avatar_content_description),
                 imageUrl = avatarUrl,
                 modifier = Modifier
-                    .size(AvatarSize)
+                    .size(Theme.size.avatarSmall)
                     .clip(CircleShape)
                     .clickable(onClick = onProfileClick)
                     .semantics { role = Role.Button },

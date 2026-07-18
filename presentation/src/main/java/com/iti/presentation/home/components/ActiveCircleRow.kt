@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,10 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.components.button.ButtonHeightCompact
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.theme.Theme
-import com.iti.domain.model.home.StudyCircle
+import com.iti.domain.model.StudyCircle
 import com.iti.presentation.R
 
-private val RowShape = RoundedCornerShape(16.dp)
 private val JoinButtonMinWidth = 84.dp
 
 
@@ -41,9 +39,9 @@ fun ActiveCircleRow(
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
         modifier = modifier
             .fillMaxWidth()
-            .clip(RowShape)
+            .clip(Theme.shapes.large)
             .background(Theme.colors.surface)
-            .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = RowShape)
+            .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = Theme.shapes.large)
             .padding(Theme.spacing.medium),
     ) {
         Column(

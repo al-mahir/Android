@@ -2,8 +2,10 @@ package com.iti.presentation.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -12,14 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.search.ClickableSearchBar
+import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
 import com.iti.presentation.home.components.ActiveCircleRow
 import com.iti.presentation.home.components.ContinueReadingCard
 import com.iti.presentation.home.components.HomeHeader
-import com.iti.presentation.home.components.HomeSearchBar
 import com.iti.presentation.home.components.HomeSkeleton
-import com.iti.presentation.home.components.SectionHeader
 import com.iti.presentation.home.components.SheikhProfileCard
 import com.iti.presentation.home.state.HomeUiState
 
@@ -41,6 +43,8 @@ fun HomeContent(
         .fillMaxSize()
         .background(Theme.colors.backGround)
 
+    val gutter = Modifier.padding(horizontal = Theme.spacing.medium)
+
     when {
         state.hasError -> NetworkErrorScreen(
             modifier = rootModifier,
@@ -50,78 +54,90 @@ fun HomeContent(
 
         state.isLoading && state.user == null -> HomeSkeleton(modifier = rootModifier)
 
-        else -> LazyColumn(
-            modifier = rootModifier,
-            contentPadding = PaddingValues(
-                start = Theme.spacing.medium,
-                end = Theme.spacing.medium,
-                top = Theme.spacing.medium,
-                bottom = Theme.spacing.extraLarge,
-            ),
-            verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
-        ) {
-            item(key = "header") {
-                HomeHeader(
-                    initials = state.user?.initials,
-                    avatarUrl = state.user?.avatarUrl,
-                    onProfileClick = onProfileClick,
-                )
-            }
+        else -> Column(modifier = rootModifier) {
+            HomeHeader(
+                initials = state.user?.initials,
+                avatarUrl = state.user?.avatarUrl,
+                onProfileClick = onProfileClick,
+                modifier = Modifier
+                    .then(gutter)
+                    .padding(top = Theme.spacing.medium, bottom = Theme.spacing.medium),
+            )
 
-            item(key = "search") {
-                HomeSearchBar(onSearchClick = onSearchClick)
-            }
-
-            state.continueReading?.let { continueReading ->
-                item(key = "continue-reading-header") {
-                    SectionHeader(title = stringResource(R.string.home_section_continue_reading))
-                }
-                item(key = "continue-reading") {
-                    ContinueReadingCard(
-                        surahName = continueReading.surahName,
-                        ayahNumber = continueReading.ayahNumber,
-                        pageNumber = continueReading.pageNumber,
-                        onClick = onContinueReadingClick,
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = Theme.spacing.extraLarge),
+                verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+            ) {
+                item(key = "search") {
+                    ClickableSearchBar(
+                        hint = stringResource(R.string.home_search_hint),
+                        onClick = onSearchClick,
+                        modifier = gutter,
                     )
                 }
-            }
 
-            if (state.sheikhs.isNotEmpty()) {
-                item(key = "sheikhs-header") {
-                    SectionHeader(
-                        title = stringResource(R.string.home_section_sheikhs),
-                        actionLabel = stringResource(R.string.home_see_all),
-                        onActionClick = onSeeAllSheikhsClick,
-                    )
+                state.readingProgress?.let { progress ->
+                    item(key = "continue-reading-header") {
+                        SectionHeader(
+                            title = stringResource(R.string.home_section_continue_reading),
+                            modifier = gutter,
+                        )
+                    }
+                    item(key = "continue-reading") {
+                        ContinueReadingCard(
+                            surahName = progress.surahName,
+                            ayahNumber = progress.ayahNumber,
+                            pageNumber = progress.pageNumber,
+                            onClick = onContinueReadingClick,
+                            modifier = gutter,
+                        )
+                    }
                 }
-                item(key = "sheikhs-row") {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
-                    ) {
-                        items(items = state.sheikhs, key = { sheikh -> sheikh.id }) { sheikh ->
-                            SheikhProfileCard(
-                                sheikh = sheikh,
-                                onClick = { onSheikhClick(sheikh.id) },
-                            )
+
+                if (state.sheikhs.isNotEmpty()) {
+                    item(key = "sheikhs-header") {
+                        SectionHeader(
+                            title = stringResource(R.string.home_section_sheikhs),
+                            actionLabel = stringResource(R.string.home_see_all),
+                            onActionClick = onSeeAllSheikhsClick,
+                            modifier = gutter,
+                        )
+                    }
+                    item(key = "sheikhs-row") {
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            // Gutter lives here, not on the parent, so cards bleed to the edges.
+                            contentPadding = PaddingValues(horizontal = Theme.spacing.medium),
+                            horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+                        ) {
+                            items(items = state.sheikhs, key = { sheikh -> sheikh.id }) { sheikh ->
+                                SheikhProfileCard(
+                                    sheikh = sheikh,
+                                    onClick = { onSheikhClick(sheikh.id) },
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            if (state.circles.isNotEmpty()) {
-                item(key = "circles-header") {
-                    SectionHeader(
-                        title = stringResource(R.string.home_section_circles),
-                        actionLabel = stringResource(R.string.home_see_all),
-                        onActionClick = onSeeAllCirclesClick,
-                    )
-                }
-                items(items = state.circles, key = { circle -> circle.id }) { circle ->
-                    ActiveCircleRow(
-                        circle = circle,
-                        isJoining = circle.id in state.joiningCircleIds,
-                        onJoinClick = { onJoinCircleClick(circle.id) },
-                    )
+                if (state.circles.isNotEmpty()) {
+                    item(key = "circles-header") {
+                        SectionHeader(
+                            title = stringResource(R.string.home_section_circles),
+                            actionLabel = stringResource(R.string.home_see_all),
+                            onActionClick = onSeeAllCirclesClick,
+                            modifier = gutter,
+                        )
+                    }
+                    items(items = state.circles, key = { circle -> circle.id }) { circle ->
+                        ActiveCircleRow(
+                            circle = circle,
+                            isJoining = circle.id in state.joiningCircleIds,
+                            onJoinClick = { onJoinCircleClick(circle.id) },
+                            modifier = gutter,
+                        )
+                    }
                 }
             }
         }
