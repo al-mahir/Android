@@ -137,8 +137,10 @@ fun RegisterScreen(
 
         item {
             SecondaryButton(
-                caption = "Continue with Google",
+                caption = "Register with Google",
                 onClick = { onIntent(RegisterIntent.GoogleSignInClicked) },
+                iconPainter = painterResource(id = com.example.designsystem.R.drawable.ic_google),
+                tintIcon = false,
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.large)
             )
         }

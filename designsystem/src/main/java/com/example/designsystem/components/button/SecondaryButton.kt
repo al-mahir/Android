@@ -27,6 +27,7 @@ fun SecondaryButton(
     iconPosition: ButtonIconPosition = ButtonIconPosition.Start,
     isDisabled: Boolean = false,
     isLoading: Boolean = false,
+    tintIcon: Boolean = true,
     @RawRes loadingAnimationRes: Int = R.raw.button_loading,
 ) {
     val containerColor = Theme.colors.backGround
@@ -43,6 +44,7 @@ fun SecondaryButton(
         hasBorder = true,
         isDisabled = isDisabled,
         isLoading = isLoading,
+        tintIcon = tintIcon,
         onClick = onClick,
         loadingView = {
             LottieButtonLoader(

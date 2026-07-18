@@ -20,6 +20,9 @@ import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @Composable
 fun LoginScreen(
     state: LoginState,
@@ -28,10 +31,12 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Theme.colors.backGround)
+            .verticalScroll(scrollState)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -105,10 +110,12 @@ fun LoginScreen(
         SecondaryButton(
             caption = "Continue with Google",
             onClick = { onIntent(LoginIntent.GoogleSignInClicked) },
+            iconPainter = painterResource(id = com.example.designsystem.R.drawable.ic_google),
+            tintIcon = false,
             modifier = Modifier.fillMaxWidth()
         )
         
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(Theme.spacing.large))
         
         Row(
             modifier = Modifier.padding(vertical = Theme.spacing.medium),
