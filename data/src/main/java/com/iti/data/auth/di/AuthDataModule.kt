@@ -18,6 +18,9 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
+import io.ktor.client.plugins.logging.Logger
+import android.util.Log
+
 val authDataModule = module {
     single {
         HttpClient(Android) {
@@ -29,10 +32,15 @@ val authDataModule = module {
                 })
             }
             install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        Log.d("KtorClient", message)
+                    }
+                }
                 level = LogLevel.ALL
             }
             defaultRequest {
-                url("https://virtserver.swaggerhub.com/iti-ff4/AuthN-AuthZ-API/1.4.0")
+                url("https://virtserver.swaggerhub.com/iti-ff4/AuthN-AuthZ-API/1.4.0/")
                 contentType(ContentType.Application.Json)
             }
         }
