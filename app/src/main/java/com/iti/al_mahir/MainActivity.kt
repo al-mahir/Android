@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.designsystem.theme.AlMahirTheme
+import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
 
 class MainActivity : ComponentActivity() {
