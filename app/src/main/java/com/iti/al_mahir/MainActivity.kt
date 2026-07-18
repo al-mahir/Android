@@ -4,11 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.designsystem.theme.AlMahirTheme
+import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
 
 class MainActivity : ComponentActivity() {
@@ -17,7 +19,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AlMahirTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Theme.colors.backGround
+                        )
+                ) { innerPadding ->
                     AppNavHost(modifier = Modifier.padding(innerPadding))
                 }
             }
