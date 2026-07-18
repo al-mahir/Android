@@ -119,7 +119,7 @@ fun TextField(
             }
         }
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(fieldHeight)
                 .clip(shape)
