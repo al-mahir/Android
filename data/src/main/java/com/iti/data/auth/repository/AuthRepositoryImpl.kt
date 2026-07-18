@@ -18,6 +18,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+import io.ktor.client.plugins.ResponseException
+import com.iti.data.auth.remote.dto.ApiResponse
+import io.ktor.client.call.body
+
 class AuthRepositoryImpl(
     private val remoteDataSource: AuthRemoteDataSource,
     private val tokenStorage: TokenStorage
@@ -44,7 +48,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<UserDto>(e)
         }
     }
 
@@ -70,7 +74,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<AuthDataDto>(e)
         }
     }
 
@@ -96,7 +100,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<AuthDataDto>(e)
         }
     }
 
@@ -107,7 +111,7 @@ class AuthRepositoryImpl(
             _authState.value = false
             Result.Success(Unit)
         } catch (e: Exception) {
-             Result.Error(DomainError.NetworkError(e))
+            handleException<Unit>(e)
         }
     }
 
@@ -128,7 +132,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<Unit>(e)
         }
     }
 
@@ -141,7 +145,7 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<Unit>(e)
         }
     }
 
@@ -154,8 +158,28 @@ class AuthRepositoryImpl(
                 Result.Error(DomainError.ServerError(response.message))
             }
         } catch (e: Exception) {
-            Result.Error(DomainError.NetworkError(e))
+            handleException<Unit>(e)
         }
+    }
+
+    private suspend inline fun <reified T> handleException(e: Exception): Result<Nothing> {
+        val domainError = when (e) {
+            is ResponseException -> {
+                try {
+                    val errorBody = e.response.body<ApiResponse<T>>()
+                    when (e.response.status.value) {
+                        400 -> DomainError.ValidationError(errorBody.message, errorBody.fieldErrors ?: emptyMap())
+                        409 -> DomainError.ConflictError(errorBody.message, errorBody.fieldErrors ?: emptyMap())
+                        401 -> DomainError.Unauthorized(errorBody.message)
+                        else -> DomainError.ServerError(errorBody.message)
+                    }
+                } catch (parseException: Exception) {
+                    DomainError.ServerError("Server error: ${e.response.status.description}")
+                }
+            }
+            else -> DomainError.NetworkError(e)
+        }
+        return Result.Error(domainError)
     }
 
     private fun UserDto.toDomain() = User(
