@@ -20,6 +20,6 @@
     <string name="topbar_notifications_title">الاشعارات</string>
     <string name="topbar_back_title">حجز استشارة</string>
     <string name="bottom_nav_home">الرئيسية</string>
-    <string name="bottom_nav_reservations">الحجوزات</string>
+    <string name="bottom_nav_mushaf">المصحف</string>
     <string name="bottom_nav_profile">الملف الشخصي</string>
 </resources>
