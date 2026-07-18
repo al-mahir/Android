@@ -58,9 +58,8 @@ internal fun MushafSearchContent(
                 .padding(padding)
                 .padding(horizontal = 18.dp)
         ) {
-            Spacer(Modifier.height(12.dp))
             TopHeaderSection(userInitials = "ق") // As requested by user: 'ق'
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             
             SearchBar(
                 query = state.query,

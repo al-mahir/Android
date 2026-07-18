@@ -49,9 +49,10 @@ fun LastReadBanner(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_mushaf_reading), // Assuming this icon exists, fallback otherwise
+                painter = painterResource(id = R.drawable.ic_info),
                 contentDescription = null,
-                tint = Theme.colors.onPrimary
+                tint = Theme.colors.onPrimary,
+                modifier = Modifier.size(28.dp)
             )
         }
         Spacer(Modifier.width(12.dp))

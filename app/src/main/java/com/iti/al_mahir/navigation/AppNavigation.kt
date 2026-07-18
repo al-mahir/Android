@@ -11,11 +11,12 @@ import com.example.mushaf.presentation.MushafScreen
 
 sealed interface AppRoute : NavKey {
     data object Mushaf : AppRoute
+    data object Search : AppRoute
 }
 
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
-    val backStack = remember { mutableStateListOf<NavKey>(AppRoute.Mushaf) }
+    val backStack = remember { mutableStateListOf<NavKey>(AppRoute.Search) }
 
     NavDisplay(
         backStack = backStack,
@@ -24,6 +25,12 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         entryProvider = entryProvider {
             entry<AppRoute.Mushaf> {
                 MushafScreen()
+            }
+            entry<AppRoute.Search> {
+                // Here we inject the ViewModel using Koin
+                com.example.mushaf.presentation.search.MushafSearchScreen(
+                    viewModel = org.koin.androidx.compose.koinViewModel()
+                )
             }
         },
     )

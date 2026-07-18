@@ -14,5 +14,8 @@ val mushafPresentationModule = module {
     factory { SetTajweedEnabledUseCase(get()) }
     factory { SaveLastPageUseCase(get()) }
 
+    factory { com.example.mushaf.domain.usecase.GetLastReadUseCase() }
+
     viewModel { MushafViewModel(get(), get(), get(), get()) }
+    viewModel { com.example.mushaf.presentation.search.MushafSearchViewModel(get()) }
 }

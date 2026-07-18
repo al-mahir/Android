@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation.search.components
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -9,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 
@@ -38,8 +40,9 @@ fun MushafBottomBar(
             onClick = { onSelect(MushafDestination.MUSHAF) },
             icon = { 
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_reservations_unselected), // Replace with actual Mushaf icon
-                    contentDescription = null 
+                    painter = painterResource(id = R.drawable.ic_reservations_unselected),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
                 ) 
             },
             label = { Text("Mushaf", style = Theme.typography.body.small) },

@@ -50,18 +50,6 @@ fun TopHeaderSection(
             }
         }
 
-        Spacer(Modifier.height(20.dp))
 
-        Text(
-            text = "The Noble Qur'an",
-            color = Theme.colors.primary,
-            style = Theme.typography.display.copy(fontWeight = FontWeight.ExtraBold)
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = "Continue your journey with the light of guidance.",
-            color = Theme.colors.primaryFont,
-            style = Theme.typography.body.medium
-        )
     }
 }
