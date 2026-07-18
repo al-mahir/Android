@@ -69,4 +69,53 @@ class MushafLayoutMathTest {
         assertTrue("width fits", scaledWidth <= 1000)
         assertTrue("height fits", scaledHeight <= 120f)
     }
+
+    @Test
+    fun `justified line pins first token to right edge and last to left edge`() {
+        // Reading order right-to-left: token 0 sits at the right, the last token at the left.
+        val widths = listOf(100f, 100f, 100f)
+        val lefts = MushafLayoutMath.tokenLefts(widths, maxWidthPx = 600, centered = false)
+
+        // First token's right edge is the page's right edge.
+        assertEquals(600f, lefts[0] + widths[0], 0.001f)
+        // Last token's left edge is the page's left edge.
+        assertEquals(0f, lefts[2], 0.001f)
+        // Leftover 300px is spread as two equal 150px gaps -> tokens step left by width+gap = 250.
+        assertEquals(500f, lefts[0], 0.001f)
+        assertEquals(250f, lefts[1], 0.001f)
+    }
+
+    @Test
+    fun `justified tokens never overlap and stay in right-to-left order`() {
+        val widths = listOf(80f, 120f, 60f, 140f)
+        val lefts = MushafLayoutMath.tokenLefts(widths, maxWidthPx = 1000, centered = false)
+        // Each subsequent token is strictly to the left of the previous one, with a non-negative gap.
+        for (i in 1 until widths.size) {
+            val prevLeft = lefts[i - 1]
+            val thisRight = lefts[i] + widths[i]
+            assertTrue("token $i must sit left of token ${i - 1}", thisRight <= prevLeft + 0.001f)
+        }
+    }
+
+    @Test
+    fun `centered group is packed adjacent and centred with equal margins`() {
+        val widths = listOf(100f, 100f)
+        val lefts = MushafLayoutMath.tokenLefts(widths, maxWidthPx = 600, centered = true)
+        // Group total 200 centred in 600 -> right edge at 400, left edge at 200 (margins 200 each).
+        assertEquals(400f, lefts[0] + widths[0], 0.001f) // rightmost edge
+        assertEquals(200f, lefts[1], 0.001f)             // leftmost edge
+        // Packed adjacent: token 1's right edge meets token 0's left edge.
+        assertEquals(lefts[0], lefts[1] + widths[1], 0.001f)
+    }
+
+    @Test
+    fun `single token is centred`() {
+        val lefts = MushafLayoutMath.tokenLefts(listOf(200f), maxWidthPx = 600, centered = false)
+        assertEquals(200f, lefts[0], 0.001f) // (600 - 200) / 2
+    }
+
+    @Test
+    fun `empty line yields no positions`() {
+        assertTrue(MushafLayoutMath.tokenLefts(emptyList(), maxWidthPx = 600, centered = false).isEmpty())
+    }
 }
