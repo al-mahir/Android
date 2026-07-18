@@ -51,14 +51,14 @@ private fun PreviewAppHomeLightLtr() {
     }
 }
 
-@Preview(name = "AppBottomNavBar – Reservations, Light LTR", showBackground = true, group = "AppBottomNavBar")
+@Preview(name = "AppBottomNavBar – Mushaf, Light LTR", showBackground = true, group = "AppBottomNavBar")
 @Composable
-private fun PreviewAppReservationsLightLtr() {
+private fun PreviewAppMushafLightLtr() {
     AlMahirTheme(isDarkTheme = false, locale = Locale.ENGLISH) {
         BottomNavPreviewScaffold {
-            StateLabel("Reservations selected")
+            StateLabel("Mushaf selected")
             AppBottomNavBar(
-                selectedDestination = AppBottomNavDestination.Reservations,
+                selectedDestination = AppBottomNavDestination.Mushaf,
                 onDestinationSelected = {},
             )
         }
@@ -95,14 +95,14 @@ private fun PreviewAppHomeLightRtl() {
     }
 }
 
-@Preview(name = "AppBottomNavBar – Reservations, Light RTL", showBackground = true, group = "AppBottomNavBar")
+@Preview(name = "AppBottomNavBar – Mushaf, Light RTL", showBackground = true, group = "AppBottomNavBar")
 @Composable
-private fun PreviewAppReservationsLightRtl() {
+private fun PreviewAppMushafLightRtl() {
     AlMahirTheme(isDarkTheme = false, locale = Locale("ar")) {
         BottomNavPreviewScaffold {
-            StateLabel("Reservations selected (RTL)")
+            StateLabel("Mushaf selected (RTL)")
             AppBottomNavBar(
-                selectedDestination = AppBottomNavDestination.Reservations,
+                selectedDestination = AppBottomNavDestination.Mushaf,
                 onDestinationSelected = {},
             )
         }
@@ -167,9 +167,9 @@ private fun AllDestinationsBlock() {
         onDestinationSelected = {},
     )
     Spacer(Modifier.height(8.dp))
-    StateLabel("Reservations selected")
+    StateLabel("Mushaf selected")
     AppBottomNavBar(
-        selectedDestination = AppBottomNavDestination.Reservations,
+        selectedDestination = AppBottomNavDestination.Mushaf,
         onDestinationSelected = {},
     )
     Spacer(Modifier.height(8.dp))

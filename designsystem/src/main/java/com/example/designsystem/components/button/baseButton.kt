@@ -21,8 +21,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.R
 import com.example.designsystem.theme.AlMahirTheme
@@ -37,6 +40,12 @@ import java.util.Locale
  */
 enum class ButtonIconPosition { Start, End }
 
+/** Full-width CTA height — the default for primary/secondary buttons. */
+val ButtonHeightDefault: Dp = 58.dp
+
+/** Height for buttons that sit inline in a list row or card, where a full CTA would dominate. */
+val ButtonHeightCompact: Dp = 40.dp
+
 @Composable
 internal fun BaseButton(
     caption: String?,
@@ -50,21 +59,22 @@ internal fun BaseButton(
     borderColor: Color = Color.Transparent,
     hasBorder: Boolean = false,
     isLoading: Boolean = false,
+    height: Dp = ButtonHeightDefault,
+    shape: Shape = Theme.shapes.small,
+    captionStyle: TextStyle? = null,
     loadingView: (@Composable () -> Unit)? = null,
 ) {
     val backGroundColor = if (isDisabled) Theme.colors.disable else containerColor
     val borderColor = if (!hasBorder || isDisabled) Color.Transparent else borderColor
     Row(
         modifier = modifier
-            .height(
-                58.dp
-            )
+            .height(height)
             .border(
                 width = 1.dp,
-                shape = Theme.shapes.small,
+                shape = shape,
                 color = borderColor
             )
-            .clip(Theme.shapes.small)
+            .clip(shape)
             .background(backGroundColor)
             .clickable(
                 enabled = !isDisabled && !isLoading,
@@ -92,7 +102,7 @@ internal fun BaseButton(
                 if (caption != null) {
                     BasicText(
                         text = caption,
-                        style = Theme.typography.body.large.copy(
+                        style = (captionStyle ?: Theme.typography.body.large).copy(
                             color = if (isDisabled) Theme.colors.onDisable else contentColor
                         ),
                     )
