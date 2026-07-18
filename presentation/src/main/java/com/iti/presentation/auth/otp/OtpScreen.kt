@@ -1,5 +1,6 @@
 package com.iti.presentation.auth.otp
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ fun OtpScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(Theme.colors.backGround)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -51,7 +53,7 @@ fun OtpScreen(
         )
         
         PrimaryButton(
-            text = "Verify Code",
+            caption = "Verify Code",
             onClick = { onIntent(OtpIntent.Submit) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)

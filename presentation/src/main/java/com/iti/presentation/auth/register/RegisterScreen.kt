@@ -1,5 +1,6 @@
 package com.iti.presentation.auth.register
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,6 +29,7 @@ fun RegisterScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .background(Theme.colors.backGround)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -126,7 +128,7 @@ fun RegisterScreen(
 
         item {
             PrimaryButton(
-                text = "Sign Up",
+                caption = "Sign Up",
                 onClick = { onIntent(RegisterIntent.SubmitRegistration) },
                 isLoading = state.isLoading,
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
@@ -135,7 +137,7 @@ fun RegisterScreen(
 
         item {
             SecondaryButton(
-                text = "Continue with Google",
+                caption = "Continue with Google",
                 onClick = { onIntent(RegisterIntent.GoogleSignInClicked) },
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.large)
             )

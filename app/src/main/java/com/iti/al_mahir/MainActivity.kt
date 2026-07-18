@@ -17,7 +17,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AlMahirTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = Theme.colors.backGround
+                ) { innerPadding ->
                     AppNavHost(modifier = Modifier.padding(innerPadding))
                 }
             }

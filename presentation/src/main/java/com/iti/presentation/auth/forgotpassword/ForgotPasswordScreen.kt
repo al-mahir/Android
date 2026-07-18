@@ -1,5 +1,6 @@
 package com.iti.presentation.auth.forgotpassword
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ fun ForgotPasswordScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(Theme.colors.backGround)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -57,7 +59,7 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.large))
         
         PrimaryButton(
-            text = "Send Reset Link",
+            caption = "Send Reset Link",
             onClick = { onIntent(ForgotPasswordIntent.Submit) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.iti.presentation.auth.login
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +31,7 @@ fun LoginScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(Theme.colors.backGround)
             .padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -92,7 +94,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.large))
         
         PrimaryButton(
-            text = "Sign In",
+            caption = "Sign In",
             onClick = { onIntent(LoginIntent.SubmitLogin) },
             isLoading = state.isLoading,
             modifier = Modifier.fillMaxWidth()
@@ -101,7 +103,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(Theme.spacing.medium))
         
         SecondaryButton(
-            text = "Continue with Google",
+            caption = "Continue with Google",
             onClick = { onIntent(LoginIntent.GoogleSignInClicked) },
             modifier = Modifier.fillMaxWidth()
         )
