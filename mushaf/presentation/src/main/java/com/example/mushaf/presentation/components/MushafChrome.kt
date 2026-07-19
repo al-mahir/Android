@@ -1,75 +1,11 @@
 package com.example.mushaf.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
-
-
-@Composable
-fun MushafChrome(
-    currentPage: Int,
-    pageCount: Int,
-    isTajweedEnabled: Boolean,
-    isFollowAlongActive: Boolean,
-    onToggleTajweed: (Boolean) -> Unit,
-    onToggleFollowAlong: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        PageIndicator(currentPage = currentPage, pageCount = pageCount)
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.mushaf_tajweed_label),
-                style = Theme.typography.body.medium,
-                color = Theme.colors.onSurface,
-                modifier = Modifier.padding(end = 4.dp),
-            )
-            Switch(
-                checked = isTajweedEnabled,
-                onCheckedChange = onToggleTajweed,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Theme.colors.onPrimary,
-                    checkedTrackColor = Theme.colors.primary,
-                    uncheckedThumbColor = Theme.colors.outline,
-                    uncheckedTrackColor = Theme.colors.surfaceVariant,
-                    uncheckedBorderColor = Theme.colors.outline,
-                ),
-            )
-            TextButton(
-                onClick = onToggleFollowAlong,
-                colors = ButtonDefaults.textButtonColors(contentColor = Theme.colors.primary),
-            ) {
-                Text(
-                    text = stringResource(
-                        if (isFollowAlongActive) R.string.mushaf_follow_along_stop
-                        else R.string.mushaf_follow_along_start,
-                    ),
-                    style = Theme.typography.body.medium,
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun PageIndicator(

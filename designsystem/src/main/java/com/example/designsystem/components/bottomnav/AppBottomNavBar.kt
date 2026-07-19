@@ -8,7 +8,7 @@ import com.example.designsystem.R
 
 enum class AppBottomNavDestination {
     Home,
-    Reservations,
+    Mushaf,
     Profile,
 }
 
@@ -35,9 +35,9 @@ private fun appBottomNavTabs(): List<BottomNavTab> = listOf(
         selectedIcon = painterResource(R.drawable.ic_home_selected),
     ),
     BottomNavTab(
-        title = stringResource(R.string.bottom_nav_reservations),
-        icon = painterResource(R.drawable.ic_reservations_unselected),
-        selectedIcon = painterResource(R.drawable.ic_reservations_selected_svg),
+        title = stringResource(R.string.bottom_nav_mushaf),
+        icon = painterResource(R.drawable.ic_mushaf_unselected),
+        selectedIcon = painterResource(R.drawable.ic_mushaf_selected),
     ),
     BottomNavTab(
         title = stringResource(R.string.bottom_nav_profile),

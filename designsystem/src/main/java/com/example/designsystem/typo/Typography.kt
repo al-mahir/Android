@@ -25,6 +25,12 @@ internal fun spTypographyOf(fontFamily: FontFamily): SPTextStyle = SPTextStyle(
         fontWeight = FontWeight.SemiBold,
         lineHeight = 32.sp
     ),
+    h4 = TextStyle(
+        fontFamily = fontFamily,
+        fontSize = 32.sp,
+        fontWeight = FontWeight.Bold,
+        lineHeight = 42.sp
+    ),
 
     body = SizedTextStyle(
         large = TextStyle(

@@ -1,0 +1,86 @@
+package com.iti.presentation.auth.otp
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.textfield.OtpField
+import com.example.designsystem.theme.Theme
+import androidx.compose.ui.res.stringResource
+import com.iti.presentation.R
+
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
+@Composable
+fun OtpScreen(
+    state: OtpState,
+    onIntent: (OtpIntent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Theme.colors.backGround)
+            .imePadding()
+            .verticalScroll(scrollState)
+            .padding(Theme.spacing.medium),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        
+        Text(
+            text = stringResource(id = R.string.auth_check_email),
+            style = Theme.typography.h4,
+            color = Theme.colors.primaryFont,
+            modifier = Modifier.padding(bottom = Theme.spacing.small)
+        )
+        
+        Text(
+            text = stringResource(id = R.string.auth_sent_code_to, state.email),
+            style = Theme.typography.body.large,
+            color = Theme.colors.secondaryFont,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(bottom = Theme.spacing.large)
+        )
+
+        OtpField(
+            value = state.otpCode,
+            onValueChange = { onIntent(OtpIntent.OtpChanged(it)) },
+            length = 6,
+            isError = state.isError,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.large)
+        )
+        
+        PrimaryButton(
+            caption = stringResource(id = R.string.auth_verify_code),
+            onClick = { onIntent(OtpIntent.Submit) },
+            isLoading = state.isLoading,
+            modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
+        )
+
+        if (state.canResend) {
+            Text(
+                text = stringResource(id = R.string.auth_resend_code),
+                style = Theme.typography.body.medium,
+                color = Theme.colors.primary,
+                modifier = Modifier.clickable { onIntent(OtpIntent.ResendOtp) }
+            )
+        } else {
+            val formattedTime = String.format("00:%02d", state.timerSeconds)
+            Text(
+                text = stringResource(id = R.string.auth_resend_code_in, formattedTime),
+                style = Theme.typography.body.medium,
+                color = Theme.colors.secondaryFont
+            )
+        }
+    }
+}

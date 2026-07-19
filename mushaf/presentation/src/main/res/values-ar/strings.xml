@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Page navigation -->
+    <string name="mushaf_page_indicator">صفحة %1$d / %2$d</string>
+
+    <!-- Loading / error states -->
+    <string name="mushaf_loading">جارٍ تحميل الصفحة…</string>
+    <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
+    <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
+    <string name="mushaf_retry">إعادة المحاولة</string>
+
+    <!-- Tajweed toggle -->
+    <string name="mushaf_tajweed_label">التجويد</string>
+    <string name="mushaf_tajweed_on">تلوين التجويد مُفعّل</string>
+    <string name="mushaf_tajweed_off">تلوين التجويد مُعطّل</string>
+
+    <!-- Follow-along (highlighting) -->
+    <string name="mushaf_follow_along_start">بدء المتابعة</string>
+    <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
+
+    <!-- Top bar -->
+    <string name="mushaf_juz_label">الجزء %1$d</string>
+    <string name="mushaf_hizb_label">الحزب %1$d</string>
+
+    <!-- Top bar content descriptions -->
+    <string name="mushaf_cd_back">رجوع</string>
+    <string name="mushaf_cd_bookmark">إشارة مرجعية</string>
+    <string name="mushaf_cd_settings">الإعدادات</string>
+
+    <!-- Bottom bar — modes -->
+    <string name="mushaf_mode_reading">قراءة</string>
+    <string name="mushaf_mode_listen">استماع</string>
+    <string name="mushaf_mode_recitation">تلاوة</string>
+    <string name="mushaf_mode_muallem">معلّم</string>
+
+    <!-- Bottom bar — eye / reveal -->
+    <string name="mushaf_cd_hide_ayahs">إخفاء الآيات</string>
+    <string name="mushaf_cd_show_ayahs">إظهار الآيات</string>
+    <string name="mushaf_cd_next_word">الكشف عن الكلمة التالية</string>
+    <string name="mushaf_cd_next_ayah">الكشف عن الآية التالية</string>
+
+    <!-- Bottom bar — mic -->
+    <string name="mushaf_cd_start_recording">بدء التسجيل</string>
+    <string name="mushaf_cd_stop_recording">إيقاف التسجيل</string>
+</resources>
