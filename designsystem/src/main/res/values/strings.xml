@@ -20,6 +20,6 @@
     <string name="topbar_notifications_title">Notifications</string>
     <string name="topbar_back_title">Booking Consultation</string>
     <string name="bottom_nav_home">Home</string>
-    <string name="bottom_nav_reservations">Reservations</string>
+    <string name="bottom_nav_mushaf">Mushaf</string>
     <string name="bottom_nav_profile">Profile</string>
 </resources>

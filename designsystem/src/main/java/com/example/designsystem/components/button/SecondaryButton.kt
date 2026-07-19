@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.R
@@ -28,6 +31,9 @@ fun SecondaryButton(
     isDisabled: Boolean = false,
     isLoading: Boolean = false,
     tintIcon: Boolean = true,
+    height: Dp = ButtonHeightDefault,
+    shape: Shape = Theme.shapes.small,
+    captionStyle: TextStyle? = null,
     @RawRes loadingAnimationRes: Int = R.raw.button_loading,
 ) {
     val containerColor = Theme.colors.backGround
@@ -45,6 +51,9 @@ fun SecondaryButton(
         isDisabled = isDisabled,
         isLoading = isLoading,
         tintIcon = tintIcon,
+        height = height,
+        shape = shape,
+        captionStyle = captionStyle,
         onClick = onClick,
         loadingView = {
             LottieButtonLoader(

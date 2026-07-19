@@ -1,4 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- ===== Authentication ===== -->
     <!-- Login Screen -->
     <string name="auth_welcome_back">Welcome Back</string>
     <string name="auth_sign_in_to_continue">Sign in to continue</string>
@@ -36,4 +38,34 @@
     <string name="auth_enter_email_reset">Enter your email to receive a reset link/OTP</string>
     <string name="auth_send_reset_link">Send Reset Link</string>
     <string name="auth_back_to_sign_in">Back to Sign In</string>
+
+    <!-- ===== Home ===== -->
+    <string name="home_brand_title">Al-Māhir</string>
+    <string name="home_greeting">welcome back</string>
+    <string name="home_greeting_subtitle">Continue your journey with the light of guidance.</string>
+    <string name="home_search_hint">Search Surah, Para, Page…</string>
+    <string name="home_avatar_content_description">Open profile</string>
+
+    <string name="home_section_continue_reading">Continue Reading</string>
+    <string name="home_section_sheikhs">Learn with a Sheikh</string>
+    <string name="home_section_circles">Active Circles</string>
+    <string name="home_see_all">See All</string>
+
+    <string name="home_last_read">LAST READ</string>
+    <!-- %1$d = ayah number, %2$d = page number -->
+    <string name="home_ayah_page">Ayah %1$d • Page %2$d</string>
+    <string name="home_continue_reading_content_description">Continue reading</string>
+
+    <!-- %1$s = sheikh name -->
+    <string name="home_sheikh_avatar_content_description">%1$s\'s photo</string>
+    <string name="home_rating_content_description">Rating</string>
+    <string name="home_status_available">Available</string>
+    <string name="home_status_in_session">In session</string>
+    <string name="home_status_offline">Offline</string>
+
+    <string name="home_join">Join</string>
+    <string name="home_joined">Joined</string>
+
+    <string name="home_error_generic">We couldn\'t load your home content. Please try again.</string>
+    <string name="home_join_failed">Couldn\'t join the circle. Please try again.</string>
 </resources>
