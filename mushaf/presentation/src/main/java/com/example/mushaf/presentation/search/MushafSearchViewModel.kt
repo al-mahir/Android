@@ -3,59 +3,85 @@ package com.example.mushaf.presentation.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mushaf.domain.model.MushafFilter
-import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.domain.usecase.GetLastReadUseCase
+import com.example.mushaf.domain.usecase.search.SearchAyahUseCase
+import com.example.mushaf.domain.usecase.search.SearchHizbUseCase
+import com.example.mushaf.domain.usecase.search.SearchJuzUseCase
+import com.example.mushaf.domain.usecase.search.SearchPageUseCase
+import com.example.mushaf.domain.usecase.search.SearchSurahUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class MushafSearchViewModel(
+    private val searchSurahUseCase: SearchSurahUseCase,
+    private val searchJuzUseCase: SearchJuzUseCase,
+    private val searchPageUseCase: SearchPageUseCase,
+    private val searchHizbUseCase: SearchHizbUseCase,
+    private val searchAyahUseCase: SearchAyahUseCase,
     private val getLastReadUseCase: GetLastReadUseCase
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
-    private val _filter = MutableStateFlow(MushafFilter.SURAH)
-    
-    // We will hold a static list of all Surahs for now, 
-    // ideally this comes from a repository layer.
-    private val allSurahs = listOf(
-        Surah(1, "Al-Fatihah", "الفاتحة", "Meccan", 7),
-        Surah(2, "Al-Baqarah", "البقرة", "Medinan", 286),
-        Surah(3, "Ali Imran", "آل عمران", "Medinan", 200),
-        Surah(4, "An-Nisa", "النساء", "Medinan", 176),
-        Surah(5, "Al-Maidah", "المائدة", "Medinan", 120),
-        Surah(6, "Al-Anam", "الأنعام", "Meccan", 165)
-    )
+    private val _filter = MutableStateFlow(MushafFilter.AYAH)
 
-    val state: StateFlow<MushafSearchState> = combine(
+    private val searchResultsFlow = combine(
         _query.debounce(500L),
-        _filter,
-        getLastReadUseCase()
-    ) { query, filter, lastRead ->
-        val filteredSurahs = if (filter == MushafFilter.SURAH) {
-            if (query.isBlank()) {
-                allSurahs
-            } else {
-                allSurahs.filter {
-                    it.nameEn.contains(query, ignoreCase = true) ||
-                    it.nameAr.contains(query, ignoreCase = true)
+        _filter
+    ) { query, filter ->
+        Pair(query, filter)
+    }.flatMapLatest { (query, filter) ->
+        flow {
+            val stateUpdate = when (filter) {
+                MushafFilter.SURAH -> {
+                    val res = searchSurahUseCase(query).getOrDefault(emptyList())
+                    MushafSearchStateUpdate(surahs = res)
+                }
+                MushafFilter.PARA -> {
+                    val res = searchJuzUseCase(query).getOrDefault(emptyList())
+                    MushafSearchStateUpdate(juzs = res)
+                }
+                MushafFilter.PAGE -> {
+                    val res = searchPageUseCase(query).getOrDefault(emptyList())
+                    MushafSearchStateUpdate(pages = res)
+                }
+                MushafFilter.HIJB -> {
+                    val res = searchHizbUseCase(query).getOrDefault(emptyList())
+                    MushafSearchStateUpdate(hizbs = res)
+                }
+                MushafFilter.AYAH -> {
+                    val res = searchAyahUseCase(query).getOrDefault(emptyList())
+                    MushafSearchStateUpdate(ayahs = res)
                 }
             }
-        } else {
-            emptyList() // Other tabs will show empty for now
+            emit(stateUpdate)
         }
-        
+    }
+
+    val state: StateFlow<MushafSearchState> = combine(
+        _query,
+        _filter,
+        searchResultsFlow,
+        getLastReadUseCase()
+    ) { query, filter, results, lastRead ->
         MushafSearchState(
-            query = _query.value,
+            query = query,
             selectedFilter = filter,
-            surahs = filteredSurahs,
+            surahs = results.surahs,
+            juzs = results.juzs,
+            hizbs = results.hizbs,
+            pages = results.pages,
+            ayahs = results.ayahs,
             lastReadSession = lastRead
         )
     }.stateIn(
@@ -66,21 +92,23 @@ class MushafSearchViewModel(
 
     fun onIntent(intent: MushafSearchIntent) {
         when (intent) {
-            is MushafSearchIntent.UpdateQuery -> {
-                _query.update { intent.query }
-            }
-            is MushafSearchIntent.SelectFilter -> {
-                _filter.update { intent.filter }
-            }
-            is MushafSearchIntent.SurahClicked -> {
-                // Navigate to Mushaf screen for this Surah
-            }
-            MushafSearchIntent.LastReadClicked -> {
-                // Navigate to last read position
-            }
-            is MushafSearchIntent.NavigateBottomTab -> {
-                // Handle bottom navigation
-            }
+            is MushafSearchIntent.UpdateQuery -> _query.update { intent.query }
+            is MushafSearchIntent.SelectFilter -> _filter.update { intent.filter }
+            is MushafSearchIntent.SurahClicked -> { /* Navigate */ }
+            is MushafSearchIntent.JuzClicked -> { /* Navigate */ }
+            is MushafSearchIntent.HizbClicked -> { /* Navigate */ }
+            is MushafSearchIntent.PageClicked -> { /* Navigate */ }
+            is MushafSearchIntent.AyahClicked -> { /* Navigate */ }
+            MushafSearchIntent.LastReadClicked -> { /* Navigate */ }
+            is MushafSearchIntent.NavigateBottomTab -> { /* Navigate */ }
         }
     }
+
+    private data class MushafSearchStateUpdate(
+        val surahs: List<com.example.mushaf.domain.model.Surah> = emptyList(),
+        val juzs: List<com.example.mushaf.domain.model.Juz> = emptyList(),
+        val hizbs: List<com.example.mushaf.domain.model.Hizb> = emptyList(),
+        val pages: List<Int> = emptyList(),
+        val ayahs: List<com.example.mushaf.domain.model.AyahSearchResult> = emptyList()
+    )
 }

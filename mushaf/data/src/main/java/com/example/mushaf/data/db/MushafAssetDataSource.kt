@@ -120,6 +120,24 @@ class MushafAssetDataSource(
         DEFAULT_PAGE_COUNT
     }
 
+    suspend fun searchPage(query: String): List<Int> = withContext(Dispatchers.IO) {
+        val q = query.trim()
+        if (q.isBlank()) return@withContext emptyList()
+
+        val results = mutableListOf<Int>()
+        try {
+            val sql = "SELECT DISTINCT page_number FROM pages WHERE CAST(page_number AS TEXT) LIKE ? ORDER BY page_number ASC LIMIT 20"
+            database().rawQuery(sql, arrayOf("$q%")).use { c ->
+                while (c.moveToNext()) {
+                    results.add(c.getInt(0))
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Page search failed for query: $query", t)
+        }
+        results
+    }
+
     private fun Cursor.toLineEntity(): MushafLineEntity = MushafLineEntity(
         pageNumber = getIntByName("page_number") ?: 0,
         lineNumber = getIntByName("line_number") ?: 0,

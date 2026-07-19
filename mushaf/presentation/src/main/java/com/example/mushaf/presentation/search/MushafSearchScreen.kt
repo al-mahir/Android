@@ -17,8 +17,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.search.SearchBar
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.domain.model.MushafFilter
 import com.example.mushaf.domain.model.Surah
+import com.example.mushaf.presentation.search.components.AyahListItem
 import com.example.mushaf.presentation.search.components.FilterTabsRow
+import com.example.mushaf.presentation.search.components.HizbListItem
+import com.example.mushaf.presentation.search.components.JuzListItem
+import com.example.mushaf.presentation.search.components.LastReadBanner
+import com.example.mushaf.presentation.search.components.MushafBottomBar
+import com.example.mushaf.presentation.search.components.PageListItem
+import com.example.mushaf.presentation.search.components.SurahListItem
+import com.example.mushaf.presentation.search.components.TopHeaderSection
 import com.example.mushaf.presentation.search.components.LastReadBanner
 import com.example.mushaf.presentation.search.components.MushafBottomBar
 import com.example.mushaf.presentation.search.components.MushafDestination
@@ -81,11 +90,47 @@ internal fun MushafSearchContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
-                items(state.surahs, key = { it.number }) { surah ->
-                    SurahListItem(
-                        surah = surah, 
-                        onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
-                    )
+                when (state.selectedFilter) {
+                    MushafFilter.SURAH -> {
+                        items(state.surahs, key = { it.number }) { surah ->
+                            SurahListItem(
+                                surah = surah,
+                                onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
+                            )
+                        }
+                    }
+                    MushafFilter.PARA -> {
+                        items(state.juzs, key = { it.number }) { juz ->
+                            JuzListItem(
+                                juz = juz,
+                                onClick = { onIntent(MushafSearchIntent.JuzClicked(it)) }
+                            )
+                        }
+                    }
+                    MushafFilter.PAGE -> {
+                        items(state.pages, key = { it }) { page ->
+                            PageListItem(
+                                page = page,
+                                onClick = { onIntent(MushafSearchIntent.PageClicked(it)) }
+                            )
+                        }
+                    }
+                    MushafFilter.HIJB -> {
+                        items(state.hizbs, key = { it.number }) { hizb ->
+                            HizbListItem(
+                                hizb = hizb,
+                                onClick = { onIntent(MushafSearchIntent.HizbClicked(it)) }
+                            )
+                        }
+                    }
+                    MushafFilter.AYAH -> {
+                        items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
+                            AyahListItem(
+                                ayah = ayah,
+                                onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
+                            )
+                        }
+                    }
                 }
             }
 

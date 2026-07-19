@@ -3,14 +3,22 @@ package com.example.mushaf.data.repository
 import android.util.Log
 import com.example.mushaf.data.MushafLog
 import com.example.mushaf.data.db.MushafAssetDataSource
+import com.example.mushaf.data.db.QuranMetadataDataSource
+import com.example.mushaf.data.db.QuranTextDataSource
 import com.example.mushaf.data.mapper.MushafMapper
+import com.example.mushaf.domain.model.AyahSearchResult
+import com.example.mushaf.domain.model.Hizb
+import com.example.mushaf.domain.model.Juz
 import com.example.mushaf.domain.model.MushafPage
+import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.domain.repository.MushafRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 class MushafRepositoryImpl(
     private val dataSource: MushafAssetDataSource,
+    private val metadataDataSource: QuranMetadataDataSource,
+    private val textDataSource: QuranTextDataSource
 ) : MushafRepository {
 
     override fun getPage(pageNumber: Int): Flow<MushafPage> = flow {
@@ -27,4 +35,34 @@ class MushafRepositoryImpl(
     }
 
     override suspend fun getPageCount(): Int = dataSource.getPageCount()
+
+    override suspend fun searchSurah(query: String): List<Surah> {
+        return metadataDataSource.searchSurah(query)
+    }
+
+    override suspend fun searchJuz(query: String): List<Juz> {
+        return metadataDataSource.searchJuz(query)
+    }
+
+    override suspend fun searchHizb(query: String): List<Hizb> {
+        return metadataDataSource.searchHizb(query)
+    }
+
+    override suspend fun searchPage(query: String): List<Int> {
+        return dataSource.searchPage(query)
+    }
+
+    override suspend fun searchAyah(query: String): List<AyahSearchResult> {
+        val rawResults = textDataSource.searchAyahs(query)
+        return rawResults.map { raw ->
+            val surah = metadataDataSource.getSurah(raw.surahNumber)
+            AyahSearchResult(
+                surahNumber = raw.surahNumber,
+                ayahNumber = raw.ayahNumber,
+                ayahText = raw.text,
+                surahNameArabic = surah?.nameAr ?: "",
+                surahNameEnglish = surah?.nameEn ?: ""
+            )
+        }
+    }
 }
