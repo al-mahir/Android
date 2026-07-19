@@ -1,9 +1,5 @@
 package com.iti.presentation.auth.register
 
-import com.iti.presentation.core.mvi.UiEffect
-import com.iti.presentation.core.mvi.UiIntent
-import com.iti.presentation.core.mvi.UiState
-
 data class RegisterState(
     val username: String = "",
     val usernameError: String? = null,
@@ -19,9 +15,9 @@ data class RegisterState(
     val phoneNumber: String = "",
     val phoneNumberError: String? = null,
     val isLoading: Boolean = false
-) : UiState
+)
 
-sealed class RegisterIntent : UiIntent {
+sealed class RegisterIntent {
     data class UsernameChanged(val username: String) : RegisterIntent()
     data class FirstNameChanged(val firstName: String) : RegisterIntent()
     data class LastNameChanged(val lastName: String) : RegisterIntent()
@@ -33,7 +29,7 @@ sealed class RegisterIntent : UiIntent {
     object GoogleSignInClicked : RegisterIntent()
 }
 
-sealed class RegisterEffect : UiEffect {
+sealed class RegisterEffect {
     data class NavigateToOtpVerify(val email: String) : RegisterEffect()
     object NavigateToHome : RegisterEffect()
     data class ShowError(val message: String) : RegisterEffect()

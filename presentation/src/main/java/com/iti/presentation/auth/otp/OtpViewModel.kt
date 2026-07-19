@@ -1,11 +1,15 @@
 package com.iti.presentation.auth.otp
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.usecase.ForgotPasswordUseCase
 import com.iti.domain.auth.usecase.VerifyOtpUseCase
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
-import com.iti.presentation.core.mvi.BaseViewModel
+import com.iti.presentation.core.mvi.DefaultEffectPublisher
+import com.iti.presentation.core.mvi.DefaultStateHolder
+import com.iti.presentation.core.mvi.EffectPublisher
+import com.iti.presentation.core.mvi.StateHolder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -13,27 +17,27 @@ import kotlinx.coroutines.launch
 class OtpViewModel(
     private val verifyOtpUseCase: VerifyOtpUseCase,
     private val forgotPasswordUseCase: ForgotPasswordUseCase
-) : BaseViewModel<OtpState, OtpIntent, OtpEffect>() {
+) : ViewModel(),
+    StateHolder<OtpState> by DefaultStateHolder(OtpState()),
+    EffectPublisher<OtpEffect> by DefaultEffectPublisher() {
 
     private var timerJob: Job? = null
 
-    override fun createInitialState() = OtpState()
-
-    override fun handleIntent(intent: OtpIntent) {
+    fun onIntent(intent: OtpIntent) {
         when (intent) {
             is OtpIntent.InitEmail -> {
-                setState { copy(email = intent.email) }
+                updateState { copy(email = intent.email) }
                 startTimer()
             }
-            is OtpIntent.OtpChanged -> setState { copy(otpCode = intent.otp, isError = false) }
+            is OtpIntent.OtpChanged -> updateState { copy(otpCode = intent.otp, isError = false) }
             is OtpIntent.Submit -> submit()
             is OtpIntent.ResendOtp -> resendOtp()
             is OtpIntent.TimerTick -> {
                 val current = currentState.timerSeconds
                 if (current > 0) {
-                    setState { copy(timerSeconds = current - 1) }
+                    updateState { copy(timerSeconds = current - 1) }
                 } else {
-                    setState { copy(canResend = true) }
+                    updateState { copy(canResend = true) }
                     timerJob?.cancel()
                 }
             }
@@ -42,11 +46,11 @@ class OtpViewModel(
 
     private fun startTimer() {
         timerJob?.cancel()
-        setState { copy(timerSeconds = 60, canResend = false) }
+        updateState { copy(timerSeconds = 60, canResend = false) }
         timerJob = viewModelScope.launch {
             while (currentState.timerSeconds > 0) {
                 delay(1000)
-                sendIntent(OtpIntent.TimerTick)
+                onIntent(OtpIntent.TimerTick)
             }
         }
     }
@@ -56,20 +60,20 @@ class OtpViewModel(
         val email = currentState.email
 
         if (otp.length != 6) {
-            setState { copy(isError = true) }
+            updateState { copy(isError = true) }
             return
         }
 
-        setState { copy(isLoading = true) }
+        updateState { copy(isLoading = true) }
         
         viewModelScope.launch {
             when (val result = verifyOtpUseCase(email, otp)) {
                 is Result.Success -> {
-                    setState { copy(isLoading = false) }
-                    setEffect { OtpEffect.NavigateToLogin } // Navigate to login after successful reset verification
+                    updateState { copy(isLoading = false) }
+                    sendEffect(OtpEffect.NavigateToLogin) // Navigate to login after successful reset verification
                 }
                 is Result.Error -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     handleDomainError(result.error)
                 }
             }
@@ -77,15 +81,15 @@ class OtpViewModel(
     }
 
     private fun resendOtp() {
-        setState { copy(isLoading = true) }
+        updateState { copy(isLoading = true) }
         viewModelScope.launch {
             when (val result = forgotPasswordUseCase(currentState.email)) {
                 is Result.Success -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     startTimer()
                 }
                 is Result.Error -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     handleDomainError(result.error)
                 }
             }
@@ -95,16 +99,16 @@ class OtpViewModel(
     private fun handleDomainError(error: DomainError) {
         when (error) {
             is DomainError.ValidationError -> {
-                setState { copy(isError = true) }
+                updateState { copy(isError = true) }
             }
             is DomainError.ServerError -> {
-                setEffect { OtpEffect.ShowError(error.message) }
+                sendEffect(OtpEffect.ShowError(error.message))
             }
             is DomainError.NetworkError -> {
-                setEffect { OtpEffect.ShowError("Network error. Please try again.") }
+                sendEffect(OtpEffect.ShowError("Network error. Please try again."))
             }
             else -> {
-                setEffect { OtpEffect.ShowError("An unknown error occurred") }
+                sendEffect(OtpEffect.ShowError("An unknown error occurred"))
             }
         }
     }

@@ -41,9 +41,9 @@ fun EntryProviderScope<NavKey>.authEntries(
 ) {
     entry<AuthRoute.Login> {
         val viewModel: LoginViewModel = koinViewModel()
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
-        ObserveEffect(viewModel.uiEffect) { effect ->
+        ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is LoginEffect.NavigateToHome -> onAuthenticated()
                 is LoginEffect.ShowError -> onShowMessage(effect.message)
@@ -52,7 +52,7 @@ fun EntryProviderScope<NavKey>.authEntries(
 
         LoginScreen(
             state = state,
-            onIntent = viewModel::sendIntent,
+            onIntent = viewModel::onIntent,
             onNavigateToRegister = { onNavigate(AuthRoute.Register) },
             onNavigateToForgotPassword = { onNavigate(AuthRoute.ForgotPassword) },
         )
@@ -60,9 +60,9 @@ fun EntryProviderScope<NavKey>.authEntries(
 
     entry<AuthRoute.Register> {
         val viewModel: RegisterViewModel = koinViewModel()
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
-        ObserveEffect(viewModel.uiEffect) { effect ->
+        ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is RegisterEffect.NavigateToOtpVerify ->
                     onNavigate(AuthRoute.OtpVerify(effect.email))
@@ -74,7 +74,7 @@ fun EntryProviderScope<NavKey>.authEntries(
 
         RegisterScreen(
             state = state,
-            onIntent = viewModel::sendIntent,
+            onIntent = viewModel::onIntent,
             // Register is always pushed from Login, so "go to login" is a pop.
             onNavigateToLogin = onBack,
         )
@@ -82,9 +82,9 @@ fun EntryProviderScope<NavKey>.authEntries(
 
     entry<AuthRoute.ForgotPassword> {
         val viewModel: ForgotPasswordViewModel = koinViewModel()
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
-        ObserveEffect(viewModel.uiEffect) { effect ->
+        ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is ForgotPasswordEffect.NavigateToOtpVerify ->
                     onNavigate(AuthRoute.OtpVerify(effect.email))
@@ -96,21 +96,21 @@ fun EntryProviderScope<NavKey>.authEntries(
 
         ForgotPasswordScreen(
             state = state,
-            onIntent = viewModel::sendIntent,
+            onIntent = viewModel::onIntent,
             onNavigateBack = onBack,
         )
     }
 
     entry<AuthRoute.OtpVerify> { route ->
         val viewModel: OtpViewModel = koinViewModel()
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
         // Seed the ViewModel with the address the code was sent to.
         LaunchedEffect(route.email) {
-            viewModel.sendIntent(OtpIntent.InitEmail(route.email))
+            viewModel.onIntent(OtpIntent.InitEmail(route.email))
         }
 
-        ObserveEffect(viewModel.uiEffect) { effect ->
+        ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is OtpEffect.NavigateToLogin -> onNavigate(AuthRoute.Login)
                 is OtpEffect.NavigateToHome -> onAuthenticated()
@@ -121,7 +121,7 @@ fun EntryProviderScope<NavKey>.authEntries(
 
         OtpScreen(
             state = state,
-            onIntent = viewModel::sendIntent,
+            onIntent = viewModel::onIntent,
         )
     }
 }

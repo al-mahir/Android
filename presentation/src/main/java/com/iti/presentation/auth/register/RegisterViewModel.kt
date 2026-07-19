@@ -1,29 +1,33 @@
 package com.iti.presentation.auth.register
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.usecase.LoginWithGoogleUseCase
 import com.iti.domain.auth.usecase.RegisterUseCase
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
-import com.iti.presentation.core.mvi.BaseViewModel
+import com.iti.presentation.core.mvi.DefaultEffectPublisher
+import com.iti.presentation.core.mvi.DefaultStateHolder
+import com.iti.presentation.core.mvi.EffectPublisher
+import com.iti.presentation.core.mvi.StateHolder
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(
     private val registerUseCase: RegisterUseCase,
     private val loginWithGoogleUseCase: LoginWithGoogleUseCase
-) : BaseViewModel<RegisterState, RegisterIntent, RegisterEffect>() {
+) : ViewModel(),
+    StateHolder<RegisterState> by DefaultStateHolder(RegisterState()),
+    EffectPublisher<RegisterEffect> by DefaultEffectPublisher() {
 
-    override fun createInitialState() = RegisterState()
-
-    override fun handleIntent(intent: RegisterIntent) {
+    fun onIntent(intent: RegisterIntent) {
         when (intent) {
-            is RegisterIntent.UsernameChanged -> setState { copy(username = intent.username, usernameError = null) }
-            is RegisterIntent.FirstNameChanged -> setState { copy(firstName = intent.firstName, firstNameError = null) }
-            is RegisterIntent.LastNameChanged -> setState { copy(lastName = intent.lastName, lastNameError = null) }
-            is RegisterIntent.EmailChanged -> setState { copy(email = intent.email, emailError = null) }
-            is RegisterIntent.PasswordChanged -> setState { copy(password = intent.password, passwordError = null) }
-            is RegisterIntent.PhoneNumberChanged -> setState { copy(phoneNumber = intent.phoneNumber, phoneNumberError = null) }
-            is RegisterIntent.TogglePasswordVisibility -> setState { copy(isPasswordVisible = !isPasswordVisible) }
+            is RegisterIntent.UsernameChanged -> updateState { copy(username = intent.username, usernameError = null) }
+            is RegisterIntent.FirstNameChanged -> updateState { copy(firstName = intent.firstName, firstNameError = null) }
+            is RegisterIntent.LastNameChanged -> updateState { copy(lastName = intent.lastName, lastNameError = null) }
+            is RegisterIntent.EmailChanged -> updateState { copy(email = intent.email, emailError = null) }
+            is RegisterIntent.PasswordChanged -> updateState { copy(password = intent.password, passwordError = null) }
+            is RegisterIntent.PhoneNumberChanged -> updateState { copy(phoneNumber = intent.phoneNumber, phoneNumberError = null) }
+            is RegisterIntent.TogglePasswordVisibility -> updateState { copy(isPasswordVisible = !isPasswordVisible) }
             is RegisterIntent.SubmitRegistration -> submitRegistration()
             is RegisterIntent.GoogleSignInClicked -> handleGoogleSignIn()
         }
@@ -32,7 +36,7 @@ class RegisterViewModel(
     private fun submitRegistration() {
         val state = currentState
         
-        setState { copy(isLoading = true) }
+        updateState { copy(isLoading = true) }
         
         viewModelScope.launch {
             val result = registerUseCase(
@@ -46,12 +50,12 @@ class RegisterViewModel(
             
             when (result) {
                 is Result.Success -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     // Navigate to OTP verify passing the email
-                    setEffect { RegisterEffect.NavigateToOtpVerify(state.email) }
+                    sendEffect(RegisterEffect.NavigateToOtpVerify(state.email))
                 }
                 is Result.Error -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     handleDomainError(result.error)
                 }
             }
@@ -59,17 +63,17 @@ class RegisterViewModel(
     }
 
     private fun handleGoogleSignIn() {
-        setState { copy(isLoading = true) }
+        updateState { copy(isLoading = true) }
         
         viewModelScope.launch {
             when (val result = loginWithGoogleUseCase("mock_google_id_token")) {
                 is Result.Success -> {
-                    setState { copy(isLoading = false) }
-                    setEffect { RegisterEffect.NavigateToHome }
+                    updateState { copy(isLoading = false) }
+                    sendEffect(RegisterEffect.NavigateToHome)
                 }
                 is Result.Error -> {
-                    setState { copy(isLoading = false) }
-                    setEffect { RegisterEffect.ShowError(result.error.toString()) }
+                    updateState { copy(isLoading = false) }
+                    sendEffect(RegisterEffect.ShowError(result.error.toString()))
                 }
             }
         }
@@ -78,7 +82,7 @@ class RegisterViewModel(
     private fun handleDomainError(error: DomainError) {
         when (error) {
             is DomainError.ValidationError -> {
-                setState {
+                updateState {
                     copy(
                         usernameError = error.fieldErrors["username"],
                         firstNameError = error.fieldErrors["firstName"],
@@ -90,13 +94,13 @@ class RegisterViewModel(
                 }
             }
             is DomainError.ServerError -> {
-                setEffect { RegisterEffect.ShowError(error.message) }
+                sendEffect(RegisterEffect.ShowError(error.message))
             }
             is DomainError.NetworkError -> {
-                setEffect { RegisterEffect.ShowError("Network error. Please try again.") }
+                sendEffect(RegisterEffect.ShowError("Network error. Please try again."))
             }
             else -> {
-                setEffect { RegisterEffect.ShowError("An unknown error occurred") }
+                sendEffect(RegisterEffect.ShowError("An unknown error occurred"))
             }
         }
     }

@@ -1,9 +1,5 @@
 package com.iti.presentation.auth.login
 
-import com.iti.presentation.core.mvi.UiEffect
-import com.iti.presentation.core.mvi.UiIntent
-import com.iti.presentation.core.mvi.UiState
-
 data class LoginState(
     val email: String = "",
     val emailError: String? = null,
@@ -11,9 +7,9 @@ data class LoginState(
     val passwordError: String? = null,
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false
-) : UiState
+)
 
-sealed class LoginIntent : UiIntent {
+sealed class LoginIntent {
     data class EmailChanged(val email: String) : LoginIntent()
     data class PasswordChanged(val password: String) : LoginIntent()
     object TogglePasswordVisibility : LoginIntent()
@@ -21,7 +17,7 @@ sealed class LoginIntent : UiIntent {
     object GoogleSignInClicked : LoginIntent()
 }
 
-sealed class LoginEffect : UiEffect {
+sealed class LoginEffect {
     object NavigateToHome : LoginEffect()
     data class ShowError(val message: String) : LoginEffect()
 }

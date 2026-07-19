@@ -1,21 +1,25 @@
 package com.iti.presentation.auth.forgotpassword
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.usecase.ForgotPasswordUseCase
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
-import com.iti.presentation.core.mvi.BaseViewModel
+import com.iti.presentation.core.mvi.DefaultEffectPublisher
+import com.iti.presentation.core.mvi.DefaultStateHolder
+import com.iti.presentation.core.mvi.EffectPublisher
+import com.iti.presentation.core.mvi.StateHolder
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
     private val forgotPasswordUseCase: ForgotPasswordUseCase
-) : BaseViewModel<ForgotPasswordState, ForgotPasswordIntent, ForgotPasswordEffect>() {
+) : ViewModel(),
+    StateHolder<ForgotPasswordState> by DefaultStateHolder(ForgotPasswordState()),
+    EffectPublisher<ForgotPasswordEffect> by DefaultEffectPublisher() {
 
-    override fun createInitialState() = ForgotPasswordState()
-
-    override fun handleIntent(intent: ForgotPasswordIntent) {
+    fun onIntent(intent: ForgotPasswordIntent) {
         when (intent) {
-            is ForgotPasswordIntent.EmailChanged -> setState { copy(email = intent.email, emailError = null) }
+            is ForgotPasswordIntent.EmailChanged -> updateState { copy(email = intent.email, emailError = null) }
             is ForgotPasswordIntent.Submit -> submit()
         }
     }
@@ -23,21 +27,21 @@ class ForgotPasswordViewModel(
     private fun submit() {
         val email = currentState.email
         if (email.isBlank()) {
-            setState { copy(emailError = "Email cannot be empty") }
+            updateState { copy(emailError = "Email cannot be empty") }
             return
         }
 
-        setState { copy(isLoading = true) }
+        updateState { copy(isLoading = true) }
         
         viewModelScope.launch {
             when (val result = forgotPasswordUseCase(email)) {
                 is Result.Success -> {
-                    setState { copy(isLoading = false, isSuccess = true) }
+                    updateState { copy(isLoading = false, isSuccess = true) }
                     // Navigate to OTP verify
-                    setEffect { ForgotPasswordEffect.NavigateToOtpVerify(email) }
+                    sendEffect(ForgotPasswordEffect.NavigateToOtpVerify(email))
                 }
                 is Result.Error -> {
-                    setState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false) }
                     handleDomainError(result.error)
                 }
             }
@@ -47,16 +51,16 @@ class ForgotPasswordViewModel(
     private fun handleDomainError(error: DomainError) {
         when (error) {
             is DomainError.ValidationError -> {
-                setState { copy(emailError = error.fieldErrors["email"]) }
+                updateState { copy(emailError = error.fieldErrors["email"]) }
             }
             is DomainError.ServerError -> {
-                setEffect { ForgotPasswordEffect.ShowError(error.message) }
+                sendEffect(ForgotPasswordEffect.ShowError(error.message))
             }
             is DomainError.NetworkError -> {
-                setEffect { ForgotPasswordEffect.ShowError("Network error. Please try again.") }
+                sendEffect(ForgotPasswordEffect.ShowError("Network error. Please try again."))
             }
             else -> {
-                setEffect { ForgotPasswordEffect.ShowError("An unknown error occurred") }
+                sendEffect(ForgotPasswordEffect.ShowError("An unknown error occurred"))
             }
         }
     }

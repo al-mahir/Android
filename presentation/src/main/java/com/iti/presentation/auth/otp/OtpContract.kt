@@ -1,9 +1,5 @@
 package com.iti.presentation.auth.otp
 
-import com.iti.presentation.core.mvi.UiEffect
-import com.iti.presentation.core.mvi.UiIntent
-import com.iti.presentation.core.mvi.UiState
-
 data class OtpState(
     val email: String = "",
     val otpCode: String = "",
@@ -11,9 +7,9 @@ data class OtpState(
     val isLoading: Boolean = false,
     val timerSeconds: Int = 60,
     val canResend: Boolean = false
-) : UiState
+)
 
-sealed class OtpIntent : UiIntent {
+sealed class OtpIntent {
     data class InitEmail(val email: String) : OtpIntent()
     data class OtpChanged(val otp: String) : OtpIntent()
     object Submit : OtpIntent()
@@ -21,7 +17,7 @@ sealed class OtpIntent : UiIntent {
     object TimerTick : OtpIntent()
 }
 
-sealed class OtpEffect : UiEffect {
+sealed class OtpEffect {
     object NavigateToHome : OtpEffect()
     object NavigateToLogin : OtpEffect()
     data class ShowError(val message: String) : OtpEffect()
