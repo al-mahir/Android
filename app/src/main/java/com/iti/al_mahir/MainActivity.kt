@@ -16,8 +16,11 @@ import com.example.designsystem.theme.AlMahirTheme
 import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
 
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
