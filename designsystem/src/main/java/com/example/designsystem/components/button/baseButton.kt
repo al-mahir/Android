@@ -59,6 +59,7 @@ internal fun BaseButton(
     borderColor: Color = Color.Transparent,
     hasBorder: Boolean = false,
     isLoading: Boolean = false,
+    tintIcon: Boolean = true,
     height: Dp = ButtonHeightDefault,
     shape: Shape = Theme.shapes.small,
     captionStyle: TextStyle? = null,
@@ -92,9 +93,9 @@ internal fun BaseButton(
                         painter = iconPainter,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        colorFilter = ColorFilter.tint(
-                            if (isDisabled) Theme.colors.onDisable else contentColor
-                        )
+                        colorFilter = if (tintIcon) {
+                            ColorFilter.tint(if (isDisabled) Theme.colors.onDisable else contentColor)
+                        } else null
                     )
                 }
             }

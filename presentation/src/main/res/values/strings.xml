@@ -1,5 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- ===== Authentication ===== -->
+    <!-- Login Screen -->
+    <string name="auth_welcome_back">Welcome Back</string>
+    <string name="auth_sign_in_to_continue">Sign in to continue</string>
+    <string name="auth_email_address">Email Address</string>
+    <string name="auth_enter_email">Enter your email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_enter_password">Enter your password</string>
+    <string name="auth_forgot_password">Forgot Password?</string>
+    <string name="auth_sign_in">Sign In</string>
+    <string name="auth_continue_with_google">Continue with Google</string>
+    <string name="auth_dont_have_account">Don\'t have an account? </string>
+    <string name="auth_sign_up">Sign Up</string>
+
+    <!-- Register Screen -->
+    <string name="auth_create_account">Create Account</string>
+    <string name="auth_sign_up_to_start">Sign up to get started</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_enter_username">Enter your username</string>
+    <string name="auth_first_name">First Name</string>
+    <string name="auth_last_name">Last Name</string>
+    <string name="auth_phone_number">Phone Number</string>
+    <string name="auth_enter_phone_number">Enter your phone number</string>
+    <string name="auth_register_with_google">Register with Google</string>
+    <string name="auth_already_have_account">Already have an account? </string>
+
+    <!-- OTP Screen -->
+    <string name="auth_check_email">Check Your Email</string>
+    <string name="auth_sent_code_to">We sent a 6-digit code to\n%1$s</string>
+    <string name="auth_verify_code">Verify Code</string>
+    <string name="auth_resend_code">Resend Code</string>
+    <string name="auth_resend_code_in">Resend Code in %1$s</string>
+
+    <!-- Forgot Password Screen -->
+    <string name="auth_forgot_password_title">Forgot Password</string>
+    <string name="auth_enter_email_reset">Enter your email to receive a reset link/OTP</string>
+    <string name="auth_send_reset_link">Send Reset Link</string>
+    <string name="auth_back_to_sign_in">Back to Sign In</string>
+
+    <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
     <string name="home_greeting">welcome back</string>
     <string name="home_greeting_subtitle">Continue your journey with the light of guidance.</string>

@@ -6,6 +6,7 @@ import androidx.compose.ui.text.TextStyle
 data class SPTextStyle(
     val display: TextStyle,
     val title: TextStyle,
+    val h4: TextStyle,
     val body: SizedTextStyle,
     val hint: SizedTextStyle
 )
