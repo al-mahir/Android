@@ -68,4 +68,65 @@
 
     <string name="home_error_generic">تعذّر تحميل محتوى الصفحة الرئيسية. حاول مرة أخرى.</string>
     <string name="home_join_failed">تعذّر الانضمام إلى الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== Profile ===== -->
+    <string name="profile_avatar_content_description">الصورة الشخصية</string>
+
+    <!-- Subscription meta -->
+    <string name="profile_subscription_status">حالة الاشتراك</string>
+    <string name="profile_joined">انضم</string>
+    <string name="profile_plan_none">لا شيء</string>
+    <string name="profile_plan_premium">بريميوم</string>
+
+    <!-- Account actions -->
+    <string name="profile_buy_premium">اشترِ الماهر Premium</string>
+    <string name="profile_restore_purchases">استعادة المشتريات</string>
+    <string name="profile_restoring_purchases">جارٍ الاستعادة…</string>
+    <string name="profile_logout">تسجيل الخروج</string>
+
+    <string name="profile_restore_succeeded">تمت استعادة مشترياتك.</string>
+    <string name="profile_restore_nothing_found">لم يتم العثور على مشتريات سابقة.</string>
+    <string name="profile_restore_failed">تعذّرت استعادة المشتريات. حاول مرة أخرى.</string>
+
+    <!-- Social channels (accessibility labels) -->
+    <string name="profile_social_github">جيت هَب</string>
+    <string name="profile_social_discord">ديسكورد</string>
+    <string name="profile_social_x">إكس</string>
+    <string name="profile_social_facebook">فيسبوك</string>
+    <string name="profile_social_youtube">يوتيوب</string>
+    <string name="profile_social_instagram">إنستغرام</string>
+
+    <!-- Menu -->
+    <string name="profile_menu_about">عن الماهر</string>
+    <string name="profile_menu_feature_request">طلب خاصية جديدة</string>
+    <string name="profile_menu_help_center">مركز المساعدة</string>
+    <string name="profile_menu_share_app">شارك التطبيق</string>
+    <string name="profile_menu_rate_app">قيّم البرنامج</string>
+    <string name="profile_menu_terms_of_service">شروط الخدمة</string>
+    <string name="profile_menu_privacy_policy">سياسة الخصوصية</string>
+    <string name="profile_delete_account">إلغاء الحساب</string>
+
+    <!-- Share sheet. %1$s = app deep link -->
+    <string name="profile_share_message">اقرأ القرآن الكريم واحفظه مع الماهر: %1$s</string>
+    <string name="profile_share_chooser_title">مشاركة الماهر</string>
+
+    <!-- Logout confirmation -->
+    <string name="profile_logout_dialog_title">تسجيل الخروج</string>
+    <string name="profile_logout_dialog_message">ستحتاج إلى تسجيل الدخول مجدداً لمتابعة جلساتك.</string>
+    <string name="profile_logout_dialog_confirm">تسجيل الخروج</string>
+    <string name="profile_logout_failed">تعذّر تسجيل الخروج. حاول مرة أخرى.</string>
+
+    <!-- Account deletion confirmation -->
+    <string name="profile_delete_account_dialog_title">إلغاء الحساب</string>
+    <string name="profile_delete_account_dialog_message">سيتم حذف حسابك وتسجيلاتك وتقدّمك نهائياً. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="profile_delete_account_dialog_confirm">حذف</string>
+    <string name="profile_delete_account_failed">تعذّر حذف الحساب. حاول مرة أخرى.</string>
+
+    <string name="profile_dialog_cancel">إلغاء</string>
+
+    <string name="profile_error_generic">تعذّر تحميل ملفك الشخصي. حاول مرة أخرى.</string>
+    <string name="profile_no_app_to_handle">لا يوجد تطبيق على هذا الجهاز يمكنه فتح ذلك.</string>
+
+    <!-- ===== Static content (about / terms / privacy) ===== -->
+    <string name="static_content_error_generic">تعذّر تحميل هذه الصفحة. حاول مرة أخرى.</string>
 </resources>
