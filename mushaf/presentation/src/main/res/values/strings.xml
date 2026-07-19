@@ -17,4 +17,29 @@
     <!-- Follow-along (highlighting) -->
     <string name="mushaf_follow_along_start">Start follow-along</string>
     <string name="mushaf_follow_along_stop">Stop follow-along</string>
+
+    <!-- Top bar -->
+    <string name="mushaf_juz_label">Juz %1$d</string>
+    <string name="mushaf_hizb_label">Hizb %1$d</string>
+
+    <!-- Top bar content descriptions -->
+    <string name="mushaf_cd_back">Back</string>
+    <string name="mushaf_cd_bookmark">Bookmark</string>
+    <string name="mushaf_cd_settings">Settings</string>
+
+    <!-- Bottom bar — modes -->
+    <string name="mushaf_mode_reading">Reading</string>
+    <string name="mushaf_mode_listen">Listen</string>
+    <string name="mushaf_mode_recitation">Recitation</string>
+    <string name="mushaf_mode_muallem">Mu\'allem</string>
+
+    <!-- Bottom bar — eye / reveal -->
+    <string name="mushaf_cd_hide_ayahs">Hide ayahs</string>
+    <string name="mushaf_cd_show_ayahs">Show ayahs</string>
+    <string name="mushaf_cd_next_word">Reveal next word</string>
+    <string name="mushaf_cd_next_ayah">Reveal next ayah</string>
+
+    <!-- Bottom bar — mic -->
+    <string name="mushaf_cd_start_recording">Start recording</string>
+    <string name="mushaf_cd_stop_recording">Stop recording</string>
 </resources>

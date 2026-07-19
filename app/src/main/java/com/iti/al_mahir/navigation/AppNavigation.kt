@@ -113,7 +113,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
 private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
     when (lastOrNull()) {
         AppRoute.Home -> AppBottomNavDestination.Home
-        is AppRoute.Mushaf -> AppBottomNavDestination.Mushaf
         AppRoute.Profile -> AppBottomNavDestination.Profile
+        is AppRoute.Mushaf -> AppBottomNavDestination.Mushaf
         else -> null
     }

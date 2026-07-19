@@ -4,6 +4,7 @@ kotlin = "2.4.0"
 ksp = "2.3.9"
 
 coreKtx = "1.19.0"
+coreSplashscreen = "1.0.1"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 navigationCompose = "2.9.8"
@@ -43,9 +44,11 @@ espresso = "3.7.0"
 archCoreTesting = "2.2.0"
 mockk = "1.14.11"
 turbine = "1.2.1"
+navigation3Runtime = "1.1.4"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
 
@@ -133,6 +136,7 @@ androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigat
 androidx-navigation3-ui = { group = "androidx.navigation3", name = "navigation3-ui", version.ref = "navigation3" }
 androidx-lifecycle-viewmodel-navigation3 = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqliteJdbc" }
+navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runtime", version.ref = "navigation3Runtime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
