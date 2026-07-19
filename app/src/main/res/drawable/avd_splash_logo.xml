@@ -1,7 +1,0 @@
-<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_logo_vector">
-
-    <target android:name="logo_group" android:animation="@animator/splash_spark" />
-    <target android:name="arch_path" android:animation="@animator/splash_arch_draw" />
-    <target android:name="soundwave_center" android:animation="@animator/splash_wave_shrink" />
-</animated-vector>

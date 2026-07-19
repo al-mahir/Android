@@ -16,6 +16,11 @@ import com.example.designsystem.theme.AlMahirTheme
 import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
 
+import android.animation.ObjectAnimator
+import android.view.View
+import android.view.animation.OvershootInterpolator
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
@@ -27,8 +32,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         
-        // Keep the splash screen visible for 1 second so the AVD animation has time to play
+        // Keep the splash screen visible for 1 second so the logo is displayed clearly
         splashScreen.setKeepOnScreenCondition { !isAppReady }
+        
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
+            val scaleX = ObjectAnimator.ofFloat(splashScreenView.view, View.SCALE_X, 1f, 1.2f)
+            val scaleY = ObjectAnimator.ofFloat(splashScreenView.view, View.SCALE_Y, 1f, 1.2f)
+            val fadeOut = ObjectAnimator.ofFloat(splashScreenView.view, View.ALPHA, 1f, 0f)
+            
+            val animatorSet = android.animation.AnimatorSet()
+            animatorSet.playTogether(scaleX, scaleY, fadeOut)
+            animatorSet.interpolator = OvershootInterpolator()
+            animatorSet.duration = 400L
+            
+            animatorSet.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    splashScreenView.remove()
+                }
+            })
+            animatorSet.start()
+        }
         
         lifecycleScope.launch {
             delay(1000)
