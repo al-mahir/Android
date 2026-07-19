@@ -8,7 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -61,17 +61,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AlMahirTheme {
-                val darkTheme = isSystemInDarkTheme()
-                val view = LocalView.current
+            // Resolved here, OUTSIDE AlMahirTheme, and passed in explicitly.
+            //
+            // AlMahirTheme overrides LocalConfiguration to apply the app locale, so calling
+            // isSystemInDarkTheme() inside its content reads that overridden configuration
+            // and can disagree with the value the theme picked its colors from. When it does,
+            // the bars get light-content icons over a light background and the clock, battery
+            // and signal icons vanish. One evaluation, shared by both, cannot drift.
+            val darkTheme = isSystemInDarkTheme()
+            val view = LocalView.current
 
-                SideEffect {
-                    val window = (view.context as ComponentActivity).window
-                    WindowCompat.getInsetsController(window, view).apply {
-                        isAppearanceLightStatusBars = !darkTheme
-                        isAppearanceLightNavigationBars = !darkTheme
-                    }
+            // Keyed rather than a bare SideEffect: the flags only need rewriting when the
+            // system theme actually flips, not on every recomposition of the whole app.
+            LaunchedEffect(darkTheme, view) {
+                val window = (view.context as ComponentActivity).window
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !darkTheme
+                    isAppearanceLightNavigationBars = !darkTheme
                 }
+            }
+
+            AlMahirTheme(isDarkTheme = darkTheme) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

@@ -14,17 +14,17 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.designsystem.components.bottomnav.AppBottomNavBar
 import com.example.designsystem.components.bottomnav.AppBottomNavDestination
-import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.mushaf.presentation.MushafScreen
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.home.HomeScreen
+import com.iti.presentation.profile.ProfileScreen
+import com.iti.presentation.profile.navigation.ProfileRoute
+import com.iti.presentation.profile.navigation.profileEntries
 
-/** Destinations of the signed-in app. Auth destinations live in `AuthRoute` (`:presentation`). */
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
 
-    /** [startPage] is set when arriving from Home's "Continue Reading"; null resumes. */
     data class Mushaf(val startPage: Int? = null) : AppRoute
 
     data object Profile : AppRoute
@@ -32,12 +32,9 @@ sealed interface AppRoute : NavKey {
 
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
-    // The app opens on Login; a successful sign-in swaps the stack for Home.
     val backStack = remember { mutableStateListOf<NavKey>(AuthRoute.Login) }
     val context = LocalContext.current
 
-    // Switching tabs resets the stack to that tab's root. The three tabs are independent
-    // entry points rather than a growing history.
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
             AppBottomNavDestination.Home -> AppRoute.Home
@@ -89,9 +86,21 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                     MushafScreen(startPage = route.startPage)
                 }
                 entry<AppRoute.Profile> {
-                    // Placeholder until the Profile feature lands.
-                    EmptyDataScreen(modifier = Modifier.fillMaxSize())
+                    ProfileScreen(
+                        onOpenPremium = { backStack.add(ProfileRoute.Premium) },
+                        onOpenLegalDocument = { documentType ->
+                            backStack.add(ProfileRoute.StaticContent(documentType))
+                        },
+                        // Logout and account deletion both end the session: clearing the stack
+                        // is what makes sign-out irreversible, mirroring onAuthenticated above.
+                        onSignedOut = {
+                            backStack.clear()
+                            backStack.add(AuthRoute.Login)
+                        },
+                    )
                 }
+
+                profileEntries(onBack = { backStack.removeLastOrNull() })
             },
         )
 
@@ -106,10 +115,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The tab owning the current top-of-stack entry, or null while the user is in the auth flow
- * (which shows no bottom bar).
- */
+
 private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
     when (lastOrNull()) {
         AppRoute.Home -> AppBottomNavDestination.Home

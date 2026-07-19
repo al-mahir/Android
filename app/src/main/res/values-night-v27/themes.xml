@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark mode on API 27+: the base style (values-night) already flips the status bar to light
+  content; this flips the navigation bar to match.
+-->
+<resources>
+
+    <style name="Theme.AlMahir" parent="Base.Theme.AlMahir">
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
