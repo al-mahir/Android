@@ -18,6 +18,8 @@ data class ColorScheme(
     val surface: Color,
     val surfaceVariant: Color,
     val onSurface: Color,
+    val field: Color,
+    val border: Color,
     val outline: Color,
     val hint: Color,
     val warning: Color,

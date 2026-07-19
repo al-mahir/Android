@@ -126,9 +126,9 @@ private fun OtpCell(
     val borderColor: Color = when {
         isError -> Theme.colors.error
         isActive -> Theme.colors.primary
-        else -> Theme.colors.hint
+        else -> Theme.colors.border
     }
-    val container: Color = if (enabled) Theme.colors.backGround else Theme.colors.disable
+    val container: Color = if (enabled) Theme.colors.field else Theme.colors.disable
     Box(
         modifier = Modifier
             .size(56.dp)

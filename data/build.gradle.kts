@@ -32,6 +32,8 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
 
+    implementation(libs.kotlinx.serialization.json)
+
     implementation(platform(libs.ktor.bom))
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.android)
@@ -44,6 +46,7 @@ dependencies {
     ksp(libs.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

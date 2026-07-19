@@ -85,6 +85,13 @@ class MushafViewModel(
     fun onIntent(intent: MushafIntent) {
         when (intent) {
             is MushafIntent.LoadPage -> loadPage(intent.page)
+            is MushafIntent.OpenAtPage -> {
+                // Claim the restore slot before loading, so the preferences observer treats
+                // the reader as already initialised whichever of the two arrives first.
+                Log.d(TAG, "OpenAtPage(${intent.page}) — suppressing last-page restore")
+                initialized = true
+                loadPage(intent.page)
+            }
             is MushafIntent.ToggleTajweed -> toggleTajweed(intent.enabled)
             is MushafIntent.HighlightWord -> _state.update { it.copy(highlightedWordId = intent.wordId) }
             MushafIntent.StartFollowAlongPreview -> startFollowAlong()

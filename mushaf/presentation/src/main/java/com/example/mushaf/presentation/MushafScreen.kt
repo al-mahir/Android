@@ -30,6 +30,11 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MushafScreen(
     modifier: Modifier = Modifier,
+    /**
+     * Page to open on, e.g. when arriving from Home's "Continue Reading". Null resumes the
+     * reader's own persisted last page.
+     */
+    startPage: Int? = null,
     onBack: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
@@ -42,6 +47,17 @@ fun MushafScreen(
 
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
+    }
+
+    // Declared after the pager effect on purpose. `state.currentPage` is the single source of
+    // truth for which page is shown; seeding the pager instead would make the two fight and
+    // oscillate. Dispatching here sets the state, and the sync effect below scrolls the pager
+    // to match. OpenAtPage (not LoadPage) so a late preferences emission cannot restore the
+    // previously-read page over the one the caller asked for.
+    LaunchedEffect(startPage) {
+        if (startPage != null) {
+            viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
+        }
     }
 
     LaunchedEffect(state.currentPage) {

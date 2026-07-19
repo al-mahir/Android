@@ -52,8 +52,8 @@ fun TextField(
     tipText: String? = null,
     titleColor: Color = Theme.colors.primaryFont,
     textColor: Color = Theme.colors.primaryFont,
-    borderColor: Color = Theme.colors.hint,
-    containerColor: Color = Theme.colors.backGround,
+    borderColor: Color = Theme.colors.border,
+    containerColor: Color = Theme.colors.field,
     onFocusBorderColor: Color = Theme.colors.primary,
     errorBorderColor: Color = Theme.colors.error,
     errorMessage: String? = null,
@@ -119,7 +119,7 @@ fun TextField(
             }
         }
         Row(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(fieldHeight)
                 .clip(shape)
