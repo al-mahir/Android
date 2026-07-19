@@ -28,8 +28,6 @@ val mushafPresentationModule = module {
             getLastReadUseCase = get(),
             searchSurahUseCase = get(),
             searchJuzUseCase = get(),
-            searchPageUseCase = get(),
-            searchHizbUseCase = get(),
             searchAyahUseCase = get()
         )
     }

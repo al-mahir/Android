@@ -1,11 +1,9 @@
 package com.example.mushaf.presentation.search
 
-import com.example.mushaf.domain.model.MushafFilter
 import com.example.mushaf.domain.model.Surah
 
 sealed interface MushafSearchIntent {
     data class UpdateQuery(val query: String) : MushafSearchIntent
-    data class SelectFilter(val filter: MushafFilter) : MushafSearchIntent
     data class SurahClicked(val surah: Surah) : MushafSearchIntent
     data class JuzClicked(val juz: com.example.mushaf.domain.model.Juz) : MushafSearchIntent
     data class HizbClicked(val hizb: com.example.mushaf.domain.model.Hizb) : MushafSearchIntent

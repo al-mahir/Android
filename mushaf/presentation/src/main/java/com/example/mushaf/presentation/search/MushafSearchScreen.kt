@@ -25,15 +25,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.search.SearchBar
 import com.example.designsystem.theme.Theme
-import com.example.mushaf.domain.model.MushafFilter
 import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.presentation.search.components.AyahListItem
-import com.example.mushaf.presentation.search.components.FilterTabsRow
-import com.example.mushaf.presentation.search.components.HizbListItem
 import com.example.mushaf.presentation.search.components.JuzListItem
 import com.example.mushaf.presentation.search.components.LastReadBanner
 import com.example.mushaf.presentation.search.components.MushafBottomBar
-import com.example.mushaf.presentation.search.components.PageListItem
 import com.example.mushaf.presentation.search.components.SurahListItem
 import com.example.mushaf.presentation.search.components.TopHeaderSection
 import com.example.mushaf.presentation.search.components.LastReadBanner
@@ -81,14 +77,7 @@ internal fun MushafSearchContent(
             SearchBar(
                 query = state.query,
                 onQueryChange = { onIntent(MushafSearchIntent.UpdateQuery(it)) },
-                hint = "Search Surah, Para, Page..."
-            )
-            
-            Spacer(Modifier.height(14.dp))
-            
-            FilterTabsRow(
-                selected = state.selectedFilter,
-                onSelect = { onIntent(MushafSearchIntent.SelectFilter(it)) }
+                hint = "Search Surah or Ayah..."
             )
             
             Spacer(Modifier.height(14.dp))
@@ -98,7 +87,7 @@ internal fun MushafSearchContent(
             LaunchedEffect(listState) {
                 snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
                     .collect { lastIndex ->
-                        if (lastIndex != null && lastIndex >= state.ayahs.size - 5 && state.selectedFilter == MushafFilter.AYAH) {
+                        if (state.query.isNotBlank() && lastIndex != null && lastIndex >= state.surahs.size + state.ayahs.size - 5) {
                             onIntent(MushafSearchIntent.LoadNextAyahsPage)
                         }
                     }
@@ -110,51 +99,30 @@ internal fun MushafSearchContent(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 12.dp)
             ) {
-                when (state.selectedFilter) {
-                    MushafFilter.SURAH -> {
-                        items(state.surahs, key = { it.number }) { surah ->
-                            SurahListItem(
-                                surah = surah,
-                                onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
-                            )
-                        }
+                if (state.query.isBlank()) {
+                    items(state.juzs, key = { it.number }) { juz ->
+                        JuzListItem(
+                            juz = juz,
+                            onClick = { onIntent(MushafSearchIntent.JuzClicked(it)) }
+                        )
                     }
-                    MushafFilter.PARA -> {
-                        items(state.juzs, key = { it.number }) { juz ->
-                            JuzListItem(
-                                juz = juz,
-                                onClick = { onIntent(MushafSearchIntent.JuzClicked(it)) }
-                            )
-                        }
+                } else {
+                    items(state.surahs, key = { it.number }) { surah ->
+                        SurahListItem(
+                            surah = surah,
+                            onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
+                        )
                     }
-                    MushafFilter.PAGE -> {
-                        items(state.pages, key = { it }) { page ->
-                            PageListItem(
-                                page = page,
-                                onClick = { onIntent(MushafSearchIntent.PageClicked(it)) }
-                            )
-                        }
+                    items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
+                        AyahListItem(
+                            ayah = ayah,
+                            onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
+                        )
                     }
-                    MushafFilter.HIJB -> {
-                        items(state.hizbs, key = { it.number }) { hizb ->
-                            HizbListItem(
-                                hizb = hizb,
-                                onClick = { onIntent(MushafSearchIntent.HizbClicked(it)) }
-                            )
-                        }
-                    }
-                    MushafFilter.AYAH -> {
-                        items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
-                            AyahListItem(
-                                ayah = ayah,
-                                onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
-                            )
-                        }
-                        if (state.isPaginatingAyahs) {
-                            item {
-                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator(color = Theme.colors.primary, modifier = Modifier.size(24.dp))
-                                }
+                    if (state.isPaginatingAyahs) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(color = Theme.colors.primary, modifier = Modifier.size(24.dp))
                             }
                         }
                     }
