@@ -52,8 +52,8 @@ class MushafRepositoryImpl(
         return dataSource.searchPage(query)
     }
 
-    override suspend fun searchAyah(query: String): List<AyahSearchResult> {
-        val rawResults = textDataSource.searchAyahs(query)
+    override suspend fun searchAyah(query: String, limit: Int, offset: Int): List<AyahSearchResult> {
+        val rawResults = textDataSource.searchAyahs(query, limit, offset)
         return rawResults.map { raw ->
             val surah = metadataDataSource.getSurah(raw.surahNumber)
             AyahSearchResult(

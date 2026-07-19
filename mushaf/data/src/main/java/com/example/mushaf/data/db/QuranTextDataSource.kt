@@ -76,15 +76,23 @@ class QuranTextDataSource(
         }
     }
 
-    suspend fun searchAyahs(query: String): List<RawAyahResult> = withContext(Dispatchers.IO) {
+    suspend fun searchAyahs(query: String, limit: Int = 50, offset: Int = 0): List<RawAyahResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<RawAyahResult>()
         val q = query.trim()
-        if (q.isBlank()) return@withContext results
 
         try {
-            // Escape special characters for LIKE if needed, but standard %q% works.
-            val sql = "SELECT surah, ayah, text FROM verses WHERE text LIKE ? LIMIT 50"
-            database().rawQuery(sql, arrayOf("%$q%")).use { c ->
+            val sql: String
+            val args: Array<String>
+
+            if (q.isBlank()) {
+                sql = "SELECT surah, ayah, text FROM verses LIMIT ? OFFSET ?"
+                args = arrayOf(limit.toString(), offset.toString())
+            } else {
+                sql = "SELECT surah, ayah, text FROM verses WHERE text LIKE ? LIMIT ? OFFSET ?"
+                args = arrayOf("%$q%", limit.toString(), offset.toString())
+            }
+
+            database().rawQuery(sql, args).use { c ->
                 while (c.moveToNext()) {
                     results.add(
                         RawAyahResult(

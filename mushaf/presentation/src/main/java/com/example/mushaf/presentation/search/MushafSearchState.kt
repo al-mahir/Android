@@ -15,6 +15,8 @@ data class MushafSearchState(
     val hizbs: List<Hizb> = emptyList(),
     val pages: List<Int> = emptyList(),
     val ayahs: List<AyahSearchResult> = emptyList(),
+    val isPaginatingAyahs: Boolean = false,
+    val hasReachedEndAyahs: Boolean = false,
     val isLoading: Boolean = false,
     val lastReadSession: LastReadSession? = null
 )

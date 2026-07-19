@@ -1,17 +1,25 @@
 package com.example.mushaf.presentation.search
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,7 +93,19 @@ internal fun MushafSearchContent(
             
             Spacer(Modifier.height(14.dp))
 
+            val listState = rememberLazyListState()
+
+            LaunchedEffect(listState) {
+                snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+                    .collect { lastIndex ->
+                        if (lastIndex != null && lastIndex >= state.ayahs.size - 5 && state.selectedFilter == MushafFilter.AYAH) {
+                            onIntent(MushafSearchIntent.LoadNextAyahsPage)
+                        }
+                    }
+            }
+
             LazyColumn(
+                state = listState,
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 12.dp)
@@ -129,6 +149,13 @@ internal fun MushafSearchContent(
                                 ayah = ayah,
                                 onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
                             )
+                        }
+                        if (state.isPaginatingAyahs) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = Theme.colors.primary, modifier = Modifier.size(24.dp))
+                                }
+                            }
                         }
                     }
                 }

@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.AyahSearchResult
@@ -47,8 +49,13 @@ fun AyahListItem(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = ayah.ayahText,
-                style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold),
-                color = Theme.colors.primaryFont
+                style = Theme.typography.body.large.copy(
+                    fontWeight = FontWeight.Bold,
+                    textDirection = TextDirection.Rtl
+                ),
+                color = Theme.colors.primaryFont,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Right
             )
         }
     }

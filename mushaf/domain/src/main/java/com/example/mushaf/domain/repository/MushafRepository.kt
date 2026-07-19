@@ -18,5 +18,5 @@ interface MushafRepository {
     suspend fun searchJuz(query: String): List<Juz>
     suspend fun searchHizb(query: String): List<Hizb>
     suspend fun searchPage(query: String): List<Int>
-    suspend fun searchAyah(query: String): List<AyahSearchResult>
+    suspend fun searchAyah(query: String, limit: Int = 50, offset: Int = 0): List<AyahSearchResult>
 }
