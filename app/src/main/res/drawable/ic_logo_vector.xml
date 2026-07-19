@@ -10,16 +10,16 @@
         android:name="logo_group"
         android:pivotX="144"
         android:pivotY="144"
-        android:scaleX="0.0"
-        android:scaleY="0.0">
+        android:scaleX="1.0"
+        android:scaleY="1.0">
         
-        <!-- The Arch Path (initially trimmed to 0 so it's invisible) -->
+        <!-- The Arch Path (fully visible in base state) -->
         <path
             android:name="arch_path"
             android:strokeWidth="12"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
-            android:trimPathEnd="0.0"
+            android:trimPathEnd="1.0"
             android:pathData="M144,192 C144,192 84,192 84,144 C84,96 120,84 144,48 C168,84 204,96 204,144 C204,192 144,192 144,192 Z">
             <aapt:attr name="android:strokeColor">
                 <gradient android:startX="84" android:startY="144" android:endX="204" android:endY="144" android:type="linear">
