@@ -44,6 +44,8 @@ fun MushafPageView(
     highlightedWordId: () -> String?,
     modifier: Modifier = Modifier,
     prefetchPages: List<MushafPage> = emptyList(),
+    areAyahsHidden: Boolean = false,
+    revealedWordIds: Set<String> = emptySet(),
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
@@ -132,6 +134,16 @@ fun MushafPageView(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val highlighted = highlightedWordId()
             tokens.forEach { token ->
+                val isAyahWord = token.wordId != null
+                val isVisible = when {
+                    !areAyahsHidden -> true
+                    !isAyahWord -> true
+                    token.wordId in revealedWordIds -> true
+                    else -> false
+                }
+
+                if (!isVisible) return@forEach
+
                 if (token.wordId != null && token.wordId == highlighted) {
                     drawRect(
                         color = highlightColor,

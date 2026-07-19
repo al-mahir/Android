@@ -49,7 +49,7 @@ internal fun BottomNavShowcaseScreen(modifier: Modifier = Modifier) {
                 onDestinationSelected = {},
             )
             AppBottomNavBar(
-                selectedDestination = AppBottomNavDestination.Reservations,
+                selectedDestination = AppBottomNavDestination.Mushaf,
                 onDestinationSelected = {},
             )
             AppBottomNavBar(

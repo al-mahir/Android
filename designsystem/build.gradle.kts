@@ -24,7 +24,6 @@ android {
     buildFeatures {
         compose = true
     }
-
 }
 
 dependencies {
@@ -33,8 +32,13 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.core.ktx)
     api(libs.androidx.compose.material3)
     api(libs.lottie.compose)
+    api(libs.coil.compose)
+    api(libs.coil.network.okhttp)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    testImplementation(libs.junit)
 }

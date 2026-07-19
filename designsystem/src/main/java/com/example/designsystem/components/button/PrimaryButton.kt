@@ -10,8 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.R
@@ -30,6 +33,9 @@ fun PrimaryButton(
     isLoading: Boolean = false,
     containerColor: Color = Theme.colors.primary,
     contentColor:Color = Theme.colors.onPrimary,
+    height: Dp = ButtonHeightDefault,
+    shape: Shape = Theme.shapes.small,
+    captionStyle: TextStyle? = null,
     @RawRes loadingAnimationRes: Int = R.raw.button_loading,
 ) {
     BaseButton(
@@ -43,6 +49,9 @@ fun PrimaryButton(
         hasBorder = true,
         isDisabled = isDisabled,
         isLoading = isLoading,
+        height = height,
+        shape = shape,
+        captionStyle = captionStyle,
         onClick = onClick,
         loadingView = {
             LottieButtonLoader(

@@ -19,6 +19,7 @@ data class SPShapes(
     val small: Shape = RoundedCornerShape(4.dp),
     val medium: Shape = RoundedCornerShape(8.dp),
     val large: Shape = RoundedCornerShape(16.dp),
+    val extraLarge: Shape = RoundedCornerShape(20.dp),
     val circle: Shape = RoundedCornerShape(50)
 )
 data class SPSize(
@@ -30,6 +31,10 @@ data class SPSize(
     val componentsLargeHeight: Dp = 56.dp,
     val overlayContainer: Dp = 160.dp,
     val overlayIndicator: Dp = 80.dp,
+    val statusDot: Dp = 8.dp,
+    val avatarSmall: Dp = 40.dp,
+    val avatarMedium: Dp = 56.dp,
+    val iconContainer: Dp = 52.dp,
 )
 
 val LocalSPSpacing = staticCompositionLocalOf { SPSpacing() }

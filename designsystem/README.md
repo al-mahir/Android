@@ -216,6 +216,37 @@ sits at the row's end.
 
 `SettingsActionCard` is the older, purpose-built settings row.
 
+### Avatars — `components/avatar/`
+
+`InitialsAvatar(initials, contentDescription, imageUrl = null, …)` is a circular avatar that
+paints the initials first and draws a Coil `AsyncImage` over them. The initials therefore act
+as both the loading placeholder and the error fallback — no extra painters, and it never
+flashes empty. Size comes from the caller's `modifier`
+(`Modifier.size(Theme.size.avatarSmall | avatarMedium)`).
+
+### Section headers — `components/section/`
+
+`SectionHeader(title, actionLabel = null, onActionClick)` is the list-section title row with
+an optional trailing text action ("See All"). Pass a null `actionLabel` for sections with no
+destination to expand into.
+
+### Status & rating — `components/status/`, `components/rating/`
+
+`StatusDot(color)` is a bare presence dot (`Theme.size.statusDot`); `StatusLabel(text, color)`
+pairs it with a label and hides the redundant dot from screen readers. The caller owns the
+status→colour/label mapping so neither component knows about any feature's status enum.
+
+`RatingLabel(rating, contentDescription)` renders a star plus the value formatted with
+`NumberFormat` for the active locale, so Arabic gets Arabic-Indic digits and the correct
+decimal separator instead of a hardcoded `"4.9"`.
+
+### Search — `components/search/`
+
+`SearchBar(query, onQueryChange, hint)` is the editable field. `ClickableSearchBar(hint,
+onClick)` is the same field rendered as a button: a transparent lid swallows touches so the
+text field never takes focus and the keyboard never opens. Use it on screens where tapping
+search navigates to a dedicated search screen rather than editing in place.
+
 ### Tabs — `components/tab/`
 
 `DayTabRow(labels, selectedIndex, onSelect)` is a horizontally-scrollable row of pill-

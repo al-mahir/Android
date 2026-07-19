@@ -1,7 +1,9 @@
 package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.MushafConstants
+import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.MushafPage
+import com.example.mushaf.domain.model.MushafWord
 import com.example.mushaf.domain.model.ReadingMode
 
 data class MushafUiState(
@@ -12,11 +14,14 @@ data class MushafUiState(
     val highlightedWordId: String? = null,
     val pageCount: Int = MushafConstants.LAST_PAGE,
     val isFollowAlongActive: Boolean = false,
+    val mushafMode: MushafMode = MushafMode.READING,
+    val areBarsVisible: Boolean = true,
+    val areAyahsVisible: Boolean = true,
+    val isRecordingActive: Boolean = false,
+    val revealedWordIds: Set<String> = emptySet(),
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
-
     val page: MushafPage? get() = pages[currentPage]
-
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
 
     fun pageState(pageNumber: Int): PageLoadState = when {
@@ -24,6 +29,9 @@ data class MushafUiState(
         pageNumber in failedPages -> PageLoadState.Failed
         else -> PageLoadState.Loading
     }
+
+    fun wordsForCurrentPage(): List<MushafWord> =
+        page?.lines?.flatMap { it.words } ?: emptyList()
 }
 
 sealed interface PageLoadState {
