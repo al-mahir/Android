@@ -17,10 +17,24 @@ import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
 
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private var isAppReady = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
+        
+        // Keep the splash screen visible for 1 second so the AVD animation has time to play
+        splashScreen.setKeepOnScreenCondition { !isAppReady }
+        
+        lifecycleScope.launch {
+            delay(1000)
+            isAppReady = true
+        }
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
