@@ -23,7 +23,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         onBack = { backStack.removeLastOrNull() },
         entryProvider = entryProvider {
             entry<AppRoute.Mushaf> {
-                MushafScreen()
+                MushafScreen(onBack = { backStack.removeLastOrNull() })
             }
         },
     )
