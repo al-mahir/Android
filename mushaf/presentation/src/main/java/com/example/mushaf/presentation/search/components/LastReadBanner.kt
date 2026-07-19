@@ -19,14 +19,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.R
+import com.example.designsystem.R as DesignSystemR
+import com.example.mushaf.presentation.R
 import com.example.designsystem.theme.Theme
 
 @Composable
 fun LastReadBanner(
-    surahName: String,
+    surahNameAr: String,
+    surahNameEn: String,
     ayah: Int,
     page: Int,
     onClick: () -> Unit,
@@ -49,7 +52,7 @@ fun LastReadBanner(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_info),
+                painter = painterResource(id = DesignSystemR.drawable.ic_info),
                 contentDescription = null,
                 tint = Theme.colors.onPrimary,
                 modifier = Modifier.size(28.dp)
@@ -58,17 +61,17 @@ fun LastReadBanner(
         Spacer(Modifier.width(12.dp))
         Column {
             Text(
-                text = "LAST READ",
+                text = stringResource(R.string.last_read),
                 color = Theme.colors.onPrimary.copy(alpha = 0.7f),
                 style = Theme.typography.body.small.copy(fontWeight = FontWeight.SemiBold)
             )
             Text(
-                text = surahName,
+                text = stringResource(R.string.last_read_surah_name, surahNameAr, surahNameEn),
                 color = Theme.colors.onPrimary,
                 style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = "Ayah $ayah · Page $page",
+                text = stringResource(R.string.ayah_and_page_format, ayah, page),
                 color = Theme.colors.onPrimary.copy(alpha = 0.9f),
                 style = Theme.typography.body.small
             )

@@ -65,4 +65,24 @@ class MushafRepositoryImpl(
             )
         }
     }
+
+    override suspend fun getSurahStartingPage(surahNumber: Int): Int? {
+        return dataSource.getSurahStartingPage(surahNumber)
+    }
+
+    override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? {
+        return dataSource.getAyahPage(surahNumber, ayahNumber)
+    }
+
+    override suspend fun getJuzStartingPage(juzNumber: Int): Int? {
+        val juzPages = intArrayOf(
+            1, 22, 42, 62, 82, 102, 122, 142, 162, 182, 
+            202, 222, 242, 262, 282, 302, 322, 342, 362, 382, 
+            402, 422, 442, 462, 482, 502, 522, 542, 562, 582
+        )
+        if (juzNumber in 1..30) {
+            return juzPages[juzNumber - 1]
+        }
+        return null
+    }
 }

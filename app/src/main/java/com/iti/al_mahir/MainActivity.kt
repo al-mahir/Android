@@ -10,13 +10,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.designsystem.theme.AlMahirTheme
 import com.iti.al_mahir.navigation.AppNavHost
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AlMahirTheme {
+            AlMahirTheme(locale = Locale("ar")) {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppNavHost(modifier = Modifier.padding(innerPadding))
                 }

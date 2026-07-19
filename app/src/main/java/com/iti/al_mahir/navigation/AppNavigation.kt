@@ -24,12 +24,21 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         onBack = { backStack.removeLastOrNull() },
         entryProvider = entryProvider {
             entry<AppRoute.Mushaf> {
-                MushafScreen()
+                MushafScreen(
+                    onNavigateSearch = {
+                        backStack.removeAll { it == AppRoute.Search }
+                        backStack.add(AppRoute.Search)
+                    }
+                )
             }
             entry<AppRoute.Search> {
                 // Here we inject the ViewModel using Koin
                 com.example.mushaf.presentation.search.MushafSearchScreen(
-                    viewModel = org.koin.androidx.compose.koinViewModel()
+                    viewModel = org.koin.androidx.compose.koinViewModel(),
+                    onNavigateToMushaf = {
+                        backStack.removeAll { it == AppRoute.Mushaf }
+                        backStack.add(AppRoute.Mushaf)
+                    }
                 )
             }
         },

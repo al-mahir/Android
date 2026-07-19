@@ -21,10 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.Surah
+import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.font.PageFontProvider
 import com.example.mushaf.presentation.font.rememberSurahNameFontFamily
 
@@ -72,8 +74,13 @@ fun SurahListItem(
                     color = Theme.colors.primaryFont
                 )
                 Spacer(Modifier.height(2.dp))
+                val revType = if (surah.revelationType.lowercase().startsWith("mec")) {
+                    stringResource(R.string.revelation_meccan)
+                } else {
+                    stringResource(R.string.revelation_medinan)
+                }
                 Text(
-                    text = "${surah.revelationType} · ${surah.verseCount} Verses",
+                    text = "$revType · ${stringResource(R.string.verses_count_format, surah.verseCount)}",
                     style = Theme.typography.body.small,
                     color = Theme.colors.hint
                 )

@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.R
+import com.example.designsystem.R as DesignSystemR
+import com.example.mushaf.presentation.R
 import com.example.designsystem.theme.Theme
 
 enum class MushafDestination { HOME, MUSHAF, PROFILE }
@@ -26,38 +28,22 @@ fun MushafBottomBar(
         NavigationBarItem(
             selected = selected == MushafDestination.HOME,
             onClick = { onSelect(MushafDestination.HOME) },
-            icon = { 
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_home_unselected_svg), // Replace with your actual icon
-                    contentDescription = null 
-                ) 
-            },
-            label = { Text("Home", style = Theme.typography.body.small) },
+            icon = { Icon(painterResource(id = DesignSystemR.drawable.ic_home_unselected_svg), contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_home), style = Theme.typography.body.small) },
             colors = navBarColors()
         )
         NavigationBarItem(
             selected = selected == MushafDestination.MUSHAF,
             onClick = { onSelect(MushafDestination.MUSHAF) },
-            icon = { 
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_reservations_unselected),
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp)
-                ) 
-            },
-            label = { Text("Mushaf", style = Theme.typography.body.small) },
+            icon = { Icon(painterResource(id = DesignSystemR.drawable.ic_reservations_unselected), contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_mushaf), style = Theme.typography.body.small) },
             colors = navBarColors()
         )
         NavigationBarItem(
             selected = selected == MushafDestination.PROFILE,
             onClick = { onSelect(MushafDestination.PROFILE) },
-            icon = { 
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_profile_unselected), // Replace with actual Profile icon
-                    contentDescription = null 
-                ) 
-            },
-            label = { Text("Profile", style = Theme.typography.body.small) },
+            icon = { Icon(painterResource(id = DesignSystemR.drawable.ic_profile_unselected), contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_profile), style = Theme.typography.body.small) },
             colors = navBarColors()
         )
     }

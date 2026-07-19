@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.snapshotFlow
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.components.MushafChrome
 import com.example.mushaf.presentation.components.MushafErrorState
@@ -29,6 +30,7 @@ import org.koin.androidx.compose.koinViewModel
 fun MushafScreen(
     modifier: Modifier = Modifier,
     viewModel: MushafViewModel = koinViewModel(),
+    onNavigateSearch: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -37,8 +39,14 @@ fun MushafScreen(
         pageCount = { state.pageCount },
     )
 
-    LaunchedEffect(pagerState.currentPage) {
-        viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .collect { page ->
+                val requestedPage = page + 1
+                if (requestedPage != viewModel.state.value.currentPage) {
+                    viewModel.onIntent(MushafIntent.LoadPage(requestedPage))
+                }
+            }
     }
 
     LaunchedEffect(state.currentPage) {

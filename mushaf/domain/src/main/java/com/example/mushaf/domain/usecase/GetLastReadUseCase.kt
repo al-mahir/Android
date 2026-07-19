@@ -9,7 +9,8 @@ class GetLastReadUseCase {
     operator fun invoke(): Flow<LastReadSession?> {
         return flowOf(
             LastReadSession(
-                surahName = "Al-Kahf",
+                surahNameAr = "سورة الكهف",
+                surahNameEn = "Al-Kahf",
                 ayah = 45,
                 page = 298
             )

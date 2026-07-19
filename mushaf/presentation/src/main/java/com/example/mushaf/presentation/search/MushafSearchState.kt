@@ -16,5 +16,6 @@ data class MushafSearchState(
     val isPaginatingAyahs: Boolean = false,
     val hasReachedEndAyahs: Boolean = false,
     val isLoading: Boolean = false,
-    val lastReadSession: LastReadSession? = null
+    val lastReadSession: LastReadSession? = null,
+    val shouldNavigateToMushaf: Boolean = false
 )

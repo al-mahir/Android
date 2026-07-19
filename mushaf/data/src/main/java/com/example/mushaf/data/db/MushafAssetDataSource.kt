@@ -138,6 +138,35 @@ class MushafAssetDataSource(
         results
     }
 
+    suspend fun getSurahStartingPage(surahNumber: Int): Int? = withContext(Dispatchers.IO) {
+        try {
+            val sql = "SELECT MIN(page_number) FROM pages WHERE surah_number = ?"
+            database().rawQuery(sql, arrayOf(surahNumber.toString())).use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) {
+                    return@withContext c.getInt(0)
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Failed to find starting page for Surah $surahNumber", t)
+        }
+        null
+    }
+
+    suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? = withContext(Dispatchers.IO) {
+        try {
+            val wordKeyPrefix = "$surahNumber:$ayahNumber:%"
+            val sql = "SELECT page_number FROM words WHERE word_key LIKE ? LIMIT 1"
+            database().rawQuery(sql, arrayOf(wordKeyPrefix)).use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) {
+                    return@withContext c.getInt(0)
+                }
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Failed to find page for Ayah $surahNumber:$ayahNumber", t)
+        }
+        null
+    }
+
     private fun Cursor.toLineEntity(): MushafLineEntity = MushafLineEntity(
         pageNumber = getIntByName("page_number") ?: 0,
         lineNumber = getIntByName("line_number") ?: 0,

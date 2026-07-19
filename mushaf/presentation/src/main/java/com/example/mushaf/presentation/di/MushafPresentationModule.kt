@@ -21,6 +21,7 @@ val mushafPresentationModule = module {
     factory { com.example.mushaf.domain.usecase.search.SearchHizbUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchPageUseCase(get()) }
     factory { SearchAyahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
 
     viewModel { MushafViewModel(get(), get(), get(), get()) }
     viewModel { 
@@ -28,7 +29,9 @@ val mushafPresentationModule = module {
             getLastReadUseCase = get(),
             searchSurahUseCase = get(),
             searchJuzUseCase = get(),
-            searchAyahUseCase = get()
+            searchAyahUseCase = get(),
+            getTargetPageUseCase = get(),
+            saveLastPageUseCase = get()
         )
     }
 }

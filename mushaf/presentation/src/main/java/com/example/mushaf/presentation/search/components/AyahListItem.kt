@@ -14,11 +14,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.AyahSearchResult
 
 @Composable
@@ -42,7 +44,12 @@ fun AyahListItem(
                 .padding(14.dp)
         ) {
             Text(
-                text = "${ayah.surahNameArabic} (${ayah.surahNameEnglish}) - Ayah ${ayah.ayahNumber}",
+                text = stringResource(
+                    R.string.ayah_title_format,
+                    ayah.surahNameArabic,
+                    ayah.surahNameEnglish,
+                    ayah.ayahNumber
+                ),
                 style = Theme.typography.body.small,
                 color = Theme.colors.hint
             )

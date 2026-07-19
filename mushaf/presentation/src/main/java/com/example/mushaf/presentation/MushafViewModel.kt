@@ -53,7 +53,7 @@ class MushafViewModel(
             .onEach { prefs ->
                 Log.d(TAG, "Preferences: tajweed=${prefs.tajweedEnabled}, lastPage=${prefs.lastPage}")
                 _state.update { it.copy(isTajweedEnabled = prefs.tajweedEnabled) }
-                if (!initialized) {
+                if (!initialized || _state.value.currentPage != prefs.lastPage) {
                     initialized = true
                     onIntent(MushafIntent.LoadPage(prefs.lastPage))
                 }

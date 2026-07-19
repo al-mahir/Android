@@ -6,6 +6,8 @@ import com.example.mushaf.domain.usecase.GetLastReadUseCase
 import com.example.mushaf.domain.usecase.search.SearchAyahUseCase
 import com.example.mushaf.domain.usecase.search.SearchJuzUseCase
 import com.example.mushaf.domain.usecase.search.SearchSurahUseCase
+import com.example.mushaf.domain.usecase.GetTargetPageUseCase
+import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,10 +26,13 @@ class MushafSearchViewModel(
     private val searchSurahUseCase: SearchSurahUseCase,
     private val searchJuzUseCase: SearchJuzUseCase,
     private val searchAyahUseCase: SearchAyahUseCase,
-    private val getLastReadUseCase: GetLastReadUseCase
+    private val getLastReadUseCase: GetLastReadUseCase,
+    private val getTargetPageUseCase: GetTargetPageUseCase,
+    private val saveLastPageUseCase: SaveLastPageUseCase
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
+    private val _shouldNavigateToMushaf = MutableStateFlow(false)
 
     private val _ayahs = MutableStateFlow<List<com.example.mushaf.domain.model.AyahSearchResult>>(emptyList())
     private val _isPaginatingAyahs = MutableStateFlow(false)
@@ -64,7 +69,8 @@ class MushafSearchViewModel(
         _ayahs,
         _isPaginatingAyahs,
         _hasReachedEndAyahs,
-        getLastReadUseCase()
+        getLastReadUseCase(),
+        _shouldNavigateToMushaf
     ) { args ->
         val query = args[0] as String
         val results = args[1] as MushafSearchStateUpdate
@@ -72,6 +78,7 @@ class MushafSearchViewModel(
         val isPaginating = args[3] as Boolean
         val hasReachedEnd = args[4] as Boolean
         val lastRead = args[5] as com.example.mushaf.domain.model.LastReadSession?
+        val shouldNavigate = args[6] as Boolean
         
         MushafSearchState(
             query = query,
@@ -80,7 +87,8 @@ class MushafSearchViewModel(
             ayahs = ayahs,
             isPaginatingAyahs = isPaginating,
             hasReachedEndAyahs = hasReachedEnd,
-            lastReadSession = lastRead
+            lastReadSession = lastRead,
+            shouldNavigateToMushaf = shouldNavigate
         )
     }.stateIn(
         scope = viewModelScope,
@@ -91,14 +99,40 @@ class MushafSearchViewModel(
     fun onIntent(intent: MushafSearchIntent) {
         when (intent) {
             is MushafSearchIntent.UpdateQuery -> _query.update { intent.query }
-            is MushafSearchIntent.SurahClicked -> { /* Navigate */ }
-            is MushafSearchIntent.JuzClicked -> { /* Navigate */ }
-            is MushafSearchIntent.HizbClicked -> { /* Navigate */ }
-            is MushafSearchIntent.PageClicked -> { /* Navigate */ }
-            is MushafSearchIntent.AyahClicked -> { /* Navigate */ }
+            is MushafSearchIntent.SurahClicked -> {
+                viewModelScope.launch {
+                    getTargetPageUseCase.forSurah(intent.surah.number)?.let { navigateToPage(it) }
+                }
+            }
+            is MushafSearchIntent.JuzClicked -> {
+                viewModelScope.launch {
+                    getTargetPageUseCase.forJuz(intent.juz.number)?.let { navigateToPage(it) }
+                }
+            }
+            is MushafSearchIntent.HizbClicked -> { /* Not supported yet */ }
+            is MushafSearchIntent.PageClicked -> {
+                navigateToPage(intent.page)
+            }
+            is MushafSearchIntent.AyahClicked -> {
+                viewModelScope.launch {
+                    getTargetPageUseCase.forAyah(intent.ayah.surahNumber, intent.ayah.ayahNumber)?.let { navigateToPage(it) }
+                }
+            }
             is MushafSearchIntent.LoadNextAyahsPage -> loadNextAyahsPage()
-            MushafSearchIntent.LastReadClicked -> { /* Navigate */ }
+            MushafSearchIntent.LastReadClicked -> {
+                state.value.lastReadSession?.let { navigateToPage(it.page) }
+            }
             is MushafSearchIntent.NavigateBottomTab -> { /* Navigate */ }
+            MushafSearchIntent.ClearNavigationEffect -> {
+                _shouldNavigateToMushaf.value = false
+            }
+        }
+    }
+
+    private fun navigateToPage(page: Int) {
+        viewModelScope.launch {
+            saveLastPageUseCase(page)
+            _shouldNavigateToMushaf.value = true
         }
     }
 

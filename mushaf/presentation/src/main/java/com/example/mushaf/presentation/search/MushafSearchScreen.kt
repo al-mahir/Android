@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,10 +22,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.search.SearchBar
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.presentation.search.components.AyahListItem
 import com.example.mushaf.presentation.search.components.JuzListItem
@@ -41,10 +44,18 @@ import com.example.mushaf.presentation.search.components.TopHeaderSection
 @Composable
 fun MushafSearchScreen(
     viewModel: MushafSearchViewModel,
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onNavigateToMushaf: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     
+    LaunchedEffect(state.shouldNavigateToMushaf) {
+        if (state.shouldNavigateToMushaf) {
+            onNavigateToMushaf()
+            viewModel.onIntent(MushafSearchIntent.ClearNavigationEffect)
+        }
+    }
+
     MushafSearchContent(
         state = state,
         onIntent = viewModel::onIntent
@@ -58,6 +69,7 @@ internal fun MushafSearchContent(
 ) {
     Scaffold(
         containerColor = Theme.colors.backGround,
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = { 
             MushafBottomBar(
                 selected = MushafDestination.MUSHAF, // Mock selected tab
@@ -68,7 +80,7 @@ internal fun MushafSearchContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(bottom = padding.calculateBottomPadding(), top = 12.dp)
                 .padding(horizontal = 18.dp)
         ) {
             TopHeaderSection(userInitials = "ق") // As requested by user: 'ق'
@@ -77,7 +89,7 @@ internal fun MushafSearchContent(
             SearchBar(
                 query = state.query,
                 onQueryChange = { onIntent(MushafSearchIntent.UpdateQuery(it)) },
-                hint = "Search Surah or Ayah..."
+                hint = stringResource(R.string.search_hint)
             )
             
             Spacer(Modifier.height(14.dp))
@@ -131,7 +143,8 @@ internal fun MushafSearchContent(
 
             state.lastReadSession?.let { lastRead ->
                 LastReadBanner(
-                    surahName = lastRead.surahName,
+                    surahNameAr = lastRead.surahNameAr,
+                    surahNameEn = lastRead.surahNameEn,
                     ayah = lastRead.ayah,
                     page = lastRead.page,
                     onClick = { onIntent(MushafSearchIntent.LastReadClicked) },

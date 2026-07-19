@@ -19,4 +19,8 @@ interface MushafRepository {
     suspend fun searchHizb(query: String): List<Hizb>
     suspend fun searchPage(query: String): List<Int>
     suspend fun searchAyah(query: String, limit: Int = 50, offset: Int = 0): List<AyahSearchResult>
+
+    suspend fun getSurahStartingPage(surahNumber: Int): Int?
+    suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int?
+    suspend fun getJuzStartingPage(juzNumber: Int): Int?
 }

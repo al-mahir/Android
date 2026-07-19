@@ -12,4 +12,5 @@ sealed interface MushafSearchIntent {
     data object LoadNextAyahsPage : MushafSearchIntent
     data object LastReadClicked : MushafSearchIntent
     data class NavigateBottomTab(val tabIndex: Int) : MushafSearchIntent
+    data object ClearNavigationEffect : MushafSearchIntent
 }

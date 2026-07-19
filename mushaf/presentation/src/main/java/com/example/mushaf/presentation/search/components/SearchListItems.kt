@@ -21,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.Hizb
 import com.example.mushaf.domain.model.Juz
 
@@ -103,7 +105,7 @@ fun HizbListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Hizb ${hizb.number}",
+                text = stringResource(R.string.hizb_format, hizb.number),
                 style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold),
                 color = Theme.colors.primaryFont,
                 modifier = Modifier.weight(1f)
@@ -134,7 +136,7 @@ fun PageListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Page $page",
+                text = stringResource(R.string.page_format, page),
                 style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold),
                 color = Theme.colors.primaryFont,
                 modifier = Modifier.weight(1f)
