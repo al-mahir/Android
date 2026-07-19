@@ -36,16 +36,6 @@ fun AppNavHost(modifier: Modifier = Modifier) {
     val backStack = remember { mutableStateListOf<NavKey>(AuthRoute.Login) }
     val context = LocalContext.current
 
-    NavDisplay(
-        backStack = backStack,
-        modifier = modifier,
-        onBack = { backStack.removeLastOrNull() },
-        entryProvider = entryProvider {
-            entry<AppRoute.Mushaf> {
-                MushafScreen(onBack = { backStack.removeLastOrNull() })
-            }
-        },
-    )
     // Switching tabs resets the stack to that tab's root. The three tabs are independent
     // entry points rather than a growing history.
     fun selectTab(destination: AppBottomNavDestination) {
@@ -115,3 +105,15 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * The tab owning the current top-of-stack entry, or null while the user is in the auth flow
+ * (which shows no bottom bar).
+ */
+private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
+    when (lastOrNull()) {
+        AppRoute.Home -> AppBottomNavDestination.Home
+        AppRoute.Profile -> AppBottomNavDestination.Profile
+        is AppRoute.Mushaf -> AppBottomNavDestination.Mushaf
+        else -> null
+    }
