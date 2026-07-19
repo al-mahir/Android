@@ -1,5 +1,4 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="288dp"
     android:height="288dp"
     android:viewportWidth="288"
@@ -13,35 +12,23 @@
         android:scaleX="1.0"
         android:scaleY="1.0">
         
-        <!-- The Arch Path (fully visible in base state) -->
+        <!-- The Arch Path -->
         <path
             android:name="arch_path"
             android:strokeWidth="12"
+            android:strokeColor="#00796B"
             android:strokeLineCap="round"
             android:strokeLineJoin="round"
             android:trimPathEnd="1.0"
-            android:pathData="M144,192 C144,192 84,192 84,144 C84,96 120,84 144,48 C168,84 204,96 204,144 C204,192 144,192 144,192 Z">
-            <aapt:attr name="android:strokeColor">
-                <gradient android:startX="84" android:startY="144" android:endX="204" android:endY="144" android:type="linear">
-                    <item android:offset="0.0" android:color="#004D40"/>
-                    <item android:offset="1.0" android:color="#00BFA5"/>
-                </gradient>
-            </aapt:attr>
-        </path>
+            android:pathData="M144,192 C144,192 84,192 84,144 C84,96 120,84 144,48 C168,84 204,96 204,144 C204,192 144,192 144,192 Z" />
 
-        <!-- The Central Soundwave/Mic (initially visible and tall) -->
+        <!-- The Central Soundwave/Mic -->
         <path
             android:name="soundwave_center"
             android:strokeWidth="16"
+            android:strokeColor="#00BFA5"
             android:strokeLineCap="round"
             android:trimPathEnd="1.0"
-            android:pathData="M144,96 L144,192">
-            <aapt:attr name="android:strokeColor">
-                <gradient android:startX="136" android:startY="144" android:endX="152" android:endY="144" android:type="linear">
-                    <item android:offset="0.0" android:color="#00796B"/>
-                    <item android:offset="1.0" android:color="#00BFA5"/>
-                </gradient>
-            </aapt:attr>
-        </path>
+            android:pathData="M144,96 L144,192" />
     </group>
 </vector>
