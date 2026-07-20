@@ -1,12 +1,32 @@
 package com.iti.presentation.di
 
+import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
+import com.iti.domain.usecase.legal.GetLegalDocumentUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
+import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
+import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
+import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.domain.usecase.user.LogoutUseCase
+import com.iti.domain.usecase.settings.DeleteAllRecordingsUseCase
+import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
+import com.iti.domain.usecase.settings.SetAppLanguageUseCase
+import com.iti.domain.usecase.settings.SetDataSaverEnabledUseCase
+import com.iti.domain.usecase.settings.SetErrorSoundsEnabledUseCase
+import com.iti.domain.usecase.settings.SetRemindersEnabledUseCase
+import com.iti.domain.usecase.settings.SetThemeModeUseCase
+import com.iti.presentation.core.platform.AppReviewLauncher
+import com.iti.presentation.core.platform.StoreListingAppReviewLauncher
 import com.iti.presentation.home.HomeViewModel
+import com.iti.presentation.profile.ProfileViewModel
+import com.iti.presentation.settings.SettingsViewModel
+import com.iti.presentation.staticcontent.StaticContentViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val presentationModule = module {
@@ -15,6 +35,47 @@ val presentationModule = module {
     factory { GetSheikhsUseCase(get()) }
     factory { GetStudyCirclesUseCase(get()) }
     factory { JoinStudyCircleUseCase(get()) }
+    factory { GetSubscriptionUseCase(get()) }
+    factory { RestorePurchasesUseCase(get()) }
+    factory { LogoutUseCase(get()) }
+    factory { DeleteAccountUseCase(get()) }
+    factory { GetLegalDocumentUseCase(get()) }
+
+    factory { ObserveAppPreferencesUseCase(get()) }
+    factory { SetThemeModeUseCase(get()) }
+    factory { SetAppLanguageUseCase(get()) }
+    factory { SetRemindersEnabledUseCase(get()) }
+    factory { SetErrorSoundsEnabledUseCase(get()) }
+    factory { SetDataSaverEnabledUseCase(get()) }
+    factory { DeleteAllRecordingsUseCase(get()) }
+
+    single<AppReviewLauncher> { StoreListingAppReviewLauncher(androidContext().packageName) }
+
+
+    single(named(APP_VERSION)) {
+        val context = androidContext()
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty()
+    }
 
     viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+    viewModel { (documentType: LegalDocumentType) ->
+        StaticContentViewModel(documentType, get())
+    }
+    viewModel {
+        SettingsViewModel(
+            appVersion = get(named(APP_VERSION)),
+            observePreferences = get(),
+            setThemeMode = get(),
+            setLanguage = get(),
+            setRemindersEnabled = get(),
+            setErrorSoundsEnabled = get(),
+            setDataSaverEnabled = get(),
+            deleteAllRecordings = get(),
+        )
+    }
 }
+
+const val APP_VERSION = "app_version"

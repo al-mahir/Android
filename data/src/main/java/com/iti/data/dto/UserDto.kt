@@ -8,4 +8,6 @@ data class UserDto(
     @SerialName("id") val id: String,
     @SerialName("display_name") val displayName: String,
     @SerialName("avatar_url") val avatarUrl: String? = null,
+    @SerialName("email") val email: String = "",
+    @SerialName("joined_at") val joinedAtEpochMillis: Long = 0L,
 )

@@ -1,10 +1,5 @@
 package com.iti.presentation.home
 
-import com.iti.domain.model.ReadingProgress
-import com.iti.domain.model.Sheikh
-import com.iti.domain.model.SheikhAvailability
-import com.iti.domain.model.StudyCircle
-import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
@@ -13,13 +8,10 @@ import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.presentation.home.state.HomeEffect
 import com.iti.presentation.home.state.HomeIntent
+import com.iti.presentation.testing.FakeAlmahirRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -45,7 +37,7 @@ class HomeViewModelTest {
 
     @Test
     fun `the four resource streams are combined into one state`() = runTest(dispatcher) {
-        val viewModel = viewModel(FakeRepository())
+        val viewModel = viewModel(FakeAlmahirRepository())
 
         testScheduler.advanceUntilIdle()
 
@@ -61,7 +53,7 @@ class HomeViewModelTest {
     @Test
     fun `a missing reading position still renders the rest of the screen`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(FakeRepository(readingProgress = null))
+            val viewModel = viewModel(FakeAlmahirRepository(readingProgress = null))
 
             testScheduler.advanceUntilIdle()
 
@@ -74,7 +66,7 @@ class HomeViewModelTest {
     @Test
     fun `one failing resource surfaces the error instead of hanging on loading`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(FakeRepository(failSheikhs = true))
+            val viewModel = viewModel(FakeAlmahirRepository(failSheikhs = true))
 
             testScheduler.advanceUntilIdle()
 
@@ -86,7 +78,7 @@ class HomeViewModelTest {
     @Test
     fun `continue reading intent emits navigation carrying the saved page`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(FakeRepository())
+            val viewModel = viewModel(FakeAlmahirRepository())
             testScheduler.advanceUntilIdle()
 
             viewModel.onIntent(HomeIntent.ContinueReadingClicked)
@@ -97,7 +89,7 @@ class HomeViewModelTest {
     @Test
     fun `continue reading intent is ignored when there is no saved position`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(FakeRepository(readingProgress = null))
+            val viewModel = viewModel(FakeAlmahirRepository(readingProgress = null))
             testScheduler.advanceUntilIdle()
 
             viewModel.onIntent(HomeIntent.ContinueReadingClicked)
@@ -110,7 +102,7 @@ class HomeViewModelTest {
     @Test
     fun `joining marks the circle pending and clears it once the call returns`() =
         runTest(dispatcher) {
-            val repository = FakeRepository()
+            val repository = FakeAlmahirRepository()
             val viewModel = viewModel(repository)
             testScheduler.advanceUntilIdle()
 
@@ -125,7 +117,7 @@ class HomeViewModelTest {
     @Test
     fun `a repeated tap while the join is in flight does not send a second request`() =
         runTest(dispatcher) {
-            val repository = FakeRepository()
+            val repository = FakeAlmahirRepository()
             val viewModel = viewModel(repository)
             testScheduler.advanceUntilIdle()
 
@@ -144,48 +136,4 @@ class HomeViewModelTest {
         joinStudyCircle = JoinStudyCircleUseCase(repository),
     )
 
-    private class FakeRepository(
-        private val readingProgress: ReadingProgress? = PROGRESS,
-        private val failSheikhs: Boolean = false,
-    ) : AlmahirRepository {
-        val joined = mutableListOf<String>()
-        private val circles = MutableStateFlow(listOf(CIRCLE))
-
-        override fun observeCurrentUser(): Flow<User> = flowOf(USER)
-
-        override fun observeReadingProgress(): Flow<ReadingProgress?> = flowOf(readingProgress)
-
-        override fun observeSheikhs(): Flow<List<Sheikh>> =
-            if (failSheikhs) flow { throw IllegalStateException("boom") } else flowOf(listOf(SHEIKH))
-
-        override fun observeStudyCircles(): Flow<List<StudyCircle>> = circles
-
-        override suspend fun joinStudyCircle(circleId: String) {
-            joined += circleId
-        }
-    }
-
-    private companion object {
-        val USER = User(
-            id = "user-1",
-            displayName = "Jamal Darwish",
-            initials = "JD",
-            avatarUrl = null,
-        )
-        val PROGRESS = ReadingProgress(surahName = "Al-Kahf", ayahNumber = 45, pageNumber = 298)
-        val SHEIKH = Sheikh(
-            id = "sheikh-1",
-            name = "الشيخ أحمد",
-            initials = "أح",
-            avatarUrl = null,
-            rating = 4.9,
-            availability = SheikhAvailability.IN_SESSION,
-        )
-        val CIRCLE = StudyCircle(
-            id = "circle-1",
-            title = "دورة",
-            hostName = "Omar",
-            isJoined = false,
-        )
-    }
 }

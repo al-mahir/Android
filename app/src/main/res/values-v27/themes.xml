@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  API 27+ gained android:windowLightNavigationBar. Declared here rather than in the base so
+  the attribute is never referenced on API 24-26, where it does not exist.
+-->
+<resources>
+
+    <style name="Theme.AlMahir" parent="Base.Theme.AlMahir">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
