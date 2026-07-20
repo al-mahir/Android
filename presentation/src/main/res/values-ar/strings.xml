@@ -129,4 +129,41 @@
 
     <!-- ===== Static content (about / terms / privacy) ===== -->
     <string name="static_content_error_generic">تعذّر تحميل هذه الصفحة. حاول مرة أخرى.</string>
+
+    <!-- ===== Settings ===== -->
+    <string name="settings_title">الإعدادات</string>
+
+    <!-- Section headers -->
+    <string name="settings_section_appearance">مظهر التطبيق</string>
+    <string name="settings_section_notifications">إشعارات</string>
+    <string name="settings_section_sounds">الأصوات والتفاعل الحسي</string>
+    <string name="settings_section_privacy">الخصوصية</string>
+
+    <!-- Rows -->
+    <string name="settings_language">اللغة</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="settings_reminders">تذكيرات</string>
+    <string name="settings_error_sounds">الأخطاء</string>
+    <string name="settings_data_usage">استخدام البيانات</string>
+    <string name="settings_delete_recordings">حذف جميع التسجيلات</string>
+
+    <!-- Language options -->
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Theme options -->
+    <string name="settings_theme_light">فاتح</string>
+    <string name="settings_theme_dark">داكن</string>
+    <string name="settings_theme_system">حسب النظام</string>
+
+    <!-- Delete recordings confirmation -->
+    <string name="settings_delete_recordings_title">حذف جميع التسجيلات؟</string>
+    <string name="settings_delete_recordings_message">سيتم حذف كل التسجيلات المحفوظة نهائيًا. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="settings_delete_recordings_confirm">حذف</string>
+    <string name="settings_delete_recordings_cancel">إلغاء</string>
+    <string name="settings_recordings_deleted">تم حذف جميع التسجيلات.</string>
+    <string name="settings_recordings_delete_failed">تعذّر حذف التسجيلات. حاول مرة أخرى.</string>
+
+    <!-- Footer -->
+    <string name="settings_version_footer">الماهر • الإصدار %1$s</string>
 </resources>

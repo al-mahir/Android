@@ -129,4 +129,41 @@
 
     <!-- ===== Static content (about / terms / privacy) ===== -->
     <string name="static_content_error_generic">We couldn\'t load this page. Please try again.</string>
+
+    <!-- ===== Settings ===== -->
+    <string name="settings_title">Settings</string>
+
+    <!-- Section headers -->
+    <string name="settings_section_appearance">App appearance</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_section_sounds">Sounds and haptics</string>
+    <string name="settings_section_privacy">Privacy</string>
+
+    <!-- Rows -->
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_error_sounds">Errors</string>
+    <string name="settings_data_usage">Data usage</string>
+    <string name="settings_delete_recordings">Delete all recordings</string>
+
+    <!-- Language options -->
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Theme options -->
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">Match system</string>
+
+    <!-- Delete recordings confirmation -->
+    <string name="settings_delete_recordings_title">Delete all recordings?</string>
+    <string name="settings_delete_recordings_message">Every recording you have saved will be permanently removed. This cannot be undone.</string>
+    <string name="settings_delete_recordings_confirm">Delete</string>
+    <string name="settings_delete_recordings_cancel">Cancel</string>
+    <string name="settings_recordings_deleted">All recordings deleted.</string>
+    <string name="settings_recordings_delete_failed">We could not delete the recordings. Please try again.</string>
+
+    <!-- Footer -->
+    <string name="settings_version_footer">Al-Mahir • Version %1$s</string>
 </resources>
