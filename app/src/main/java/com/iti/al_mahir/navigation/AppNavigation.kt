@@ -1,12 +1,13 @@
 package com.iti.al_mahir.navigation
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.NavKey
@@ -50,15 +51,28 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         backStack.add(root)
     }
 
-    Column(
+    // Box, not Column: the floating bar is overlaid on the content so the pill
+    // appears to hover above it.
+    Box(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding(),
     ) {
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.weight(1f),
-            onBack = { backStack.removeLastOrNull() },
+            modifier = Modifier.fillMaxSize(),
+            onBack = {
+                when {
+                    // Mushaf hides the bottom nav, so back is a real exit from the
+                    // reader rather than a no-op on a root route.
+                    backStack.lastOrNull() is AppRoute.Mushaf ->
+                        selectTab(AppBottomNavDestination.Home)
+
+                    // Other tab roots are the sole stack entry; an unguarded pop
+                    // would leave NavDisplay with nothing to render.
+                    backStack.size > 1 -> backStack.removeLastOrNull()
+                }
+            },
             entryProvider = entryProvider {
                 authEntries(
                     onNavigate = { route -> backStack.add(route) },
@@ -88,7 +102,11 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                     )
                 }
                 entry<AppRoute.Mushaf> { route ->
-                    MushafScreen(startPage = route.startPage)
+                    MushafScreen(
+                        startPage = route.startPage,
+                        onBack = { selectTab(AppBottomNavDestination.Home) },
+                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                    )
                 }
                 entry<AppRoute.Profile> {
                     ProfileScreen(
@@ -133,6 +151,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             AppBottomNavBar(
                 selectedDestination = selectedTab,
                 onDestinationSelected = ::selectTab,
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
@@ -143,6 +162,5 @@ private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
     when (lastOrNull()) {
         AppRoute.Home -> AppBottomNavDestination.Home
         AppRoute.Profile -> AppBottomNavDestination.Profile
-        is AppRoute.Mushaf -> AppBottomNavDestination.Mushaf
         else -> null
     }

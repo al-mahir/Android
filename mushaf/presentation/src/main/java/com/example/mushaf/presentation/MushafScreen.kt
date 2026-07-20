@@ -36,6 +36,7 @@ fun MushafScreen(
      */
     startPage: Int? = null,
     onBack: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -129,7 +130,7 @@ fun MushafScreen(
             isBookmarked = false,
             onBack = onBack,
             onBookmark = {},
-            onSettings = {},
+            onSettings = onOpenSettings,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
