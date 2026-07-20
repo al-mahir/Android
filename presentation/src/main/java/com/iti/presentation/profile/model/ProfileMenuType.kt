@@ -2,6 +2,7 @@ package com.iti.presentation.profile.model
 
 
 enum class ProfileMenuType {
+    SETTINGS,
     ABOUT,
     FEATURE_REQUEST,
     HELP_CENTER,

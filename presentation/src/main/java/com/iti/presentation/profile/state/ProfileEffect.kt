@@ -9,6 +9,8 @@ sealed interface ProfileEffect {
 
     data object OpenPremium : ProfileEffect
 
+    data object OpenSettings : ProfileEffect
+
     data class OpenLegalDocument(val type: LegalDocumentType) : ProfileEffect
 
     data class OpenWebPage(val target: ProfileWebTarget) : ProfileEffect

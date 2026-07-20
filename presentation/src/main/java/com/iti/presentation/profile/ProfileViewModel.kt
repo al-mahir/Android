@@ -147,6 +147,8 @@ class ProfileViewModel(
 
     private fun openMenuOption(menuType: ProfileMenuType) {
         val effect = when (menuType) {
+            ProfileMenuType.SETTINGS -> ProfileEffect.OpenSettings
+
             ProfileMenuType.ABOUT ->
                 ProfileEffect.OpenLegalDocument(LegalDocumentType.ABOUT)
 

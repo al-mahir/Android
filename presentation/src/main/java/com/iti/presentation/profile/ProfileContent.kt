@@ -146,6 +146,12 @@ private data class MenuEntry(
 
 private val MenuEntries = listOf(
     MenuEntry(
+        type = ProfileMenuType.SETTINGS,
+        titleRes = R.string.settings_title,
+        iconRes = DesignSystemR.drawable.ic_theme_mode,
+        showChevron = false,
+    ),
+    MenuEntry(
         type = ProfileMenuType.ABOUT,
         titleRes = R.string.profile_menu_about,
         iconRes = DesignSystemR.drawable.ic_info,
