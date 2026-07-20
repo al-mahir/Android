@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.R as DesignSystemR
+import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
@@ -99,10 +100,10 @@ fun ProfileContent(
             }
 
             LazyColumn(
-                // weight(1f) rather than fillMaxSize: the list takes exactly the space the
-                // pinned block leaves, so it scrolls within it instead of pushing it off-screen.
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(bottom = Theme.spacing.large),
+                contentPadding = PaddingValues(
+                    bottom = Theme.spacing.large + bottomNavBarHeight(),
+                ),
             ) {
                 items(items = MenuEntries, key = { entry -> entry.type.name }) { entry ->
                     ProfileMenuRow(
@@ -133,10 +134,7 @@ fun ProfileContent(
     }
 }
 
-/**
- * The menu in display order. A table rather than seven call sites, so adding a row is one line
- * and the ordering is readable at a glance.
- */
+
 private data class MenuEntry(
     val type: ProfileMenuType,
     @StringRes val titleRes: Int,
