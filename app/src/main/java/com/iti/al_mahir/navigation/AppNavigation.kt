@@ -15,12 +15,17 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.designsystem.components.bottomnav.AppBottomNavBar
 import com.example.designsystem.components.bottomnav.AppBottomNavDestination
 import com.example.mushaf.presentation.MushafScreen
+import com.example.mushaf.presentation.download.navigation.DownloadsRoute
+import com.example.mushaf.presentation.download.navigation.downloadsEntries
+import com.example.mushaf.presentation.settings.MushafSettingsSection
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.home.HomeScreen
 import com.iti.presentation.profile.ProfileScreen
 import com.iti.presentation.profile.navigation.ProfileRoute
 import com.iti.presentation.profile.navigation.profileEntries
+import com.iti.presentation.settings.SettingsScreen
+import com.iti.presentation.settings.navigation.SettingsRoute
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
@@ -97,14 +102,32 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                             backStack.clear()
                             backStack.add(AuthRoute.Login)
                         },
+                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                     )
                 }
 
                 profileEntries(onBack = { backStack.removeLastOrNull() })
+
+                entry<SettingsRoute.Settings> {
+                    SettingsScreen(
+                        onBack = { backStack.removeLastOrNull() },
+                        onShowMessage = { messageRes ->
+                            Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+                        },
+                        mushafSection = {
+                            MushafSettingsSection(
+                                onOpenDownloads = { kind ->
+                                    backStack.add(DownloadsRoute.Downloads(kind))
+                                },
+                            )
+                        },
+                    )
+                }
+
+                downloadsEntries(onBack = { backStack.removeLastOrNull() })
             },
         )
 
-        // Auth is a full-screen flow with no tabs — the bar only appears once signed in.
         val selectedTab = backStack.selectedDestination()
         if (selectedTab != null) {
             AppBottomNavBar(

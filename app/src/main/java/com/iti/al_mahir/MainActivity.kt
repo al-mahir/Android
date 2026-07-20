@@ -22,18 +22,30 @@ import android.view.animation.OvershootInterpolator
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.iti.domain.settings.model.ThemeMode
+import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
-    private var isAppReady = false
+
+    private val observePreferences: ObserveAppPreferencesUseCase by inject()
+
+    private var isSplashDelayDone = false
+
+    private var isPreferencesReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        
-        // Keep the splash screen visible for 1 second so the logo is displayed clearly
-        splashScreen.setKeepOnScreenCondition { !isAppReady }
+
+        splashScreen.setKeepOnScreenCondition { !(isSplashDelayDone && isPreferencesReady) }
         
         splashScreen.setOnExitAnimationListener { splashScreenView ->
             val scaleX = ObjectAnimator.ofFloat(splashScreenView.view, View.SCALE_X, 1f, 1.2f)
@@ -54,25 +66,32 @@ class MainActivity : ComponentActivity() {
         }
         
         lifecycleScope.launch {
-            delay(1000)
-            isAppReady = true
+            delay(1000.milliseconds)
+            isSplashDelayDone = true
         }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            // Resolved here, OUTSIDE AlMahirTheme, and passed in explicitly.
-            //
-            // AlMahirTheme overrides LocalConfiguration to apply the app locale, so calling
-            // isSystemInDarkTheme() inside its content reads that overridden configuration
-            // and can disagree with the value the theme picked its colors from. When it does,
-            // the bars get light-content icons over a light background and the clock, battery
-            // and signal icons vanish. One evaluation, shared by both, cannot drift.
-            val darkTheme = isSystemInDarkTheme()
+          val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
+
+            val systemInDarkTheme = isSystemInDarkTheme()
             val view = LocalView.current
 
-            // Keyed rather than a bare SideEffect: the flags only need rewriting when the
-            // system theme actually flips, not on every recomposition of the whole app.
+            val darkTheme = when (preferences?.themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM, null -> systemInDarkTheme
+            }
+
+            val locale = remember(preferences?.language) {
+                preferences?.language?.let { Locale(it.tag) } ?: Locale.getDefault()
+            }
+
+            LaunchedEffect(preferences) {
+                if (preferences != null) isPreferencesReady = true
+            }
+
             LaunchedEffect(darkTheme, view) {
                 val window = (view.context as ComponentActivity).window
                 WindowCompat.getInsetsController(window, view).apply {
@@ -81,7 +100,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            AlMahirTheme(isDarkTheme = darkTheme) {
+            AlMahirTheme(isDarkTheme = darkTheme, locale = locale) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
