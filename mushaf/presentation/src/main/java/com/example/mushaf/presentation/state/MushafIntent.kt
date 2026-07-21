@@ -2,6 +2,8 @@ package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.MushafMode
 
+import com.example.mushaf.domain.model.Reciter
+
 sealed interface MushafIntent {
     data class LoadPage(val page: Int) : MushafIntent
 
@@ -22,4 +24,12 @@ sealed interface MushafIntent {
     data object RevealNextWord : MushafIntent
     data object RevealNextAyah : MushafIntent
     data object ToggleRecording : MushafIntent
+
+    // Listen Mode
+    data class SelectReciter(val reciter: Reciter) : MushafIntent
+    data object PlayPauseAudio : MushafIntent
+    data class SetAudioSpeed(val speed: Float) : MushafIntent
+    data class SeekAudio(val positionMs: Long) : MushafIntent
+    data object NextAyahAudio : MushafIntent
+    data object PrevAyahAudio : MushafIntent
 }

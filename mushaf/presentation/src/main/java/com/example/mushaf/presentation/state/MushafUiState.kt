@@ -5,6 +5,8 @@ import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.MushafWord
 import com.example.mushaf.domain.model.ReadingMode
+import com.example.mushaf.domain.model.Reciter
+import com.example.mushaf.presentation.audio.AudioState
 
 data class MushafUiState(
     val currentPage: Int = MushafConstants.FIRST_PAGE,
@@ -19,6 +21,13 @@ data class MushafUiState(
     val areAyahsVisible: Boolean = true,
     val isRecordingActive: Boolean = false,
     val revealedWordIds: Set<String> = emptySet(),
+    
+    // Listen Mode
+    val currentReciter: Reciter? = null,
+    val audioState: AudioState = AudioState.IDLE,
+    val playingPage: Int? = null,
+    val playbackSpeed: Float = 1.0f,
+    val availableReciters: List<Reciter> = emptyList(),
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
