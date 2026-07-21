@@ -14,6 +14,7 @@ import com.example.mushaf.presentation.download.DownloadsViewModel
 import com.example.mushaf.presentation.settings.MushafSettingsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import org.koin.android.ext.koin.androidContext
 
 val mushafPresentationModule = module {
     factory { GetPageUseCase(get()) }
@@ -26,7 +27,14 @@ val mushafPresentationModule = module {
     factory { CancelResourceDownloadUseCase(get()) }
     factory { DeleteResourceDownloadUseCase(get()) }
 
-    viewModel { MushafViewModel(get(), get(), get(), get()) }
+    factory { com.example.mushaf.domain.usecase.GetRecitersUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetAyahTimingsUseCase(get()) }
+    
+    factory<com.example.mushaf.presentation.audio.AudioPlayer> { 
+        com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
+    }
+
+    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get()) }
 
     viewModel { MushafSettingsViewModel(get(), get()) }
 

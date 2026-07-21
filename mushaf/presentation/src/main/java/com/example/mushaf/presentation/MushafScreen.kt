@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -23,6 +26,11 @@ import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
+import com.example.designsystem.components.mushaf.AudioPlayerBar
+import com.example.designsystem.components.mushaf.ReciterPickerSheet
+import com.example.designsystem.components.mushaf.ReciterItem
+import com.example.mushaf.presentation.audio.AudioState
+import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.PageLoadState
 import org.koin.androidx.compose.koinViewModel
@@ -45,6 +53,8 @@ fun MushafScreen(
         initialPage = state.currentPage - 1,
         pageCount = { state.pageCount },
     )
+    
+    var showReciterPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
@@ -92,10 +102,7 @@ fun MushafScreen(
                             MushafPageView(
                                 page = pageState.page,
                                 mode = state.readingMode,
-                                highlightedWordId = {
-                                    if (pageNumber == state.currentPage) state.highlightedWordId
-                                    else null
-                                },
+                                highlightedWordId = if (pageNumber == state.currentPage) state.highlightedWordId else null,
                                 prefetchPages = if (pageNumber == state.currentPage) {
                                     listOfNotNull(
                                         state.pages[pageNumber - 2],
@@ -134,17 +141,60 @@ fun MushafScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        MushafBottomBar(
-            visible = state.areBarsVisible,
-            mushafMode = state.mushafMode,
-            areAyahsVisible = state.areAyahsVisible,
-            isRecordingActive = state.isRecordingActive,
-            onToggleAyahVisibility = { viewModel.onIntent(MushafIntent.ToggleAyahVisibility) },
-            onRevealNextWord = { viewModel.onIntent(MushafIntent.RevealNextWord) },
-            onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
-            onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
-            onToggleRecording = { viewModel.onIntent(MushafIntent.ToggleRecording) },
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
+        if (state.mushafMode == MushafMode.LISTEN && state.areBarsVisible) {
+            AudioPlayerBar(
+                isPlaying = state.audioState == AudioState.PLAYING,
+                reciterName = state.currentReciter?.nameArabic ?: "",
+                playbackSpeed = state.playbackSpeed,
+                onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
+                onNextClick = { viewModel.onIntent(MushafIntent.NextAyahAudio) },
+                onPrevClick = { viewModel.onIntent(MushafIntent.PrevAyahAudio) },
+                onReciterClick = { showReciterPicker = true },
+                onSpeedClick = {
+                    val nextSpeed = when (state.playbackSpeed) {
+                        0.75f -> 1.0f
+                        1.0f -> 1.25f
+                        1.25f -> 1.5f
+                        else -> 0.75f
+                    }
+                    viewModel.onIntent(MushafIntent.SetAudioSpeed(nextSpeed))
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        } else {
+            MushafBottomBar(
+                visible = state.areBarsVisible,
+                mushafMode = state.mushafMode,
+                areAyahsVisible = state.areAyahsVisible,
+                isRecordingActive = state.isRecordingActive,
+                onToggleAyahVisibility = { viewModel.onIntent(MushafIntent.ToggleAyahVisibility) },
+                onRevealNextWord = { viewModel.onIntent(MushafIntent.RevealNextWord) },
+                onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
+                onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
+                onToggleRecording = { viewModel.onIntent(MushafIntent.ToggleRecording) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+        
+        if (showReciterPicker) {
+            val reciterItems = state.availableReciters.map {
+                ReciterItem(
+                    id = it.id,
+                    name = it.name,
+                    nameArabic = it.nameArabic,
+                    style = it.style.name.lowercase().replaceFirstChar { char -> char.uppercase() }
+                )
+            }
+            ReciterPickerSheet(
+                reciters = reciterItems,
+                selectedId = state.currentReciter?.id,
+                onReciterSelected = { selectedItem ->
+                    val domainReciter = state.availableReciters.first { it.id == selectedItem.id }
+                    viewModel.onIntent(MushafIntent.SelectReciter(domainReciter))
+                    showReciterPicker = false
+                },
+                onDismiss = { showReciterPicker = false }
+            )
+        }
     }
 }

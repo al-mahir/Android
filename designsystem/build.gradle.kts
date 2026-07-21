@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.core.ktx)
     api(libs.androidx.compose.material3)
+    api(libs.androidx.compose.material.icons.extended)
     api(libs.lottie.compose)
     api(libs.coil.compose)
     api(libs.coil.network.okhttp)
