@@ -28,8 +28,8 @@ class RecitationCursorTest {
 
     @Test
     fun `a malformed key yields no cursor rather than a guess`() {
-        // Seeking to a fabricated position would make the tracker report mismatches that are
-        // not mistakes, which is worse than not seeking at all.
+        
+        
         assertNull(RecitationCursor.fromWordId("p1:l2:p3"))
         assertNull(RecitationCursor.fromWordId("1:1"))
         assertNull(RecitationCursor.fromWordId(""))
@@ -38,12 +38,12 @@ class RecitationCursorTest {
     }
 }
 
-/**
- * The merge rule that keeps a reciter's earned verdicts from vanishing.
- *
- * A word on a chunk boundary is reported by two chunks, and `docs/API.md` §5.4/§5.5 show the
- * exact pair: 1:1:3 arrives scored `correct`, then `correct, trimmed`.
- */
+
+
+
+
+
+ 
 class RecitationLedgerTest {
 
     private fun word(
@@ -88,8 +88,8 @@ class RecitationLedgerTest {
 
     @Test
     fun `a scored report does replace an earlier trimmed one`() {
-        // The other direction is exactly what should happen: the chunk that finally scored the
-        // word knows more than the one that only clipped it.
+        
+        
         val existing = ledgerOf(word(0, RecitationWordStatus.CORRECT, trimmed = true))
 
         val merged = existing.mergedWith(ledgerOf(word(0, RecitationWordStatus.ERROR, trimmed = false)))

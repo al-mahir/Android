@@ -30,7 +30,7 @@ class AudioFrameTest {
 
     @Test
     fun `sine wave rms is the expected fraction of its peak`() {
-        // A sine's RMS is peak / sqrt(2) ~= 0.707 * peak. Half-scale peak -> ~0.354 RMS.
+        
         val samples = ShortArray(RecitationAudioFormat.SAMPLE_RATE_HZ / 100) { index ->
             (16384 * sin(2 * PI * index / 160.0)).toInt().toShort()
         }
@@ -43,8 +43,8 @@ class AudioFrameTest {
 
     @Test
     fun `most-negative sample cannot push loudness above full scale`() {
-        // Short.MIN_VALUE is -32768: negating it overflows back to itself, the classic way a
-        // level meter reports a nonsensical value just above 1.
+        
+        
         val frame = AudioFrame(ShortArray(16) { Short.MIN_VALUE }, startSample = 0)
 
         assertTrue("peak=${frame.peak()} exceeded full scale", frame.peak() <= 1f)
@@ -55,7 +55,7 @@ class AudioFrameTest {
     fun `frame timing follows the 16 kHz sample rate`() {
         val frame = AudioFrame(
             samples = ShortArray(RecitationAudioFormat.FRAME_SAMPLES),
-            startSample = RecitationAudioFormat.SAMPLE_RATE_HZ.toLong(), // Exactly one second in.
+            startSample = RecitationAudioFormat.SAMPLE_RATE_HZ.toLong(), 
         )
 
         assertEquals(1_000L, frame.startMs)
@@ -64,7 +64,7 @@ class AudioFrameTest {
 
     @Test
     fun `wire format matches the service contract`() {
-        // These are the values docs/API.md 5_3 fixes; drift here is silently decoded as noise.
+        
         assertEquals(16_000, RecitationAudioFormat.SAMPLE_RATE_HZ)
         assertEquals(1, RecitationAudioFormat.CHANNEL_COUNT)
         assertEquals(16, RecitationAudioFormat.BITS_PER_SAMPLE)
