@@ -10,13 +10,13 @@ import com.example.mushaf.presentation.SurahNameResolver
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 import com.example.designsystem.components.mushaf.CorrectionWordUi as DesignCorrectionWordUi
 
-/**
- * Resolves an [AyahCorrectionUi] into the design system's plain-string card model.
- *
- * The split is deliberate: the mapper produces resource ids so it stays testable and
- * locale-independent, and `:designsystem` takes only resolved strings so it never depends on a
- * feature module's resources.
- */
+
+
+
+
+
+
+ 
 @Composable
 fun AyahCorrectionUi.toCard(): CorrectionCardUi = CorrectionCardUi(
     id = id,
@@ -39,13 +39,13 @@ fun AyahCorrectionUi.toCard(): CorrectionCardUi = CorrectionCardUi(
     },
 )
 
-/**
- * "٣ أخطاء · الفاتحة ١ — الفاتحة ٧": how much was found, and over what.
- *
- * The count comes first because it is what the reciter opened the sheet to learn. Before any
- * chunk has been graded there is no range to state, so only the count is shown rather than a
- * guess about what is being read.
- */
+
+
+
+
+
+
+ 
 @Composable
 fun LiveCorrectionUiState.correctionsSubtitle(): String {
     val count = pluralStringResource(R.plurals.mushaf_corrections_count, mistakeCount, mistakeCount)

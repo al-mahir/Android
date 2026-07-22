@@ -12,29 +12,29 @@ import androidx.core.content.ContextCompat
 import com.example.designsystem.components.permission.MicPermissionPreprompt
 import com.example.mushaf.presentation.R
 
-/**
- * Which microphone dialog the reader is showing, if any.
- *
- * [Preprompt] MUST be shown before the OS permission dialog (TAH-02 / SEC-03): the system
- * dialog offers one irreversible choice, and a second denial is permanent on Android — so the
- * reciter has to understand the reason before it appears, not after.
- */
+
+
+
+
+
+
+ 
 enum class MicPrompt {
-    /** Privacy explainer, shown before the OS dialog is ever requested. */
+     
     Preprompt,
 
-    /** The permission was refused; recovery is a trip to the app's system settings. */
+     
     Denied,
 
-    /** The device refused to open a recorder — typically another app holds the microphone. */
+     
     Unavailable,
 
-    /**
-     * The AI service could not be reached, or the session dropped and could not be resumed.
-     *
-     * Shown rather than swallowed: with live correction unavailable, an empty mistake list means
-     * "nothing was checked", which a reciter would otherwise read as "nothing was wrong".
-     */
+    
+
+
+
+
+ 
     ServiceUnreachable,
 }
 
@@ -42,7 +42,7 @@ fun Context.hasRecordAudioPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
         PackageManager.PERMISSION_GRANTED
 
-/** Opens this app's system settings page, where a denied microphone can be re-granted. */
+ 
 fun Context.openAppSettings() {
     val intent = Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -51,12 +51,12 @@ fun Context.openAppSettings() {
     startActivity(intent)
 }
 
-/**
- * Renders the copy for [prompt] on the shared `:designsystem` dialog.
- *
- * [onConfirm] means different things per prompt and the caller decides: request the OS
- * permission, open system settings, or simply acknowledge.
- */
+
+
+
+
+
+ 
 @Composable
 fun MicPromptDialog(
     prompt: MicPrompt,

@@ -8,12 +8,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/**
- * The accuracy figure the reader shows.
- *
- * It is session feedback, not an assessment — the thresholds behind `almost` versus `error` are
- * documented as uncalibrated — so the rules here are about what it must never overstate.
- */
+
+
+
+
+
+ 
 class LiveCorrectionAccuracyTest {
 
     private fun word(
@@ -33,8 +33,8 @@ class LiveCorrectionAccuracyTest {
 
     @Test
     fun `no scored words yields no figure at all`() {
-        // Showing 100% before anything was checked would assert something about a recitation
-        // nobody graded.
+        
+        
         assertNull(LiveCorrectionUiState().accuracy)
     }
 
@@ -63,8 +63,8 @@ class LiveCorrectionAccuracyTest {
 
     @Test
     fun `a hint does not lower it`() {
-        // The service softened that finding because it was not confident enough to accuse.
-        // Counting it here would re-harden it into a penalty and undo the safety property.
+        
+        
         val state = stateOf(
             word(0, RecitationWordStatus.CORRECT),
             word(1, RecitationWordStatus.ALMOST),
@@ -76,8 +76,8 @@ class LiveCorrectionAccuracyTest {
 
     @Test
     fun `unverified words are excluded from both halves of the fraction`() {
-        // A word the chunker cut was never checked. Counting it as a success would inflate the
-        // figure; counting it as a failure would penalise a recitation nobody graded.
+        
+        
         val state = stateOf(
             word(0, RecitationWordStatus.CORRECT),
             word(1, RecitationWordStatus.ERROR),

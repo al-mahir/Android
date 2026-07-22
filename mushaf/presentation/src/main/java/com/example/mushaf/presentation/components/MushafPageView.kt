@@ -49,7 +49,7 @@ fun MushafPageView(
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
     revealedWordIds: Set<String> = emptySet(),
-    /** Live AI verdicts, keyed by [com.example.mushaf.domain.model.MushafWord.id]. */
+     
     wordMarks: Map<String, RecitationWordMark> = emptyMap(),
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
@@ -60,13 +60,13 @@ fun MushafPageView(
     val hintColor = Theme.colors.amber
     val underlineStroke = with(LocalDensity.current) { 2.dp.toPx() }
     val measurer = rememberTextMeasurer()
-    // A separate measurer touched only on the prefetch coroutine, so its internal layout cache is
-    // never accessed concurrently with the composition measurer above.
+    
+    
     val prefetchMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val context = LocalContext.current
-    // Same resolver the composition measurer uses, so preloading a neighbour's typeface off-thread
-    // warms the exact cache its draw will hit — no synchronous TTF decode on the main thread.
+    
+    
     val fontResolver = LocalFontFamilyResolver.current
 
     BoxWithConstraints(
@@ -164,9 +164,9 @@ fun MushafPageView(
                         ),
                     )
                 }
-                // Tint the glyphs for a graded word. In tajweed mode the page font supplies its
-                // own COLR colours, which this override cannot reach — which is exactly why the
-                // underline below, not the tint, is the signal that must always be present.
+                
+                
+                
                 val glyphColor = when (mark) {
                     RecitationWordMark.MISTAKE -> mistakeColor
                     RecitationWordMark.HINT -> hintColor
@@ -179,14 +179,14 @@ fun MushafPageView(
     }
 }
 
-/**
- * Draws the mark's underline: solid for a mistake, dashed for a hint, nothing otherwise.
- *
- * The *shape* carries the meaning, not the colour. A11Y-01 forbids colour-alone status, and a
- * red-green colour-blind reciter would otherwise see a tinted word and no way to tell an
- * accusation from a hint. Correct and unverified words are left completely unmarked — the
- * contract requires an unscored word to render neutrally, with no tick and no green.
- */
+
+
+
+
+
+
+
+ 
 private fun DrawScope.drawMarkUnderline(
     token: PageToken,
     mark: RecitationWordMark?,
@@ -214,7 +214,7 @@ private fun DrawScope.drawMarkUnderline(
     )
 }
 
-/** A single positioned run of glyphs to paint. [wordId] is set only for highlightable ayah words. */
+ 
 private data class PageToken(
     val layout: TextLayoutResult,
     val left: Float,
@@ -222,12 +222,12 @@ private data class PageToken(
     val wordId: String?,
 )
 
-/**
- * Cache of fully-built, positioned page tokens keyed by everything they depend on. Lets the
- * prefetch coroutine build a neighbour's tokens off the main thread so its later composition (and
- * any re-entry after the page scrolls out and back) is a cache hit — no measuring, no font decode.
- * [TextLayoutResult]s are immutable and drawable from any thread, so caching them is safe.
- */
+
+
+
+
+
+ 
 private object PageTokenCache {
     private const val CACHE_SIZE = 12
 
@@ -257,7 +257,7 @@ private object PageTokenCache {
     }
 }
 
-/** [buildPageTokens] behind [PageTokenCache]; safe to call from the prefetch coroutine or composition. */
+ 
 private fun pageTokens(
     page: MushafPage,
     mode: ReadingMode,
@@ -287,11 +287,11 @@ private fun pageTokens(
     return built
 }
 
-/**
- * Flattens a page into absolutely-positioned draw tokens. Lines occupy fixed-height slots
- * (`availableHeight / LINES_PER_PAGE`); a page with fewer than a full set of lines has its block of
- * slots centred vertically — matching the old `Column(Arrangement.Center)` of fixed-height rows.
- */
+
+
+
+
+ 
 private fun buildPageTokens(
     page: MushafPage,
     lineSizes: Map<Int, Float>,
@@ -357,7 +357,7 @@ private fun buildPageTokens(
             }
 
             LineType.BASMALLAH -> {
-                // U+FDFD is the single-glyph ornamental basmala ligature in the system Naskh font.
+                
                 val size = fitLineSize(SurahInfo.BASMALLAH_LIGATURE, FontFamily.Default, measurer, availableWidthPx, slotHeightPx)
                 val layout = measurer.measure(
                     text = AnnotatedString(SurahInfo.BASMALLAH_LIGATURE),
@@ -372,7 +372,7 @@ private fun buildPageTokens(
     return tokens
 }
 
-/** A horizontally-centred, vertically-centred (in its slot) non-highlightable token. */
+ 
 private fun centeredToken(layout: TextLayoutResult, availableWidthPx: Int, slotCenterY: Float): PageToken =
     PageToken(
         layout = layout,
@@ -381,7 +381,7 @@ private fun centeredToken(layout: TextLayoutResult, availableWidthPx: Int, slotC
         wordId = null,
     )
 
-/** Natural width (px) of [glyphs] rendered in [fontFamily] at the reference size. */
+ 
 private fun measureGlyphWidth(
     measurer: TextMeasurer,
     fontFamily: FontFamily,
@@ -394,7 +394,7 @@ private fun measureGlyphWidth(
         maxLines = 1,
     ).size.width
 
-/** Largest size that fits [text] (in [font]) within the line's width and vertical slot. */
+ 
 private fun fitLineSize(
     text: String,
     font: FontFamily,

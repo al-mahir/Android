@@ -80,15 +80,15 @@ class MushafViewModel(
     private var sessionJob: Job? = null
     private var controlChannel: Channel<RecitationControl>? = null
 
-    /** Resume point for a reconnect: the latest cursor any chunk reported. */
+     
     private var lastCursor: RecitationCursor? = null
     private var reconnectAttempts = 0
 
-    /** Set once the reciter asks to stop, so a closing socket is not mistaken for a drop. */
+     
     private var isFinishing = false
     private var smoothedMicLevel = 0f
 
-    /** Page whose seek is still owed because it had not finished loading when it was turned to. */
+     
     private var seekOnPageLoad: Int? = null
 
     private companion object {
@@ -103,10 +103,10 @@ class MushafViewModel(
 
         const val CLIPPING_THRESHOLD = 0.99f
 
-        /**
-         * Reconnect attempts after a dropped session. Bounded on purpose: retrying forever
-         * against an unreachable service looks exactly like a reciter making no mistakes.
-         */
+        
+
+
+ 
         const val MAX_RECONNECT_ATTEMPTS = 3
         const val RECONNECT_DELAY_MS = 1_000L
     }
@@ -186,8 +186,8 @@ class MushafViewModel(
         when (intent) {
             is MushafIntent.LoadPage -> loadPage(intent.page)
             is MushafIntent.OpenAtPage -> {
-                // Claim the restore slot before loading, so the preferences observer treats
-                // the reader as already initialised whichever of the two arrives first.
+                
+                
                 Log.d(TAG, "OpenAtPage(${intent.page}) — suppressing last-page restore")
                 initialized = true
                 loadPage(intent.page)
@@ -216,8 +216,8 @@ class MushafViewModel(
             MushafIntent.PlayPauseAudio -> playPauseAudio()
             is MushafIntent.SetAudioSpeed -> playbackManager.setSpeed(intent.speed)
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
-            MushafIntent.NextAyahAudio -> Unit // TODO: implement next ayah
-            MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
+            MushafIntent.NextAyahAudio -> Unit 
+            MushafIntent.PrevAyahAudio -> Unit 
         }
     }
 
@@ -250,7 +250,7 @@ class MushafViewModel(
     private fun selectReciter(reciter: Reciter) {
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            // Reload audio for current page
+            
             startFollowAlong()
         }
     }
@@ -284,9 +284,9 @@ class MushafViewModel(
         requestPage(clamped - 2)
         requestPage(clamped + 2)
 
-        // A page turn during a live session moves the reciter. Without telling the service, the
-        // tracker keeps searching around the old position and starts reporting mismatches that
-        // are not mistakes. The page may not be cached yet, hence the retry once it loads.
+        
+        
+        
         if (_state.value.liveCorrection.isActive) {
             startCursorForCurrentPage()?.let(::seekLiveCorrection) ?: run { seekOnPageLoad = clamped }
         }
@@ -340,8 +340,8 @@ class MushafViewModel(
         val current = _state.value
         if (current.isFollowAlongActive) stopFollowAlong()
         if (current.isRecordingActive) {
-            // Abandon rather than flush: the reciter left the mode, so a graded tail of a
-            // recitation they are no longer doing would be noise.
+            
+            
             clearLiveSession()
             _state.update { it.copy(isRecordingActive = false) }
         }
@@ -420,8 +420,8 @@ class MushafViewModel(
         _state.update { it.copy(isRecordingActive = nowRecording, captureError = null) }
 
         if (nowRecording) {
-            // RECITATION runs the live AI session; MUALLEM still runs the simulated highlight
-            // until it is migrated onto the same pipeline.
+            
+            
             if (state.mushafMode == MushafMode.RECITATION) {
                 startLiveCorrection()
             } else {
@@ -433,15 +433,15 @@ class MushafViewModel(
         }
     }
 
-    // ===== Live AI correction =====
+    
 
-    /**
-     * Opens a live session for the current page and collects its events until the reciter stops.
-     *
-     * The session is seeded with the reciter's position whenever the page is loaded. Starting
-     * without one puts the service into whole-muṣḥaf search, where the basmalah — the most
-     * likely opening — comes back ambiguous.
-     */
+    
+
+
+
+
+
+ 
     private fun startLiveCorrection() {
         sessionJob?.cancel()
         lastCursor = startCursorForCurrentPage()
@@ -460,14 +460,14 @@ class MushafViewModel(
         sessionJob = viewModelScope.launch { runSession(controls) }
     }
 
-    /**
-     * Runs the session, resuming from the last cursor if the connection drops.
-     *
-     * There is no session resumption server-side: a reconnect opens a new session seeded with
-     * the last cursor seen, which costs only the in-flight chunk. Attempts are bounded, because
-     * retrying forever against an unreachable service looks identical to a reciter making no
-     * mistakes.
-     */
+    
+
+
+
+
+
+
+ 
     private suspend fun runSession(controls: Channel<RecitationControl>) {
         while (currentCoroutineContext().isActive) {
             try {
@@ -564,8 +564,8 @@ class MushafViewModel(
             val live = state.liveCorrection
             state.copy(
                 liveCorrection = live.copy(
-                    // Merged, not replaced: a word on a chunk boundary is reported twice, and an
-                    // unscored second report must not erase the verdict the first one earned.
+                    
+                    
                     wordFeedback = live.wordFeedback.mergedWith(chunk),
                     candidates = (chunk.match as? RecitationMatch.Ambiguous)?.candidates.orEmpty(),
                     nonVerse = chunk.nonVerse,
@@ -582,12 +582,12 @@ class MushafViewModel(
         RecitationMatch.NoMatch -> ChunkOutcome.NO_MATCH
     }
 
-    /**
-     * Asks the service to flush and waits for it to acknowledge.
-     *
-     * Deliberately not a cancellation: `Finish` lets the server grade the utterance still in
-     * flight, which is the last few seconds of what was just recited. Cancelling drops it.
-     */
+    
+
+
+
+
+ 
     private fun finishLiveCorrection() {
         isFinishing = true
         val controls = controlChannel
@@ -602,7 +602,7 @@ class MushafViewModel(
         _state.update { it.copy(micLevel = 0f, isSpeechDetected = false) }
     }
 
-    /** Tears the session down without waiting for the server — mode changes, backgrounding. */
+     
     private fun clearLiveSession() {
         isFinishing = true
         sessionJob?.cancel()
@@ -615,14 +615,14 @@ class MushafViewModel(
         }
     }
 
-    /** Tells the service the reciter moved, so tracking does not drift into false mismatches. */
+     
     private fun seekLiveCorrection(cursor: RecitationCursor) {
         lastCursor = cursor
         controlChannel?.trySend(RecitationControl.Seek(cursor))
         Log.d(TAG, "Seek → ${cursor.wordId}")
     }
 
-    /** The first āyah word on the page being read, or null before the page has loaded. */
+     
     private fun startCursorForCurrentPage(): RecitationCursor? =
         _state.value.wordsForCurrentPage()
             .firstNotNullOfOrNull { RecitationCursor.fromWordId(it.id) }
@@ -648,7 +648,7 @@ class MushafViewModel(
         
         Log.d(TAG, "startFollowAlong() started. Mode=${_state.value.mushafMode}, Reciter=${reciter?.name}, Page=${page.pageNumber}")
         
-        // Stop any currently playing audio before starting a new page
+        
         playbackManager.stop()
         
         _state.update { it.copy(isFollowAlongActive = true, playingPage = page.pageNumber) }

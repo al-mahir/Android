@@ -58,10 +58,10 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MushafScreen(
     modifier: Modifier = Modifier,
-    /**
-     * Page to open on, e.g. when arriving from Home's "Continue Reading". Null resumes the
-     * reader's own persisted last page.
-     */
+    
+
+
+ 
     startPage: Int? = null,
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -80,8 +80,8 @@ fun MushafScreen(
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
     var showCorrections by remember { mutableStateOf(false) }
 
-    // Derived once per feedback change rather than per page in the pager, which recomposes for
-    // the neighbours on every swipe.
+    
+    
     val wordMarks by remember(state.liveCorrection.wordFeedback) {
         derivedStateOf { state.liveCorrection.wordFeedback.mapValues { (_, word) -> word.mark } }
     }
@@ -103,8 +103,8 @@ fun MushafScreen(
         when (state.captureError) {
             CaptureError.PERMISSION_DENIED -> micPrompt = MicPrompt.Denied
             CaptureError.MICROPHONE_UNAVAILABLE -> micPrompt = MicPrompt.Unavailable
-            // Live correction has no offline mode. Say so rather than letting the reciter read
-            // an absence of corrections as an absence of mistakes.
+            
+            
             CaptureError.SERVICE_UNREACHABLE -> micPrompt = MicPrompt.ServiceUnreachable
             null -> Unit
         }
@@ -118,11 +118,11 @@ fun MushafScreen(
         viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
     }
 
-    // Declared after the pager effect on purpose. `state.currentPage` is the single source of
-    // truth for which page is shown; seeding the pager instead would make the two fight and
-    // oscillate. Dispatching here sets the state, and the sync effect below scrolls the pager
-    // to match. OpenAtPage (not LoadPage) so a late preferences emission cannot restore the
-    // previously-read page over the one the caller asked for.
+    
+    
+    
+    
+    
     LaunchedEffect(startPage) {
         if (startPage != null) {
             viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
@@ -231,8 +231,8 @@ fun MushafScreen(
                 onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
                 onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
                 micLevel = state.micLevel,
-                // Inside the bar, not floating over the page: the muṣḥaf stays fully readable
-                // and the pills hide with the rest of the chrome on a tap.
+                
+                
                 statusRow = if (state.mushafMode == MushafMode.RECITATION) {
                     {
                         LiveSessionStatusRow(
@@ -246,11 +246,11 @@ fun MushafScreen(
                 },
                 onToggleRecording = {
                     when {
-                        // Stopping never needs a permission check.
+                        
                         state.isRecordingActive -> viewModel.onIntent(MushafIntent.ToggleRecording)
                         context.hasRecordAudioPermission() ->
                             viewModel.onIntent(MushafIntent.ToggleRecording)
-                        // Explainer first, OS dialog second — never the other way round.
+                        
                         else -> micPrompt = MicPrompt.Preprompt
                     }
                 },
@@ -266,8 +266,8 @@ fun MushafScreen(
                 emptyMessage = stringResource(R.string.mushaf_corrections_empty),
                 onDismiss = { showCorrections = false },
                 onMistakeClick = { wordId ->
-                    // Close and jump to the word, so the correction is read against the page it
-                    // happened on rather than as a bare word in a list.
+                    
+                    
                     viewModel.onIntent(MushafIntent.HighlightWord(wordId))
                     viewModel.onIntent(MushafIntent.SelectMistake(wordId))
                     showCorrections = false
@@ -288,7 +288,7 @@ fun MushafScreen(
                         MicPrompt.Preprompt ->
                             micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         MicPrompt.Denied -> context.openAppSettings()
-                        // Acknowledge only; retrying is the mic button, which is still there.
+                        
                         MicPrompt.Unavailable, MicPrompt.ServiceUnreachable -> Unit
                     }
                 },

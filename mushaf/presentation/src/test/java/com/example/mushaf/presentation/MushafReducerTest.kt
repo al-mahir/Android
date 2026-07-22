@@ -99,17 +99,17 @@ class MushafReducerTest {
         override fun release() = Unit
     }
 
-    /**
-     * Live-session stand-in.
-     *
-     * Scripts a session's event stream and records the controls it receives, so the reducer can
-     * be driven through connect / grade / drop / finish without a microphone or a server.
-     * [isRunning] proves the session is torn down on stop — a leaked session holds the mic.
-     */
+    
+
+
+
+
+
+ 
     private class FakeLiveRepo(
         private val script: List<LiveRecitationEvent> = emptyList(),
         private val failWith: Throwable? = null,
-        /** Thrown once, then the session succeeds — models a dropped connection. */
+         
         private val failFirstAttemptWith: Throwable? = null,
     ) : LiveRecitationRepository {
         var isRunning = false
@@ -148,7 +148,7 @@ class MushafReducerTest {
         }
     }
 
-    /** A graded chunk carrying one word with the given verdict. */
+     
     private fun gradedChunk(
         wordIndex: Int = 0,
         status: RecitationWordStatus = RecitationWordStatus.ERROR,
@@ -252,8 +252,8 @@ class MushafReducerTest {
         val vm = buildViewModel(prefs, repo)
         advanceUntilIdle()
 
-        // Page 10 plus a two-page window each side are cached, so the presentation layer can
-        // prefetch ±2 and a fast multi-page fling never reloads.
+        
+        
         val pages = vm.state.value.pages.keys
         assertTrue(pages.containsAll(listOf(8, 9, 10, 11, 12)))
     }
@@ -270,7 +270,7 @@ class MushafReducerTest {
         vm.onIntent(MushafIntent.LoadPage(10))
         advanceUntilIdle()
 
-        // Page 10 was fetched exactly once despite being visited twice.
+        
         assertEquals(1, repo.loadCounts[10])
     }
 
@@ -287,7 +287,7 @@ class MushafReducerTest {
         assertTrue(true)
     }
 
-    // ===== Ta'ahud — live AI correction =====
+    
 
     private fun recitingViewModel(liveRepo: FakeLiveRepo): MushafViewModel {
         val vm = buildViewModel(FakePrefsRepo(ReaderPreferences(lastPage = 1)), liveRepo = liveRepo)
@@ -321,8 +321,8 @@ class MushafReducerTest {
 
     @Test
     fun `stopping asks the server to flush rather than cancelling`() = runTest(dispatcher) {
-        // Cancelling would drop the utterance still in flight — the last few seconds of what
-        // was just recited, which is exactly the part the reciter is waiting to hear about.
+        
+        
         val live = startedSession()
         val vm = recitingViewModel(live)
         advanceUntilIdle()
@@ -355,8 +355,8 @@ class MushafReducerTest {
 
     @Test
     fun `a later trimmed report does not erase a scored verdict`() = runTest(dispatcher) {
-        // API.md 5.4/5.5 show exactly this pair: a word scored in one chunk comes back trimmed
-        // in the next. Overwriting would downgrade a verdict the reciter already earned.
+        
+        
         val live = startedSession(
             gradedChunk(wordIndex = 0, status = RecitationWordStatus.ERROR, trimmed = false, sequence = 0),
             gradedChunk(wordIndex = 0, status = RecitationWordStatus.CORRECT, trimmed = true, sequence = 1),
@@ -429,8 +429,8 @@ class MushafReducerTest {
 
     @Test
     fun `a dropped session reconnects from the last cursor`() = runTest(dispatcher) {
-        // There is no server-side resumption: a reconnect opens a new session seeded with the
-        // last cursor, costing only the in-flight chunk.
+        
+        
         val live = FakeLiveRepo(
             script = listOf(
                 LiveRecitationEvent.Started(sessionId = "s2", engine = "real", requestedEngine = null),
@@ -449,7 +449,7 @@ class MushafReducerTest {
 
     @Test
     fun `an unreachable service stops recording and says so`() = runTest(dispatcher) {
-        // Silence would be read as a flawless recitation, so a failure has to be visible.
+        
         val live = FakeLiveRepo(failWith = IllegalStateException("connection refused"))
         val vm = recitingViewModel(live)
         advanceUntilIdle()
@@ -522,8 +522,8 @@ class MushafReducerTest {
 
     @Test
     fun `a page turn never invents a position to seek to`() = runTest(dispatcher) {
-        // The fake pages carry no words, so no cursor can be derived. Seeking to a fabricated
-        // position would itself make the tracker report mismatches that are not mistakes.
+        
+        
         val live = startedSession()
         val vm = recitingViewModel(live)
         advanceUntilIdle()

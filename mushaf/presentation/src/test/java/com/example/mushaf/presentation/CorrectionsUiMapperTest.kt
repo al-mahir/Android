@@ -66,8 +66,8 @@ class CorrectionsUiMapperTest {
 
     @Test
     fun `hints never produce a card`() {
-        // `almost` means the model was not confident enough to accuse, and a corrections list is
-        // an accusation. Listing it would undo the softening the service applied on purpose.
+        
+        
         val corrections = CorrectionsUiMapper.toCorrections(
             ledger(word(index = 0, status = RecitationWordStatus.ALMOST, mistakes = listOf(mistake()))),
         )
@@ -99,7 +99,7 @@ class CorrectionsUiMapperTest {
         val card = corrections.single()
         assertEquals("1:1", card.id)
         assertEquals("1:1:1", card.firstMistakeWordId)
-        // The correct words are present as context: a lone flagged word is unreadable.
+        
         assertEquals(3, card.words.size)
         assertEquals(listOf(true, false, false), card.words.map { it.isMistake })
     }
@@ -163,7 +163,7 @@ class CorrectionsUiMapperTest {
             R.string.mushaf_correction_tajweed,
             labelFor(MistakeCategory.TAJWID, SpeechErrorType.REPLACE),
         )
-        // An unknown channel gets a neutral label rather than being folded into a real category.
+        
         assertEquals(
             R.string.mushaf_correction_generic,
             labelFor(MistakeCategory.OTHER, SpeechErrorType.UNKNOWN),
@@ -197,8 +197,8 @@ class CorrectionsUiMapperTest {
 
     @Test
     fun `a finding without lengths gets no invented explanation`() {
-        // Telling a reciter something specific and wrong about their tajwīd is worse than
-        // telling them nothing.
+        
+        
         val corrections = CorrectionsUiMapper.toCorrections(
             ledger(
                 word(
@@ -233,8 +233,8 @@ class CorrectionsUiMapperTest {
 
     @Test
     fun `every mistaken word in an ayah gets its own entry`() {
-        // The reason this is per-word: an ayah can go wrong in several places for different
-        // reasons, and one label per ayah shows only the first while hiding the rest.
+        
+        
         val corrections = CorrectionsUiMapper.toCorrections(
             ledger(
                 word(
@@ -252,10 +252,10 @@ class CorrectionsUiMapperTest {
         val card = corrections.single()
         assertEquals(2, card.mistakes.size)
         assertEquals(listOf("first", "third"), card.mistakes.map { it.word })
-        // Each keeps its own reason rather than inheriting the first one's.
+        
         assertEquals(R.string.mushaf_correction_extra_words, card.mistakes[0].labelRes)
         assertEquals(R.string.mushaf_correction_tashkeel, card.mistakes[1].labelRes)
-        // And each is individually addressable, so tapping one focuses that word.
+        
         assertEquals(listOf("1:1:1", "1:1:3"), card.mistakes.map { it.wordId })
     }
 

@@ -15,14 +15,14 @@ import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.state.ChunkOutcome
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 
-/**
- * The live session's status line: what the session is doing, how it is going, and a way in to
- * the mistakes.
- *
- * A correction session is silent by design — no mistakes means no marks on the page. But a
- * session that never connected also produces no marks, and the two must not look identical: a
- * reciter reading silence as "flawless" is the failure mode this row exists to prevent.
- */
+
+
+
+
+
+
+
+ 
 @Composable
 fun LiveSessionStatusRow(
     live: LiveCorrectionUiState,
@@ -47,8 +47,8 @@ fun LiveSessionStatusRow(
             )
         }
 
-        // Only once something has actually been scored. A pill reading 100% before a single word
-        // was graded would be an assertion about a recitation nobody has checked.
+        
+        
         live.accuracy?.let { accuracy ->
             AccuracyPill(
                 accuracy = accuracy,
@@ -63,18 +63,18 @@ fun LiveSessionStatusRow(
     }
 }
 
-/**
- * The one-line answer to "is anything happening?", or null when the marks on the page already
- * say it.
- */
+
+
+
+ 
 private fun LiveCorrectionUiState.statusLabelRes(isRecording: Boolean): Int? = when {
     !isRecording -> null
     isConnecting -> R.string.mushaf_live_connecting
     !isActive -> R.string.mushaf_live_starting
-    // The service declined to place what it heard. Say so — silence would be read as approval.
+    
     lastOutcome == ChunkOutcome.NO_MATCH -> R.string.mushaf_live_no_match
     lastOutcome == ChunkOutcome.AMBIGUOUS -> R.string.mushaf_live_ambiguous_short
-    // Nothing graded yet on a live session: confirm it is listening rather than stalled.
+    
     wordFeedback.isEmpty() -> R.string.mushaf_live_listening
     else -> null
 }

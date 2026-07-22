@@ -41,7 +41,7 @@ fun MushafSettingsSectionContent(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        // ---- Reading preferences ----
+        
         SettingsSectionHeader(title = stringResource(R.string.settings_section_mushaf))
 
         SettingsItemRow(

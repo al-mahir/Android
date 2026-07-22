@@ -50,11 +50,11 @@ dependencies {
     api(libs.androidx.navigation3.runtime)
     implementation(libs.kotlinx.serialization.json)
     
-    // Media3 (Audio Playback)
+    
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
 
-    // DI
+    
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)

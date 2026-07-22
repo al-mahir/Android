@@ -24,13 +24,13 @@ data class MushafUiState(
 
 
     val micLevel: Float = 0f,
-    /** True while the speech gate is open, i.e. audio is actually being streamed. */
+     
     val isSpeechDetected: Boolean = false,
     val captureError: CaptureError? = null,
-    /** The live AI correction session. Empty and inactive outside recitation mode. */
+     
     val liveCorrection: LiveCorrectionUiState = LiveCorrectionUiState(),
 
-    // Listen Mode
+    
     val currentReciter: Reciter? = null,
     val audioState: AudioState = AudioState.IDLE,
     val playingPage: Int? = null,
@@ -63,11 +63,11 @@ enum class CaptureError {
 
     MICROPHONE_UNAVAILABLE,
 
-    /**
-     * The AI service could not be reached, or the session dropped and could not be resumed.
-     *
-     * Live correction has no offline mode, so the honest response is to stop and say so — a
-     * silent failure would let the reciter read "no mistakes shown" as "no mistakes made".
-     */
+    
+
+
+
+
+ 
     SERVICE_UNREACHABLE,
 }

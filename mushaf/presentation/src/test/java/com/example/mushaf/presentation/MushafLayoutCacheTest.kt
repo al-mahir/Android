@@ -16,9 +16,9 @@ import org.junit.Test
 class MushafLayoutCacheTest {
 
     private companion object {
-        // MushafLayoutCache is a process-level singleton shared across every test method, and JUnit
-        // builds a fresh test instance per method — so page numbers must be unique across the whole
-        // class run, not per instance, or one test's cached entry would satisfy another's lookup.
+        
+        
+        
         val pageSeq = AtomicInteger(1000)
     }
 
@@ -44,8 +44,8 @@ class MushafLayoutCacheTest {
             words = words.mapIndexed { i, g -> word(line, i, g) },
         )
 
-    // 100px per glyph char: keeps measured widths easy to reason about while staying large enough
-    // that width (not the MAX_SP cap) is the binding constraint at the height limits used below.
+    
+    
     private val widthPerChar: (String) -> Int = { it.length * 100 }
 
     @Test
@@ -61,7 +61,7 @@ class MushafLayoutCacheTest {
             calls++
             widthPerChar(it)
         }
-        // Two ayah lines -> two measure calls, even though there are five words total.
+        
         assertEquals(2, calls)
     }
 

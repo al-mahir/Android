@@ -65,13 +65,13 @@ fun MushafBottomBar(
     onToggleRecording: () -> Unit,
     modifier: Modifier = Modifier,
     micLevel: Float = 0f,
-    /**
-     * Live-session status, laid out on its own line above the controls.
-     *
-     * A slot rather than a handful of parameters: it keeps the bar unaware of what a correction
-     * session is, and it puts the pills inside the bar chrome so they hide along with it and
-     * never cover the last line of the muṣḥaf page.
-     */
+    
+
+
+
+
+
+ 
     statusRow: (@Composable () -> Unit)? = null,
 ) {
     AnimatedVisibility(

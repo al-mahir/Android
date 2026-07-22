@@ -7,11 +7,11 @@ import com.example.mushaf.domain.model.Reciter
 sealed interface MushafIntent {
     data class LoadPage(val page: Int) : MushafIntent
 
-    /**
-     * Opens an explicitly requested page (e.g. Home's "Continue Reading"). Unlike [LoadPage]
-     * this also suppresses the persisted-last-page restore, so a late preferences emission
-     * cannot pull the reader back to where it previously was.
-     */
+    
+
+
+
+ 
     data class OpenAtPage(val page: Int) : MushafIntent
     data class ToggleTajweed(val enabled: Boolean) : MushafIntent
     data class HighlightWord(val wordId: String?) : MushafIntent
@@ -30,10 +30,10 @@ sealed interface MushafIntent {
 
     data object DismissCaptureError : MushafIntent
 
-    /** Opens the mistake detail for a word, or closes it when null. */
+     
     data class SelectMistake(val wordId: String?) : MushafIntent
 
-    /** Acknowledges the notice that the server ran a different engine than the one requested. */
+     
     data object DismissEngineNotice : MushafIntent
 
     data class SelectReciter(val reciter: Reciter) : MushafIntent
