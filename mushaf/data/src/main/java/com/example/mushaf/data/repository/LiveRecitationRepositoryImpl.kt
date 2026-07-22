@@ -109,7 +109,7 @@ class LiveRecitationRepositoryImpl(
             when (event) {
                 is SpeechEvent.Audio -> {
                     commands.send(LiveSessionCommand.Audio(event.frame))
-                    send(LiveRecitationEvent.Level(event.frame.rms(), isSpeaking = true))
+                    send(LiveRecitationEvent.Level(event.frame.rms(), isSpeaking = event.isSpeech))
                 }
 
                 SpeechEvent.SpeechEnded ->

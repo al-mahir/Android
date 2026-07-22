@@ -3,6 +3,11 @@ package com.example.mushaf.data.di
 import com.example.mushaf.data.db.MushafAssetDataSource
 import com.example.mushaf.data.download.FakeDownloadableResourceRepository
 import com.example.mushaf.data.prefs.ReaderPreferencesDataStore
+import com.example.mushaf.data.prefs.RecitationSettingsDataStore
+import com.example.mushaf.data.repository.RecitationSchemaRepositoryImpl
+import com.example.mushaf.data.repository.RecitationSettingsRepositoryImpl
+import com.example.mushaf.domain.repository.RecitationSchemaRepository
+import com.example.mushaf.domain.repository.RecitationSettingsRepository
 import com.example.mushaf.data.recite.audio.AudioRecordPcmRecorder
 import com.example.mushaf.data.recite.audio.PcmRecorder
 import com.example.mushaf.data.recite.audio.WavDebugSink
@@ -74,6 +79,11 @@ val mushafDataModule = module {
     single { AiServiceApi(get(named(AI_SERVICE_CLIENT)), get()) }
     single { LiveRecitationSocket(get(named(AI_SERVICE_CLIENT)), get()) }
     single<LiveRecitationRepository> { LiveRecitationRepositoryImpl(get(), get()) }
+
+    single { RecitationSettingsDataStore(androidContext()) }
+    single<RecitationSettingsRepository> { RecitationSettingsRepositoryImpl(get()) }
+
+    single<RecitationSchemaRepository> { RecitationSchemaRepositoryImpl(get()) }
 
     single { HttpClient(Android) {
         install(ContentNegotiation) {

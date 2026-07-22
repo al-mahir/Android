@@ -54,7 +54,10 @@ class LiveRecitationRepositoryTest {
     }
 
      
-    private class FakeCapture(private val frameCount: Int) : RecitationCaptureRepository {
+    private class FakeCapture(
+        private val frameCount: Int,
+        private val isSpeech: Boolean = true,
+    ) : RecitationCaptureRepository {
         val isCapturing = AtomicBoolean(false)
 
          
@@ -73,6 +76,7 @@ class LiveRecitationRepositoryTest {
                                 ShortArray(RecitationAudioFormat.FRAME_SAMPLES) { 4_000 },
                                 startSample = index.toLong() * RecitationAudioFormat.FRAME_SAMPLES,
                             ),
+                            isSpeech = isSpeech,
                         ),
                     )
                 }
@@ -180,6 +184,30 @@ class LiveRecitationRepositoryTest {
         val levels = events.filterIsInstance<LiveRecitationEvent.Level>()
         assertTrue("no level events while audio flowed", levels.any { it.isSpeaking && it.amplitude > 0f })
         assertTrue("the meter never settled on the waqf", levels.any { !it.isSpeaking })
+    }
+
+    @Test
+    fun `forwarded silence reaches the server without reporting as speech`() = runBlocking {
+        service = FakeAiService().start()
+
+        
+        
+        val capture = FakeCapture(frameCount = 3, isSpeech = false)
+        val events = runSession(capture) {
+            awaitUntil("audio streamed") { service.binaryFrameCount.get() == 3 }
+        }
+
+        
+        assertEquals(3, service.binaryFrameCount.get())
+
+        
+        
+        val levels = events.filterIsInstance<LiveRecitationEvent.Level>()
+        assertTrue("no level events were emitted at all", levels.isNotEmpty())
+        assertTrue(
+            "forwarded silence was reported as speech",
+            levels.none { it.isSpeaking },
+        )
     }
 
     @Test

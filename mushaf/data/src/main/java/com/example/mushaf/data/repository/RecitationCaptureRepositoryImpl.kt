@@ -52,9 +52,11 @@ class RecitationCaptureRepositoryImpl(
                 rawWriter.writeQuietly(frame)
 
                 val wasOpen = gate.isOpen
-                gate.process(frame).forEach { passed ->
+                val passedFrames = gate.process(frame)
+                val isSpeech = gate.isSpeechFrame
+                passedFrames.forEach { passed ->
                     gatedWriter.writeQuietly(passed)
-                    emit(SpeechEvent.Audio(passed))
+                    emit(SpeechEvent.Audio(passed, isSpeech = isSpeech))
                 }
                 if (wasOpen && !gate.isOpen) {
                     emit(SpeechEvent.SpeechEnded)
