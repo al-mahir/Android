@@ -37,9 +37,8 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-
+    data object Search : AppRoute
     data class Mushaf(val startPage: Int? = null) : AppRoute
-
     data object Profile : AppRoute
 }
 
@@ -117,7 +116,10 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
 
                 entry<AppRoute.Home> {
                     HomeScreen(
-                        onOpenSearch = { },
+                        onOpenSearch = { 
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                         onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
                         onOpenMushafAtPage = { page ->
                             backStack.clear()
@@ -131,8 +133,21 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 entry<AppRoute.Mushaf> { route ->
                     MushafScreen(
                         startPage = route.startPage,
+                        onNavigateSearch = {
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                    )
+                }
+                entry<AppRoute.Search> {
+                    com.example.mushaf.presentation.search.MushafSearchScreen(
+                        viewModel = org.koin.androidx.compose.koinViewModel(),
+                        onNavigateToMushaf = {
+                            backStack.removeAll { it is AppRoute.Mushaf }
+                            backStack.add(AppRoute.Mushaf())
+                        }
                     )
                 }
                 entry<AppRoute.Profile> {
