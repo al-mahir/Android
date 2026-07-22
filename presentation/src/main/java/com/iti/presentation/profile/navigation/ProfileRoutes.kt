@@ -12,4 +12,12 @@ sealed interface ProfileRoute : NavKey {
 
     @Serializable
     data object Premium : ProfileRoute
+
+    /** The reciter's recorded sessions. */
+    @Serializable
+    data object Sessions : ProfileRoute
+
+    /** Content credits, required by the Qur'an text licence. */
+    @Serializable
+    data object Attributions : ProfileRoute
 }

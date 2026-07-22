@@ -182,4 +182,34 @@
 
     <!-- Footer -->
     <string name="settings_version_footer">الماهر • الإصدار %1$s</string>
+    <string name="session_history_title">جلسات التلاوة</string>
+    <string name="session_history_empty">لا توجد جلسات بعد. تلُ مع تشغيل الميكروفون وستظهر هنا.</string>
+    <string name="profile_menu_sessions">جلسات التلاوة</string>
+    <string name="session_headline_clean">لا شيء للتصحيح</string>
+    <string name="session_headline_reviewed">تمت مراجعة الجلسة</string>
+    <string name="session_headline_nothing_checked">لم يتم فحص شيء</string>
+    <string name="session_stat_accuracy">الدقة</string>
+    <string name="session_stat_mistakes">الأخطاء</string>
+    <string name="session_stat_words">الكلمات المفحوصة</string>
+    <string name="session_stat_duration">المدة</string>
+    <string name="session_breakdown_title">أين كانت الأخطاء</string>
+    <string name="session_practice_title">يستحق المراجعة</string>
+    <string name="session_practice_item">%1$s ×%2$d</string>
+    <string name="session_category_memorization">الحفظ</string>
+    <string name="session_category_tashkil">التشكيل</string>
+    <string name="session_category_tajwid">التجويد</string>
+    <string name="session_category_other">أخرى</string>
+    <string name="session_mistakes_title">كل الأخطاء</string>
+    <string name="session_mistake_row">%1$s — %2$d:%3$d</string>
+    <string name="session_nothing_checked_message">لم يتم فحص تلاوتك، لذا لا تدل هذه الجلسة على شيء.</string>
+    <string name="session_delete">حذف هذه الجلسة</string>
+    <string name="attributions_title">التنويهات</string>
+    <string name="profile_menu_attributions">التنويهات</string>
+    <string name="attribution_quran_title">نص القرآن الكريم</string>
+    <string name="attribution_quran_body">نص القرآن الكريم مقدَّم من مشروع «تنزيل» بموجب رخصة المشاع الإبداعي نسب المُصنَّف ٣٫٠. لا يجوز تعديل النص.</string>
+    <string name="attribution_tanzil_url">https://tanzil.net</string>
+    <string name="attribution_mushaf_title">رسم المصحف وتخطيط الصفحات</string>
+    <string name="attribution_mushaf_body">رسم المصحف وتخطيط صفحاته © مجمع الملك فهد لطباعة المصحف الشريف.</string>
+    <string name="attribution_models_title">تحليل التلاوة</string>
+    <string name="attribution_models_body">يعتمد التصحيح المباشر على نموذجَي Muaalem وrecitation-segmenter من obadx.</string>
 </resources>

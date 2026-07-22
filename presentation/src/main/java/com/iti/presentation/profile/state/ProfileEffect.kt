@@ -11,6 +11,12 @@ sealed interface ProfileEffect {
 
     data object OpenSettings : ProfileEffect
 
+    /** The reciter wants their past sessions. */
+    data object OpenSessions : ProfileEffect
+
+    /** Content credits. Required by the Qur'an text licence, so it is always reachable. */
+    data object OpenAttributions : ProfileEffect
+
     data class OpenLegalDocument(val type: LegalDocumentType) : ProfileEffect
 
     data class OpenWebPage(val target: ProfileWebTarget) : ProfileEffect

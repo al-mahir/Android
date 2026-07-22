@@ -146,6 +146,8 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                             backStack.add(AuthRoute.Login)
                         },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                        onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
+                        onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
                     )
                 }
 

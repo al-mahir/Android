@@ -144,6 +144,12 @@ private data class MenuEntry(
 
 private val MenuEntries = listOf(
     MenuEntry(
+        type = ProfileMenuType.SESSIONS,
+        titleRes = R.string.profile_menu_sessions,
+        iconRes = DesignSystemR.drawable.ic_info,
+        showChevron = true,
+    ),
+    MenuEntry(
         type = ProfileMenuType.SETTINGS,
         titleRes = R.string.settings_title,
         iconRes = DesignSystemR.drawable.ic_theme_mode,
@@ -173,6 +179,11 @@ private val MenuEntries = listOf(
         type = ProfileMenuType.RATE_APP,
         titleRes = R.string.profile_menu_rate_app,
         iconRes = DesignSystemR.drawable.ic_star,
+    ),
+    MenuEntry(
+        type = ProfileMenuType.ATTRIBUTIONS,
+        titleRes = R.string.profile_menu_attributions,
+        iconRes = DesignSystemR.drawable.ic_info,
     ),
     MenuEntry(
         type = ProfileMenuType.TERMS_OF_SERVICE,

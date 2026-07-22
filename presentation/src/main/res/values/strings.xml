@@ -182,4 +182,34 @@
 
     <!-- Footer -->
     <string name="settings_version_footer">Al-Mahir • Version %1$s</string>
+    <string name="session_history_title">Recitation sessions</string>
+    <string name="session_history_empty">No sessions yet. Recite with the mic on and they will appear here.</string>
+    <string name="profile_menu_sessions">Recitation sessions</string>
+    <string name="session_headline_clean">Nothing to correct</string>
+    <string name="session_headline_reviewed">Session reviewed</string>
+    <string name="session_headline_nothing_checked">Nothing was checked</string>
+    <string name="session_stat_accuracy">Accuracy</string>
+    <string name="session_stat_mistakes">Mistakes</string>
+    <string name="session_stat_words">Words checked</string>
+    <string name="session_stat_duration">Duration</string>
+    <string name="session_breakdown_title">Where the mistakes were</string>
+    <string name="session_practice_title">Worth practising</string>
+    <string name="session_practice_item">%1$s ×%2$d</string>
+    <string name="session_category_memorization">Memorization</string>
+    <string name="session_category_tashkil">Vowels</string>
+    <string name="session_category_tajwid">Tajweed</string>
+    <string name="session_category_other">Other</string>
+    <string name="session_mistakes_title">Every mistake</string>
+    <string name="session_mistake_row">%1$s — %2$d:%3$d</string>
+    <string name="session_nothing_checked_message">Your recitation was not checked, so this session says nothing about how it went.</string>
+    <string name="session_delete">Delete this session</string>
+    <string name="attributions_title">Attributions</string>
+    <string name="profile_menu_attributions">Attributions</string>
+    <string name="attribution_quran_title">Qur\'an text</string>
+    <string name="attribution_quran_body">The Qur\'an text is provided by the Tanzil Project under the Creative Commons Attribution 3.0 licence. The text may not be modified.</string>
+    <string name="attribution_tanzil_url">https://tanzil.net</string>
+    <string name="attribution_mushaf_title">Mushaf script and page layout</string>
+    <string name="attribution_mushaf_body">The Mushaf glyphs and page layout are © King Fahd Glorious Qur\'an Printing Complex.</string>
+    <string name="attribution_models_title">Recitation analysis</string>
+    <string name="attribution_models_body">Live recitation feedback uses the Muaalem and recitation-segmenter models by obadx.</string>
 </resources>

@@ -1,5 +1,9 @@
 package com.iti.presentation.di
 
+import com.iti.domain.usecase.DeleteRecitationSessionUseCase
+import com.iti.domain.usecase.GetRecitationSessionUseCase
+import com.iti.domain.usecase.ObserveRecitationSessionsUseCase
+import com.iti.presentation.sessions.SessionHistoryViewModel
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
@@ -59,6 +63,11 @@ val presentationModule = module {
 
     viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+
+    factory { ObserveRecitationSessionsUseCase(get()) }
+    factory { GetRecitationSessionUseCase(get()) }
+    factory { DeleteRecitationSessionUseCase(get()) }
+    viewModel { SessionHistoryViewModel(get(), get()) }
     viewModel { (documentType: LegalDocumentType) ->
         StaticContentViewModel(documentType, get())
     }
