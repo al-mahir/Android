@@ -1,5 +1,4 @@
 package com.iti.al_mahir
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +14,7 @@ import androidx.core.view.WindowCompat
 import com.example.designsystem.theme.AlMahirTheme
 import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.navigation.AppNavHost
+import java.util.Locale
 
 import android.animation.ObjectAnimator
 import android.view.View
@@ -31,7 +31,6 @@ import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
@@ -73,7 +72,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-          val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
+            val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
 
             val systemInDarkTheme = isSystemInDarkTheme()
             val view = LocalView.current

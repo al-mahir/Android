@@ -20,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.snapshotFlow
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
@@ -46,6 +47,7 @@ fun MushafScreen(
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
+    onNavigateSearch: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -56,8 +58,14 @@ fun MushafScreen(
     
     var showReciterPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(pagerState.currentPage) {
-        viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .collect { page ->
+                val requestedPage = page + 1
+                if (requestedPage != viewModel.state.value.currentPage) {
+                    viewModel.onIntent(MushafIntent.LoadPage(requestedPage))
+                }
+            }
     }
 
     // Declared after the pager effect on purpose. `state.currentPage` is the single source of
