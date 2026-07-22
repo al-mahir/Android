@@ -37,6 +37,7 @@ fun AudioPlayerBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(Theme.spacing.medium),
         shape = RoundedCornerShape(16.dp),
         color = Theme.colors.surface,
