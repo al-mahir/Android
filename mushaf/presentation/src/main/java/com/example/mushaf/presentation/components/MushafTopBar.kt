@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -85,7 +84,7 @@ fun MushafTopBar(
                         .clip(RoundedCornerShape(20.dp))
                         .clickable(onClick = onSurahNameClick)
                         .background(Theme.colors.primary.copy(alpha = 0.10f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -94,12 +93,6 @@ fun MushafTopBar(
                         color = Theme.colors.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                    )
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = "اختر السورة",
-                        tint = Theme.colors.primary,
-                        modifier = Modifier.size(18.dp),
                     )
                 }
                 Text(

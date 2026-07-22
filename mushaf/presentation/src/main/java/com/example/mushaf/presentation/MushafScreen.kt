@@ -145,10 +145,7 @@ fun MushafScreen(
 
         MushafTopBar(
             visible = state.areBarsVisible,
-            surahName = state.page?.lines
-                ?.firstOrNull { it.surahNumber != null }
-                ?.let { SurahNameResolver.nameFor(it.surahNumber) }
-                ?: "",
+            surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
             juzNumber = 1,
             hizbNumber = 1,
             isBookmarked = false,
