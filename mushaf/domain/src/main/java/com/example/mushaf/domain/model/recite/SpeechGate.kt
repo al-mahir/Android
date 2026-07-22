@@ -1,53 +1,20 @@
 package com.example.mushaf.domain.model.recite
 
-
-
-
-
-
-
-
- 
 data class SpeechGateConfig(
-    
 
-
-
- 
     val enabled: Boolean = true,
 
-     
     val preRollFrames: Int = 3,
 
-    
-
-
-
-
-
-
-
- 
     val hangoverFrames: Int = 6,
 
-     
     val onsetFrames: Int = 2,
-
-    
-
-
  
     val warmUpFrames: Int = 5,
-
      
     val speechFactor: Float = 2.5f,
 
-    
-
-
- 
     val absoluteFloor: Float = 0.004f,
-
      
     val initialNoiseFloor: Float = 0.02f,
 ) {
@@ -84,22 +51,6 @@ data class SpeechGateStats(
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
 class SpeechGate(
     private val config: SpeechGateConfig = SpeechGateConfig(),
 ) {
@@ -111,8 +62,11 @@ class SpeechGate(
     private var framesIn = 0L
     private var framesOut = 0L
 
-     
+
     var isOpen: Boolean = false
+        private set
+
+    var isSpeechFrame: Boolean = false
         private set
 
     val stats: SpeechGateStats get() = SpeechGateStats(framesIn, framesOut)
@@ -120,26 +74,25 @@ class SpeechGate(
      
     val noiseFloorEstimate: Float get() = noiseFloor
 
-    
-
-
-
-
- 
     fun process(frame: AudioFrame): List<AudioFrame> {
         framesIn++
 
         if (!config.enabled) {
             framesOut++
             isOpen = true
+            isSpeechFrame = true
             return listOf(frame)
         }
 
         val isWarmingUp = framesIn <= config.warmUpFrames
         val rms = frame.rms()
-        
-        
-        val isSpeech = isWarmingUp || rms > maxOf(noiseFloor * config.speechFactor, config.absoluteFloor)
+
+        val exceedsThreshold =
+            rms > maxOf(noiseFloor * config.speechFactor, config.absoluteFloor)
+
+        val isSpeech = isWarmingUp || exceedsThreshold
+        isSpeechFrame = exceedsThreshold
+
         updateNoiseFloor(rms, isSpeech && !isWarmingUp)
 
         if (isSpeech) {

@@ -214,4 +214,56 @@ class SpeechGateTest {
     fun `a pre-roll too small to cover the onset is rejected`() {
         SpeechGateConfig(preRollFrames = 0, onsetFrames = 3)
     }
+
+    @Test
+    fun `warm-up frames are forwarded but never called speech`() {
+        val gate = SpeechGate()
+
+        
+        
+        val passed = gate.feed(List(SpeechGateConfig().warmUpFrames) { silence() })
+
+        assertTrue("warm-up frames were dropped", passed.isNotEmpty())
+        assertFalse(
+            "opening silence was reported as speech, which walks the cursor forward before " +
+                "the reciter has said anything",
+            gate.isSpeechFrame,
+        )
+    }
+
+    @Test
+    fun `the waqf tail is forwarded but never called speech`() {
+        val gate = settledGate()
+        gate.feed(List(4) { speech() })
+        assertTrue("speech was not recognised", gate.isSpeechFrame)
+
+        
+        
+        val tail = gate.feed(List(2) { silence() })
+
+        assertTrue("the waqf tail was dropped", tail.isNotEmpty())
+        assertTrue("the gate closed before the tail was sent", gate.isOpen)
+        assertFalse("the waqf tail was reported as speech", gate.isSpeechFrame)
+    }
+
+    @Test
+    fun `real speech during warm-up is still recognised`() {
+        val gate = SpeechGate()
+
+        gate.feed(List(2) { speech() })
+
+        
+        assertTrue(gate.isSpeechFrame)
+    }
+
+    @Test
+    fun `a disabled gate reports every frame as speech`() {
+        val gate = SpeechGate(SpeechGateConfig.Disabled)
+
+        gate.feed(List(3) { silence() })
+
+        
+        
+        assertTrue(gate.isSpeechFrame)
+    }
 }

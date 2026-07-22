@@ -3,6 +3,8 @@ package com.example.mushaf.domain
 import com.example.mushaf.domain.model.recite.RecitationPacer
 import com.example.mushaf.domain.model.recite.RecitationPacerConfig
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -229,5 +231,80 @@ class RecitationPacerTest {
         pacer.placeAtStart()
 
         assertNull(pacer.currentWordId)
+    }
+
+    @Test
+    fun `the cursor tracks a whole ayah without stalling part-way through`() {
+        
+        
+        
+        val pacer = pacerOn(
+            wordCount = 40,
+            config = RecitationPacerConfig(initialFramesPerWord = 1f),
+        )
+
+        pacer.speak(18)
+
+        assertFalse(
+            "the cursor stalled before covering a typical āyah",
+            pacer.isAtLookaheadLimit,
+        )
+    }
+
+    @Test
+    fun `the cursor eases off as it runs ahead rather than stopping dead`() {
+        val config = RecitationPacerConfig(
+            initialFramesPerWord = 1f,
+            maxLookaheadWords = 20,
+            easeAfterWords = 10,
+            maxDrag = 2.5f,
+        )
+        val pacer = pacerOn(wordCount = 60, config = config)
+
+        pacer.speak(10)
+        val atThreshold = pacer.currentWordId
+        pacer.speak(10)
+        val afterThreshold = pacer.currentWordId
+
+        
+        
+        assertEquals("1:1:10", atThreshold)
+        assertNotEquals("the cursor stopped instead of easing", atThreshold, afterThreshold)
+        assertNotEquals(
+            "the cursor did not slow down past the ease threshold",
+            "1:1:20",
+            afterThreshold,
+        )
+    }
+
+    @Test
+    fun `easing never carries the cursor past the hard bound`() {
+        val config = RecitationPacerConfig(
+            initialFramesPerWord = 1f,
+            maxLookaheadWords = 12,
+            easeAfterWords = 4,
+        )
+        val pacer = pacerOn(wordCount = 80, config = config)
+
+        pacer.speak(500)
+
+        
+        
+        assertTrue(pacer.isAtLookaheadLimit)
+        assertEquals("1:1:12", pacer.currentWordId)
+    }
+
+    @Test
+    fun `an ease threshold at or past the bound behaves as a plain cap`() {
+        val config = RecitationPacerConfig(
+            initialFramesPerWord = 1f,
+            maxLookaheadWords = 3,
+            easeAfterWords = 10,
+        )
+        val pacer = pacerOn(wordCount = 50, config = config)
+
+        pacer.speak(200)
+
+        assertEquals("1:1:3", pacer.currentWordId)
     }
 }

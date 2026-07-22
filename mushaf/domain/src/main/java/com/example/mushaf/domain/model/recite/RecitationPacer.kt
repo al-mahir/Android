@@ -5,7 +5,12 @@ data class RecitationPacerConfig(
     val initialFramesPerWord: Float = 5f,
 
 
-    val maxLookaheadWords: Int = 6,
+    val maxLookaheadWords: Int = 20,
+
+
+    val easeAfterWords: Int = 10,
+
+    val maxDrag: Float = 2.5f,
 
     val paceSmoothing: Float = 0.3f,
 
@@ -29,7 +34,19 @@ class RecitationPacer(
     val estimatedFramesPerWord: Float get() = framesPerWord
 
     val isAtLookaheadLimit: Boolean
-        get() = predictedIndex - confirmedIndex >= config.maxLookaheadWords
+        get() = leadWords >= config.maxLookaheadWords
+
+    private val leadWords: Int get() = predictedIndex - confirmedIndex
+
+
+    private val drag: Float
+        get() {
+            val runway = config.maxLookaheadWords - config.easeAfterWords
+            if (runway <= 0) return 1f
+            val past = (leadWords - config.easeAfterWords).coerceAtLeast(0)
+            val ratio = (past.toFloat() / runway).coerceIn(0f, 1f)
+            return 1f + (config.maxDrag - 1f) * ratio
+        }
 
 
     fun setWords(wordIds: List<String>) {
@@ -71,8 +88,12 @@ class RecitationPacer(
         if (isAtLookaheadLimit) return currentWordId
 
         framesIntoWord += 1f
-        while (framesIntoWord >= framesPerWord && !isAtLookaheadLimit) {
-            framesIntoWord -= framesPerWord
+        
+        
+        while (!isAtLookaheadLimit) {
+            val framesNeeded = framesPerWord * drag
+            if (framesIntoWord < framesNeeded) break
+            framesIntoWord -= framesNeeded
             if (predictedIndex < words.lastIndex) predictedIndex++ else break
         }
         return currentWordId
