@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.CompositionLocalProvider
@@ -40,11 +42,21 @@ import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterPickerSheet
 import com.example.designsystem.components.mushaf.ReciterItem
 import com.example.designsystem.components.mushaf.CorrectionsSheet
+import com.example.designsystem.components.session.SessionSummarySheet
 import com.example.mushaf.presentation.audio.AudioState
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.presentation.recite.LiveSessionStatusRow
+import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionsUiMapper
 import com.example.mushaf.presentation.recite.correctionsSubtitle
+import com.example.mushaf.presentation.recite.label
+import com.example.mushaf.presentation.recite.toChip
+import com.example.mushaf.presentation.recite.breakdown
+import com.example.mushaf.presentation.recite.emptyMessageOrNull
+import com.example.mushaf.presentation.recite.headline
+import com.example.mushaf.presentation.recite.practiceLines
+import com.example.mushaf.presentation.recite.stats
+import com.example.mushaf.presentation.recite.subtitle
 import com.example.mushaf.presentation.recite.toCard
 import com.example.mushaf.presentation.recite.MicPrompt
 import com.example.mushaf.presentation.recite.MicPromptDialog
@@ -58,10 +70,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MushafScreen(
     modifier: Modifier = Modifier,
-    
-
-
- 
     startPage: Int? = null,
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -79,6 +87,7 @@ fun MushafScreen(
     val context = LocalContext.current
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
     var showCorrections by remember { mutableStateOf(false) }
+    var correctionTabIndex by remember { mutableStateOf(0) }
 
     
     
@@ -87,6 +96,13 @@ fun MushafScreen(
     }
     val corrections by remember(state.liveCorrection.wordFeedback) {
         derivedStateOf { CorrectionsUiMapper.toCorrections(state.liveCorrection.wordFeedback) }
+    }
+    val correctionTabs by remember(corrections) {
+        derivedStateOf { CorrectionFilter.tabsFor(corrections) }
+    }
+    val selectedTab = correctionTabs.getOrNull(correctionTabIndex) ?: correctionTabs.firstOrNull()
+    val visibleCorrections by remember(corrections, selectedTab) {
+        derivedStateOf { CorrectionFilter.apply(corrections, selectedTab?.category) }
     }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(
@@ -112,6 +128,16 @@ fun MushafScreen(
 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         viewModel.onScreenStopped()
+    }
+
+    
+    
+    val haptics = LocalHapticFeedback.current
+    var lastMistakeCount by remember { mutableStateOf(0) }
+    LaunchedEffect(state.liveCorrection.mistakeCount) {
+        val count = state.liveCorrection.mistakeCount
+        if (count > lastMistakeCount) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        lastMistakeCount = count
     }
 
     LaunchedEffect(pagerState.currentPage) {
@@ -231,6 +257,8 @@ fun MushafScreen(
                 onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
                 onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
                 micLevel = state.micLevel,
+                canFinishSession = state.isRecordingActive && state.liveCorrection.isActive,
+                onFinishSession = { viewModel.onIntent(MushafIntent.FinishAndStartNewSession) },
                 
                 
                 statusRow = if (state.mushafMode == MushafMode.RECITATION) {
@@ -239,6 +267,15 @@ fun MushafScreen(
                             live = state.liveCorrection,
                             isRecording = state.isRecordingActive,
                             onCorrectionsClick = { showCorrections = true },
+                            onDismissEngineNotice = {
+                                viewModel.onIntent(MushafIntent.DismissEngineNotice)
+                            },
+                            onSelectCandidate = { position ->
+                                viewModel.onIntent(MushafIntent.SelectCandidate(position))
+                            },
+                            onDismissCandidates = {
+                                viewModel.onIntent(MushafIntent.DismissCandidates)
+                            },
                         )
                     }
                 } else {
@@ -262,8 +299,13 @@ fun MushafScreen(
             CorrectionsSheet(
                 title = stringResource(R.string.mushaf_corrections_title),
                 subtitle = state.liveCorrection.correctionsSubtitle(),
-                corrections = corrections.map { it.toCard() },
+                corrections = visibleCorrections.map { it.toCard() },
+                tabs = correctionTabs.map { it.toChip() },
+                selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
+                onTabSelected = { correctionTabIndex = it },
                 emptyMessage = stringResource(R.string.mushaf_corrections_empty),
+                practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
+                practiceFocus = state.liveCorrection.practiceFocus.map { it.label() },
                 onDismiss = { showCorrections = false },
                 onMistakeClick = { wordId ->
                     
@@ -272,6 +314,21 @@ fun MushafScreen(
                     viewModel.onIntent(MushafIntent.SelectMistake(wordId))
                     showCorrections = false
                 },
+            )
+        }
+
+        state.sessionSummary?.let { summary ->
+            SessionSummarySheet(
+                headline = summary.headline(),
+                subtitle = summary.subtitle(),
+                stats = summary.stats(),
+                breakdownTitle = stringResource(R.string.session_breakdown_title),
+                breakdown = summary.breakdown(),
+                practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
+                practiceFocus = summary.practiceLines(),
+                emptyMessage = summary.emptyMessageOrNull(),
+                dismissLabel = stringResource(R.string.session_summary_done),
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissSessionSummary) },
             )
         }
 

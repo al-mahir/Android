@@ -38,7 +38,9 @@ val mushafPresentationModule = module {
         com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
     }
 
-    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { com.iti.domain.usecase.SaveRecitationSessionUseCase(get()) }
+
+    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     viewModel { MushafSettingsViewModel(get(), get()) }
 

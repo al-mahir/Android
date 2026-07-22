@@ -5,6 +5,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.mushaf.CorrectionCardUi
 import com.example.designsystem.components.mushaf.CorrectionMistakeUi
+import com.example.designsystem.components.mushaf.CorrectionTabUi
+import com.example.mushaf.domain.model.recite.MistakeCategory
+import com.example.mushaf.domain.model.recite.PracticeFocus
 import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.SurahNameResolver
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
@@ -61,3 +64,24 @@ fun LiveCorrectionUiState.correctionsSubtitle(): String {
     )
     return "$count · $range"
 }
+
+
+@Composable
+fun PracticeFocus.label(): String {
+    val name = ruleName ?: stringResource(
+        when (category) {
+            MistakeCategory.MEMORIZATION -> R.string.mushaf_correction_generic
+            MistakeCategory.TASHKIL -> R.string.mushaf_correction_tashkeel
+            MistakeCategory.TAJWID -> R.string.mushaf_correction_tajweed
+            MistakeCategory.OTHER -> R.string.mushaf_correction_generic
+        },
+    )
+    return stringResource(R.string.mushaf_practice_focus_item, name, occurrences)
+}
+
+
+@Composable
+fun CorrectionTab.toChip(): CorrectionTabUi = CorrectionTabUi(
+    label = stringResource(labelRes),
+    count = count,
+)

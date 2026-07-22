@@ -1,17 +1,13 @@
 package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.MushafMode
+import com.example.mushaf.domain.model.recite.RecitationCursor
 
 import com.example.mushaf.domain.model.Reciter
 
 sealed interface MushafIntent {
     data class LoadPage(val page: Int) : MushafIntent
 
-    
-
-
-
- 
     data class OpenAtPage(val page: Int) : MushafIntent
     data class ToggleTajweed(val enabled: Boolean) : MushafIntent
     data class HighlightWord(val wordId: String?) : MushafIntent
@@ -35,6 +31,13 @@ sealed interface MushafIntent {
 
      
     data object DismissEngineNotice : MushafIntent
+    data class SelectCandidate(val position: RecitationCursor) : MushafIntent
+
+    data object DismissCandidates : MushafIntent
+
+    data object DismissSessionSummary : MushafIntent
+
+    data object FinishAndStartNewSession : MushafIntent
 
     data class SelectReciter(val reciter: Reciter) : MushafIntent
     data object PlayPauseAudio : MushafIntent

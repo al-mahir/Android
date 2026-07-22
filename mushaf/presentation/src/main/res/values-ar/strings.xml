@@ -65,7 +65,7 @@
 
     <string name="mushaf_live_unreachable_title">التصحيح المباشر غير متاح</string>
     <string name="mushaf_live_unreachable_message">تعذّر على «الماهر» الوصول إلى خدمة التصحيح، فلم يتم فحص تلاوتك. تحقّق من اتصالك ثم حاول مرة أخرى.</string>
-    <string name="mushaf_live_engine_notice">استخدم الخادم نموذجًا مختلفًا عن المطلوب، وقد لا يتوفّر تقييم التجويد.</string>
+    <string name="mushaf_live_engine_notice">يعمل على «%1$s» وليس النموذج الذي اخترته، وقد لا يتوفّر تقييم التجويد.</string>
     <string name="mushaf_live_no_match">لم يتم التقاط ذلك</string>
 
     <!-- ورقة التصحيحات -->
@@ -129,4 +129,27 @@
         <item quantity="many">%1$d خطأً</item>
         <item quantity="other">%1$d خطأ</item>
     </plurals>
+    <string name="mushaf_practice_focus_title">يستحق المراجعة</string>
+    <string name="mushaf_practice_focus_item">%1$s ×%2$d</string>
+    <string name="session_headline_clean">لا شيء للتصحيح</string>
+    <string name="session_headline_reviewed">تمت مراجعة الجلسة</string>
+    <string name="session_headline_nothing_checked">لم يتم فحص شيء</string>
+    <string name="session_range">%1$s — %2$s</string>
+    <string name="session_stat_accuracy">الدقة</string>
+    <string name="session_stat_mistakes">الأخطاء</string>
+    <string name="session_stat_words">الكلمات المفحوصة</string>
+    <string name="session_stat_duration">المدة</string>
+    <string name="session_breakdown_title">أين كانت الأخطاء</string>
+    <string name="session_category_memorization">الحفظ</string>
+    <string name="session_nothing_checked_message">لم يتم فحص تلاوتك، لذا لا تدل هذه الجلسة على شيء. تحقّق من الاتصال وحاول مرة أخرى.</string>
+    <string name="session_summary_done">تم</string>
+    <string name="mushaf_correction_tab_all">الكل</string>
+    <string name="mushaf_correction_tab_memorization">الحفظ</string>
+    <string name="mushaf_finish_session">إنهاء الجلسة</string>
+    <string name="mushaf_cd_finish_session">إنهاء هذه الجلسة وبدء جلسة جديدة</string>
+    <string name="mushaf_cd_dismiss_notice">إخفاء</string>
+    <string name="mushaf_non_verse_istiaatha">الاستعاذة · غير مُقيَّمة</string>
+    <string name="mushaf_non_verse_basmalah">البسملة · غير مُقيَّمة</string>
+    <string name="mushaf_non_verse_sadaka">صدق الله العظيم · غير مُقيَّمة</string>
+    <string name="mushaf_non_verse_other">غير مُقيَّم</string>
 </resources>

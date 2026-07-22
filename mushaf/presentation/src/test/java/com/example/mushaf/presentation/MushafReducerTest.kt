@@ -2,11 +2,16 @@ package com.example.mushaf.presentation
 
 import com.example.mushaf.domain.model.AyahTiming
 import com.example.mushaf.domain.model.MushafMode
+import com.example.mushaf.domain.model.LineType
+import com.example.mushaf.domain.model.MushafLine
 import com.example.mushaf.domain.model.MushafPage
+import com.example.mushaf.domain.model.MushafWord
 import com.example.mushaf.domain.model.ReaderPreferences
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.domain.model.recite.LiveRecitationConfig
 import com.example.mushaf.domain.model.recite.LiveRecitationEvent
+import com.example.mushaf.domain.model.recite.NonVerseSegment
+import com.example.mushaf.domain.model.recite.RecitationCandidate
 import com.example.mushaf.domain.model.recite.RecitationChunk
 import com.example.mushaf.domain.model.recite.RecitationControl
 import com.example.mushaf.domain.model.recite.RecitationCursor
@@ -18,6 +23,9 @@ import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
 import com.example.mushaf.domain.repository.RecitationRepository
 import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
+import com.iti.domain.model.recitation.RecitationSessionSummary
+import com.iti.domain.repository.RecitationSessionRepository
+import com.iti.domain.usecase.SaveRecitationSessionUseCase
 import com.example.mushaf.domain.usecase.GetAyahTimingsUseCase
 import com.example.mushaf.domain.usecase.GetPageUseCase
 import com.example.mushaf.domain.usecase.GetRecitersUseCase
@@ -46,6 +54,8 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -111,6 +121,12 @@ class MushafReducerTest {
         private val failWith: Throwable? = null,
          
         private val failFirstAttemptWith: Throwable? = null,
+        
+
+
+
+ 
+        private val scripts: List<List<LiveRecitationEvent>>? = null,
     ) : LiveRecitationRepository {
         var isRunning = false
             private set
@@ -140,7 +156,7 @@ class MushafReducerTest {
                         }
                     }
                 }
-                script.forEach { send(it) }
+                (scripts?.getOrNull(sessionCount - 1) ?: script).forEach { send(it) }
                 awaitClose()
             } finally {
                 isRunning = false
@@ -178,10 +194,22 @@ class MushafReducerTest {
         ),
     )
 
+     
+    private class FakeSessionRepo : RecitationSessionRepository {
+        val saved = mutableListOf<RecitationSessionSummary>()
+        override fun observeSessions(): Flow<List<RecitationSessionSummary>> = flowOf(saved)
+        override fun observeSession(id: String): Flow<RecitationSessionSummary?> =
+            flowOf(saved.firstOrNull { it.id == id })
+        override suspend fun save(summary: RecitationSessionSummary) { saved += summary }
+        override suspend fun delete(id: String) { saved.removeAll { it.id == id } }
+        override suspend fun deleteAll() { saved.clear() }
+    }
+
     private fun buildViewModel(
         prefs: FakePrefsRepo,
-        mushafRepo: FakeMushafRepo = FakeMushafRepo(),
+        mushafRepo: MushafRepository = FakeMushafRepo(),
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
+        sessionRepo: FakeSessionRepo = FakeSessionRepo(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
@@ -192,6 +220,7 @@ class MushafReducerTest {
             getAyahTimings = GetAyahTimingsUseCase(FakeRecitationRepo()),
             playbackManager = FakeAudioPlayer(),
             startLiveRecitation = StartLiveRecitationUseCase(liveRepo),
+            saveRecitationSession = SaveRecitationSessionUseCase(sessionRepo),
         )
     }
 
@@ -551,5 +580,269 @@ class MushafReducerTest {
         vm.onIntent(MushafIntent.SelectMistake(null))
         advanceUntilIdle()
         assertEquals(null, vm.state.value.liveCorrection.selectedMistake)
+    }
+
+    @Test
+    fun `finishing a session saves it and starts a fresh one`() = runTest(dispatcher) {
+        
+        
+        val sessions = FakeSessionRepo()
+        val started = LiveRecitationEvent.Started(sessionId = "s1", engine = "real", requestedEngine = null)
+        val live = FakeLiveRepo(
+            
+            
+            scripts = listOf(listOf(started, gradedChunk()), listOf(started)),
+        )
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            sessionRepo = sessions,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.FinishAndStartNewSession)
+        advanceUntilIdle()
+
+        assertEquals("the finished session was not saved", 1, sessions.saved.size)
+        assertEquals("a second session did not start", 2, live.sessionCount)
+        assertTrue("recording stopped instead of continuing", vm.state.value.isRecordingActive)
+        
+        assertTrue(vm.state.value.liveCorrection.wordFeedback.isEmpty())
+    }
+
+    @Test
+    fun `finishing does nothing when no session is running`() = runTest(dispatcher) {
+        val sessions = FakeSessionRepo()
+        val live = FakeLiveRepo()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            sessionRepo = sessions,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.FinishAndStartNewSession)
+        advanceUntilIdle()
+
+        assertEquals(0, live.sessionCount)
+        assertTrue(sessions.saved.isEmpty())
+    }
+
+    @Test
+    fun `stopping the mic saves the session and offers its summary`() = runTest(dispatcher) {
+        val sessions = FakeSessionRepo()
+        val live = startedSession(gradedChunk())
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            sessionRepo = sessions,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(1, sessions.saved.size)
+        assertEquals(1, sessions.saved.single().mistakeCount)
+        assertNotNull("the summary was not offered", vm.state.value.sessionSummary)
+
+        vm.onIntent(MushafIntent.DismissSessionSummary)
+        advanceUntilIdle()
+        assertNull(vm.state.value.sessionSummary)
+    }
+
+    @Test
+    fun `the live pills are cleared once a session ends`() = runTest(dispatcher) {
+        
+        
+        val sessions = FakeSessionRepo()
+        val live = startedSession(gradedChunk())
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            sessionRepo = sessions,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+        assertEquals(1, vm.state.value.liveCorrection.mistakeCount)
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        val cleared = vm.state.value.liveCorrection
+        assertEquals("the mistake count survived the session", 0, cleared.mistakeCount)
+        assertNull("the accuracy pill survived the session", cleared.accuracy)
+        assertTrue(cleared.wordFeedback.isEmpty())
+        
+        assertNotNull(vm.state.value.sessionSummary)
+        assertEquals(1, sessions.saved.single().mistakeCount)
+    }
+
+    @Test
+    fun `choosing a candidate seeks the service and clears the question`() = runTest(dispatcher) {
+        
+        val live = startedSession(
+            LiveRecitationEvent.Graded(
+                RecitationChunk(
+                    sequence = 0,
+                    match = RecitationMatch.Ambiguous(
+                        listOf(
+                            RecitationCandidate(RecitationCursor(1, 1, 0), null, "بسم الله"),
+                            RecitationCandidate(RecitationCursor(27, 30, 3), null, "إنه من سليمان"),
+                        ),
+                    ),
+                    cursor = null,
+                    forcedCut = false,
+                    nonVerse = emptyList(),
+                ),
+            ),
+        )
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+        assertEquals(2, vm.state.value.liveCorrection.candidates.size)
+
+        vm.onIntent(MushafIntent.SelectCandidate(RecitationCursor(27, 30, 3)))
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.liveCorrection.candidates.isEmpty())
+        val seek = live.received.filterIsInstance<RecitationControl.Seek>().single()
+        assertEquals(27, seek.position.sura)
+        assertEquals(30, seek.position.aya)
+    }
+
+    @Test
+    fun `dismissing candidates leaves the session alone`() = runTest(dispatcher) {
+        
+        val live = startedSession(
+            LiveRecitationEvent.Graded(
+                RecitationChunk(
+                    sequence = 0,
+                    match = RecitationMatch.Ambiguous(
+                        listOf(RecitationCandidate(RecitationCursor(1, 1, 0), null, "بسم الله")),
+                    ),
+                    cursor = null,
+                    forcedCut = false,
+                    nonVerse = emptyList(),
+                ),
+            ),
+        )
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.DismissCandidates)
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.liveCorrection.candidates.isEmpty())
+        assertTrue("dismissing must not seek", live.received.none { it is RecitationControl.Seek })
+        assertTrue(vm.state.value.isRecordingActive)
+    }
+
+    @Test
+    fun `recognised non-verse speech is carried through for acknowledgement`() = runTest(dispatcher) {
+        
+        val live = startedSession(
+            LiveRecitationEvent.Graded(
+                RecitationChunk(
+                    sequence = 0,
+                    match = RecitationMatch.Matched(emptyList(), null, null, null),
+                    cursor = null,
+                    forcedCut = false,
+                    nonVerse = listOf(NonVerseSegment.BASMALAH),
+                ),
+            ),
+        )
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(listOf(NonVerseSegment.BASMALAH), vm.state.value.liveCorrection.nonVerse)
+        
+        assertEquals(0, vm.state.value.liveCorrection.mistakeCount)
+    }
+
+     
+    private class WordedMushafRepo : MushafRepository {
+        override fun getPage(pageNumber: Int): Flow<MushafPage> = flowOf(
+            MushafPage(
+                pageNumber = pageNumber,
+                lines = listOf(
+                    MushafLine(
+                        lineNumber = 1,
+                        type = LineType.AYAH,
+                        isCentered = false,
+                        surahNumber = null,
+                        words = (1..4).map { index ->
+                            MushafWord(
+                                id = "$pageNumber:1:$index",
+                                glyphs = "w",
+                                pageNumber = pageNumber,
+                                lineNumber = 1,
+                                positionInLine = index,
+                                isEndOfAyah = index == 4,
+                            )
+                        },
+                    ),
+                ),
+            ),
+        )
+
+        override suspend fun getPageCount(): Int = 604
+    }
+
+    @Test
+    fun `turning to a prefetched page still re-points the reading cursor`() = runTest(dispatcher) {
+        
+        
+        
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = startedSession(),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+        
+        assertTrue(vm.state.value.pages.containsKey(6))
+
+        vm.onIntent(MushafIntent.LoadPage(6))
+        advanceUntilIdle()
+
+        val highlighted = vm.state.value.highlightedWordId
+        assertNotNull("no reading cursor after a page turn", highlighted)
+        assertTrue(
+            "the cursor is still on the previous page: $highlighted",
+            highlighted!!.startsWith("6:"),
+        )
+    }
+
+    @Test
+    fun `a page turn outside a session leaves no reading cursor`() = runTest(dispatcher) {
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+        )
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.LoadPage(6))
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.highlightedWordId)
     }
 }

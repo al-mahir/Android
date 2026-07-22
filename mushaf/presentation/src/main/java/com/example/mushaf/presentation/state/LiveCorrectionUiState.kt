@@ -1,6 +1,8 @@
 package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.recite.NonVerseSegment
+import com.example.mushaf.domain.model.recite.PracticeFocus
+import com.example.mushaf.domain.model.recite.practiceFocus
 import com.example.mushaf.domain.model.recite.RecitationCandidate
 import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.RecitationWordFeedback
@@ -15,11 +17,7 @@ import com.example.mushaf.domain.model.recite.RecitationWordMark
 enum class ChunkOutcome {
      
     GRADED,
-
-     
     AMBIGUOUS,
-
-     
     NO_MATCH,
 }
 
@@ -100,6 +98,9 @@ data class LiveCorrectionUiState(
             ?.let { (it - mistakeCount).toFloat() / it }
 
      
+
+    val practiceFocus: List<PracticeFocus> get() = wordFeedback.values.practiceFocus()
+
     fun feedbackFor(wordId: String): RecitationWordFeedback? = wordFeedback[wordId]
 
     val selectedMistake: RecitationWordFeedback?

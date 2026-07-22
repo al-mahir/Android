@@ -30,6 +30,7 @@ data class AyahCorrectionUi(
 data class WordMistakeUi(
     val wordId: String,
     val word: String,
+    val category: MistakeCategory,
     @StringRes val labelRes: Int,
     val detail: MistakeDetailUi?,
 )
@@ -87,6 +88,8 @@ object CorrectionsUiMapper {
                         WordMistakeUi(
                             wordId = word.wordId,
                             word = word.uthmani,
+                            category = word.scorableMistakes.firstOrNull()?.category
+                                ?: MistakeCategory.OTHER,
                             labelRes = labelFor(word),
                             detail = word.scorableMistakes.toDetail(),
                         )

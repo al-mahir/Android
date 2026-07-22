@@ -65,7 +65,7 @@
 
     <string name="mushaf_live_unreachable_title">Live correction unavailable</string>
     <string name="mushaf_live_unreachable_message">Al-Mahir could not reach the correction service, so your recitation was not checked. Check your connection and try again.</string>
-    <string name="mushaf_live_engine_notice">The server used a different model than requested, so tajweed grading may be unavailable.</string>
+    <string name="mushaf_live_engine_notice">Running on \'%1$s\', not the model you chose — tajweed grading may be unavailable.</string>
     <string name="mushaf_live_no_match">Didn\'t catch that</string>
 
     <!-- Corrections sheet -->
@@ -122,4 +122,27 @@
         <item quantity="one">%1$d mistake</item>
         <item quantity="other">%1$d mistakes</item>
     </plurals>
+    <string name="mushaf_practice_focus_title">Worth practising</string>
+    <string name="mushaf_practice_focus_item">%1$s ×%2$d</string>
+    <string name="session_headline_clean">Nothing to correct</string>
+    <string name="session_headline_reviewed">Session reviewed</string>
+    <string name="session_headline_nothing_checked">Nothing was checked</string>
+    <string name="session_range">%1$s — %2$s</string>
+    <string name="session_stat_accuracy">Accuracy</string>
+    <string name="session_stat_mistakes">Mistakes</string>
+    <string name="session_stat_words">Words checked</string>
+    <string name="session_stat_duration">Duration</string>
+    <string name="session_breakdown_title">Where the mistakes were</string>
+    <string name="session_category_memorization">Memorization</string>
+    <string name="session_nothing_checked_message">Your recitation was not checked, so this session says nothing about how it went. Check the connection and try again.</string>
+    <string name="session_summary_done">Done</string>
+    <string name="mushaf_correction_tab_all">All</string>
+    <string name="mushaf_correction_tab_memorization">Memorization</string>
+    <string name="mushaf_finish_session">Finish session</string>
+    <string name="mushaf_cd_finish_session">Finish this session and start a new one</string>
+    <string name="mushaf_cd_dismiss_notice">Dismiss</string>
+    <string name="mushaf_non_verse_istiaatha">Istiʿādha · not scored</string>
+    <string name="mushaf_non_verse_basmalah">Basmalah · not scored</string>
+    <string name="mushaf_non_verse_sadaka">Ṣadaqa · not scored</string>
+    <string name="mushaf_non_verse_other">Not scored</string>
 </resources>

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.FloatingActionButton
@@ -73,6 +74,9 @@ fun MushafBottomBar(
 
  
     statusRow: (@Composable () -> Unit)? = null,
+
+    canFinishSession: Boolean = false,
+    onFinishSession: () -> Unit = {},
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -112,6 +116,8 @@ fun MushafBottomBar(
                     mushafMode = mushafMode,
                     isRecordingActive = isRecordingActive,
                     micLevel = micLevel,
+                    canFinishSession = canFinishSession,
+                    onFinishSession = onFinishSession,
                     onToggleRecording = onToggleRecording,
                 )
             }
@@ -170,10 +176,13 @@ private fun MicSection(
     mushafMode: MushafMode,
     isRecordingActive: Boolean,
     micLevel: Float,
+    canFinishSession: Boolean,
+    onFinishSession: () -> Unit,
     onToggleRecording: () -> Unit,
 ) {
     val showMic = mushafMode == MushafMode.RECITATION || mushafMode == MushafMode.MUALLEM
 
+    
     val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
     val idleScale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -197,6 +206,43 @@ private fun MicSection(
         idleScale
     }
 
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        AnimatedVisibility(
+            visible = canFinishSession,
+            enter = fadeIn() + slideInHorizontally { it },
+            exit = fadeOut() + slideOutHorizontally { it },
+        ) {
+            IconButton(onClick = onFinishSession) {
+                Icon(
+                    imageVector = Icons.Outlined.Flag,
+                    contentDescription = stringResource(R.string.mushaf_cd_finish_session),
+                    tint = Theme.colors.primary,
+                    modifier = Modifier.size(Theme.size.iconMedium),
+                )
+            }
+        }
+
+        MicButton(
+            showMic = showMic,
+            isRecordingActive = isRecordingActive,
+            scale = scale,
+            onToggleRecording = onToggleRecording,
+        )
+    }
+}
+
+
+
+
+ 
+@Composable
+private fun MicButton(
+    showMic: Boolean,
+    isRecordingActive: Boolean,
+    scale: Float,
+    onToggleRecording: () -> Unit,
+) {
+    
     Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(
             visible = showMic,
