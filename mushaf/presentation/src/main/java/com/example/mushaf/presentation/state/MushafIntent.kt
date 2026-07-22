@@ -22,6 +22,9 @@ sealed interface MushafIntent {
 
     data object ToggleRecording : MushafIntent
 
+
+    data class SetTajweedGrading(val enabled: Boolean) : MushafIntent
+
     data class CaptureFailed(val error: CaptureError) : MushafIntent
 
     data object DismissCaptureError : MushafIntent

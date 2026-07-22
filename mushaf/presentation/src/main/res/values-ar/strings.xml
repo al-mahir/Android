@@ -152,4 +152,41 @@
     <string name="mushaf_non_verse_basmalah">البسملة · غير مُقيَّمة</string>
     <string name="mushaf_non_verse_sadaka">صدق الله العظيم · غير مُقيَّمة</string>
     <string name="mushaf_non_verse_other">غير مُقيَّم</string>
+
+    <!-- مبدّل نطاق التقييم، أسفل شاشة المصحف في وضع التلاوة -->
+    <string name="recite_grading_hifz_only">الحفظ فقط</string>
+    <string name="recite_grading_with_tajweed">الحفظ والتجويد</string>
+
+    <!-- شاشة إعدادات التصحيح -->
+    <string name="recite_settings_title">إعدادات التصحيح</string>
+    <string name="recite_settings_subtitle">المحرك وحساسية التصحيح والأحكام ورواية التلاوة</string>
+
+    <string name="recite_settings_engine">المحرك</string>
+    <string name="recite_engine_teacher">المُعلِّم</string>
+    <string name="recite_engine_teacher_hint">تحليل تجويد كامل، مع درجة ثقة لكل حرف</string>
+    <string name="recite_engine_follow">متابعة فقط</string>
+    <string name="recite_engine_follow_hint">أخفّ وأسرع، ويتابع موضعك في الصفحة</string>
+    <string name="recite_engine_follow_warning">هذا المحرك لا يصحّح. يتابع موضعك في الصفحة فقط، ولا يُبلّغ عن أخطاء ولا تجويد ولا نسبة دقة.</string>
+
+    <string name="recite_settings_sensitivity">حساسية التصحيح</string>
+    <string name="recite_sensitivity_lenient">متساهل</string>
+    <string name="recite_sensitivity_lenient_hint">لا يُنبّه إلا على ما هو شديد اليقين منه</string>
+    <string name="recite_sensitivity_normal">عادي</string>
+    <string name="recite_sensitivity_normal_hint">التوازن الافتراضي</string>
+    <string name="recite_sensitivity_strict">صارم</string>
+    <string name="recite_sensitivity_strict_hint">يُنبّه على المزيد، بما في ذلك ما هو أقل يقينًا منه</string>
+    <string name="recite_sensitivity_disabled_hint">غير متاح على محرك المتابعة، إذ لا يُصدر درجة ثقة يمكن الموازنة بها.</string>
+
+    <string name="recite_settings_rules">الأحكام المُقيَّمة</string>
+    <string name="recite_rules_grade_tajweed">تقييم التجويد</string>
+    <string name="recite_rules_grade_tajweed_hint">عند الإيقاف يُصحَّح الحفظ والحركات فقط</string>
+    <string name="recite_rules_all">كل الأحكام</string>
+    <string name="recite_rules_tajweed_group">أحكام التجويد</string>
+    <string name="recite_rules_sifa_group">الصفات</string>
+    <string name="recite_rules_none_hint">لم يُختَر أي حكم تجويد، لذا سيُصحَّح الحفظ والحركات فقط.</string>
+
+    <string name="recite_settings_moshaf">رواية التلاوة</string>
+    <string name="recite_settings_moshaf_advanced">خيارات متقدمة</string>
+    <string name="recite_settings_moshaf_reset">إعادة ضبط رواية التلاوة</string>
+    <string name="recite_settings_moshaf_reset_hint">تُعيد كل حكم إلى الوضع الافتراضي في الخادم.</string>
 </resources>

@@ -33,6 +33,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.presentation.components.GradingModeToggle
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
@@ -182,25 +183,31 @@ fun MushafScreen(
                 val pageNumber = pageIndex + 1
                 Box(modifier = Modifier.fillMaxSize().graphicsLayer()) {
                     when (val pageState = state.pageState(pageNumber)) {
-                        is PageLoadState.Loaded ->
+                        is PageLoadState.Loaded -> {
+                            val isCurrent = pageNumber == state.currentPage
+
+                            val prefetchPages = if (isCurrent) {
+                                val before2 = state.pages[pageNumber - 2]
+                                val before1 = state.pages[pageNumber - 1]
+                                val after1 = state.pages[pageNumber + 1]
+                                val after2 = state.pages[pageNumber + 2]
+                                remember(before2, before1, after1, after2) {
+                                    listOfNotNull(before2, before1, after1, after2)
+                                }
+                            } else {
+                                emptyList()
+                            }
+
                             MushafPageView(
                                 page = pageState.page,
                                 mode = state.readingMode,
-                                highlightedWordId = if (pageNumber == state.currentPage) state.highlightedWordId else null,
-                                prefetchPages = if (pageNumber == state.currentPage) {
-                                    listOfNotNull(
-                                        state.pages[pageNumber - 2],
-                                        state.pages[pageNumber - 1],
-                                        state.pages[pageNumber + 1],
-                                        state.pages[pageNumber + 2],
-                                    )
-                                } else {
-                                    emptyList()
-                                },
+                                highlightedWordId = if (isCurrent) state.highlightedWordId else null,
+                                prefetchPages = prefetchPages,
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
-                                wordMarks = if (pageNumber == state.currentPage) wordMarks else emptyMap(),
+                                wordMarks = if (isCurrent) wordMarks else emptyMap(),
                             )
+                        }
 
                         PageLoadState.Failed ->
                             MushafErrorState(onRetry = { viewModel.onIntent(MushafIntent.Retry) })
@@ -275,6 +282,19 @@ fun MushafScreen(
                             },
                             onDismissCandidates = {
                                 viewModel.onIntent(MushafIntent.DismissCandidates)
+                            },
+                        )
+                    }
+                } else {
+                    null
+                },
+                gradingToggle = if (state.mushafMode == MushafMode.RECITATION) {
+                    {
+                        GradingModeToggle(
+                            tajweedGradingEnabled = state.isTajweedGradingEnabled,
+                            enabled = state.canGradeTajweed,
+                            onSelect = { enabled ->
+                                viewModel.onIntent(MushafIntent.SetTajweedGrading(enabled))
                             },
                         )
                     }

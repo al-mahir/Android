@@ -28,7 +28,11 @@ data class MushafUiState(
      
     val isSpeechDetected: Boolean = false,
     val captureError: CaptureError? = null,
-     
+
+    val isTajweedGradingEnabled: Boolean = true,
+
+    val canGradeTajweed: Boolean = true,
+
     val liveCorrection: LiveCorrectionUiState = LiveCorrectionUiState(),
      
     val sessionSummary: RecitationSessionSummary? = null,

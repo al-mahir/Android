@@ -77,6 +77,8 @@ fun MushafBottomBar(
 
     canFinishSession: Boolean = false,
     onFinishSession: () -> Unit = {},
+
+    gradingToggle: (@Composable () -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -93,6 +95,15 @@ fun MushafBottomBar(
         ) {
             statusRow?.let { row ->
                 Box(modifier = Modifier.padding(bottom = 8.dp)) { row() }
+            }
+
+            gradingToggle?.let { toggle ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) { toggle() }
             }
 
             Row(

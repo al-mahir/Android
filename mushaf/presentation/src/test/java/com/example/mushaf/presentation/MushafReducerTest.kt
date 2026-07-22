@@ -10,6 +10,8 @@ import com.example.mushaf.domain.model.ReaderPreferences
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.domain.model.recite.LiveRecitationConfig
 import com.example.mushaf.domain.model.recite.LiveRecitationEvent
+import com.example.mushaf.domain.model.recite.MoshafValue
+import com.example.mushaf.domain.model.recite.RecitationStrictness
 import com.example.mushaf.domain.model.recite.NonVerseSegment
 import com.example.mushaf.domain.model.recite.RecitationCandidate
 import com.example.mushaf.domain.model.recite.RecitationChunk
@@ -17,12 +19,16 @@ import com.example.mushaf.domain.model.recite.RecitationControl
 import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationWordFeedback
+import com.example.mushaf.domain.model.recite.RecitationSettings
 import com.example.mushaf.domain.model.recite.RecitationWordStatus
 import com.example.mushaf.domain.repository.LiveRecitationRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
 import com.example.mushaf.domain.repository.RecitationRepository
+import com.example.mushaf.domain.repository.RecitationSettingsRepository
+import com.example.mushaf.domain.usecase.ObserveRecitationSettingsUseCase
 import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
+import com.example.mushaf.domain.usecase.UpdateRecitationSettingsUseCase
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.repository.RecitationSessionRepository
 import com.iti.domain.usecase.SaveRecitationSessionUseCase
@@ -205,11 +211,22 @@ class MushafReducerTest {
         override suspend fun deleteAll() { saved.clear() }
     }
 
+     
+    private class FakeSettingsRepo(
+        initial: RecitationSettings = RecitationSettings(),
+    ) : RecitationSettingsRepository {
+        private val state = MutableStateFlow(initial)
+        override val settings: Flow<RecitationSettings> = state
+        override suspend fun update(settings: RecitationSettings) { state.value = settings }
+        val current: RecitationSettings get() = state.value
+    }
+
     private fun buildViewModel(
         prefs: FakePrefsRepo,
         mushafRepo: MushafRepository = FakeMushafRepo(),
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
+        settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
@@ -221,6 +238,8 @@ class MushafReducerTest {
             playbackManager = FakeAudioPlayer(),
             startLiveRecitation = StartLiveRecitationUseCase(liveRepo),
             saveRecitationSession = SaveRecitationSessionUseCase(sessionRepo),
+            observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
+            updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
         )
     }
 
@@ -611,6 +630,129 @@ class MushafReducerTest {
         assertTrue("recording stopped instead of continuing", vm.state.value.isRecordingActive)
         
         assertTrue(vm.state.value.liveCorrection.wordFeedback.isEmpty())
+    }
+
+    @Test
+    fun `a session carries the stored tuning rather than a hardcoded engine`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            settingsRepo = FakeSettingsRepo(
+                RecitationSettings(
+                    engine = "real",
+                    strictness = RecitationStrictness.STRICT,
+                    gradedRules = setOf("aared_madd"),
+                    moshaf = mapOf("madd_monfasel_len" to MoshafValue.Number(4)),
+                ),
+            ),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        val config = live.lastConfig
+        assertEquals("real", config?.engine)
+        assertEquals(RecitationStrictness.STRICT, config?.strictness)
+        assertEquals(setOf("aared_madd"), config?.gradedRules)
+        assertEquals(mapOf("madd_monfasel_len" to MoshafValue.Number(4)), config?.moshaf)
+    }
+
+    @Test
+    fun `hifz-only grading sends an empty rule list, not a null one`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            settingsRepo = FakeSettingsRepo(
+                RecitationSettings(tajweedGradingEnabled = false, gradedRules = setOf("ghonna")),
+            ),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        
+        
+        assertEquals(emptySet<String>(), live.lastConfig?.gradedRules)
+    }
+
+    @Test
+    fun `switching grading mode mid-session reopens it at the current cursor`() = runTest(dispatcher) {
+        val sessions = FakeSessionRepo()
+        val live = FakeLiveRepo(
+            scripts = listOf(
+                listOf(
+                    LiveRecitationEvent.Started("s1", engine = "real", requestedEngine = null),
+                    gradedChunk(cursor = RecitationCursor(2, 5, 3)),
+                ),
+                listOf(LiveRecitationEvent.Started("s2", engine = "real", requestedEngine = null)),
+            ),
+        )
+        val settings = FakeSettingsRepo()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            sessionRepo = sessions,
+            settingsRepo = settings,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.SetTajweedGrading(enabled = false))
+        advanceUntilIdle()
+
+        assertEquals("the session was not reopened", 2, live.sessionCount)
+        assertEquals("the new setting did not reach the wire", emptySet<String>(), live.lastConfig?.gradedRules)
+        assertEquals(
+            "the reciter was sent back to the top of the page",
+            RecitationCursor(2, 5, 3),
+            live.lastConfig?.start,
+        )
+        assertTrue("recording stopped instead of continuing", vm.state.value.isRecordingActive)
+        assertFalse(settings.current.tajweedGradingEnabled)
+
+        
+        
+        assertEquals("the recited minutes were discarded", 1, sessions.saved.size)
+        assertNull("a summary interrupted the reciter", vm.state.value.sessionSummary)
+    }
+
+    @Test
+    fun `switching grading mode outside a session only stores it`() = runTest(dispatcher) {
+        val live = FakeLiveRepo()
+        val settings = FakeSettingsRepo()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            liveRepo = live,
+            settingsRepo = settings,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.SetTajweedGrading(enabled = false))
+        advanceUntilIdle()
+
+        assertEquals("a session was started by a settings change", 0, live.sessionCount)
+        assertFalse(settings.current.tajweedGradingEnabled)
+        assertFalse(vm.state.value.isTajweedGradingEnabled)
+    }
+
+    @Test
+    fun `a follow-along engine disables the grading toggle`() = runTest(dispatcher) {
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            settingsRepo = FakeSettingsRepo(RecitationSettings(engine = "zipformer")),
+        )
+        advanceUntilIdle()
+
+        
+        
+        assertFalse(vm.state.value.canGradeTajweed)
     }
 
     @Test

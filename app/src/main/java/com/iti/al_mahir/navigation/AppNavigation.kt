@@ -21,6 +21,8 @@ import com.example.mushaf.presentation.MushafScreen
 import com.example.mushaf.presentation.download.navigation.DownloadsRoute
 import com.example.mushaf.presentation.download.navigation.downloadsEntries
 import com.example.mushaf.presentation.settings.MushafSettingsSection
+import com.example.mushaf.presentation.settings.recite.navigation.ReciteSettingsRoute
+import com.example.mushaf.presentation.settings.recite.navigation.reciteSettingsEntries
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
@@ -164,12 +166,17 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                                 onOpenDownloads = { kind ->
                                     backStack.add(DownloadsRoute.Downloads(kind))
                                 },
+                                onOpenReciteSettings = {
+                                    backStack.add(ReciteSettingsRoute.ReciteSettings)
+                                },
                             )
                         },
                     )
                 }
 
                 downloadsEntries(onBack = { backStack.removeLastOrNull() })
+
+                reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
             },
         )
 

@@ -13,6 +13,9 @@ import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
 import com.example.mushaf.domain.usecase.GetRecitersUseCase
 import com.example.mushaf.domain.usecase.GetAyahTimingsUseCase
 import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
+import com.example.mushaf.domain.usecase.ObserveRecitationSettingsUseCase
+import com.example.mushaf.domain.usecase.UpdateRecitationSettingsUseCase
+import com.example.mushaf.domain.model.recite.RecitationSettings
 import com.iti.domain.usecase.SaveRecitationSessionUseCase
 import com.example.mushaf.domain.model.AyahTiming
 import com.example.mushaf.domain.model.recite.LiveRecitationConfig
@@ -66,6 +69,8 @@ class MushafViewModel(
     private val playbackManager: AudioPlayer,
     private val startLiveRecitation: StartLiveRecitationUseCase,
     private val saveRecitationSession: SaveRecitationSessionUseCase,
+    private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
+    private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -106,7 +111,16 @@ class MushafViewModel(
 
     private var sessionStartedAtEpochMs = 0L
 
-    private var restartAfterFinish = false
+
+    private var pendingRestart: SessionRestart? = null
+
+    private var recitationSettings = RecitationSettings()
+
+    private enum class SessionRestart {
+        BOUNDARY,
+
+        SETTINGS,
+    }
 
     private companion object {
         const val TAG = "Mushaf"
@@ -180,6 +194,21 @@ class MushafViewModel(
 
         loadReciters()
 
+        observeRecitationSettings()
+            .catch { throwable ->
+                Log.e(TAG, "Failed to read recitation settings; using server defaults", throwable)
+            }
+            .onEach { settings ->
+                recitationSettings = settings
+                _state.update {
+                    it.copy(
+                        isTajweedGradingEnabled = settings.tajweedGradingEnabled,
+                        canGradeTajweed = settings.engineCanGradeTajweed,
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+
         observeReaderPreferences()
             .catch { throwable ->
                 Log.e(TAG, "Failed to read reader preferences; using defaults", throwable)
@@ -220,6 +249,7 @@ class MushafViewModel(
             MushafIntent.RevealNextWord -> revealNextWord()
             MushafIntent.RevealNextAyah -> revealNextAyah()
             MushafIntent.ToggleRecording -> toggleRecording()
+            is MushafIntent.SetTajweedGrading -> setTajweedGrading(intent.enabled)
             is MushafIntent.CaptureFailed -> failCapture(intent.error)
             MushafIntent.DismissCaptureError -> _state.update { it.copy(captureError = null) }
             is MushafIntent.SelectMistake -> _state.update {
@@ -474,9 +504,9 @@ class MushafViewModel(
 
 
  
-    private fun startLiveCorrection() {
+    private fun startLiveCorrection(resumeAt: RecitationCursor? = null) {
         sessionJob?.cancel()
-        lastCursor = startCursorForCurrentPage()
+        lastCursor = resumeAt ?: startCursorForCurrentPage()
         isFinishing = false
         reconnectAttempts = 0
         pacer.reset()
@@ -508,7 +538,7 @@ class MushafViewModel(
         while (currentCoroutineContext().isActive) {
             try {
                 startLiveRecitation(
-                    config = LiveRecitationConfig(start = lastCursor, engine = "zipformer"),
+                    config = recitationSettings.toConfig(lastCursor),
                     controls = controls.receiveAsFlow(),
                 ).collect { event -> onLiveEvent(event) }
                 return
@@ -562,10 +592,15 @@ class MushafViewModel(
 
             LiveRecitationEvent.Finished -> {
                 Log.d(TAG, "Live session finished")
-                recordFinishedSession()
 
-                val restarting = restartAfterFinish
-                restartAfterFinish = false
+                val restart = pendingRestart
+                pendingRestart = null
+                val restarting = restart != null
+
+                recordFinishedSession(showSummary = restart != SessionRestart.SETTINGS)
+
+                val resumeAt = lastCursor.takeIf { restart == SessionRestart.SETTINGS }
+
                 _state.update {
                     it.copy(
                         
@@ -583,10 +618,10 @@ class MushafViewModel(
                     )
                 }
                 if (restarting) {
-                    
-                    
+
+
                     sessionJob = null
-                    viewModelScope.launch { startLiveCorrection() }
+                    viewModelScope.launch { startLiveCorrection(resumeAt) }
                 }
             }
         }
@@ -694,11 +729,46 @@ class MushafViewModel(
     private fun finishAndStartNewSession() {
         val state = _state.value
         if (!state.isRecordingActive || state.mushafMode != MushafMode.RECITATION) return
-        restartAfterFinish = true
+        pendingRestart = SessionRestart.BOUNDARY
         finishLiveCorrection()
     }
 
-    private fun recordFinishedSession() {
+    
+
+
+
+
+
+
+
+ 
+    private fun setTajweedGrading(enabled: Boolean) {
+        val current = recitationSettings
+        if (current.tajweedGradingEnabled == enabled) return
+
+        val updated = current.copy(tajweedGradingEnabled = enabled)
+        
+        
+        recitationSettings = updated
+        _state.update { it.copy(isTajweedGradingEnabled = enabled) }
+
+        viewModelScope.launch {
+            runCatching { updateRecitationSettings(updated) }
+                .onFailure { Log.e(TAG, "Failed to store the tajwid grading choice", it) }
+        }
+
+        val state = _state.value
+        if (state.isRecordingActive &&
+            state.mushafMode == MushafMode.RECITATION &&
+            state.liveCorrection.isActive
+        ) {
+            Log.d(TAG, "Tajwid grading -> $enabled; reopening the session at ${lastCursor?.wordId}")
+            pendingRestart = SessionRestart.SETTINGS
+            finishLiveCorrection()
+        }
+    }
+
+    private fun recordFinishedSession(showSummary: Boolean = true) {
         if (sessionStartedAtEpochMs == 0L) return
         val live = _state.value.liveCorrection
 
@@ -711,7 +781,7 @@ class MushafViewModel(
         )
 
         sessionStartedAtEpochMs = 0L
-        _state.update { it.copy(sessionSummary = summary) }
+        if (showSummary) _state.update { it.copy(sessionSummary = summary) }
         viewModelScope.launch {
             runCatching { saveRecitationSession(summary) }
                 .onFailure { Log.e(TAG, "Failed to save the session record", it) }
@@ -755,7 +825,7 @@ class MushafViewModel(
         pacer.reset()
         chunkSpeechFrames = 0
         sessionStartedAtEpochMs = 0L
-        restartAfterFinish = false
+        pendingRestart = null
         _state.update {
             it.copy(
                 micLevel = 0f,

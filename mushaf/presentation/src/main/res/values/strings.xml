@@ -145,4 +145,41 @@
     <string name="mushaf_non_verse_basmalah">Basmalah · not scored</string>
     <string name="mushaf_non_verse_sadaka">Ṣadaqa · not scored</string>
     <string name="mushaf_non_verse_other">Not scored</string>
+
+    <!-- Grading-scope toggle, shown in the muṣḥaf bottom bar during تلاوة -->
+    <string name="recite_grading_hifz_only">Memorization only</string>
+    <string name="recite_grading_with_tajweed">Memorization + tajwid</string>
+
+    <!-- Recitation settings screen -->
+    <string name="recite_settings_title">Correction settings</string>
+    <string name="recite_settings_subtitle">Engine, sensitivity, rules and recitation style</string>
+
+    <string name="recite_settings_engine">Engine</string>
+    <string name="recite_engine_teacher">Al-Muʿallim</string>
+    <string name="recite_engine_teacher_hint">Full tajwid analysis, with a confidence score for every letter</string>
+    <string name="recite_engine_follow">Follow along only</string>
+    <string name="recite_engine_follow_hint">Lighter and faster. Tracks your place on the page</string>
+    <string name="recite_engine_follow_warning">This engine does not correct. It follows where you are on the page, but reports no mistakes, no tajwid and no accuracy.</string>
+
+    <string name="recite_settings_sensitivity">Correction sensitivity</string>
+    <string name="recite_sensitivity_lenient">Lenient</string>
+    <string name="recite_sensitivity_lenient_hint">Only flags what it is very sure about</string>
+    <string name="recite_sensitivity_normal">Normal</string>
+    <string name="recite_sensitivity_normal_hint">The default balance</string>
+    <string name="recite_sensitivity_strict">Strict</string>
+    <string name="recite_sensitivity_strict_hint">Flags more, including what it is less sure about</string>
+    <string name="recite_sensitivity_disabled_hint">Unavailable on the follow-along engine, which reports no confidence to weigh.</string>
+
+    <string name="recite_settings_rules">Graded rules</string>
+    <string name="recite_rules_grade_tajweed">Grade tajwid</string>
+    <string name="recite_rules_grade_tajweed_hint">When off, only memorization and harakat are corrected</string>
+    <string name="recite_rules_all">All rules</string>
+    <string name="recite_rules_tajweed_group">Tajwid rules</string>
+    <string name="recite_rules_sifa_group">Letter qualities</string>
+    <string name="recite_rules_none_hint">No tajwid rule is selected, so only memorization and harakat will be corrected.</string>
+
+    <string name="recite_settings_moshaf">Recitation style</string>
+    <string name="recite_settings_moshaf_advanced">Advanced options</string>
+    <string name="recite_settings_moshaf_reset">Reset recitation style</string>
+    <string name="recite_settings_moshaf_reset_hint">Returns every ruling to the server default.</string>
 </resources>
