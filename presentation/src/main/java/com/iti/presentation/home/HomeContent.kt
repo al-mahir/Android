@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.search.ClickableSearchBar
 import com.example.designsystem.components.section.SectionHeader
@@ -66,7 +67,9 @@ fun HomeContent(
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = Theme.spacing.extraLarge),
+                contentPadding = PaddingValues(
+                    bottom = Theme.spacing.extraLarge + bottomNavBarHeight(),
+                ),
                 verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
             ) {
                 item(key = "search") {

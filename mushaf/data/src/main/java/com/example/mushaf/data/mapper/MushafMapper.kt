@@ -39,7 +39,7 @@ object MushafMapper {
     }
 
     private fun MushafWordEntity.toWord(pageNumber: Int): MushafWord = MushafWord(
-        id = if (wordKey.isNotBlank()) wordKey else "p$pageNumber:l$lineNumber:p$position",
+        id = if (wordKey.isNotBlank()) wordKey.trim() else "p$pageNumber:l$lineNumber:p$position",
         glyphs = glyphText,
         pageNumber = pageNumber,
         lineNumber = lineNumber,

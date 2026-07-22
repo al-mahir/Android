@@ -8,4 +8,6 @@ internal fun UserDto.toDomain(): User = User(
     displayName = displayName,
     initials = displayName.toInitials(),
     avatarUrl = avatarUrl,
+    email = email,
+    joinedAtEpochMillis = joinedAtEpochMillis,
 )

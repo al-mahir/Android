@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Dark-mode counterpart of values/themes.xml. Only the base style is overridden — Theme.AlMahir
+  and Theme.App.Starting inherit from it and need no night variant of their own.
+-->
+<resources>
+
+    <style name="Base.Theme.AlMahir" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Light *content* (white icons), legible against the dark app background. -->
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

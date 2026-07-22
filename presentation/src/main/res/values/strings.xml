@@ -39,6 +39,22 @@
     <string name="auth_send_reset_link">Send Reset Link</string>
     <string name="auth_back_to_sign_in">Back to Sign In</string>
 
+    <!-- Authentication errors -->
+    <string name="auth_error_required">This field is required</string>
+    <string name="auth_error_invalid_email">Enter a valid email address</string>
+    <string name="auth_error_weak_password">Use at least 8 characters with upper and lower case letters, a number, and a symbol</string>
+    <string name="auth_error_invalid_phone_number">Enter a valid Egyptian mobile number, e.g. 01012345678</string>
+    <string name="auth_error_invalid_otp">Enter the 6-digit code</string>
+    <string name="auth_error_validation">Please check the highlighted fields</string>
+    <string name="auth_error_invalid_credentials">Incorrect email or password</string>
+    <string name="auth_error_conflict">An account with these details already exists</string>
+    <string name="auth_error_google_unavailable">Google sign-in isn\'t available right now. Please use your email and password.</string>
+    <string name="auth_error_registered_sign_in_failed">Your account was created. Please sign in.</string>
+
+    <!-- ===== Shared errors ===== -->
+    <string name="error_network">No connection. Please check your network and try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+
     <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
     <string name="home_greeting">welcome back</string>
@@ -68,4 +84,102 @@
 
     <string name="home_error_generic">We couldn\'t load your home content. Please try again.</string>
     <string name="home_join_failed">Couldn\'t join the circle. Please try again.</string>
+
+    <!-- ===== Profile ===== -->
+    <string name="profile_avatar_content_description">Profile picture</string>
+
+    <!-- Subscription meta -->
+    <string name="profile_subscription_status">Subscription status</string>
+    <string name="profile_joined">Joined</string>
+    <string name="profile_plan_none">None</string>
+    <string name="profile_plan_premium">Premium</string>
+
+    <!-- Account actions -->
+    <string name="profile_buy_premium">Buy Al-Māhir Premium</string>
+    <string name="profile_restore_purchases">Restore purchases</string>
+    <string name="profile_restoring_purchases">Restoring…</string>
+    <string name="profile_logout">Sign out</string>
+
+    <string name="profile_restore_succeeded">Your purchases have been restored.</string>
+    <string name="profile_restore_nothing_found">No previous purchases found.</string>
+    <string name="profile_restore_failed">Couldn\'t restore purchases. Please try again.</string>
+
+    <!-- Social channels (accessibility labels) -->
+    <string name="profile_social_github">GitHub</string>
+    <string name="profile_social_discord">Discord</string>
+    <string name="profile_social_x">X</string>
+    <string name="profile_social_facebook">Facebook</string>
+    <string name="profile_social_youtube">YouTube</string>
+    <string name="profile_social_instagram">Instagram</string>
+
+    <!-- Menu -->
+    <string name="profile_menu_about">About Al-Māhir</string>
+    <string name="profile_menu_feature_request">Request a new feature</string>
+    <string name="profile_menu_help_center">Help center</string>
+    <string name="profile_menu_share_app">Share the app</string>
+    <string name="profile_menu_rate_app">Rate the app</string>
+    <string name="profile_menu_terms_of_service">Terms of service</string>
+    <string name="profile_menu_privacy_policy">Privacy policy</string>
+    <string name="profile_delete_account">Delete account</string>
+
+    <!-- Share sheet. %1$s = app deep link -->
+    <string name="profile_share_message">Read and memorize the Qur\'an with Al-Māhir: %1$s</string>
+    <string name="profile_share_chooser_title">Share Al-Māhir</string>
+
+    <!-- Logout confirmation -->
+    <string name="profile_logout_dialog_title">Sign out</string>
+    <string name="profile_logout_dialog_message">You\'ll need to sign in again to continue your sessions.</string>
+    <string name="profile_logout_dialog_confirm">Sign out</string>
+    <string name="profile_logout_failed">Couldn\'t sign out. Please try again.</string>
+
+    <!-- Account deletion confirmation -->
+    <string name="profile_delete_account_dialog_title">Delete account</string>
+    <string name="profile_delete_account_dialog_message">Your account, recordings and progress will be permanently deleted. This can\'t be undone.</string>
+    <string name="profile_delete_account_dialog_confirm">Delete</string>
+    <string name="profile_delete_account_failed">Couldn\'t delete your account. Please try again.</string>
+
+    <string name="profile_dialog_cancel">Cancel</string>
+
+    <string name="profile_error_generic">We couldn\'t load your profile. Please try again.</string>
+    <string name="profile_no_app_to_handle">No app on this device can open that.</string>
+
+    <!-- ===== Static content (about / terms / privacy) ===== -->
+    <string name="static_content_error_generic">We couldn\'t load this page. Please try again.</string>
+
+    <!-- ===== Settings ===== -->
+    <string name="settings_title">Settings</string>
+
+    <!-- Section headers -->
+    <string name="settings_section_appearance">App appearance</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_section_sounds">Sounds and haptics</string>
+    <string name="settings_section_privacy">Privacy</string>
+
+    <!-- Rows -->
+    <string name="settings_language">Language</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_error_sounds">Errors</string>
+    <string name="settings_data_usage">Data usage</string>
+    <string name="settings_delete_recordings">Delete all recordings</string>
+
+    <!-- Language options -->
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Theme options -->
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">Match system</string>
+
+    <!-- Delete recordings confirmation -->
+    <string name="settings_delete_recordings_title">Delete all recordings?</string>
+    <string name="settings_delete_recordings_message">Every recording you have saved will be permanently removed. This cannot be undone.</string>
+    <string name="settings_delete_recordings_confirm">Delete</string>
+    <string name="settings_delete_recordings_cancel">Cancel</string>
+    <string name="settings_recordings_deleted">All recordings deleted.</string>
+    <string name="settings_recordings_delete_failed">We could not delete the recordings. Please try again.</string>
+
+    <!-- Footer -->
+    <string name="settings_version_footer">Al-Mahir • Version %1$s</string>
 </resources>

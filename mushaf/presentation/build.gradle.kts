@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,6 +30,7 @@ android {
 
 dependencies {
     implementation(project(":mushaf:domain"))
+    implementation(project(":domain"))
     implementation(project(":designsystem"))
 
     implementation(platform(libs.androidx.compose.bom))
@@ -43,6 +45,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.android)
+
+    api(libs.androidx.navigation3.runtime)
+    implementation(libs.kotlinx.serialization.json)
+    
+    // Media3 (Audio Playback)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.session)
 
     // DI
     implementation(platform(libs.koin.bom))

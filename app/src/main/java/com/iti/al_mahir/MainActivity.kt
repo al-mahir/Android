@@ -8,7 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -23,18 +23,30 @@ import android.view.animation.OvershootInterpolator
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.iti.domain.settings.model.ThemeMode
+import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
-    private var isAppReady = false
+
+    private val observePreferences: ObserveAppPreferencesUseCase by inject()
+
+    private var isSplashDelayDone = false
+
+    private var isPreferencesReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        
-        // Keep the splash screen visible for 1 second so the logo is displayed clearly
-        splashScreen.setKeepOnScreenCondition { !isAppReady }
+
+        splashScreen.setKeepOnScreenCondition { !(isSplashDelayDone && isPreferencesReady) }
         
         splashScreen.setOnExitAnimationListener { splashScreenView ->
             val scaleX = ObjectAnimator.ofFloat(splashScreenView.view, View.SCALE_X, 1f, 1.2f)
@@ -55,24 +67,41 @@ class MainActivity : ComponentActivity() {
         }
         
         lifecycleScope.launch {
-            delay(1000)
-            isAppReady = true
+            delay(1000.milliseconds)
+            isSplashDelayDone = true
         }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AlMahirTheme(locale = Locale("ar")) {
-                val darkTheme = isSystemInDarkTheme()
-                val view = LocalView.current
+            val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
 
-                SideEffect {
-                    val window = (view.context as ComponentActivity).window
-                    WindowCompat.getInsetsController(window, view).apply {
-                        isAppearanceLightStatusBars = !darkTheme
-                        isAppearanceLightNavigationBars = !darkTheme
-                    }
+            val systemInDarkTheme = isSystemInDarkTheme()
+            val view = LocalView.current
+
+            val darkTheme = when (preferences?.themeMode) {
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+                ThemeMode.SYSTEM, null -> systemInDarkTheme
+            }
+
+            val locale = remember(preferences?.language) {
+                preferences?.language?.let { Locale(it.tag) } ?: Locale.getDefault()
+            }
+
+            LaunchedEffect(preferences) {
+                if (preferences != null) isPreferencesReady = true
+            }
+
+            LaunchedEffect(darkTheme, view) {
+                val window = (view.context as ComponentActivity).window
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !darkTheme
+                    isAppearanceLightNavigationBars = !darkTheme
                 }
+            }
+
+            AlMahirTheme(isDarkTheme = darkTheme, locale = locale) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

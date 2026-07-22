@@ -20,6 +20,7 @@ import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.stringResource
 import com.iti.presentation.R
+import com.iti.presentation.core.ui.asString
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -63,7 +64,7 @@ fun RegisterScreen(
                 title = stringResource(id = R.string.auth_username),
                 hint = stringResource(id = R.string.auth_enter_username),
                 isError = state.usernameError != null,
-                errorMessage = state.usernameError,
+                errorMessage = state.usernameError?.asString(),
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
             )
         }
@@ -76,7 +77,7 @@ fun RegisterScreen(
                     title = stringResource(id = R.string.auth_first_name),
                     hint = stringResource(id = R.string.auth_first_name),
                     isError = state.firstNameError != null,
-                    errorMessage = state.firstNameError,
+                    errorMessage = state.firstNameError?.asString(),
                     modifier = Modifier.weight(1f)
                 )
                 TextField(
@@ -85,7 +86,7 @@ fun RegisterScreen(
                     title = stringResource(id = R.string.auth_last_name),
                     hint = stringResource(id = R.string.auth_last_name),
                     isError = state.lastNameError != null,
-                    errorMessage = state.lastNameError,
+                    errorMessage = state.lastNameError?.asString(),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -99,7 +100,7 @@ fun RegisterScreen(
                 hint = stringResource(id = R.string.auth_enter_email),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = state.emailError != null,
-                errorMessage = state.emailError,
+                errorMessage = state.emailError?.asString(),
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
             )
         }
@@ -112,7 +113,7 @@ fun RegisterScreen(
                 hint = stringResource(id = R.string.auth_enter_phone_number),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 isError = state.phoneNumberError != null,
-                errorMessage = state.phoneNumberError,
+                errorMessage = state.phoneNumberError?.asString(),
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)
             )
         }
@@ -128,7 +129,7 @@ fun RegisterScreen(
                 onClickTrailingIcon = { onIntent(RegisterIntent.TogglePasswordVisibility) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 isError = state.passwordError != null,
-                errorMessage = state.passwordError,
+                errorMessage = state.passwordError?.asString(),
                 modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.large)
             )
         }

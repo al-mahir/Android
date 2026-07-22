@@ -57,4 +57,31 @@
     <!-- Bottom bar — mic -->
     <string name="mushaf_cd_start_recording">Start recording</string>
     <string name="mushaf_cd_stop_recording">Stop recording</string>
+
+    <!-- ===== Downloads (settings section + screens) ===== -->
+    <string name="settings_section_downloads">Downloads</string>
+
+    <string name="downloads_title_reciters">Reciters</string>
+    <string name="downloads_title_tafseers">Tafsir</string>
+    <string name="downloads_title_translations">Translation</string>
+
+    <!-- Item actions -->
+    <string name="downloads_action_download">Download</string>
+    <string name="downloads_action_cancel">Cancel download</string>
+    <string name="downloads_action_delete">Delete download</string>
+    <string name="downloads_action_retry">Retry download</string>
+    <string name="downloads_state_downloaded">Downloaded</string>
+
+    <!-- Delete confirmation -->
+    <string name="downloads_delete_title">Delete download?</string>
+    <string name="downloads_delete_message">%1$s will be removed from this device. You can download it again later.</string>
+    <string name="downloads_delete_confirm">Delete</string>
+    <string name="downloads_delete_cancel">Cancel</string>
+
+    <!-- Errors -->
+    <string name="downloads_error_generic">We could not load this list. Please try again.</string>
+
+    <!-- ===== Mushaf preferences (settings section) ===== -->
+    <string name="settings_section_mushaf">Mushaf preferences</string>
+    <string name="settings_tajweed_description">Colour the script by tajweed rules</string>
 </resources>

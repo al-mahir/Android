@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Outbound URLs. Marked translatable="false" and kept out of strings.xml so they are never
+  localized and never drift between locales — there is exactly one copy of each.
+
+  These are placeholders: point them at the real channels before beta.
+-->
+<resources>
+    <!-- Profile menu destinations -->
+    <string name="profile_url_feature_request" translatable="false">https://almahir.app/feedback</string>
+    <string name="profile_url_help_center" translatable="false">https://almahir.app/help</string>
+
+    <!-- Deep link shared by the "Share the app" action -->
+    <string name="profile_share_link" translatable="false">https://almahir.app/download</string>
+
+    <!-- Official social channels -->
+    <string name="profile_social_url_github" translatable="false">https://github.com/al-mahir</string>
+    <string name="profile_social_url_discord" translatable="false">https://discord.gg/almahir</string>
+    <string name="profile_social_url_x" translatable="false">https://x.com/almahir_app</string>
+    <string name="profile_social_url_facebook" translatable="false">https://facebook.com/almahir.app</string>
+    <string name="profile_social_url_youtube" translatable="false">https://youtube.com/@almahir</string>
+    <string name="profile_social_url_instagram" translatable="false">https://instagram.com/almahir.app</string>
+</resources>

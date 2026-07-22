@@ -41,7 +41,7 @@ import kotlinx.coroutines.withContext
 fun MushafPageView(
     page: MushafPage,
     mode: ReadingMode,
-    highlightedWordId: () -> String?,
+    highlightedWordId: String?,
     modifier: Modifier = Modifier,
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
@@ -132,7 +132,7 @@ fun MushafPageView(
         }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val highlighted = highlightedWordId()
+            val highlighted = highlightedWordId
             tokens.forEach { token ->
                 val isAyahWord = token.wordId != null
                 val isVisible = when {

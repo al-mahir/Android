@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.AlMahir" parent="android:Theme.Material.Light.NoActionBar" />
+    <!--
+      The light-bar flags MUST live on the theme, not only on the Compose insets controller.
+      installSplashScreen() applies postSplashScreenTheme when the splash exits — about a
+      second after launch, i.e. after composition — and that re-application resets the system
+      bar appearance to whatever the theme declares. Without this, the bars fall back to light
+      *content* (white icons) over the app's white background and the clock, battery and
+      signal icons become invisible.
+
+      android:windowLightNavigationBar is API 27+, so it lives in the -v27 variants; this base
+      carries only windowLightStatusBar (API 23+), which every supported device understands.
+    -->
+    <style name="Base.Theme.AlMahir" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Theme.AlMahir" parent="Base.Theme.AlMahir" />
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>

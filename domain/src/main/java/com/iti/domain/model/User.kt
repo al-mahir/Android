@@ -5,4 +5,6 @@ data class User(
     val displayName: String,
     val initials: String,
     val avatarUrl: String?,
+    val email: String,
+    val joinedAtEpochMillis: Long,
 )

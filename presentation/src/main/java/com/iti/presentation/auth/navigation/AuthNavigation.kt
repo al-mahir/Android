@@ -1,7 +1,12 @@
 package com.iti.presentation.auth.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -9,6 +14,7 @@ import com.iti.presentation.auth.forgotpassword.ForgotPasswordEffect
 import com.iti.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.iti.presentation.auth.forgotpassword.ForgotPasswordViewModel
 import com.iti.presentation.auth.login.LoginEffect
+import com.iti.presentation.auth.login.LoginIntent
 import com.iti.presentation.auth.login.LoginScreen
 import com.iti.presentation.auth.login.LoginViewModel
 import com.iti.presentation.auth.otp.OtpEffect
@@ -16,10 +22,16 @@ import com.iti.presentation.auth.otp.OtpIntent
 import com.iti.presentation.auth.otp.OtpScreen
 import com.iti.presentation.auth.otp.OtpViewModel
 import com.iti.presentation.auth.register.RegisterEffect
+import com.iti.presentation.auth.register.RegisterIntent
 import com.iti.presentation.auth.register.RegisterScreen
 import com.iti.presentation.auth.register.RegisterViewModel
 import com.iti.presentation.core.mvi.ObserveEffect
+import com.iti.presentation.core.platform.GoogleIdTokenProvider
+import com.iti.presentation.core.platform.GoogleIdTokenResult
+import com.iti.presentation.core.ui.resolve
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 /**
  * Registers the authentication destinations on the app's single Navigation 3 back stack.
@@ -33,6 +45,24 @@ import org.koin.androidx.compose.koinViewModel
  * @param onAuthenticated the user is signed in; replace auth with the app's main entry point
  * @param onShowMessage surface a transient error to the user
  */
+
+@Composable
+private fun rememberGoogleSignInLauncher(
+    onResult: (GoogleIdTokenResult) -> Unit,
+): () -> Unit {
+    val provider: GoogleIdTokenProvider = koinInject()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val currentOnResult by rememberUpdatedState(onResult)
+
+    return remember(provider, context, scope) {
+        {
+            scope.launch { currentOnResult(provider.requestIdToken(context)) }
+            Unit
+        }
+    }
+}
+
 fun EntryProviderScope<NavKey>.authEntries(
     onNavigate: (NavKey) -> Unit,
     onBack: () -> Unit,
@@ -42,11 +72,23 @@ fun EntryProviderScope<NavKey>.authEntries(
     entry<AuthRoute.Login> {
         val viewModel: LoginViewModel = koinViewModel()
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+
+        val requestGoogleIdToken = rememberGoogleSignInLauncher { result ->
+            viewModel.onIntent(
+                when (result) {
+                    is GoogleIdTokenResult.Success -> LoginIntent.GoogleTokenReceived(result.idToken)
+                    is GoogleIdTokenResult.Cancelled -> LoginIntent.GoogleSignInDismissed
+                    else -> LoginIntent.GoogleSignInUnavailable
+                }
+            )
+        }
 
         ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
                 is LoginEffect.NavigateToHome -> onAuthenticated()
-                is LoginEffect.ShowError -> onShowMessage(effect.message)
+                is LoginEffect.LaunchGoogleSignIn -> requestGoogleIdToken()
+                is LoginEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
 
@@ -61,14 +103,32 @@ fun EntryProviderScope<NavKey>.authEntries(
     entry<AuthRoute.Register> {
         val viewModel: RegisterViewModel = koinViewModel()
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+
+        val requestGoogleIdToken = rememberGoogleSignInLauncher { result ->
+            viewModel.onIntent(
+                when (result) {
+                    is GoogleIdTokenResult.Success ->
+                        RegisterIntent.GoogleTokenReceived(result.idToken)
+
+                    is GoogleIdTokenResult.Cancelled -> RegisterIntent.GoogleSignInDismissed
+                    else -> RegisterIntent.GoogleSignInUnavailable
+                }
+            )
+        }
 
         ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
-                is RegisterEffect.NavigateToOtpVerify ->
-                    onNavigate(AuthRoute.OtpVerify(effect.email))
-
                 is RegisterEffect.NavigateToHome -> onAuthenticated()
-                is RegisterEffect.ShowError -> onShowMessage(effect.message)
+                is RegisterEffect.LaunchGoogleSignIn -> requestGoogleIdToken()
+
+                // Register is always pushed from Login, so returning there is a pop.
+                is RegisterEffect.NavigateToLogin -> {
+                    onShowMessage(effect.message.resolve(context))
+                    onBack()
+                }
+
+                is RegisterEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
 

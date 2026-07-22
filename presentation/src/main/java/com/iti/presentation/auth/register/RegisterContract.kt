@@ -1,19 +1,21 @@
 package com.iti.presentation.auth.register
 
+import com.iti.presentation.core.ui.UiText
+
 data class RegisterState(
     val username: String = "",
-    val usernameError: String? = null,
+    val usernameError: UiText? = null,
     val firstName: String = "",
-    val firstNameError: String? = null,
+    val firstNameError: UiText? = null,
     val lastName: String = "",
-    val lastNameError: String? = null,
+    val lastNameError: UiText? = null,
     val email: String = "",
-    val emailError: String? = null,
+    val emailError: UiText? = null,
     val password: String = "",
-    val passwordError: String? = null,
+    val passwordError: UiText? = null,
     val isPasswordVisible: Boolean = false,
     val phoneNumber: String = "",
-    val phoneNumberError: String? = null,
+    val phoneNumberError: UiText? = null,
     val isLoading: Boolean = false
 )
 
@@ -24,13 +26,22 @@ sealed class RegisterIntent {
     data class EmailChanged(val email: String) : RegisterIntent()
     data class PasswordChanged(val password: String) : RegisterIntent()
     data class PhoneNumberChanged(val phoneNumber: String) : RegisterIntent()
-    object TogglePasswordVisibility : RegisterIntent()
-    object SubmitRegistration : RegisterIntent()
-    object GoogleSignInClicked : RegisterIntent()
+    data object TogglePasswordVisibility : RegisterIntent()
+    data object SubmitRegistration : RegisterIntent()
+    data object GoogleSignInClicked : RegisterIntent()
+
+    data class GoogleTokenReceived(val idToken: String) : RegisterIntent()
+
+    data object GoogleSignInDismissed : RegisterIntent()
+    data object GoogleSignInUnavailable : RegisterIntent()
 }
 
 sealed class RegisterEffect {
-    data class NavigateToOtpVerify(val email: String) : RegisterEffect()
-    object NavigateToHome : RegisterEffect()
-    data class ShowError(val message: String) : RegisterEffect()
+    data object NavigateToHome : RegisterEffect()
+
+    data object LaunchGoogleSignIn : RegisterEffect()
+
+    data class NavigateToLogin(val message: UiText) : RegisterEffect()
+
+    data class ShowError(val message: UiText) : RegisterEffect()
 }

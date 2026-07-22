@@ -39,6 +39,22 @@
     <string name="auth_send_reset_link">إرسال رابط إعادة التعيين</string>
     <string name="auth_back_to_sign_in">العودة لتسجيل الدخول</string>
 
+    <!-- Authentication errors -->
+    <string name="auth_error_required">هذا الحقل مطلوب</string>
+    <string name="auth_error_invalid_email">أدخل بريداً إلكترونياً صحيحاً</string>
+    <string name="auth_error_weak_password">استخدم 8 أحرف على الأقل تتضمن حرفاً كبيراً وصغيراً ورقماً ورمزاً</string>
+    <string name="auth_error_invalid_phone_number">أدخل رقم هاتف مصري صحيح، مثال 01012345678</string>
+    <string name="auth_error_invalid_otp">أدخل الرمز المكون من 6 أرقام</string>
+    <string name="auth_error_validation">يرجى مراجعة الحقول المحددة</string>
+    <string name="auth_error_invalid_credentials">البريد الإلكتروني أو كلمة المرور غير صحيحة</string>
+    <string name="auth_error_conflict">يوجد حساب بهذه البيانات بالفعل</string>
+    <string name="auth_error_google_unavailable">تسجيل الدخول عبر جوجل غير متاح حالياً. يرجى استخدام بريدك الإلكتروني وكلمة المرور.</string>
+    <string name="auth_error_registered_sign_in_failed">تم إنشاء حسابك. يرجى تسجيل الدخول.</string>
+
+    <!-- ===== Shared errors ===== -->
+    <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>
+    <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+
     <!-- ===== Home ===== -->
     <string name="home_brand_title">المَاهِر</string>
     <string name="home_greeting">أهلاً بعودتك</string>
@@ -68,4 +84,102 @@
 
     <string name="home_error_generic">تعذّر تحميل محتوى الصفحة الرئيسية. حاول مرة أخرى.</string>
     <string name="home_join_failed">تعذّر الانضمام إلى الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== Profile ===== -->
+    <string name="profile_avatar_content_description">الصورة الشخصية</string>
+
+    <!-- Subscription meta -->
+    <string name="profile_subscription_status">حالة الاشتراك</string>
+    <string name="profile_joined">انضم</string>
+    <string name="profile_plan_none">لا شيء</string>
+    <string name="profile_plan_premium">بريميوم</string>
+
+    <!-- Account actions -->
+    <string name="profile_buy_premium">اشترِ الماهر Premium</string>
+    <string name="profile_restore_purchases">استعادة المشتريات</string>
+    <string name="profile_restoring_purchases">جارٍ الاستعادة…</string>
+    <string name="profile_logout">تسجيل الخروج</string>
+
+    <string name="profile_restore_succeeded">تمت استعادة مشترياتك.</string>
+    <string name="profile_restore_nothing_found">لم يتم العثور على مشتريات سابقة.</string>
+    <string name="profile_restore_failed">تعذّرت استعادة المشتريات. حاول مرة أخرى.</string>
+
+    <!-- Social channels (accessibility labels) -->
+    <string name="profile_social_github">جيت هَب</string>
+    <string name="profile_social_discord">ديسكورد</string>
+    <string name="profile_social_x">إكس</string>
+    <string name="profile_social_facebook">فيسبوك</string>
+    <string name="profile_social_youtube">يوتيوب</string>
+    <string name="profile_social_instagram">إنستغرام</string>
+
+    <!-- Menu -->
+    <string name="profile_menu_about">عن الماهر</string>
+    <string name="profile_menu_feature_request">طلب خاصية جديدة</string>
+    <string name="profile_menu_help_center">مركز المساعدة</string>
+    <string name="profile_menu_share_app">شارك التطبيق</string>
+    <string name="profile_menu_rate_app">قيّم البرنامج</string>
+    <string name="profile_menu_terms_of_service">شروط الخدمة</string>
+    <string name="profile_menu_privacy_policy">سياسة الخصوصية</string>
+    <string name="profile_delete_account">إلغاء الحساب</string>
+
+    <!-- Share sheet. %1$s = app deep link -->
+    <string name="profile_share_message">اقرأ القرآن الكريم واحفظه مع الماهر: %1$s</string>
+    <string name="profile_share_chooser_title">مشاركة الماهر</string>
+
+    <!-- Logout confirmation -->
+    <string name="profile_logout_dialog_title">تسجيل الخروج</string>
+    <string name="profile_logout_dialog_message">ستحتاج إلى تسجيل الدخول مجدداً لمتابعة جلساتك.</string>
+    <string name="profile_logout_dialog_confirm">تسجيل الخروج</string>
+    <string name="profile_logout_failed">تعذّر تسجيل الخروج. حاول مرة أخرى.</string>
+
+    <!-- Account deletion confirmation -->
+    <string name="profile_delete_account_dialog_title">إلغاء الحساب</string>
+    <string name="profile_delete_account_dialog_message">سيتم حذف حسابك وتسجيلاتك وتقدّمك نهائياً. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="profile_delete_account_dialog_confirm">حذف</string>
+    <string name="profile_delete_account_failed">تعذّر حذف الحساب. حاول مرة أخرى.</string>
+
+    <string name="profile_dialog_cancel">إلغاء</string>
+
+    <string name="profile_error_generic">تعذّر تحميل ملفك الشخصي. حاول مرة أخرى.</string>
+    <string name="profile_no_app_to_handle">لا يوجد تطبيق على هذا الجهاز يمكنه فتح ذلك.</string>
+
+    <!-- ===== Static content (about / terms / privacy) ===== -->
+    <string name="static_content_error_generic">تعذّر تحميل هذه الصفحة. حاول مرة أخرى.</string>
+
+    <!-- ===== Settings ===== -->
+    <string name="settings_title">الإعدادات</string>
+
+    <!-- Section headers -->
+    <string name="settings_section_appearance">مظهر التطبيق</string>
+    <string name="settings_section_notifications">إشعارات</string>
+    <string name="settings_section_sounds">الأصوات والتفاعل الحسي</string>
+    <string name="settings_section_privacy">الخصوصية</string>
+
+    <!-- Rows -->
+    <string name="settings_language">اللغة</string>
+    <string name="settings_theme">المظهر</string>
+    <string name="settings_reminders">تذكيرات</string>
+    <string name="settings_error_sounds">الأخطاء</string>
+    <string name="settings_data_usage">استخدام البيانات</string>
+    <string name="settings_delete_recordings">حذف جميع التسجيلات</string>
+
+    <!-- Language options -->
+    <string name="settings_language_arabic">العربية</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Theme options -->
+    <string name="settings_theme_light">فاتح</string>
+    <string name="settings_theme_dark">داكن</string>
+    <string name="settings_theme_system">حسب النظام</string>
+
+    <!-- Delete recordings confirmation -->
+    <string name="settings_delete_recordings_title">حذف جميع التسجيلات؟</string>
+    <string name="settings_delete_recordings_message">سيتم حذف كل التسجيلات المحفوظة نهائيًا. لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="settings_delete_recordings_confirm">حذف</string>
+    <string name="settings_delete_recordings_cancel">إلغاء</string>
+    <string name="settings_recordings_deleted">تم حذف جميع التسجيلات.</string>
+    <string name="settings_recordings_delete_failed">تعذّر حذف التسجيلات. حاول مرة أخرى.</string>
+
+    <!-- Footer -->
+    <string name="settings_version_footer">الماهر • الإصدار %1$s</string>
 </resources>
