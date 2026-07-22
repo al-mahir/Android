@@ -11,6 +11,8 @@ sealed interface MushafSearchIntent {
     data class AyahClicked(val ayah: com.example.mushaf.domain.model.AyahSearchResult) : MushafSearchIntent
     data object LoadNextAyahsPage : MushafSearchIntent
     data object LastReadClicked : MushafSearchIntent
+    data class SelectSearchType(val searchType: SearchType) : MushafSearchIntent
+    data class ToggleHyDe(val enabled: Boolean) : MushafSearchIntent
     data class NavigateBottomTab(val tabIndex: Int) : MushafSearchIntent
     data object ClearNavigationEffect : MushafSearchIntent
 }

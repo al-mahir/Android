@@ -29,6 +29,7 @@ val mushafPresentationModule = module {
     factory { com.example.mushaf.domain.usecase.search.SearchHizbUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchPageUseCase(get()) }
     factory { SearchAyahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
@@ -51,6 +52,7 @@ val mushafPresentationModule = module {
             searchSurahUseCase = get(),
             searchJuzUseCase = get(),
             searchAyahUseCase = get(),
+            searchAyahByMeaningUseCase = get(),
             getTargetPageUseCase = get(),
             saveLastPageUseCase = get()
         )

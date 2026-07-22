@@ -1,9 +1,12 @@
 package com.example.mushaf.presentation.search
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,14 +17,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,10 +38,6 @@ import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.presentation.search.components.AyahListItem
 import com.example.mushaf.presentation.search.components.JuzListItem
-import com.example.mushaf.presentation.search.components.LastReadBanner
-import com.example.mushaf.presentation.search.components.MushafBottomBar
-import com.example.mushaf.presentation.search.components.SurahListItem
-import com.example.mushaf.presentation.search.components.TopHeaderSection
 import com.example.mushaf.presentation.search.components.LastReadBanner
 import com.example.mushaf.presentation.search.components.MushafBottomBar
 import com.example.mushaf.presentation.search.components.MushafDestination
@@ -92,14 +95,81 @@ internal fun MushafSearchContent(
                 hint = stringResource(R.string.search_hint)
             )
             
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
+
+            // Search Type Switcher (Text vs Meaning)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Theme.colors.surface)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (state.searchType == SearchType.TEXT) Theme.colors.primary else Color.Transparent
+                        )
+                        .clickable { onIntent(MushafSearchIntent.SelectSearchType(SearchType.TEXT)) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "النص (Wording)",
+                        color = if (state.searchType == SearchType.TEXT) Color.White else Theme.colors.primaryFont,
+                        style = Theme.typography.body.medium
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (state.searchType == SearchType.MEANING) Theme.colors.primary else Color.Transparent
+                        )
+                        .clickable { onIntent(MushafSearchIntent.SelectSearchType(SearchType.MEANING)) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "المعنى (Meaning)",
+                        color = if (state.searchType == SearchType.MEANING) Color.White else Theme.colors.primaryFont,
+                        style = Theme.typography.body.medium
+                    )
+                }
+            }
+
+            if (state.searchType == SearchType.MEANING && state.hydeUsed) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "✨ تم توسيع البحث بالذكاء الاصطناعي (HyDE Expansion)",
+                    style = Theme.typography.body.small,
+                    color = Theme.colors.primary,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+
+            if (state.errorMessage != null) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = state.errorMessage,
+                    style = Theme.typography.body.small,
+                    color = Color.Red,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
 
             val listState = rememberLazyListState()
 
             LaunchedEffect(listState) {
                 snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
                     .collect { lastIndex ->
-                        if (state.query.isNotBlank() && lastIndex != null && lastIndex >= state.surahs.size + state.ayahs.size - 5) {
+                        if (state.query.isNotBlank() && state.searchType == SearchType.TEXT && lastIndex != null && lastIndex >= state.surahs.size + state.ayahs.size - 5) {
                             onIntent(MushafSearchIntent.LoadNextAyahsPage)
                         }
                     }
@@ -119,11 +189,13 @@ internal fun MushafSearchContent(
                         )
                     }
                 } else {
-                    items(state.surahs, key = { it.number }) { surah ->
-                        SurahListItem(
-                            surah = surah,
-                            onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
-                        )
+                    if (state.searchType == SearchType.TEXT) {
+                        items(state.surahs, key = { it.number }) { surah ->
+                            SurahListItem(
+                                surah = surah,
+                                onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
+                            )
+                        }
                     }
                     items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
                         AyahListItem(

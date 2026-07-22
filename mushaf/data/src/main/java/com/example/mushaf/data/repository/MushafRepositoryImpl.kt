@@ -15,10 +15,13 @@ import com.example.mushaf.domain.repository.MushafRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+import com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource
+
 class MushafRepositoryImpl(
     private val dataSource: MushafAssetDataSource,
     private val metadataDataSource: QuranMetadataDataSource,
-    private val textDataSource: QuranTextDataSource
+    private val textDataSource: QuranTextDataSource,
+    private val semanticSearchDataSource: SemanticSearchRemoteDataSource? = null
 ) : MushafRepository {
 
     override fun getPage(pageNumber: Int): Flow<MushafPage> = flow {
@@ -62,6 +65,29 @@ class MushafRepositoryImpl(
                 ayahText = raw.text,
                 surahNameArabic = surah?.nameAr ?: "",
                 surahNameEnglish = surah?.nameEn ?: ""
+            )
+        }
+    }
+
+    override suspend fun searchAyahByMeaning(
+        query: String,
+        mode: String,
+        hyde: Boolean,
+        limit: Int
+    ): List<AyahSearchResult> {
+        val dataSource = semanticSearchDataSource ?: return emptyList()
+        val response = dataSource.searchByMeaning(query, mode, hyde, limit)
+        return response.hits.map { hit ->
+            val surah = metadataDataSource.getSurah(hit.sura)
+            AyahSearchResult(
+                surahNumber = hit.sura,
+                ayahNumber = hit.aya,
+                ayahText = hit.textUthmani,
+                surahNameArabic = surah?.nameAr ?: "",
+                surahNameEnglish = surah?.nameEn ?: "",
+                translation = hit.translation,
+                score = hit.score,
+                hydeUsed = response.hydeUsed
             )
         }
     }

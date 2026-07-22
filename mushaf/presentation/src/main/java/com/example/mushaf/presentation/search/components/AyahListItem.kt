@@ -64,6 +64,16 @@ fun AyahListItem(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Right
             )
+            val translation = ayah.translation
+            if (!translation.isNullOrBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = translation,
+                    style = Theme.typography.body.medium,
+                    color = Theme.colors.secondaryFont,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }

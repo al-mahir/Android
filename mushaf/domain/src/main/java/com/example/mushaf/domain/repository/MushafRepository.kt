@@ -19,6 +19,7 @@ interface MushafRepository {
     suspend fun searchHizb(query: String): List<Hizb>
     suspend fun searchPage(query: String): List<Int>
     suspend fun searchAyah(query: String, limit: Int = 50, offset: Int = 0): List<AyahSearchResult>
+    suspend fun searchAyahByMeaning(query: String, mode: String = "hybrid", hyde: Boolean = true, limit: Int = 20): List<AyahSearchResult>
 
     suspend fun getSurahStartingPage(surahNumber: Int): Int?
     suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int?

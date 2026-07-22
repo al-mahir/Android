@@ -8,6 +8,9 @@ import com.example.mushaf.domain.model.Surah
 
 data class MushafSearchState(
     val query: String = "",
+    val searchType: SearchType = SearchType.TEXT,
+    val useHyDe: Boolean = true,
+    val hydeUsed: Boolean = false,
     val surahs: List<Surah> = emptyList(),
     val juzs: List<Juz> = emptyList(),
     val hizbs: List<Hizb> = emptyList(),
@@ -16,6 +19,7 @@ data class MushafSearchState(
     val isPaginatingAyahs: Boolean = false,
     val hasReachedEndAyahs: Boolean = false,
     val isLoading: Boolean = false,
+    val errorMessage: String? = null,
     val lastReadSession: LastReadSession? = null,
     val shouldNavigateToMushaf: Boolean = false
 )

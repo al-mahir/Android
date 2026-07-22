@@ -21,31 +21,42 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+import com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase
+
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class MushafSearchViewModel(
     private val searchSurahUseCase: SearchSurahUseCase,
     private val searchJuzUseCase: SearchJuzUseCase,
     private val searchAyahUseCase: SearchAyahUseCase,
+    private val searchAyahByMeaningUseCase: SearchAyahByMeaningUseCase,
     private val getLastReadUseCase: GetLastReadUseCase,
     private val getTargetPageUseCase: GetTargetPageUseCase,
     private val saveLastPageUseCase: SaveLastPageUseCase
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
+    private val _searchType = MutableStateFlow(SearchType.TEXT)
+    private val _useHyDe = MutableStateFlow(true)
     private val _shouldNavigateToMushaf = MutableStateFlow(false)
 
     private val _ayahs = MutableStateFlow<List<com.example.mushaf.domain.model.AyahSearchResult>>(emptyList())
     private val _isPaginatingAyahs = MutableStateFlow(false)
     private val _hasReachedEndAyahs = MutableStateFlow(false)
+    private val _hydeUsed = MutableStateFlow(false)
+    private val _errorMessage = MutableStateFlow<String?>(null)
     private var currentAyahOffset = 0
     private val AYAH_PAGE_SIZE = 50
 
-    private val searchResultsFlow = _query.debounce(500L).flatMapLatest { query ->
+    private val searchResultsFlow = combine(_query.debounce(500L), _searchType, _useHyDe) { query, searchType, useHyDe ->
+        Triple(query, searchType, useHyDe)
+    }.flatMapLatest { (query, searchType, useHyDe) ->
         flow {
+            _errorMessage.value = null
+            _hydeUsed.value = false
             if (query.isBlank()) {
                 val allJuzs = searchJuzUseCase("").getOrDefault(emptyList())
                 emit(MushafSearchStateUpdate(juzs = allJuzs))
-            } else {
+            } else if (searchType == SearchType.TEXT) {
                 val matchedSurahs = searchSurahUseCase(query).getOrDefault(emptyList())
                 
                 // Reset pagination
@@ -59,34 +70,69 @@ class MushafSearchViewModel(
                 _isPaginatingAyahs.value = false
                 
                 emit(MushafSearchStateUpdate(surahs = matchedSurahs))
+            } else {
+                // Search by Meaning (Semantic / Hybrid search via Backend AI service)
+                currentAyahOffset = 0
+                _hasReachedEndAyahs.value = true
+                _ayahs.value = emptyList()
+                _isPaginatingAyahs.value = true
+
+                val result = searchAyahByMeaningUseCase(
+                    query = query,
+                    mode = "hybrid",
+                    hyde = useHyDe,
+                    limit = 20
+                )
+
+                result.onSuccess { res ->
+                    _ayahs.value = res
+                    _hydeUsed.value = res.firstOrNull()?.hydeUsed ?: false
+                }.onFailure { error ->
+                    _errorMessage.value = error.message ?: "Failed to perform semantic search"
+                }
+
+                _isPaginatingAyahs.value = false
+                emit(MushafSearchStateUpdate(surahs = emptyList()))
             }
         }
     }
 
     val state: StateFlow<MushafSearchState> = combine(
         _query,
+        _searchType,
+        _useHyDe,
         searchResultsFlow,
         _ayahs,
         _isPaginatingAyahs,
         _hasReachedEndAyahs,
+        _hydeUsed,
+        _errorMessage,
         getLastReadUseCase(),
         _shouldNavigateToMushaf
     ) { args ->
         val query = args[0] as String
-        val results = args[1] as MushafSearchStateUpdate
-        val ayahs = args[2] as List<com.example.mushaf.domain.model.AyahSearchResult>
-        val isPaginating = args[3] as Boolean
-        val hasReachedEnd = args[4] as Boolean
-        val lastRead = args[5] as com.example.mushaf.domain.model.LastReadSession?
-        val shouldNavigate = args[6] as Boolean
+        val searchType = args[1] as SearchType
+        val useHyDe = args[2] as Boolean
+        val results = args[3] as MushafSearchStateUpdate
+        val ayahs = args[4] as List<com.example.mushaf.domain.model.AyahSearchResult>
+        val isPaginating = args[5] as Boolean
+        val hasReachedEnd = args[6] as Boolean
+        val hydeUsed = args[7] as Boolean
+        val errorMessage = args[8] as String?
+        val lastRead = args[9] as com.example.mushaf.domain.model.LastReadSession?
+        val shouldNavigate = args[10] as Boolean
         
         MushafSearchState(
             query = query,
+            searchType = searchType,
+            useHyDe = useHyDe,
+            hydeUsed = hydeUsed,
             surahs = results.surahs,
             juzs = results.juzs,
             ayahs = ayahs,
             isPaginatingAyahs = isPaginating,
             hasReachedEndAyahs = hasReachedEnd,
+            errorMessage = errorMessage,
             lastReadSession = lastRead,
             shouldNavigateToMushaf = shouldNavigate
         )
@@ -99,6 +145,8 @@ class MushafSearchViewModel(
     fun onIntent(intent: MushafSearchIntent) {
         when (intent) {
             is MushafSearchIntent.UpdateQuery -> _query.update { intent.query }
+            is MushafSearchIntent.SelectSearchType -> _searchType.update { intent.searchType }
+            is MushafSearchIntent.ToggleHyDe -> _useHyDe.update { intent.enabled }
             is MushafSearchIntent.SurahClicked -> {
                 viewModelScope.launch {
                     getTargetPageUseCase.forSurah(intent.surah.number)?.let { navigateToPage(it) }
