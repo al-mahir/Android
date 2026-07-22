@@ -8,10 +8,13 @@ invariants, the architecture, what is built, and what is not.
 - **Connecting a device:** [../MOBILE_INTEGRATION.md](../MOBILE_INTEGRATION.md)
 - **Engineering rules:** [../../AGENTS.md](../../AGENTS.md) — architecture, MVI, stack, localization
 
-**Status:** live correction works end to end against the real GPU service. ~175 unit tests,
-lint clean. Sessions are recorded locally and reviewable, and every API.md §10 contract
-obligation is now rendered. The recitation-settings surface (engine / strictness / tajwīd rules /
-moshaf) is **not built** — see [§7.2](#72-recitation-settings-the-whole-surface).
+**Status:** live correction works end to end against the real GPU service. **292 tests pass**
+(~200 of them this feature's), lint clean. Sessions are recorded locally and reviewable, every
+API.md §10 contract obligation is rendered, and the recitation-settings surface (engine /
+strictness / tajwīd rules / moshaf) is **built** — see [§12](#12-recitation-settings).
+
+> **Picking this up cold?** Read [§2 Quick start](#2-quick-start) to get it running, then
+> [§11 Resuming](#11-resuming-after-a-context-reset) for repo state and what to do next.
 
 ---
 
@@ -77,7 +80,8 @@ From `API.md` and `MOBILE_INTEGRATION.md`. Each of these has cost time or would 
 | 5 | `word_idx` is **0-based**; the layout DB keys words **1-based** | `wordId = "$sura:$aya:${word_idx + 1}"`. Off by one and every mistake lands on the neighbouring word |
 | 6 | An unbuilt engine **falls back silently**; the ack is the only evidence | Compare `ack.engine` to the request and tell the user |
 | 7 | An out-of-range `moshaf` value makes the server discard the **entire** object | Indistinguishable from the setting being ignored. Build the panel from `/moshaf-schema` |
-| 8 | This deployment reports `available_engines: ["real"]` only | No `mock`, no `zipformer`. `FakeAiService` is the only offline test target |
+| 8 | This deployment reports `available_engines: ["real","zipformer"]` | Both are selectable per session, `real` is the default. `mock` is not built when a GPU is present. Never assume a fixed list — read `/health` |
+| 8b | **zipformer never returns `error`.** Every finding carries `confidence: null`, and null confidence grades `almost` at *every* strictness level | `almost` is a hint that is never counted ([§4](#4-the-invariants)), so on zipformer a correct client shows **no mistakes at all**. It is a follow-along engine, not a lighter corrector. This cost the whole feature once — see [§12.1](#121-the-bug-this-closed) |
 | 9 | Ktor's **Android engine does not implement WebSockets** | The AI client runs on the **OkHttp** engine with `readTimeout(0)` |
 | 10 | Confidence thresholds are **uncalibrated placeholders** | Do not build a grade, streak or ranking on accuracy without calibrating first |
 
@@ -239,6 +243,8 @@ If a word gets clipped: raise `preRollFrames` or lower `speechFactor`. **Never**
 | `non_verse` acknowledgement | ✅ | Pill, explicitly "not scored" |
 | Content attributions (Tanzil, KFGQPC) | ✅ | Profile → التنويهات; local, unconditional |
 | Localization ar + en, RTL | ✅ | Incl. Arabic plurals (six forms) |
+| Hifz-only / hifz+tajwīd toggle in the bottom bar | ✅ | `rules []` vs `null`; restarts a live session — [§12.2](#122-why-the-bottom-bar-toggle-is-the-rules-layer-not-the-engine) |
+| Recitation settings screen (engine / strictness / rules / moshaf) | ✅ | Rendered from `/health`, `/tajweed-rules`, `/moshaf-schema` — [§12](#12-recitation-settings) |
 
 ---
 
@@ -271,16 +277,9 @@ each exists is not obvious from the code alone.
 distant sūrah — mapping an arbitrary `wordId` to a page needs a layout-DB lookup that does not
 exist yet. Auto page-turn only follows onto already-loaded neighbours.
 
-### 7.2 Recitation settings (the whole surface)
+### 7.2 Recitation settings — ✅ built
 
-`AiServiceApi` exposes `/health`, `/tajweed-rules` and `/moshaf-schema`, is registered in Koin,
-and **is never called by the app**. Nothing sets `strictness`, `engine`, `rules` or `moshaf`, so
-every session runs on server defaults.
-
-Build the panel **from the response**, never hardcoded — legal ranges are not uniform
-(`madd_monfasel_len` 2–5, `madd_mottasel_len` 4–6), and an out-of-range value discards the whole
-moshaf object. Note also that `/moshaf-schema` reports `madd_monfasel_len` default `2` while the
-server grades with `4`; send the field explicitly if the displayed value must match the graded one.
+Moved to [§12](#12-recitation-settings).
 
 ### 7.3 Other gaps
 
@@ -366,6 +365,9 @@ adb pull /sdcard/g.wav
 | `Invalid unicode escape sequence` at `mergeDebugResources` | An unescaped `'` in a string resource. Android needs `'` |
 | Ktor test stub reports a nonsense engine | Inside `embeddedServer { }`, a property named `engine` is shadowed by Ktor's own |
 | Tajweed-mode mistakes show no tint | COLR page fonts supply their own colour and ignore the `drawText` override. **The underline is the signal**, not the tint |
+| Session connects, grades, ends — but never flags a single mistake | You are on **zipformer**. It returns `confidence: null`, which grades `almost` at every strictness level, and `almost` is never counted. Check `ack.engine` before suspecting the UI |
+| A moshaf field refuses to change, and the others silently revert too | One invalid value discards the **entire** moshaf object. Usually madd al-leen exceeding madd al-ʿāriḍ — send the dependent field in the same update (`MoshafConstraints`) |
+| Rule chips do nothing after a reinstall | `rules` must persist as an **absent key** for null and `"[]"` for the empty choice. A nullable `Set<String>` cannot express the difference |
 
 ---
 
@@ -377,3 +379,168 @@ adb pull /sdcard/g.wav
 | Own `:taahud:*` module set | Inside `:mushaf:*` | Highlights are drawn by `MushafPageView`, and a presentation module may not depend on another |
 | — | Accuracy pill built despite the uncalibrated caveat | Product decision, taken explicitly. Constrained: hints don't lower it, unverified excluded, denominator shown |
 | Separate Stop/Seek use cases | `RecitationControl` values | They would be empty pass-throughs into a running session |
+
+---
+
+## 11. Resuming after a context reset
+
+### 11.1 Where the work stands
+
+| | |
+|---|---|
+| Branch | `feature/voice-integration` |
+| Working tree | Clean apart from stray debug artifacts (below) |
+| Last commit | `add: profile section and session history UI with navigation integration` |
+| Build | `:app:assembleDebug` green |
+| Tests | 274 pass, 0 failures |
+| Lint | No new warnings; the remaining ones are pre-existing app-module noise |
+
+**Stray files to delete or git-ignore:** `gated`, `gated.wav`, `raw.wav` in the repo root. They are
+corrupted WAV pulls (see the PowerShell gotcha in §9) and carry no value.
+
+### 11.2 State that is not in the repo
+
+The feature depends on three things a fresh clone will not have. All three fail *silently*.
+
+1. **The AI service must be running** on the laptop — `curl http://localhost:8100/health`.
+2. **`local.properties` must contain** `almahir.aiService=localhost:8100`. It is git-ignored by
+   design, so it does not survive a clone.
+3. **`adb reverse tcp:8100 tcp:8100` must be re-run** after every replug or reboot.
+
+### 11.3 Confirm you are in a good state
+
+```bash
+# Everything compiles and every invariant still holds
+./gradlew :app:assembleDebug   :domain:test :data:testDebugUnitTest :presentation:testDebugUnitTest   :mushaf:domain:testDebugUnitTest :mushaf:data:testDebugUnitTest   :mushaf:presentation:testDebugUnitTest
+
+# The service is reachable and speaks the protocol (skips if it is down)
+./gradlew :mushaf:data:testDebugUnitTest --tests "*LiveServerSmokeTest*" -i
+```
+
+If the smoke test **skips**, the server or the tunnel is missing — fix that before believing any
+on-device symptom.
+
+### 11.4 What to do next, in order
+
+1. **Offline handling (§7.3)** — disable live correction up front when there is no connectivity,
+   rather than failing after ~12 s. AI-12 / AVL-02. The settings screen has the same problem: it
+   shows a retry, but nothing tells the reciter the device is offline.
+2. **TAH-06 mistake detail overlay** — `selectedMistakeWordId` is already set by an intent and
+   nothing opens a sheet on it.
+3. **Migrate MUALLEM mode** off `SimulatedHighlightDriver` onto this pipeline.
+4. **Backend sync for history** — the repository contract was written so this is additive.
+
+Settings follow-ups that were left deliberately:
+
+- `MoshafConstraints.resolveForWire` is written and tested but **not yet called** — the panel
+  clamps on edit (`apply`), which covers the case the reciter can see. It is needed if a stored
+  selection from an older build can reach the wire unclamped.
+- Nothing reads back what the server actually resolved. The client is the only thing that can
+  tell a reciter their choice did not take, and right now it does not.
+
+### 11.5 Before changing behaviour
+
+- Read [§4 The invariants](#4-the-invariants) first. Each row names the file that enforces it and
+  has tests behind it; several encode a safety property that is not obvious from the code alone.
+- When fixing a bug, **verify the regression test fails without the fix**. A test that passes on
+  the broken code proves nothing — the page-turn fix in §9 was confirmed this way.
+- New user-facing text goes in **both** `values/` and `values-ar/`, and any count-bearing string
+  must be a `<plurals>` (Arabic has six forms).
+- Escape `'` as `'` in string resources, or `mergeDebugResources` fails with a misleading
+  "Invalid unicode escape sequence".
+
+---
+
+## 12. Recitation settings
+
+Full reference: [../ANDROID_MODEL_SETTINGS.md](../ANDROID_MODEL_SETTINGS.md). This section
+records what was built and the decisions that are not obvious from the code.
+
+### 12.1 The bug this closed
+
+`MushafViewModel` hardcoded `engine = "zipformer"` on every session. Combined with two rules that
+are individually correct, that made the whole feature silently inert:
+
+- zipformer returns `confidence: null` on every finding;
+- a null-confidence finding is softened to `almost` at **every** strictness level, by design —
+  the grader will not turn a guess into an accusation;
+- `almost` is a hint that is never listed, never counted and never scored ([§4](#4-the-invariants)).
+
+So a correctly-implemented client on zipformer **can never show a mistake**. Not a bug in either
+layer — the honest composition of both. It is pinned now by
+`MushafReducerTest.a session carries the stored tuning rather than a hardcoded engine`, which
+fails if anything hardcodes an engine again.
+
+**zipformer is a follow-along engine, not a lighter corrector.** Anything that presents it as
+"simple correction" is describing something it does not do.
+
+### 12.2 Why the bottom-bar toggle is the *rules* layer, not the engine
+
+The product ask was "simple correction without tajwīd" vs "with tajwīd" in easy reach. That is a
+real configuration — but it is `rules: []` vs `rules: null` on the **correcting** engine, not an
+engine swap:
+
+| | Engine | `rules` | Corrects? |
+|---|---|---|---|
+| حفظ فقط | `real` | `[]` | Yes — wrong words and wrong ḥarakāt. Hifz and tashkīl are **never** filtered |
+| حفظ + تجويد | `real` | `null` (or a subset) | Yes — everything |
+
+Both positions grade. `GradingModeToggle` narrows *what* is corrected; it never switches
+correction off. The engine picker lives on the settings screen, where zipformer carries an
+explicit warning that it does not correct.
+
+### 12.3 The distinctions that are load-bearing
+
+Each is pinned by a test; none is safe to "simplify".
+
+| Distinction | Why it matters | Where |
+|---|---|---|
+| `rules = null` ≠ `rules = []` | null grades every rule; `[]` grades none. A truthiness test collapses them and silently grades everything for someone who asked for nothing | `RecitationSettings.wireRules`, stored as an **absent key** vs `"[]"` |
+| `tajweedGradingEnabled` is separate from `gradedRules` | So switching to hifz-only and back does not destroy the reciter's chip selection | `RecitationSettings` |
+| Untouched moshaf is **omitted entirely** | `/moshaf-schema` reports defaults that disagree with what the server grades against on three madd fields. Seeding the panel from the schema and saving would change grading for a user who changed nothing | `LiveRecitationConfig.moshaf` empty → field absent |
+| Moshaf integers stay integers | `"4"` is rejected, and a rejected value discards the **whole** moshaf object, not just that field | `MoshafValue.Number`, `RecitationSchemaMapper` |
+| madd al-leen ≤ madd al-ʿāriḍ | Lowering ʿāriḍ alone is rejected for a reason nothing in that field shows. The dependent field must be sent alongside it | `MoshafConstraints` |
+| Ticking all 18 chips ≠ "all rules" | A named list will not include a rule the grader gains later. "كل الأحكام" must stay separately reachable | `ReciteSettingsIntent.GradeAllRules` |
+
+### 12.4 Applying a change to a live session
+
+Settings travel in the `start` message and **nowhere else** — `seek` moves the cursor, and there
+is no update message. So changing one mid-session means: `end` → apply → reopen at the last
+cursor.
+
+`SessionRestart` distinguishes the two reasons a session reopens:
+
+- **`BOUNDARY`** (the flag icon) — a deliberate fresh start. Files the session, shows the summary,
+  re-seeds from the top of the page.
+- **`SETTINGS`** (the toggle) — files the session so the recited minutes are not lost, but shows
+  **no** summary sheet and resumes at `lastCursor`. The reciter never asked to stop.
+
+Silently accepting a change that only applies to the *next* session is the option to avoid: the
+reciter hears no difference and concludes the control is broken.
+
+### 12.5 Where it lives
+
+| File | Role |
+|---|---|
+| `:mushaf:domain` `model/recite/RecitationSettings.kt` | Stored choices; `wireRules`, `toConfig` |
+| `:mushaf:domain` `model/recite/RecitationSchema.kt` | Server-described options; `RecitationEngineSpec.corrects` |
+| `:mushaf:domain` `model/recite/MoshafConstraints.kt` | The cross-field rule, plus the three effective server defaults |
+| `:mushaf:data` `prefs/RecitationSettingsDataStore.kt` | DataStore; keeps null-vs-`[]` alive across process death |
+| `:mushaf:data` `recite/RecitationSchemaMapper.kt` | DTO → domain; drops `mock`, preserves value types |
+| `:mushaf:data` `repository/RecitationSchemaRepositoryImpl.kt` | Fetches the three endpoints concurrently, caches success only |
+| `:mushaf:presentation` `settings/recite/*` | The full screen, rendered from the schema |
+| `:mushaf:presentation` `components/GradingModeToggle.kt` | The bottom-bar control |
+
+### 12.6 Verifying on device
+
+A wrong setting still produces plausible feedback, so prove each layer:
+
+- **Engine** — request each; the ack must echo it. Request `banana`; the ack must come back
+  `real`. On zipformer no word should ever be `error`, and all three strictness levels must give
+  identical results.
+- **Moshaf** — recite a clear monfasel madd at `2`, then at `5`. The findings must differ. If
+  they are identical the moshaf is being discarded — check value types first.
+- **Rules** — send `[]` with a deliberate madd mistake: no tajwīd finding, but a wrong *word*
+  must still be reported. That one test proves both halves.
+- **Persistence** — kill and relaunch with `[]` saved. If it comes back grading everything, the
+  store collapsed null and empty.
