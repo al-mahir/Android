@@ -32,7 +32,6 @@ import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
