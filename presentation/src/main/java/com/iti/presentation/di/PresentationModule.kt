@@ -10,7 +10,6 @@ import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
-import com.iti.domain.usecase.user.LogoutUseCase
 import com.iti.domain.usecase.settings.DeleteAllRecordingsUseCase
 import com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase
 import com.iti.domain.usecase.settings.SetAppLanguageUseCase
@@ -37,7 +36,6 @@ val presentationModule = module {
     factory { JoinStudyCircleUseCase(get()) }
     factory { GetSubscriptionUseCase(get()) }
     factory { RestorePurchasesUseCase(get()) }
-    factory { LogoutUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
     factory { GetLegalDocumentUseCase(get()) }
 

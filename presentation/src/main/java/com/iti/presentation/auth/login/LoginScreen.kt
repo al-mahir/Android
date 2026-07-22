@@ -21,6 +21,7 @@ import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.stringResource
 import com.iti.presentation.R
+import com.iti.presentation.core.ui.asString
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -70,7 +71,7 @@ fun LoginScreen(
             hint = stringResource(id = R.string.auth_enter_email),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = state.emailError != null,
-            errorMessage = state.emailError,
+            errorMessage = state.emailError?.asString(),
             modifier = Modifier.fillMaxWidth()
         )
         
@@ -86,7 +87,7 @@ fun LoginScreen(
             onClickTrailingIcon = { onIntent(LoginIntent.TogglePasswordVisibility) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             isError = state.passwordError != null,
-            errorMessage = state.passwordError,
+            errorMessage = state.passwordError?.asString(),
             modifier = Modifier.fillMaxWidth()
         )
         

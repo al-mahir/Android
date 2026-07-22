@@ -1,10 +1,12 @@
 package com.iti.presentation.auth.login
 
+import com.iti.presentation.core.ui.UiText
+
 data class LoginState(
     val email: String = "",
-    val emailError: String? = null,
+    val emailError: UiText? = null,
     val password: String = "",
-    val passwordError: String? = null,
+    val passwordError: UiText? = null,
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false
 )
@@ -12,12 +14,20 @@ data class LoginState(
 sealed class LoginIntent {
     data class EmailChanged(val email: String) : LoginIntent()
     data class PasswordChanged(val password: String) : LoginIntent()
-    object TogglePasswordVisibility : LoginIntent()
-    object SubmitLogin : LoginIntent()
-    object GoogleSignInClicked : LoginIntent()
+    data object TogglePasswordVisibility : LoginIntent()
+    data object SubmitLogin : LoginIntent()
+    data object GoogleSignInClicked : LoginIntent()
+
+    data class GoogleTokenReceived(val idToken: String) : LoginIntent()
+
+    data object GoogleSignInDismissed : LoginIntent()
+    data object GoogleSignInUnavailable : LoginIntent()
 }
 
 sealed class LoginEffect {
-    object NavigateToHome : LoginEffect()
-    data class ShowError(val message: String) : LoginEffect()
+    data object NavigateToHome : LoginEffect()
+
+    data object LaunchGoogleSignIn : LoginEffect()
+
+    data class ShowError(val message: UiText) : LoginEffect()
 }

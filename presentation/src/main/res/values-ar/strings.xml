@@ -39,6 +39,22 @@
     <string name="auth_send_reset_link">إرسال رابط إعادة التعيين</string>
     <string name="auth_back_to_sign_in">العودة لتسجيل الدخول</string>
 
+    <!-- Authentication errors -->
+    <string name="auth_error_required">هذا الحقل مطلوب</string>
+    <string name="auth_error_invalid_email">أدخل بريداً إلكترونياً صحيحاً</string>
+    <string name="auth_error_weak_password">استخدم 8 أحرف على الأقل تتضمن حرفاً كبيراً وصغيراً ورقماً ورمزاً</string>
+    <string name="auth_error_invalid_phone_number">أدخل رقم هاتف مصري صحيح، مثال 01012345678</string>
+    <string name="auth_error_invalid_otp">أدخل الرمز المكون من 6 أرقام</string>
+    <string name="auth_error_validation">يرجى مراجعة الحقول المحددة</string>
+    <string name="auth_error_invalid_credentials">البريد الإلكتروني أو كلمة المرور غير صحيحة</string>
+    <string name="auth_error_conflict">يوجد حساب بهذه البيانات بالفعل</string>
+    <string name="auth_error_google_unavailable">تسجيل الدخول عبر جوجل غير متاح حالياً. يرجى استخدام بريدك الإلكتروني وكلمة المرور.</string>
+    <string name="auth_error_registered_sign_in_failed">تم إنشاء حسابك. يرجى تسجيل الدخول.</string>
+
+    <!-- ===== Shared errors ===== -->
+    <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>
+    <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+
     <!-- ===== Home ===== -->
     <string name="home_brand_title">المَاهِر</string>
     <string name="home_greeting">أهلاً بعودتك</string>

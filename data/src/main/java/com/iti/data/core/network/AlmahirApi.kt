@@ -1,0 +1,22 @@
+package com.iti.data.core.network
+
+
+object AlmahirApi {
+
+    const val BASE_URL = "https://almahir-production.up.railway.app/"
+
+    object Auth {
+        const val REGISTER = "api/auth/user/register"
+        const val LOGIN = "api/auth/user/login"
+        const val GOOGLE = "api/auth/user/google"
+        const val REFRESH = "api/auth/user/refresh"
+        const val LOGOUT = "api/auth/logout"
+        const val FORGOT_PASSWORD = "api/auth/user/forgot-password"
+        const val RESET_PASSWORD = "api/auth/user/reset-password"
+
+        private val PUBLIC = setOf(REGISTER, LOGIN, GOOGLE, REFRESH, FORGOT_PASSWORD, RESET_PASSWORD)
+
+        fun isPublic(encodedPath: String): Boolean =
+            encodedPath.trim('/') in PUBLIC
+    }
+}

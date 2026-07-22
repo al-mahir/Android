@@ -6,13 +6,14 @@ import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
-import com.iti.domain.usecase.user.LogoutUseCase
+import com.iti.domain.auth.usecase.LogoutUseCase
 import com.iti.presentation.R
 import com.iti.presentation.profile.model.ProfileMenuType
 import com.iti.presentation.profile.state.ProfileDialog
 import com.iti.presentation.profile.state.ProfileEffect
 import com.iti.presentation.profile.state.ProfileIntent
 import com.iti.presentation.testing.FakeAlmahirRepository
+import com.iti.presentation.testing.FakeAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -78,28 +79,28 @@ class ProfileViewModelTest {
 
     @Test
     fun `logout only runs after the confirmation dialog is confirmed`() = runTest(dispatcher) {
-        val repository = FakeAlmahirRepository()
-        val viewModel = viewModel(repository)
+        val authRepository = FakeAuthRepository()
+        val viewModel = viewModel(FakeAlmahirRepository(), authRepository)
         testScheduler.advanceUntilIdle()
 
         viewModel.onIntent(ProfileIntent.LogoutClicked)
 
         // Opening the dialog must not sign the user out on its own.
         assertEquals(ProfileDialog.LOGOUT, viewModel.state.value.dialog)
-        assertFalse(repository.loggedOut)
+        assertFalse(authRepository.loggedOut)
 
         viewModel.onIntent(ProfileIntent.DialogConfirmed)
         testScheduler.advanceUntilIdle()
 
-        assertTrue(repository.loggedOut)
+        assertTrue(authRepository.loggedOut)
         assertNull(viewModel.state.value.dialog)
         assertEquals(ProfileEffect.NavigateToAuth, viewModel.effect.first())
     }
 
     @Test
     fun `dismissing the logout dialog leaves the session intact`() = runTest(dispatcher) {
-        val repository = FakeAlmahirRepository()
-        val viewModel = viewModel(repository)
+        val authRepository = FakeAuthRepository()
+        val viewModel = viewModel(FakeAlmahirRepository(), authRepository)
         testScheduler.advanceUntilIdle()
 
         viewModel.onIntent(ProfileIntent.LogoutClicked)
@@ -107,14 +108,15 @@ class ProfileViewModelTest {
         testScheduler.advanceUntilIdle()
 
         assertNull(viewModel.state.value.dialog)
-        assertFalse(repository.loggedOut)
+        assertFalse(authRepository.loggedOut)
     }
 
     @Test
     fun `account deletion is confirmed separately from logout and also ends the session`() =
         runTest(dispatcher) {
             val repository = FakeAlmahirRepository()
-            val viewModel = viewModel(repository)
+            val authRepository = FakeAuthRepository()
+            val viewModel = viewModel(repository, authRepository)
             testScheduler.advanceUntilIdle()
 
             viewModel.onIntent(ProfileIntent.DeleteAccountClicked)
@@ -124,7 +126,7 @@ class ProfileViewModelTest {
             testScheduler.advanceUntilIdle()
 
             assertTrue(repository.deletedAccount)
-            assertFalse(repository.loggedOut)
+            assertFalse(authRepository.loggedOut)
             assertEquals(ProfileEffect.NavigateToAuth, viewModel.effect.first())
         }
 
@@ -215,11 +217,14 @@ class ProfileViewModelTest {
         assertEquals(ProfileEffect.ShareApp, viewModel.effect.first())
     }
 
-    private fun viewModel(repository: AlmahirRepository) = ProfileViewModel(
+    private fun viewModel(
+        repository: AlmahirRepository,
+        authRepository: FakeAuthRepository = FakeAuthRepository(),
+    ) = ProfileViewModel(
         getCurrentUser = GetCurrentUserUseCase(repository),
         getSubscription = GetSubscriptionUseCase(repository),
         restorePurchases = RestorePurchasesUseCase(repository),
-        logout = LogoutUseCase(repository),
+        logout = LogoutUseCase(authRepository),
         deleteAccount = DeleteAccountUseCase(repository),
     )
 }
