@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -49,11 +50,11 @@ dependencies {
     api(libs.androidx.navigation3.runtime)
     implementation(libs.kotlinx.serialization.json)
     
-    // Media3 (Audio Playback)
+    
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.session)
 
-    // DI
+    
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)

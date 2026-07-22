@@ -1,6 +1,7 @@
 # 6. Ta'ahud - Live AI Correction — TAH
 
 > **Product spec:** [Al-Mahir-SDD.md](../Al-Mahir-SDD.md) → "Epic 6: Ta'ahud - Live AI Correction". That file is the canonical product requirement; this doc is the agent build brief.
+> **Engineering handbook (contract, invariants, current status, gaps):** [06-taahud-engineering.md](06-taahud-engineering.md) — read this before writing code.
 > **Rules:** [AGENTS.md](../../AGENTS.md) — architecture, modules, MVI, stack, localization (do not restate them here).
 
 **Priority:** MUST · **Primary modules:** :presentation, :domain, :data (flagship AI/audio feature → SHOULD get its own layered module set per AGENTS §2)

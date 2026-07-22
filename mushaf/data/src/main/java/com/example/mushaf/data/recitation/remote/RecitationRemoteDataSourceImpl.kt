@@ -11,7 +11,7 @@ class RecitationRemoteDataSourceImpl(
 ) : RecitationDataSource {
 
     override fun observeReciters(): Flow<List<ReciterDto>> = flow {
-        // Just emit a hardcoded list containing Alafasy for now, as we only need one reciter
+        
         emit(
             listOf(
                 ReciterDto(
@@ -36,14 +36,14 @@ class RecitationRemoteDataSourceImpl(
         val timings = response.verses.mapNotNull { verse ->
             val audio = verse.audio ?: return@mapNotNull null
             
-            // Segments from Quran API: [ [word_idx, word_id, start_ms, end_ms], ... ]
-            // We just need [word_idx, start_ms, end_ms] as expected by AyahTimingDto
+            
+            
             val mappedSegments = audio.segments.map { rawSegment ->
                 if (rawSegment.size >= 4) {
-                    // For API v4 format: [word_idx, something, start_ms, end_ms]
+                    
                     listOf(rawSegment[0], rawSegment[2], rawSegment[3])
                 } else if (rawSegment.size == 3) {
-                    // Fallback just in case
+                    
                     listOf(rawSegment[0], rawSegment[1], rawSegment[2])
                 } else {
                     emptyList()

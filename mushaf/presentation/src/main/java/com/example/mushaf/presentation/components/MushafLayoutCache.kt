@@ -30,10 +30,10 @@ object MushafLayoutCache {
         cache[key] = value
     }
 
-    /**
-     * @param measureWidth measures the natural width (px) of a run of glyphs at [MushafLayoutMath.REF_SP],
-     *   for the font that corresponds to this page + [mode]. Called at most once per line on a cache miss.
-     */
+    
+
+
+ 
     fun lineSizes(
         page: MushafPage,
         mode: ReadingMode,

@@ -51,18 +51,18 @@ object MushafLayoutMath {
         return minOf(byWidth, byHeight).coerceIn(MIN_SP, MAX_SP)
     }
 
-    /**
-     * Left x (px, top-left origin) of each token when a line is laid out in reading order
-     * **right-to-left** across [maxWidthPx].
-     *
-     * - Justified (`centered == false`, >1 token): the first token is pinned to the right edge and
-     *   the last to the left edge, with the leftover width spread evenly between tokens — the
-     *   pixel-for-pixel equivalent of `Arrangement.SpaceBetween`.
-     * - Centered / single token: tokens are packed adjacent and the group is centred, like
-     *   `Arrangement.Center`.
-     *
-     * Returned lefts are parallel to [widths] (token order = reading order).
-     */
+    
+
+
+
+
+
+
+
+
+
+
+ 
     fun tokenLefts(widths: List<Float>, maxWidthPx: Int, centered: Boolean): List<Float> {
         if (widths.isEmpty()) return emptyList()
         val total = widths.sum()

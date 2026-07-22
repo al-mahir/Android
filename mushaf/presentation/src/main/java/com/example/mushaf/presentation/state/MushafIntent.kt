@@ -1,17 +1,13 @@
 package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.MushafMode
+import com.example.mushaf.domain.model.recite.RecitationCursor
 
 import com.example.mushaf.domain.model.Reciter
 
 sealed interface MushafIntent {
     data class LoadPage(val page: Int) : MushafIntent
 
-    /**
-     * Opens an explicitly requested page (e.g. Home's "Continue Reading"). Unlike [LoadPage]
-     * this also suppresses the persisted-last-page restore, so a late preferences emission
-     * cannot pull the reader back to where it previously was.
-     */
     data class OpenAtPage(val page: Int) : MushafIntent
     data class ToggleTajweed(val enabled: Boolean) : MushafIntent
     data class HighlightWord(val wordId: String?) : MushafIntent
@@ -23,9 +19,29 @@ sealed interface MushafIntent {
     data object ToggleAyahVisibility : MushafIntent
     data object RevealNextWord : MushafIntent
     data object RevealNextAyah : MushafIntent
+
     data object ToggleRecording : MushafIntent
 
-    // Listen Mode
+
+    data class SetTajweedGrading(val enabled: Boolean) : MushafIntent
+
+    data class CaptureFailed(val error: CaptureError) : MushafIntent
+
+    data object DismissCaptureError : MushafIntent
+
+     
+    data class SelectMistake(val wordId: String?) : MushafIntent
+
+     
+    data object DismissEngineNotice : MushafIntent
+    data class SelectCandidate(val position: RecitationCursor) : MushafIntent
+
+    data object DismissCandidates : MushafIntent
+
+    data object DismissSessionSummary : MushafIntent
+
+    data object FinishAndStartNewSession : MushafIntent
+
     data class SelectReciter(val reciter: Reciter) : MushafIntent
     data object PlayPauseAudio : MushafIntent
     data class SetAudioSpeed(val speed: Float) : MushafIntent

@@ -2,17 +2,23 @@ package com.example.mushaf.presentation.di
 
 import com.example.mushaf.domain.model.ResourceKind
 import com.example.mushaf.domain.usecase.CancelResourceDownloadUseCase
+import com.example.mushaf.domain.usecase.CaptureRecitationAudioUseCase
+import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
 import com.example.mushaf.domain.usecase.DeleteResourceDownloadUseCase
 import com.example.mushaf.domain.usecase.GetPageUseCase
+import com.example.mushaf.domain.usecase.GetRecitationSchemaUseCase
 import com.example.mushaf.domain.usecase.ObserveDownloadableResourcesUseCase
 import com.example.mushaf.domain.usecase.ObserveReaderPreferencesUseCase
+import com.example.mushaf.domain.usecase.ObserveRecitationSettingsUseCase
 import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
 import com.example.mushaf.domain.usecase.search.SearchAyahUseCase
 import com.example.mushaf.domain.usecase.StartResourceDownloadUseCase
+import com.example.mushaf.domain.usecase.UpdateRecitationSettingsUseCase
 import com.example.mushaf.presentation.MushafViewModel
 import com.example.mushaf.presentation.download.DownloadsViewModel
 import com.example.mushaf.presentation.settings.MushafSettingsViewModel
+import com.example.mushaf.presentation.settings.recite.ReciteSettingsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
@@ -39,12 +45,24 @@ val mushafPresentationModule = module {
 
     factory { com.example.mushaf.domain.usecase.GetRecitersUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetAyahTimingsUseCase(get()) }
+    factory { CaptureRecitationAudioUseCase(get()) }
+    factory { StartLiveRecitationUseCase(get()) }
     
     factory<com.example.mushaf.presentation.audio.AudioPlayer> { 
         com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
     }
 
-    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { com.iti.domain.usecase.SaveRecitationSessionUseCase(get()) }
+
+    factory { ObserveRecitationSettingsUseCase(get()) }
+    factory { UpdateRecitationSettingsUseCase(get()) }
+    factory { GetRecitationSchemaUseCase(get()) }
+
+    viewModel {
+        MushafViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
+    }
 
     viewModel { 
         com.example.mushaf.presentation.search.MushafSearchViewModel(
@@ -59,6 +77,8 @@ val mushafPresentationModule = module {
     }
 
     viewModel { MushafSettingsViewModel(get(), get()) }
+
+    viewModel { ReciteSettingsViewModel(get(), get(), get()) }
 
     viewModel { (kind: ResourceKind) ->
         DownloadsViewModel(kind, get(), get(), get(), get())

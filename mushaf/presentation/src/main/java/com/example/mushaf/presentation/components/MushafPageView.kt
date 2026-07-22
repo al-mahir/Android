@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -29,6 +31,7 @@ import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.ReadingMode
+import com.example.mushaf.domain.model.recite.RecitationWordMark
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.font.PageFontProvider
 import com.example.mushaf.presentation.font.rememberPageFontFamily
@@ -46,19 +49,24 @@ fun MushafPageView(
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
     revealedWordIds: Set<String> = emptySet(),
+     
+    wordMarks: Map<String, RecitationWordMark> = emptyMap(),
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
     val contentColor = Theme.colors.onSurface
     val highlightColor = Theme.colors.primary.copy(alpha = 0.20f)
+    val mistakeColor = Theme.colors.error
+    val hintColor = Theme.colors.amber
+    val underlineStroke = with(LocalDensity.current) { 2.dp.toPx() }
     val measurer = rememberTextMeasurer()
-    // A separate measurer touched only on the prefetch coroutine, so its internal layout cache is
-    // never accessed concurrently with the composition measurer above.
+    
+    
     val prefetchMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
     val context = LocalContext.current
-    // Same resolver the composition measurer uses, so preloading a neighbour's typeface off-thread
-    // warms the exact cache its draw will hit — no synchronous TTF decode on the main thread.
+    
+    
     val fontResolver = LocalFontFamilyResolver.current
 
     BoxWithConstraints(
@@ -144,6 +152,8 @@ fun MushafPageView(
 
                 if (!isVisible) return@forEach
 
+                val mark = token.wordId?.let(wordMarks::get)
+
                 if (token.wordId != null && token.wordId == highlighted) {
                     drawRect(
                         color = highlightColor,
@@ -154,13 +164,57 @@ fun MushafPageView(
                         ),
                     )
                 }
-                drawText(token.layout, topLeft = Offset(token.left, token.top))
+                
+                
+                
+                val glyphColor = when (mark) {
+                    RecitationWordMark.MISTAKE -> mistakeColor
+                    RecitationWordMark.HINT -> hintColor
+                    else -> Color.Unspecified
+                }
+                drawText(token.layout, color = glyphColor, topLeft = Offset(token.left, token.top))
+                drawMarkUnderline(token, mark, mistakeColor, hintColor, underlineStroke)
             }
         }
     }
 }
 
-/** A single positioned run of glyphs to paint. [wordId] is set only for highlightable ayah words. */
+
+
+
+
+
+
+
+ 
+private fun DrawScope.drawMarkUnderline(
+    token: PageToken,
+    mark: RecitationWordMark?,
+    mistakeColor: Color,
+    hintColor: Color,
+    strokeWidth: Float,
+) {
+    val color = when (mark) {
+        RecitationWordMark.MISTAKE -> mistakeColor
+        RecitationWordMark.HINT -> hintColor
+        else -> return
+    }
+    val dashed = mark == RecitationWordMark.HINT
+    val y = token.top + token.layout.size.height - strokeWidth
+    drawLine(
+        color = color,
+        start = Offset(token.left, y),
+        end = Offset(token.left + token.layout.size.width, y),
+        strokeWidth = strokeWidth,
+        pathEffect = if (dashed) {
+            PathEffect.dashPathEffect(floatArrayOf(strokeWidth * 3f, strokeWidth * 2f))
+        } else {
+            null
+        },
+    )
+}
+
+ 
 private data class PageToken(
     val layout: TextLayoutResult,
     val left: Float,
@@ -168,12 +222,12 @@ private data class PageToken(
     val wordId: String?,
 )
 
-/**
- * Cache of fully-built, positioned page tokens keyed by everything they depend on. Lets the
- * prefetch coroutine build a neighbour's tokens off the main thread so its later composition (and
- * any re-entry after the page scrolls out and back) is a cache hit — no measuring, no font decode.
- * [TextLayoutResult]s are immutable and drawable from any thread, so caching them is safe.
- */
+
+
+
+
+
+ 
 private object PageTokenCache {
     private const val CACHE_SIZE = 12
 
@@ -203,7 +257,7 @@ private object PageTokenCache {
     }
 }
 
-/** [buildPageTokens] behind [PageTokenCache]; safe to call from the prefetch coroutine or composition. */
+ 
 private fun pageTokens(
     page: MushafPage,
     mode: ReadingMode,
@@ -233,11 +287,11 @@ private fun pageTokens(
     return built
 }
 
-/**
- * Flattens a page into absolutely-positioned draw tokens. Lines occupy fixed-height slots
- * (`availableHeight / LINES_PER_PAGE`); a page with fewer than a full set of lines has its block of
- * slots centred vertically — matching the old `Column(Arrangement.Center)` of fixed-height rows.
- */
+
+
+
+
+ 
 private fun buildPageTokens(
     page: MushafPage,
     lineSizes: Map<Int, Float>,
@@ -303,7 +357,7 @@ private fun buildPageTokens(
             }
 
             LineType.BASMALLAH -> {
-                // U+FDFD is the single-glyph ornamental basmala ligature in the system Naskh font.
+                
                 val size = fitLineSize(SurahInfo.BASMALLAH_LIGATURE, FontFamily.Default, measurer, availableWidthPx, slotHeightPx)
                 val layout = measurer.measure(
                     text = AnnotatedString(SurahInfo.BASMALLAH_LIGATURE),
@@ -318,7 +372,7 @@ private fun buildPageTokens(
     return tokens
 }
 
-/** A horizontally-centred, vertically-centred (in its slot) non-highlightable token. */
+ 
 private fun centeredToken(layout: TextLayoutResult, availableWidthPx: Int, slotCenterY: Float): PageToken =
     PageToken(
         layout = layout,
@@ -327,7 +381,7 @@ private fun centeredToken(layout: TextLayoutResult, availableWidthPx: Int, slotC
         wordId = null,
     )
 
-/** Natural width (px) of [glyphs] rendered in [fontFamily] at the reference size. */
+ 
 private fun measureGlyphWidth(
     measurer: TextMeasurer,
     fontFamily: FontFamily,
@@ -340,7 +394,7 @@ private fun measureGlyphWidth(
         maxLines = 1,
     ).size.width
 
-/** Largest size that fits [text] (in [font]) within the line's width and vertical slot. */
+ 
 private fun fitLineSize(
     text: String,
     font: FontFamily,
