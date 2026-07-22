@@ -4,12 +4,15 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UserDto(
-    val id: Int,
-    val username: String,
-    val firstName: String,
-    val lastName: String,
-    val email: String,
-    val phoneNumber: String? = null
+    val id: String,
+    val username: String? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val email: String? = null,
+    val phoneNumber: String? = null,
+    val profilePictureUrl: String? = null,
+    val provider: String? = null,
+    val roles: List<String> = emptyList(),
 )
 
 @Serializable
@@ -17,20 +20,5 @@ data class AuthDataDto(
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val isNewUser: Boolean? = null,
-    val user: UserDto? = null
-)
-
-@Serializable
-data class ApiResponse<T>(
-    val success: Boolean,
-    val message: String,
-    val data: T? = null,
-    val fieldErrors: Map<String, String>? = null
-)
-
-@Serializable
-data class ApiErrorResponse(
-    val success: Boolean,
-    val message: String,
-    val fieldErrors: Map<String, String>? = null
+    val user: UserDto? = null,
 )
