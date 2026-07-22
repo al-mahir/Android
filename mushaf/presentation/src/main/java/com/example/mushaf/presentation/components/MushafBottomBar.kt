@@ -1,6 +1,7 @@
 package com.example.mushaf.presentation.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -16,6 +17,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +48,10 @@ import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.presentation.R
 
+private const val MIC_LEVEL_SCALE_RANGE = 0.35f
+
+private const val MIC_LEVEL_VISIBLE_THRESHOLD = 0.05f
+
 @Composable
 fun MushafBottomBar(
     visible: Boolean,
@@ -58,6 +64,15 @@ fun MushafBottomBar(
     onModeSelected: (MushafMode) -> Unit,
     onToggleRecording: () -> Unit,
     modifier: Modifier = Modifier,
+    micLevel: Float = 0f,
+    /**
+     * Live-session status, laid out on its own line above the controls.
+     *
+     * A slot rather than a handful of parameters: it keeps the bar unaware of what a correction
+     * session is, and it puts the pills inside the bar chrome so they hide along with it and
+     * never cover the last line of the muṣḥaf page.
+     */
+    statusRow: (@Composable () -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -65,32 +80,41 @@ fun MushafBottomBar(
         exit = slideOutVertically { it },
         modifier = modifier,
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Theme.colors.surface.copy(alpha = 0.96f))
                 .windowInsetsPadding(WindowInsets.navigationBars)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            EyeSection(
-                areAyahsVisible = areAyahsVisible,
-                onToggleAyahVisibility = onToggleAyahVisibility,
-                onRevealNextWord = onRevealNextWord,
-                onRevealNextAyah = onRevealNextAyah,
-            )
+            statusRow?.let { row ->
+                Box(modifier = Modifier.padding(bottom = 8.dp)) { row() }
+            }
 
-            MushafModeSelector(
-                selectedMode = mushafMode,
-                onModeSelected = onModeSelected,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                EyeSection(
+                    areAyahsVisible = areAyahsVisible,
+                    onToggleAyahVisibility = onToggleAyahVisibility,
+                    onRevealNextWord = onRevealNextWord,
+                    onRevealNextAyah = onRevealNextAyah,
+                )
 
-            MicSection(
-                mushafMode = mushafMode,
-                isRecordingActive = isRecordingActive,
-                onToggleRecording = onToggleRecording,
-            )
+                MushafModeSelector(
+                    selectedMode = mushafMode,
+                    onModeSelected = onModeSelected,
+                )
+
+                MicSection(
+                    mushafMode = mushafMode,
+                    isRecordingActive = isRecordingActive,
+                    micLevel = micLevel,
+                    onToggleRecording = onToggleRecording,
+                )
+            }
         }
     }
 }
@@ -145,11 +169,13 @@ private fun EyeSection(
 private fun MicSection(
     mushafMode: MushafMode,
     isRecordingActive: Boolean,
+    micLevel: Float,
     onToggleRecording: () -> Unit,
 ) {
     val showMic = mushafMode == MushafMode.RECITATION || mushafMode == MushafMode.MUALLEM
+
     val infiniteTransition = rememberInfiniteTransition(label = "mic_pulse")
-    val scale by infiniteTransition.animateFloat(
+    val idleScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.12f,
         animationSpec = infiniteRepeatable(
@@ -158,6 +184,18 @@ private fun MicSection(
         ),
         label = "mic_scale",
     )
+
+    val levelScale by animateFloatAsState(
+        targetValue = 1f + micLevel.coerceIn(0f, 1f) * MIC_LEVEL_SCALE_RANGE,
+        animationSpec = tween(durationMillis = 90, easing = LinearEasing),
+        label = "mic_level_scale",
+    )
+
+    val scale = if (isRecordingActive && micLevel > MIC_LEVEL_VISIBLE_THRESHOLD) {
+        levelScale
+    } else {
+        idleScale
+    }
 
     Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
         AnimatedVisibility(

@@ -23,9 +23,19 @@ sealed interface MushafIntent {
     data object ToggleAyahVisibility : MushafIntent
     data object RevealNextWord : MushafIntent
     data object RevealNextAyah : MushafIntent
+
     data object ToggleRecording : MushafIntent
 
-    // Listen Mode
+    data class CaptureFailed(val error: CaptureError) : MushafIntent
+
+    data object DismissCaptureError : MushafIntent
+
+    /** Opens the mistake detail for a word, or closes it when null. */
+    data class SelectMistake(val wordId: String?) : MushafIntent
+
+    /** Acknowledges the notice that the server ran a different engine than the one requested. */
+    data object DismissEngineNotice : MushafIntent
+
     data class SelectReciter(val reciter: Reciter) : MushafIntent
     data object PlayPauseAudio : MushafIntent
     data class SetAudioSpeed(val speed: Float) : MushafIntent

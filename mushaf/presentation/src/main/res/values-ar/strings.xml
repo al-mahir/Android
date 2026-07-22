@@ -43,6 +43,45 @@
     <string name="mushaf_cd_start_recording">بدء التسجيل</string>
     <string name="mushaf_cd_stop_recording">إيقاف التسجيل</string>
 
+    <!-- ===== التعاهد — إذن الميكروفون والتسجيل ===== -->
+    <string name="mushaf_mic_preprompt_title">نحتاج إلى الميكروفون</string>
+    <string name="mushaf_mic_preprompt_message">لتصحيح تلاوتك مباشرةً، يستمع «الماهر» إليك أثناء التلاوة.</string>
+    <string name="mushaf_mic_preprompt_reason_manual">لا يبدأ التسجيل إلا عند ضغطك على زر الميكروفون</string>
+    <string name="mushaf_mic_preprompt_reason_storage">لا يُحفظ صوتك على الجهاز ولا على الخادم</string>
+    <string name="mushaf_mic_preprompt_reason_stop">يمكنك الإيقاف في أي وقت</string>
+    <string name="mushaf_mic_preprompt_confirm">متابعة</string>
+    <string name="mushaf_mic_preprompt_dismiss">ليس الآن</string>
+
+    <string name="mushaf_mic_denied_title">الميكروفون مُعطَّل</string>
+    <string name="mushaf_mic_denied_message">لا يستطيع «الماهر» سماع تلاوتك بدون إذن الميكروفون. يمكنك تفعيله من إعدادات التطبيق.</string>
+    <string name="mushaf_mic_denied_confirm">فتح الإعدادات</string>
+    <string name="mushaf_mic_denied_dismiss">إلغاء</string>
+
+    <string name="mushaf_mic_unavailable_title">الميكروفون غير متاح</string>
+    <string name="mushaf_mic_unavailable_message">قد يستخدم تطبيق آخر الميكروفون. أغلقه ثم حاول مرة أخرى.</string>
+    <string name="mushaf_mic_unavailable_confirm">حسنًا</string>
+
+    <string name="mushaf_cd_mic_level">مستوى التسجيل</string>
+
+    <string name="mushaf_live_unreachable_title">التصحيح المباشر غير متاح</string>
+    <string name="mushaf_live_unreachable_message">تعذّر على «الماهر» الوصول إلى خدمة التصحيح، فلم يتم فحص تلاوتك. تحقّق من اتصالك ثم حاول مرة أخرى.</string>
+    <string name="mushaf_live_engine_notice">استخدم الخادم نموذجًا مختلفًا عن المطلوب، وقد لا يتوفّر تقييم التجويد.</string>
+    <string name="mushaf_live_no_match">لم يتم التقاط ذلك</string>
+
+    <!-- ورقة التصحيحات -->
+    <string name="mushaf_corrections_title">التصحيحات</string>
+    <string name="mushaf_corrections_range">%1$s — %2$s</string>
+    <string name="mushaf_corrections_empty">لا توجد أخطاء حتى الآن. واصل التلاوة.</string>
+    <string name="mushaf_ayah_label">%1$d:%2$d</string>
+    <string name="mushaf_correction_extra_words">كلمات زائدة</string>
+    <string name="mushaf_correction_missing_words">كلمات ناقصة</string>
+    <string name="mushaf_correction_wrong_words">كلمات خاطئة</string>
+    <string name="mushaf_correction_tashkeel">خطأ في التشكيل</string>
+    <string name="mushaf_correction_tajweed">خطأ في التجويد</string>
+    <string name="mushaf_correction_generic">خطأ</string>
+    <string name="mushaf_correction_detail">%1$s: المتوقع %2$d، قرأت %3$d</string>
+    <string name="mushaf_live_ambiguous">يرد هذا الموضع في أكثر من مكان. أيّها تتلو؟</string>
+
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">التنزيلات</string>
 
@@ -69,4 +108,25 @@
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">تفضيلات المصحف</string>
     <string name="settings_tajweed_description">تلوين النص وفق أحكام التجويد</string>
+    <plurals name="mushaf_cd_corrections">
+        <item quantity="zero">لا أخطاء للمراجعة</item>
+        <item quantity="one">مراجعة خطأ واحد</item>
+        <item quantity="two">مراجعة خطأين</item>
+        <item quantity="few">مراجعة %1$d أخطاء</item>
+        <item quantity="many">مراجعة %1$d خطأً</item>
+        <item quantity="other">مراجعة %1$d خطأ</item>
+    </plurals>
+    <string name="mushaf_cd_accuracy">دقة التلاوة حتى الآن</string>
+    <string name="mushaf_live_connecting">جارٍ الاتصال…</string>
+    <string name="mushaf_live_starting">جارٍ البدء…</string>
+    <string name="mushaf_live_listening">يستمع…</string>
+    <string name="mushaf_live_ambiguous_short">أي موضع؟</string>
+    <plurals name="mushaf_corrections_count">
+        <item quantity="zero">لا أخطاء</item>
+        <item quantity="one">خطأ واحد</item>
+        <item quantity="two">خطآن</item>
+        <item quantity="few">%1$d أخطاء</item>
+        <item quantity="many">%1$d خطأً</item>
+        <item quantity="other">%1$d خطأ</item>
+    </plurals>
 </resources>

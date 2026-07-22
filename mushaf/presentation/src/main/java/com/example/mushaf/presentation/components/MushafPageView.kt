@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -29,6 +31,7 @@ import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.ReadingMode
+import com.example.mushaf.domain.model.recite.RecitationWordMark
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.font.PageFontProvider
 import com.example.mushaf.presentation.font.rememberPageFontFamily
@@ -46,11 +49,16 @@ fun MushafPageView(
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
     revealedWordIds: Set<String> = emptySet(),
+    /** Live AI verdicts, keyed by [com.example.mushaf.domain.model.MushafWord.id]. */
+    wordMarks: Map<String, RecitationWordMark> = emptyMap(),
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
     val contentColor = Theme.colors.onSurface
     val highlightColor = Theme.colors.primary.copy(alpha = 0.20f)
+    val mistakeColor = Theme.colors.error
+    val hintColor = Theme.colors.amber
+    val underlineStroke = with(LocalDensity.current) { 2.dp.toPx() }
     val measurer = rememberTextMeasurer()
     // A separate measurer touched only on the prefetch coroutine, so its internal layout cache is
     // never accessed concurrently with the composition measurer above.
@@ -144,6 +152,8 @@ fun MushafPageView(
 
                 if (!isVisible) return@forEach
 
+                val mark = token.wordId?.let(wordMarks::get)
+
                 if (token.wordId != null && token.wordId == highlighted) {
                     drawRect(
                         color = highlightColor,
@@ -154,10 +164,54 @@ fun MushafPageView(
                         ),
                     )
                 }
-                drawText(token.layout, topLeft = Offset(token.left, token.top))
+                // Tint the glyphs for a graded word. In tajweed mode the page font supplies its
+                // own COLR colours, which this override cannot reach — which is exactly why the
+                // underline below, not the tint, is the signal that must always be present.
+                val glyphColor = when (mark) {
+                    RecitationWordMark.MISTAKE -> mistakeColor
+                    RecitationWordMark.HINT -> hintColor
+                    else -> Color.Unspecified
+                }
+                drawText(token.layout, color = glyphColor, topLeft = Offset(token.left, token.top))
+                drawMarkUnderline(token, mark, mistakeColor, hintColor, underlineStroke)
             }
         }
     }
+}
+
+/**
+ * Draws the mark's underline: solid for a mistake, dashed for a hint, nothing otherwise.
+ *
+ * The *shape* carries the meaning, not the colour. A11Y-01 forbids colour-alone status, and a
+ * red-green colour-blind reciter would otherwise see a tinted word and no way to tell an
+ * accusation from a hint. Correct and unverified words are left completely unmarked — the
+ * contract requires an unscored word to render neutrally, with no tick and no green.
+ */
+private fun DrawScope.drawMarkUnderline(
+    token: PageToken,
+    mark: RecitationWordMark?,
+    mistakeColor: Color,
+    hintColor: Color,
+    strokeWidth: Float,
+) {
+    val color = when (mark) {
+        RecitationWordMark.MISTAKE -> mistakeColor
+        RecitationWordMark.HINT -> hintColor
+        else -> return
+    }
+    val dashed = mark == RecitationWordMark.HINT
+    val y = token.top + token.layout.size.height - strokeWidth
+    drawLine(
+        color = color,
+        start = Offset(token.left, y),
+        end = Offset(token.left + token.layout.size.width, y),
+        strokeWidth = strokeWidth,
+        pathEffect = if (dashed) {
+            PathEffect.dashPathEffect(floatArrayOf(strokeWidth * 3f, strokeWidth * 2f))
+        } else {
+            null
+        },
+    )
 }
 
 /** A single positioned run of glyphs to paint. [wordId] is set only for highlightable ayah words. */

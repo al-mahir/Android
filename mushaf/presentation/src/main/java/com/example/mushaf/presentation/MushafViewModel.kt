@@ -12,7 +12,18 @@ import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
 import com.example.mushaf.domain.usecase.GetRecitersUseCase
 import com.example.mushaf.domain.usecase.GetAyahTimingsUseCase
+import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
 import com.example.mushaf.domain.model.AyahTiming
+import com.example.mushaf.domain.model.recite.LiveRecitationConfig
+import com.example.mushaf.domain.model.recite.LiveRecitationEvent
+import com.example.mushaf.domain.model.recite.RecitationChunk
+import com.example.mushaf.domain.model.recite.RecitationControl
+import com.example.mushaf.domain.model.recite.RecitationCursor
+import com.example.mushaf.domain.model.recite.RecitationMatch
+import com.example.mushaf.domain.model.recite.mergedWith
+import com.example.mushaf.presentation.state.ChunkOutcome
+import com.example.mushaf.presentation.state.LiveCorrectionUiState
+import com.example.mushaf.presentation.state.CaptureError
 import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.presentation.audio.AudioPlayer
@@ -24,7 +35,11 @@ import com.example.mushaf.presentation.state.MushafEffect
 import com.iti.domain.core.Result
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.MushafUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +60,7 @@ class MushafViewModel(
     private val getReciters: GetRecitersUseCase,
     private val getAyahTimings: GetAyahTimingsUseCase,
     private val playbackManager: AudioPlayer,
+    private val startLiveRecitation: StartLiveRecitationUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -61,9 +77,38 @@ class MushafViewModel(
 
     private var initialized = false
     private val loadJobs = mutableMapOf<Int, Job>()
+    private var sessionJob: Job? = null
+    private var controlChannel: Channel<RecitationControl>? = null
+
+    /** Resume point for a reconnect: the latest cursor any chunk reported. */
+    private var lastCursor: RecitationCursor? = null
+    private var reconnectAttempts = 0
+
+    /** Set once the reciter asks to stop, so a closing socket is not mistaken for a drop. */
+    private var isFinishing = false
+    private var smoothedMicLevel = 0f
+
+    /** Page whose seek is still owed because it had not finished loading when it was turned to. */
+    private var seekOnPageLoad: Int? = null
 
     private companion object {
         const val TAG = "Mushaf"
+
+
+        const val MIC_LEVEL_SMOOTHING = 0.3f
+
+        const val MIC_LEVEL_GAIN = 4f
+
+        const val CAPTURE_LOG_INTERVAL_MS = 1_000L
+
+        const val CLIPPING_THRESHOLD = 0.99f
+
+        /**
+         * Reconnect attempts after a dropped session. Bounded on purpose: retrying forever
+         * against an unreachable service looks exactly like a reciter making no mistakes.
+         */
+        const val MAX_RECONNECT_ATTEMPTS = 3
+        const val RECONNECT_DELAY_MS = 1_000L
     }
 
     init {
@@ -158,6 +203,14 @@ class MushafViewModel(
             MushafIntent.RevealNextWord -> revealNextWord()
             MushafIntent.RevealNextAyah -> revealNextAyah()
             MushafIntent.ToggleRecording -> toggleRecording()
+            is MushafIntent.CaptureFailed -> failCapture(intent.error)
+            MushafIntent.DismissCaptureError -> _state.update { it.copy(captureError = null) }
+            is MushafIntent.SelectMistake -> _state.update {
+                it.copy(liveCorrection = it.liveCorrection.copy(selectedMistakeWordId = intent.wordId))
+            }
+            MushafIntent.DismissEngineNotice -> _state.update {
+                it.copy(liveCorrection = it.liveCorrection.copy(engineSubstituted = false))
+            }
             
             is MushafIntent.SelectReciter -> selectReciter(intent.reciter)
             MushafIntent.PlayPauseAudio -> playPauseAudio()
@@ -230,7 +283,13 @@ class MushafViewModel(
         requestPage(clamped + 1)
         requestPage(clamped - 2)
         requestPage(clamped + 2)
-        
+
+        // A page turn during a live session moves the reciter. Without telling the service, the
+        // tracker keeps searching around the old position and starts reporting mismatches that
+        // are not mistakes. The page may not be cached yet, hence the retry once it loads.
+        if (_state.value.liveCorrection.isActive) {
+            startCursorForCurrentPage()?.let(::seekLiveCorrection) ?: run { seekOnPageLoad = clamped }
+        }
 
         viewModelScope.launch {
             runCatching { saveLastPage(clamped) }
@@ -257,6 +316,11 @@ class MushafViewModel(
                         failedPages = it.failedPages - page,
                     )
                 }
+
+                if (seekOnPageLoad == page && _state.value.liveCorrection.isActive) {
+                    seekOnPageLoad = null
+                    startCursorForCurrentPage()?.let(::seekLiveCorrection)
+                }
                 
 
             }
@@ -275,13 +339,19 @@ class MushafViewModel(
     private fun setMode(mode: MushafMode) {
         val current = _state.value
         if (current.isFollowAlongActive) stopFollowAlong()
-        if (current.isRecordingActive) _state.update { it.copy(isRecordingActive = false) }
+        if (current.isRecordingActive) {
+            // Abandon rather than flush: the reciter left the mode, so a graded tail of a
+            // recitation they are no longer doing would be noise.
+            clearLiveSession()
+            _state.update { it.copy(isRecordingActive = false) }
+        }
 
         _state.update {
             it.copy(
                 mushafMode = mode,
                 highlightedWordId = null,
                 revealedWordIds = emptySet(),
+                captureError = null,
             )
         }
 
@@ -347,12 +417,228 @@ class MushafViewModel(
         if (state.mushafMode != MushafMode.RECITATION && state.mushafMode != MushafMode.MUALLEM) return
 
         val nowRecording = !state.isRecordingActive
-        _state.update { it.copy(isRecordingActive = nowRecording) }
+        _state.update { it.copy(isRecordingActive = nowRecording, captureError = null) }
 
         if (nowRecording) {
-            state.page?.let { highlightDriver.start(it) }
+            // RECITATION runs the live AI session; MUALLEM still runs the simulated highlight
+            // until it is migrated onto the same pipeline.
+            if (state.mushafMode == MushafMode.RECITATION) {
+                startLiveCorrection()
+            } else {
+                state.page?.let { highlightDriver.start(it) }
+            }
         } else {
+            finishLiveCorrection()
             highlightDriver.stop()
+        }
+    }
+
+    // ===== Live AI correction =====
+
+    /**
+     * Opens a live session for the current page and collects its events until the reciter stops.
+     *
+     * The session is seeded with the reciter's position whenever the page is loaded. Starting
+     * without one puts the service into whole-muṣḥaf search, where the basmalah — the most
+     * likely opening — comes back ambiguous.
+     */
+    private fun startLiveCorrection() {
+        sessionJob?.cancel()
+        lastCursor = startCursorForCurrentPage()
+        isFinishing = false
+        reconnectAttempts = 0
+
+        _state.update {
+            it.copy(
+                captureError = null,
+                liveCorrection = LiveCorrectionUiState(isConnecting = true),
+            )
+        }
+
+        val controls = Channel<RecitationControl>(Channel.BUFFERED)
+        controlChannel = controls
+        sessionJob = viewModelScope.launch { runSession(controls) }
+    }
+
+    /**
+     * Runs the session, resuming from the last cursor if the connection drops.
+     *
+     * There is no session resumption server-side: a reconnect opens a new session seeded with
+     * the last cursor seen, which costs only the in-flight chunk. Attempts are bounded, because
+     * retrying forever against an unreachable service looks identical to a reciter making no
+     * mistakes.
+     */
+    private suspend fun runSession(controls: Channel<RecitationControl>) {
+        while (currentCoroutineContext().isActive) {
+            try {
+                startLiveRecitation(
+                    config = LiveRecitationConfig(start = lastCursor, engine = "zipformer"),
+                    controls = controls.receiveAsFlow(),
+                ).collect { event -> onLiveEvent(event) }
+                return
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (securityError: SecurityException) {
+                Log.e(TAG, "Live correction lost microphone permission", securityError)
+                failCapture(CaptureError.PERMISSION_DENIED)
+                return
+            } catch (throwable: Throwable) {
+                if (isFinishing || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    Log.e(TAG, "Live correction session ended (finishing=$isFinishing)", throwable)
+                    if (!isFinishing) failCapture(CaptureError.SERVICE_UNREACHABLE)
+                    return
+                }
+                reconnectAttempts++
+                Log.w(
+                    TAG,
+                    "Live session dropped; reconnect $reconnectAttempts/$MAX_RECONNECT_ATTEMPTS " +
+                        "from ${lastCursor?.wordId}",
+                    throwable,
+                )
+                _state.update {
+                    it.copy(liveCorrection = it.liveCorrection.copy(isConnecting = true, isActive = false))
+                }
+                delay(RECONNECT_DELAY_MS)
+            }
+        }
+    }
+
+    private fun onLiveEvent(event: LiveRecitationEvent) {
+        when (event) {
+            is LiveRecitationEvent.Started -> {
+                reconnectAttempts = 0
+                Log.i(TAG, "Live session ${event.sessionId} on engine '${event.engine}'")
+                _state.update {
+                    it.copy(
+                        liveCorrection = it.liveCorrection.copy(
+                            isConnecting = false,
+                            isActive = true,
+                            engine = event.engine,
+                            engineSubstituted = event.engineSubstituted,
+                        ),
+                    )
+                }
+            }
+
+            is LiveRecitationEvent.Level -> updateMicLevel(event)
+
+            is LiveRecitationEvent.Graded -> mergeChunk(event.chunk)
+
+            LiveRecitationEvent.Finished -> {
+                Log.d(TAG, "Live session finished")
+                _state.update {
+                    it.copy(
+                        isRecordingActive = false,
+                        micLevel = 0f,
+                        isSpeechDetected = false,
+                        liveCorrection = it.liveCorrection.copy(isConnecting = false, isActive = false),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateMicLevel(event: LiveRecitationEvent.Level) {
+        smoothedMicLevel = if (event.isSpeaking) {
+            smoothedMicLevel + (event.amplitude * MIC_LEVEL_GAIN - smoothedMicLevel) * MIC_LEVEL_SMOOTHING
+        } else {
+            0f
+        }
+        _state.update {
+            it.copy(
+                micLevel = smoothedMicLevel.coerceIn(0f, 1f),
+                isSpeechDetected = event.isSpeaking,
+            )
+        }
+    }
+
+    private fun mergeChunk(chunk: RecitationChunk) {
+        chunk.cursor?.let { lastCursor = it }
+        Log.d(
+            TAG,
+            "Chunk ${chunk.sequence}: ${chunk.words.size} words, " +
+                "${chunk.mistakeWords.size} mistakes, cursor=${chunk.cursor?.wordId}",
+        )
+
+        _state.update { state ->
+            val live = state.liveCorrection
+            state.copy(
+                liveCorrection = live.copy(
+                    // Merged, not replaced: a word on a chunk boundary is reported twice, and an
+                    // unscored second report must not erase the verdict the first one earned.
+                    wordFeedback = live.wordFeedback.mergedWith(chunk),
+                    candidates = (chunk.match as? RecitationMatch.Ambiguous)?.candidates.orEmpty(),
+                    nonVerse = chunk.nonVerse,
+                    lastOutcome = chunk.match.toOutcome(),
+                    cursor = chunk.cursor ?: live.cursor,
+                ),
+            )
+        }
+    }
+
+    private fun RecitationMatch.toOutcome(): ChunkOutcome = when (this) {
+        is RecitationMatch.Matched -> ChunkOutcome.GRADED
+        is RecitationMatch.Ambiguous -> ChunkOutcome.AMBIGUOUS
+        RecitationMatch.NoMatch -> ChunkOutcome.NO_MATCH
+    }
+
+    /**
+     * Asks the service to flush and waits for it to acknowledge.
+     *
+     * Deliberately not a cancellation: `Finish` lets the server grade the utterance still in
+     * flight, which is the last few seconds of what was just recited. Cancelling drops it.
+     */
+    private fun finishLiveCorrection() {
+        isFinishing = true
+        val controls = controlChannel
+        if (controls == null) {
+            clearLiveSession()
+            return
+        }
+        if (controls.trySend(RecitationControl.Finish).isFailure) {
+            Log.w(TAG, "Could not request a flush; ending the session locally")
+            clearLiveSession()
+        }
+        _state.update { it.copy(micLevel = 0f, isSpeechDetected = false) }
+    }
+
+    /** Tears the session down without waiting for the server — mode changes, backgrounding. */
+    private fun clearLiveSession() {
+        isFinishing = true
+        sessionJob?.cancel()
+        sessionJob = null
+        controlChannel?.close()
+        controlChannel = null
+        smoothedMicLevel = 0f
+        _state.update {
+            it.copy(micLevel = 0f, isSpeechDetected = false, liveCorrection = LiveCorrectionUiState())
+        }
+    }
+
+    /** Tells the service the reciter moved, so tracking does not drift into false mismatches. */
+    private fun seekLiveCorrection(cursor: RecitationCursor) {
+        lastCursor = cursor
+        controlChannel?.trySend(RecitationControl.Seek(cursor))
+        Log.d(TAG, "Seek → ${cursor.wordId}")
+    }
+
+    /** The first āyah word on the page being read, or null before the page has loaded. */
+    private fun startCursorForCurrentPage(): RecitationCursor? =
+        _state.value.wordsForCurrentPage()
+            .firstNotNullOfOrNull { RecitationCursor.fromWordId(it.id) }
+
+    private fun failCapture(error: CaptureError) {
+        clearLiveSession()
+        _state.update { it.copy(isRecordingActive = false, captureError = error) }
+    }
+
+
+    fun onScreenStopped() {
+        if (_state.value.isRecordingActive) {
+            Log.d(TAG, "Screen stopped while recording; releasing the microphone")
+            clearLiveSession()
+            highlightDriver.stop()
+            _state.update { it.copy(isRecordingActive = false) }
         }
     }
 
@@ -426,6 +712,7 @@ class MushafViewModel(
     }
 
     override fun onCleared() {
+        clearLiveSession()
         simulatedHighlightDriver.stop()
         audioHighlightDriver.stop()
         playbackManager.release()

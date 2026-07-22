@@ -2,6 +2,8 @@ package com.example.mushaf.presentation.di
 
 import com.example.mushaf.domain.model.ResourceKind
 import com.example.mushaf.domain.usecase.CancelResourceDownloadUseCase
+import com.example.mushaf.domain.usecase.CaptureRecitationAudioUseCase
+import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
 import com.example.mushaf.domain.usecase.DeleteResourceDownloadUseCase
 import com.example.mushaf.domain.usecase.GetPageUseCase
 import com.example.mushaf.domain.usecase.ObserveDownloadableResourcesUseCase
@@ -29,12 +31,14 @@ val mushafPresentationModule = module {
 
     factory { com.example.mushaf.domain.usecase.GetRecitersUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetAyahTimingsUseCase(get()) }
+    factory { CaptureRecitationAudioUseCase(get()) }
+    factory { StartLiveRecitationUseCase(get()) }
     
     factory<com.example.mushaf.presentation.audio.AudioPlayer> { 
         com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
     }
 
-    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     viewModel { MushafSettingsViewModel(get(), get()) }
 
