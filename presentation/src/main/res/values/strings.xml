@@ -39,6 +39,22 @@
     <string name="auth_send_reset_link">Send Reset Link</string>
     <string name="auth_back_to_sign_in">Back to Sign In</string>
 
+    <!-- Authentication errors -->
+    <string name="auth_error_required">This field is required</string>
+    <string name="auth_error_invalid_email">Enter a valid email address</string>
+    <string name="auth_error_weak_password">Use at least 8 characters with upper and lower case letters, a number, and a symbol</string>
+    <string name="auth_error_invalid_phone_number">Enter a valid Egyptian mobile number, e.g. 01012345678</string>
+    <string name="auth_error_invalid_otp">Enter the 6-digit code</string>
+    <string name="auth_error_validation">Please check the highlighted fields</string>
+    <string name="auth_error_invalid_credentials">Incorrect email or password</string>
+    <string name="auth_error_conflict">An account with these details already exists</string>
+    <string name="auth_error_google_unavailable">Google sign-in isn\'t available right now. Please use your email and password.</string>
+    <string name="auth_error_registered_sign_in_failed">Your account was created. Please sign in.</string>
+
+    <!-- ===== Shared errors ===== -->
+    <string name="error_network">No connection. Please check your network and try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+
     <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
     <string name="home_greeting">welcome back</string>
