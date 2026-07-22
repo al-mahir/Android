@@ -165,6 +165,15 @@ class MushafViewModel(
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
             MushafIntent.NextAyahAudio -> Unit // TODO: implement next ayah
             MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
+
+            // Surah Picker
+            MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
+            MushafIntent.HideSurahPicker -> _state.update { it.copy(showSurahPicker = false) }
+            is MushafIntent.NavigateToSurah -> navigateToSurah(intent.surahNumber)
+
+            // Tajweed Legend
+            MushafIntent.ShowTajweedLegend -> _state.update { it.copy(showTajweedLegend = true) }
+            MushafIntent.HideTajweedLegend -> _state.update { it.copy(showTajweedLegend = false) }
         }
     }
 
@@ -179,6 +188,14 @@ class MushafViewModel(
                 state.copy(highlightedWordId = wordId)
             }
         }
+    }
+
+    private fun navigateToSurah(surahNumber: Int) {
+        val idx = surahNumber - 1
+        val startPage = com.example.mushaf.domain.model.MushafConstants.SURAH_START_PAGES
+            .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
+        _state.update { it.copy(showSurahPicker = false) }
+        loadPage(startPage)
     }
 
     private fun loadReciters() {

@@ -25,6 +25,15 @@ sealed interface MushafIntent {
     data object RevealNextAyah : MushafIntent
     data object ToggleRecording : MushafIntent
 
+    // Surah Picker
+    data object ShowSurahPicker : MushafIntent
+    data object HideSurahPicker : MushafIntent
+    data class NavigateToSurah(val surahNumber: Int) : MushafIntent
+
+    // Tajweed Legend
+    data object ShowTajweedLegend : MushafIntent
+    data object HideTajweedLegend : MushafIntent
+
     // Listen Mode
     data class SelectReciter(val reciter: Reciter) : MushafIntent
     data object PlayPauseAudio : MushafIntent

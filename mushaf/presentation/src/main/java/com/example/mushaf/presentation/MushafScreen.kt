@@ -1,12 +1,24 @@
 package com.example.mushaf.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -19,18 +31,23 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.dp
+import com.example.designsystem.components.mushaf.AudioPlayerBar
+import com.example.designsystem.components.mushaf.ReciterItem
+import com.example.designsystem.components.mushaf.ReciterPickerSheet
+import com.example.designsystem.components.mushaf.SurahItem
+import com.example.designsystem.components.mushaf.SurahPickerSheet
+import com.example.designsystem.components.mushaf.TajweedLegendSheet
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.domain.model.MushafMode
+import com.example.mushaf.domain.model.SurahCatalog
+import com.example.mushaf.domain.model.SurahOrigin
+import com.example.mushaf.presentation.audio.AudioState
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
-import com.example.designsystem.components.mushaf.AudioPlayerBar
-import com.example.designsystem.components.mushaf.ReciterPickerSheet
-import com.example.designsystem.components.mushaf.ReciterItem
-import com.example.mushaf.presentation.audio.AudioState
-import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.PageLoadState
 import org.koin.androidx.compose.koinViewModel
@@ -138,6 +155,7 @@ fun MushafScreen(
             onBack = onBack,
             onBookmark = {},
             onSettings = onOpenSettings,
+            onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
@@ -175,7 +193,32 @@ fun MushafScreen(
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
+
+        // ── Tajweed Legend FAB ──────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = state.areBarsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 16.dp, bottom = 80.dp), // above the bottom bar
+        ) {
+            FloatingActionButton(
+                onClick = { viewModel.onIntent(MushafIntent.ShowTajweedLegend) },
+                shape = CircleShape,
+                containerColor = Theme.colors.surface,
+                contentColor = Theme.colors.primary,
+                elevation = FloatingActionButtonDefaults.elevation(4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Palette,
+                    contentDescription = "دليل ألوان التجويد",
+                )
+            }
+        }
         
+        // ── Reciter Picker sheet ────────────────────────────────────────────────
         if (showReciterPicker) {
             val reciterItems = state.availableReciters.map {
                 ReciterItem(
@@ -194,6 +237,35 @@ fun MushafScreen(
                     showReciterPicker = false
                 },
                 onDismiss = { showReciterPicker = false }
+            )
+        }
+
+        // ── Surah Picker sheet ──────────────────────────────────────────────────
+        if (state.showSurahPicker) {
+            val surahItems = remember {
+                SurahCatalog.all.map { s ->
+                    SurahItem(
+                        number = s.number,
+                        nameArabic = s.nameArabic,
+                        nameEnglish = s.nameEnglish,
+                        isMeccan = s.origin == com.example.mushaf.domain.model.SurahOrigin.MECCAN,
+                    )
+                }
+            }
+            SurahPickerSheet(
+                surahs = surahItems,
+                currentSurahNumber = state.currentSurahNumber,
+                onSurahSelected = { item ->
+                    viewModel.onIntent(MushafIntent.NavigateToSurah(item.number))
+                },
+                onDismiss = { viewModel.onIntent(MushafIntent.HideSurahPicker) },
+            )
+        }
+
+        // ── Tajweed Legend sheet ────────────────────────────────────────────────
+        if (state.showTajweedLegend) {
+            TajweedLegendSheet(
+                onDismiss = { viewModel.onIntent(MushafIntent.HideTajweedLegend) },
             )
         }
     }

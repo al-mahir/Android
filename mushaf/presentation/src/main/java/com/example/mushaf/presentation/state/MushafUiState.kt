@@ -28,10 +28,17 @@ data class MushafUiState(
     val playingPage: Int? = null,
     val playbackSpeed: Float = 1.0f,
     val availableReciters: List<Reciter> = emptyList(),
+
+    // Surah Picker
+    val showSurahPicker: Boolean = false,
+
+    // Tajweed Legend
+    val showTajweedLegend: Boolean = false,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
+    val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)
 
     fun pageState(pageNumber: Int): PageLoadState = when {
         pages.containsKey(pageNumber) -> PageLoadState.Loaded(pages.getValue(pageNumber))
