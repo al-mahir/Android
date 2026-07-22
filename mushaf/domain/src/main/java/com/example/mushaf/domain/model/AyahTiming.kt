@@ -12,6 +12,9 @@ data class AyahTiming(
     
     /** End time of the entire ayah in milliseconds */
     val timestampTo: Long,
+
+    /** Audio URL for the entire ayah */
+    val audioUrl: String? = null,
     
     /** Precise timings for each word in the ayah */
     val wordTimings: List<WordTiming>,

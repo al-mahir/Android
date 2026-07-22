@@ -411,9 +411,15 @@ class MushafViewModel(
 
     private fun buildAudioUrls(timings: List<AyahTiming>, reciter: Reciter): List<String> {
         return timings.map { timing ->
-            val paddedS = timing.surahNumber.toString().padStart(3, '0')
-            val paddedA = timing.ayahNumber.toString().padStart(3, '0')
-            "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            val audioUrl = timing.audioUrl
+            if (audioUrl != null) {
+                if (audioUrl.startsWith("http")) audioUrl
+                else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
+            } else {
+                val paddedS = timing.surahNumber.toString().padStart(3, '0')
+                val paddedA = timing.ayahNumber.toString().padStart(3, '0')
+                "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            }
         }
     }
 
