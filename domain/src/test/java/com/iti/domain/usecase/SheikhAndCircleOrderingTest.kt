@@ -1,15 +1,20 @@
 package com.iti.domain.usecase
 
+import com.iti.domain.model.LegalDocument
+import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.ReadingProgress
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
 import com.iti.domain.model.StudyCircle
+import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -77,8 +82,16 @@ class SheikhAndCircleOrderingTest {
     ) : AlmahirRepository {
         val joined = mutableListOf<String>()
 
-        override fun observeCurrentUser(): Flow<User> =
-            flowOf(User(id = "u", displayName = "U", initials = "U", avatarUrl = null))
+        override fun observeCurrentUser(): Flow<User> = flowOf(
+            User(
+                id = "u",
+                displayName = "U",
+                initials = "U",
+                avatarUrl = null,
+                email = "u@example.com",
+                joinedAtEpochMillis = 0L,
+            )
+        )
 
         override fun observeReadingProgress(): Flow<ReadingProgress?> = flowOf(null)
 
@@ -86,8 +99,20 @@ class SheikhAndCircleOrderingTest {
 
         override fun observeStudyCircles(): Flow<List<StudyCircle>> = flowOf(circles)
 
+        override fun observeSubscription(): Flow<Subscription> =
+            flowOf(Subscription(plan = SubscriptionPlan.NONE, renewsAtEpochMillis = null))
+
+        override fun observeLegalDocument(type: LegalDocumentType): Flow<LegalDocument> =
+            emptyFlow()
+
         override suspend fun joinStudyCircle(circleId: String) {
             joined += circleId
         }
+
+        override suspend fun restorePurchases(): Boolean = false
+
+        override suspend fun logout() = Unit
+
+        override suspend fun deleteAccount() = Unit
     }
 }
