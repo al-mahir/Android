@@ -30,7 +30,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.util.concurrent.TimeUnit
 
-/** Qualifier for the AI-service HTTP client, so it is never confused with the quran.com one. */
+ 
 const val AI_SERVICE_CLIENT = "aiServiceClient"
 
 val mushafDataModule = module {
@@ -46,8 +46,8 @@ val mushafDataModule = module {
     single { WavDebugSink(androidContext()) }
     single<RecitationCaptureRepository> { RecitationCaptureRepositoryImpl(get(), get()) }
 
-    // Al-Mahir AI service. A second client on the OkHttp engine, because Ktor's Android engine
-    // does not implement WebSockets at all — the live session cannot run on the client above.
+    
+    
     single { AiServiceConfig() }
     single(named(AI_SERVICE_CLIENT)) {
         HttpClient(OkHttp) {
@@ -57,15 +57,15 @@ val mushafDataModule = module {
             }
             engine {
                 config {
-                    // The server pushes only when the reciter pauses. Any read timeout would
-                    // kill a healthy socket in the middle of a long ayah.
-                    // TimeUnit overloads, not the java.time.Duration ones: those need API 26
-                    // and this module ships to minSdk 24.
+                    
+                    
+                    
+                    
                     readTimeout(0, TimeUnit.MILLISECONDS)
                     pingInterval(20, TimeUnit.SECONDS)
-                    // Short, so a wrong host fails in seconds rather than looking like a
-                    // reciter who is being ignored. The default 10s x 3 reconnects is half a
-                    // minute of silence before anything appears on screen.
+                    
+                    
+                    
                     connectTimeout(4, TimeUnit.SECONDS)
                 }
             }

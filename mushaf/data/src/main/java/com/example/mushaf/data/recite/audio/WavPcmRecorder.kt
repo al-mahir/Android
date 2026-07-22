@@ -9,19 +9,19 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * A [PcmRecorder] that replays a 16 kHz mono PCM16 WAV instead of opening the microphone.
- *
- * Makes a recitation reproducible: the same audio, byte for byte, on every run. That turns "the
- * feedback looks wrong" from an argument about how someone recited into a repeatable test — and
- * it is the only way to debug the session protocol on an emulator with no working microphone.
- *
- * Pairs with [WavDebugSink]: pull a `raw-*.wav` off a device, drop it in, and replay it.
- *
- * @param open supplies a fresh stream per collection, so the flow can be collected more than once.
- * @param realTime when true, paces frames as if spoken. Leave false in tests; set true on a
- *   device, where sending a whole recitation instantly would defeat the server's VAD chunking.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 class WavPcmRecorder(
     private val open: () -> InputStream,
     private val realTime: Boolean = false,
@@ -56,13 +56,13 @@ class WavPcmRecorder(
 
     private data class WavFormat(val sampleRate: Int, val channels: Int, val bitsPerSample: Int)
 
-    /**
-     * Walks the RIFF chunk list to the `data` payload.
-     *
-     * Chunks are not at fixed offsets — writers interleave `LIST`/`fact` chunks freely — so
-     * assuming the canonical 44-byte header would read metadata as audio on files this app did
-     * not write.
-     */
+    
+
+
+
+
+
+ 
     private fun InputStream.readWavHeader(): WavFormat {
         val riff = ByteArray(12)
         check(readAtMost(riff) == 12) { "Not a WAV file: truncated RIFF header" }
@@ -85,7 +85,7 @@ class WavPcmRecorder(
                         bitsPerSample = body.shortLittleEndian(14).toInt(),
                     )
                 }
-                // Payload starts here; leave the stream positioned on it.
+                
                 "data" -> return checkNotNull(format) { "WAV data chunk preceded its fmt chunk" }
                 else -> skipFully(size.toLong())
             }
@@ -102,7 +102,7 @@ class WavPcmRecorder(
         }
     }
 
-    /** [InputStream.read] may return a short read; loop until the buffer is full or the file ends. */
+     
     private fun InputStream.readAtMost(target: ByteArray): Int {
         var filled = 0
         while (filled < target.size) {

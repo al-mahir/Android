@@ -28,22 +28,22 @@ import org.junit.Test
 import java.io.File
 import java.net.Socket
 
-/**
- * Smoke tests against a **real** Al-Mahir server, run from the development machine.
- *
- * Every test here is skipped unless the server answers on [AUTHORITY], so this is safe on CI and
- * on any machine without the backend. That is the point: it climbs rungs 1, 3 and 6 of the test
- * ladder in `docs/MOBILE_INTEGRATION.md` §13 without needing the app, a device, or a microphone.
- *
- * ```
- * ./gradlew :mushaf:data:testDebugUnitTest --tests "*LiveServerSmokeTest*" -i
- * ```
- *
- * Point it elsewhere with `-DalmahirServer=192.168.1.3:8100`, and give it real recitation audio
- * with `-DalmahirWav=C:/path/to/gated.wav` — a 16 kHz mono PCM16 file, exactly what
- * `WavDebugSink` writes. Without one it streams a synthetic tone, which proves the protocol but
- * will legitimately grade `no_match`.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 class LiveServerSmokeTest {
 
     private lateinit var client: HttpClient
@@ -66,7 +66,7 @@ class LiveServerSmokeTest {
         if (::client.isInitialized) client.close()
     }
 
-    /** Rung 1: the server is up, and it says which engines it actually built. */
+     
     @Test
     fun `health reports a healthy service and its engines`() = runBlocking {
         val health = withTimeout(TIMEOUT_MS) { AiServiceApi(client, config).health() }
@@ -86,14 +86,14 @@ class LiveServerSmokeTest {
         println("[live] ${rules.rules.size} tajweed rules, ${schema.fields.size} moshaf fields")
         assertTrue("no tajweed rules returned", rules.rules.isNotEmpty())
         assertTrue("no moshaf fields returned", schema.fields.isNotEmpty())
-        // The panel is built from these, so an option with no value would render a dead control.
+        
         assertTrue(schema.fields.all { it.key.isNotBlank() })
     }
 
-    /**
-     * Rung 3 and 6: the full handshake against the real server, and — with real audio — proof
-     * that VAD, ASR and muṣḥaf tracking all ran, because the cursor moved.
-     */
+    
+
+
+ 
     @Test
     fun `a live session handshakes and reaches done`() = runBlocking {
         val frames = recitationFrames()
@@ -128,11 +128,11 @@ class LiveServerSmokeTest {
         emit(LiveSessionCommand.End)
     }
 
-    /**
-     * Real recitation when a WAV was supplied, otherwise a synthetic tone followed by silence —
-     * the silence matters, because without it the server's VAD never sees a waqf and never
-     * finalizes a chunk.
-     */
+    
+
+
+
+ 
     private fun recitationFrames(): List<AudioFrame> {
         val wavPath = System.getProperty(WAV_PROPERTY)
         if (wavPath != null) {
@@ -167,7 +167,7 @@ class LiveServerSmokeTest {
         const val SERVER_PROPERTY = "almahirServer"
         const val WAV_PROPERTY = "almahirWav"
 
-        /** From the dev machine the server is local; the emulator alias applies on-device only. */
+         
         val AUTHORITY: String = System.getProperty(SERVER_PROPERTY) ?: "localhost:8100"
 
         const val START_SURA = 1
@@ -175,7 +175,7 @@ class LiveServerSmokeTest {
         const val PROBE_TIMEOUT_MS = 300
         const val TIMEOUT_MS = 30_000L
 
-        /** Generous: the first recitation after a server start pays a model warm-up. */
+         
         const val SESSION_TIMEOUT_MS = 120_000L
     }
 }

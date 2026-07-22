@@ -16,14 +16,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-/**
- * [PcmRecorder] backed by [AudioRecord], configured for exactly the format the AI service reads.
- *
- * **The audio source is [MediaRecorder.AudioSource.VOICE_RECOGNITION], not `MIC`.** `MIC` and
- * `VOICE_COMMUNICATION` apply aggressive noise suppression and automatic gain control, which
- * distort precisely the sustained vowels that madd grading measures (API.md §10). A wrong source
- * here does not fail loudly — it silently degrades every madd finding the model returns.
- */
+
+
+
+
+
+
+
+ 
 class AudioRecordPcmRecorder : PcmRecorder {
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -56,12 +56,12 @@ class AudioRecordPcmRecorder : PcmRecorder {
                 val read = recorder.read(buffer, 0, buffer.size)
                 when {
                     read > 0 -> {
-                        // A fresh array per frame: the buffer is reused on the next read, and
-                        // everything downstream holds onto what it is handed.
+                        
+                        
                         emit(AudioFrame(samples = buffer.copyOf(read), startSample = startSample))
                         startSample += read
                     }
-                    read == 0 -> Unit // No data ready yet; keep polling.
+                    read == 0 -> Unit 
                     else -> error("AudioRecord.read failed with ${readErrorName(read)}")
                 }
             }
@@ -73,10 +73,10 @@ class AudioRecordPcmRecorder : PcmRecorder {
         }
     }.flowOn(Dispatchers.IO)
 
-    /**
-     * At least the device minimum, and at least four capture frames, so a scheduling hiccup
-     * overruns the buffer instead of dropping samples mid-word.
-     */
+    
+
+
+ 
     private fun resolveBufferSizeBytes(): Int {
         val minimum = AudioRecord.getMinBufferSize(
             RecitationAudioFormat.SAMPLE_RATE_HZ,

@@ -9,8 +9,8 @@ class PcmCodecTest {
 
     @Test
     fun `samples are encoded little-endian`() {
-        // 0x0102 little-endian is 02 01. Getting this backwards is accepted by the socket and
-        // decoded as noise, so it is asserted rather than assumed.
+        
+        
         val bytes = PcmCodec.toLittleEndianBytes(shortArrayOf(0x0102))
 
         assertArrayEquals(byteArrayOf(0x02, 0x01), bytes)

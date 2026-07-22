@@ -19,40 +19,40 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
-/**
- * One live recitation session over `WS /ws/session`.
- *
- * The exchange, in the order the server requires:
- *
- * ```
- * connect  ->  send {"type":"start", …}  ->  recv {"type":"session", …}
- *          ->  binary PCM frames …       <-  {"type":"feedback"} per waqf
- *          ->  {"type":"end"}            <-  {"type":"done"}  ->  close
- * ```
- *
- * **Ordering is enforced, not assumed.** The start message must be the first frame and must be
- * text JSON. Worse, two known server bugs (MOBILE_INTEGRATION.md §7) turn a violation into an
- * unhandled exception and a **1006** close rather than the documented clean 1002 — so a client
- * that starts streaming too early sees a generic network error and debugs the wrong layer. This
- * implementation therefore waits for the ack before sending a single byte of audio. It costs one
- * round trip at session start and removes the entire class of bug.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 class LiveRecitationSocket(
     private val client: HttpClient,
     private val config: AiServiceConfig,
     private val json: Json = ProtocolJson,
 ) {
 
-    /**
-     * Runs a session and streams its events.
-     *
-     * Cold: nothing connects until collection starts, and the socket closes when collection
-     * stops, however it stops. [commands] is consumed only after the handshake succeeds.
-     *
-     * The caller ends a session by emitting [LiveSessionCommand.End] and then completing
-     * [commands] — the flow stays open afterwards to receive the flush feedback and `done`.
-     * Simply cancelling instead loses the final chunk of the recitation.
-     */
+    
+
+
+
+
+
+
+
+
+ 
     fun open(
         start: StartSessionDto,
         commands: Flow<LiveSessionCommand>,
@@ -71,7 +71,7 @@ class LiveRecitationSocket(
                 ),
             )
 
-            // Only now is it safe to put binary on the wire.
+            
             val pump = launch { pumpCommands(commands) }
             val sawDone = try {
                 readEvents { event -> send(event) }
@@ -80,9 +80,9 @@ class LiveRecitationSocket(
             }
 
             if (!sawDone) {
-                // The socket ended without `done`. The close code is the only diagnostic the
-                // service gives, and the three cases need different responses, so it is
-                // reported rather than swallowed as a flow that merely completed.
+                
+                
+                
                 val reason = closeReason.await()
                 Log.w(TAG, "Session ended without 'done' (close=${reason?.code} ${reason?.message})")
                 throw LiveSessionException(
@@ -91,18 +91,18 @@ class LiveRecitationSocket(
                 )
             }
         }
-        // webSocket() returns once the server closed; nothing further can arrive.
+        
         close()
         awaitClose()
     }
 
-    /**
-     * Reads until the session ack arrives.
-     *
-     * Anything before it is a protocol violation on the server's side rather than something to
-     * paper over, so it fails loudly instead of streaming audio into a session that may not
-     * exist.
-     */
+    
+
+
+
+
+
+ 
     private suspend fun io.ktor.websocket.WebSocketSession.awaitAck(): SessionAckDto {
         for (frame in incoming) {
             if (frame !is Frame.Text) continue
@@ -122,8 +122,8 @@ class LiveRecitationSocket(
         commands.collect { command ->
             when (command) {
                 is LiveSessionCommand.Audio -> {
-                    // Binary, never text: the string overload produces a text frame, which the
-                    // server treats as a control message and silently ignores.
+                    
+                    
                     outgoing.send(Frame.Binary(true, PcmCodec.toLittleEndianBytes(command.frame.samples)))
                 }
 
@@ -141,11 +141,11 @@ class LiveRecitationSocket(
         }
     }
 
-    /**
-     * [emit] hands events to the surrounding flow; the read loop itself owns no channel.
-     *
-     * Returns true if the server said `done`, false if the socket ended first.
-     */
+    
+
+
+
+ 
     private suspend fun io.ktor.websocket.WebSocketSession.readEvents(
         emit: suspend (LiveSessionEvent) -> Unit,
     ): Boolean {
@@ -176,7 +176,7 @@ class LiveRecitationSocket(
         return false
     }
 
-    /** Turns a close code into the action the caller should take (API.md §5.9). */
+     
     private fun describeClose(code: Short?, message: String?): String = when (code?.toInt()) {
         CLOSE_PROTOCOL_ERROR ->
             "The server rejected the first frame as invalid JSON (1002). This is a client " +
@@ -198,13 +198,13 @@ class LiveRecitationSocket(
     }
 }
 
-/**
- * Lenient on the way in, sparse on the way out.
- *
- * `ignoreUnknownKeys` so a server that grows a field does not drop a live session, and
- * `explicitNulls = false` so an unset field in the start message is *absent* rather than an
- * explicit `null` — the contract reads absence as "use the server default".
- */
+
+
+
+
+
+
+ 
 internal val ProtocolJson: Json = Json {
     ignoreUnknownKeys = true
     explicitNulls = false

@@ -25,13 +25,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Assembles the live correction pipeline: microphone → speech gate → session socket → domain.
- *
- * The three stages live behind one capability because they are inseparable in practice — a
- * session with a socket but no microphone, or audio with nowhere to send it, is not a partially
- * working feature, it is a broken one.
- */
+
+
+
+
+
+
+ 
 class LiveRecitationRepositoryImpl(
     private val capture: RecitationCaptureRepository,
     private val socket: LiveRecitationSocket,
@@ -42,18 +42,18 @@ class LiveRecitationRepositoryImpl(
         config: LiveRecitationConfig,
         controls: Flow<RecitationControl>,
     ): Flow<LiveRecitationEvent> = channelFlow {
-        // Buffered so a slow network cannot stall the microphone read loop; the service does not
-        // block sends, and dropping audio would be worse than queueing it.
+        
+        
         val commands = Channel<LiveSessionCommand>(Channel.BUFFERED)
 
-        // Assigned once the handshake succeeds. The microphone deliberately stays shut until
-        // then: a session that never starts should never have opened it, and the recording
-        // indicator must not light for a connection that is about to fail.
+        
+        
+        
         var audioJob: Job? = null
 
-        // The reciter can tap stop before the handshake lands — on a slow first connection that
-        // is a real sequence, not a theoretical one. Without this the late handshake would open
-        // the microphone and stream into an already-closed command channel.
+        
+        
+        
         val finishing = AtomicBoolean(false)
 
         val controlJob = launch {
@@ -69,8 +69,8 @@ class LiveRecitationRepositoryImpl(
 
                     RecitationControl.Finish -> {
                         finishing.set(true)
-                        // Release the microphone *before* saying end, so no audio can arrive
-                        // after the flush request and be silently discarded by the server.
+                        
+                        
                         audioJob?.cancelAndJoin()
                         commands.send(LiveSessionCommand.End)
                         commands.close()
@@ -94,12 +94,12 @@ class LiveRecitationRepositoryImpl(
         }
     }
 
-    /**
-     * Pumps gated microphone audio into [commands], reporting loudness as it goes.
-     *
-     * The level events are the only evidence the pipeline is alive during a silent stretch:
-     * a session where nothing is said correctly produces no graded chunks at all.
-     */
+    
+
+
+
+
+ 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private suspend fun ProducerScope<LiveRecitationEvent>.streamCaptureInto(
         commands: SendChannel<LiveSessionCommand>,

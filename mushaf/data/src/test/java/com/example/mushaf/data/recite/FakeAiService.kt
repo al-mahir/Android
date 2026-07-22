@@ -12,37 +12,37 @@ import io.ktor.websocket.readText
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- * An in-process stand-in for `WS /ws/session`.
- *
- * The live server is `["real"]` only — there is no `mock` engine on this deployment — so without
- * this, the protocol client could not be tested at all until a GPU was on the other end. It
- * speaks the real handshake and replays payloads copied verbatim from `docs/API.md`.
- *
- * What it deliberately does *not* do is transcribe anything: it asserts the client's side of the
- * contract (start first, text JSON, binary audio, end → done) and nothing about recitation.
- */
+
+
+
+
+
+
+
+
+
+ 
 class FakeAiService(
-    /** Feedback payloads to push, in order, once audio starts arriving. */
+     
     private val feedbackPayloads: List<String> = emptyList(),
-    /** Payload flushed on `end`, mirroring the server's final chunk. */
+     
     private val flushOnEnd: String? = null,
-    /**
-     * Engine name reported in the ack.
-     *
-     * Not called `engine`: inside `embeddedServer { }` that name resolves to Ktor's own server
-     * engine, which silently shadows the property and puts a `CIOApplicationEngine` toString in
-     * the ack.
-     */
+    
+
+
+
+
+
+ 
     private val ackEngine: String = "real",
 ) {
     private var server: EmbeddedServer<*, *>? = null
 
-    /** Port chosen at start; 0 until then. */
+     
     var port: Int = 0
         private set
 
-    // --- Observed client behaviour, asserted by the tests ---
+    
 
     @Volatile
     var firstFrameWasText: Boolean? = null
@@ -62,7 +62,7 @@ class FakeAiService(
 
     fun start(): FakeAiService {
         port = freePort()
-        // Captured outside the server lambda so no Ktor scope member can shadow it.
+        
         val engineName = ackEngine
         server = embeddedServer(CIO, port = port) {
             install(WebSockets)
@@ -103,8 +103,8 @@ class FakeAiService(
                             is Frame.Binary -> {
                                 binaryFrameCount.incrementAndGet()
                                 binaryByteCount.addAndGet(frame.data.size)
-                                // Push the canned feedback once real audio has arrived, the way
-                                // the server pushes on a finalized waqf chunk.
+                                
+                                
                                 if (!sentFeedback && feedbackPayloads.isNotEmpty()) {
                                     sentFeedback = true
                                     feedbackPayloads.forEach { outgoing.send(Frame.Text(it)) }
@@ -128,7 +128,7 @@ class FakeAiService(
     private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 }
 
-/** A real capture from a Fātiḥa recitation — `docs/API.md` §5.4, unaltered. */
+ 
 const val FATIHA_FEEDBACK_JSON: String = """
 {
   "type": "feedback",
@@ -156,7 +156,7 @@ const val FATIHA_FEEDBACK_JSON: String = """
 }
 """
 
-/** The madd finding from `docs/API.md` §5.6 — held for three counts instead of two. */
+ 
 const val MADD_ERROR_FEEDBACK_JSON: String = """
 {
   "type": "feedback",
@@ -185,7 +185,7 @@ const val MADD_ERROR_FEEDBACK_JSON: String = """
 }
 """
 
-/** The basmalah ambiguity from `docs/API.md` §5.9 — matches both 1:1 and 27:30. */
+ 
 const val AMBIGUOUS_FEEDBACK_JSON: String = """
 {
   "type": "feedback",

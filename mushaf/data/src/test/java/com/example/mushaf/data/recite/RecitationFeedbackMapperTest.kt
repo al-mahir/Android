@@ -17,26 +17,26 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/**
- * Mapping tests driven by the real captures in `docs/API.md`, pasted verbatim into
- * [FakeAiService].
- *
- * The assertions that matter most are not about field copying — they are about the three
- * contract rules the service depends on the client honouring (API.md §5.5), because a client
- * that renders the service's deliberate refusals as assertions undoes its safety property.
- */
+
+
+
+
+
+
+
+ 
 class RecitationFeedbackMapperTest {
 
     private fun chunkFrom(payload: String) = RecitationFeedbackMapper.toChunk(
         ProtocolJson.decodeFromString(FeedbackEnvelopeDto.serializer(), payload),
     )
 
-    // ---- word identity ---------------------------------------------------------------------
+    
 
     @Test
     fun `word ids convert the service's 0-based index to the layout database's 1-based key`() {
-        // The whole per-word highlight depends on this single conversion. Off by one and every
-        // mistake lands on the neighbouring word, which reads as the model being wrong.
+        
+        
         val chunk = chunkFrom(FATIHA_FEEDBACK_JSON)
 
         val words = (chunk.match as RecitationMatch.Matched).words
@@ -50,12 +50,12 @@ class RecitationFeedbackMapperTest {
         assertEquals("2:255:1", RecitationCursor(sura = 2, aya = 255, wordIndex = 0).wordId)
     }
 
-    // ---- the three contract rules ----------------------------------------------------------
+    
 
     @Test
     fun `a trimmed word is unverified even though the service called it correct`() {
-        // The exact case API.md calls out: status "correct", trimmed true. It must not be shown
-        // as correct — the word was cut by the chunker and never scored.
+        
+        
         val chunk = chunkFrom(FATIHA_FEEDBACK_JSON)
 
         val trimmed = chunk.words.single { it.isTrimmed }
@@ -82,11 +82,11 @@ class RecitationFeedbackMapperTest {
         val match = chunk.match
         assertTrue("ambiguous mapped to a graded result", match is RecitationMatch.Ambiguous)
         assertEquals(2, (match as RecitationMatch.Ambiguous).candidates.size)
-        // Words are unreachable by construction, not merely empty.
+        
         assertTrue(chunk.words.isEmpty())
         assertTrue(chunk.mistakeWords.isEmpty())
 
-        // Candidates carry their text so the reciter is not asked to look up "(27, 30)".
+        
         assertEquals(RecitationCursor(1, 1, 0), match.candidates.first().start)
         assertTrue(match.candidates.first().text!!.isNotBlank())
     }
@@ -103,7 +103,7 @@ class RecitationFeedbackMapperTest {
         assertNull(chunk.cursor)
     }
 
-    // ---- findings --------------------------------------------------------------------------
+    
 
     @Test
     fun `a madd finding keeps the rule and both lengths for its explanation`() {
@@ -120,7 +120,7 @@ class RecitationFeedbackMapperTest {
         assertEquals(3, mistake.actualLength)
         assertEquals(0.97f, mistake.confidence!!, 0.0001f)
         assertFalse(mistake.isUnscored)
-        // "المد الطبيعي: expected 2, you held 3."
+        
         assertEquals("المد الطبيعي", mistake.rules.single().nameArabic)
         assertEquals(2, mistake.rules.single().goldenLength)
     }
@@ -134,8 +134,8 @@ class RecitationFeedbackMapperTest {
 
     @Test
     fun `a malformed span is dropped rather than guessed at`() {
-        // A wrong span highlights the wrong letters, which reads as the model being confused
-        // about a word the reciter said correctly.
+        
+        
         val chunk = chunkFrom(errorWithSpan("[7]"))
 
         assertNull(chunk.words.single().mistakes.single().uthmaniSpan)
@@ -146,23 +146,23 @@ class RecitationFeedbackMapperTest {
         assertEquals(MistakeCategory.MEMORIZATION, categoryOf("normal"))
         assertEquals(MistakeCategory.TASHKIL, categoryOf("tashkeel"))
         assertEquals(MistakeCategory.TAJWID, categoryOf("tajweed"))
-        // Ṣifāt are articulation attributes, which live under tajwīd in the shared taxonomy.
+        
         assertEquals(MistakeCategory.TAJWID, categoryOf("sifa"))
-        // A channel added server-side must not be silently folded into an existing bucket.
+        
         assertEquals(MistakeCategory.OTHER, categoryOf("something_new"))
     }
 
     @Test
     fun `a null confidence is unscored, not certain`() {
-        // Absence of confidence is not high confidence: the service grades it as a hint at every
-        // strictness level, so nothing here may treat null as 1.0.
+        
+        
         val chunk = chunkFrom(errorWithConfidence("null"))
 
         assertTrue(chunk.words.single().mistakes.single().isUnscored)
         assertNull(chunk.words.single().mistakes.single().confidence)
     }
 
-    // ---- resilience ------------------------------------------------------------------------
+    
 
     @Test
     fun `an unrecognised word status softens to a hint rather than an accusation`() {
@@ -209,7 +209,7 @@ class RecitationFeedbackMapperTest {
         assertEquals(setOf("1:1:1", "1:1:4"), byId.keys)
     }
 
-    // ---- outbound --------------------------------------------------------------------------
+    
 
     @Test
     fun `a config with a position becomes a start message carrying it`() {
@@ -229,8 +229,8 @@ class RecitationFeedbackMapperTest {
 
     @Test
     fun `no graded rules means null, an empty set means no tajweed at all`() {
-        // These are different messages: null grades everything, [] grades no tajwīd rule.
-        // Collapsing them would silently switch a learner's whole grading mode.
+        
+        
         assertNull(RecitationFeedbackMapper.toStartMessage(configWithRules(null)).rules)
         assertEquals(emptyList<String>(), RecitationFeedbackMapper.toStartMessage(configWithRules(emptySet())).rules)
     }
@@ -247,8 +247,8 @@ class RecitationFeedbackMapperTest {
             ),
         )
 
-        // An out-of-range or wrongly-typed value makes the server discard the entire moshaf,
-        // which is indistinguishable from the setting being ignored.
+        
+        
         assertEquals("4", start.moshaf!!.getValue("madd_monfasel_len").toString())
         assertEquals("\"murattal\"", start.moshaf!!.getValue("recitation_speed").toString())
     }
@@ -258,7 +258,7 @@ class RecitationFeedbackMapperTest {
         assertNull(RecitationFeedbackMapper.toStartMessage(configWithRules(null)).moshaf)
     }
 
-    // ---- fixtures --------------------------------------------------------------------------
+    
 
     private fun configWithRules(rules: Set<String>?) =
         LiveRecitationConfig(start = RecitationCursor(1, 1), gradedRules = rules)

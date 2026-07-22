@@ -23,12 +23,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/**
- * Protocol-level tests against [FakeAiService].
- *
- * These assert the client's half of the contract — the half that, when broken, produces a
- * generic 1006 network error instead of anything diagnostic (MOBILE_INTEGRATION.md §7).
- */
+
+
+
+
+
+ 
 class LiveRecitationSocketTest {
 
     private lateinit var service: FakeAiService
@@ -78,8 +78,8 @@ class LiveRecitationSocketTest {
 
     @Test
     fun `the first frame is text JSON, never audio`() = runBlocking {
-        // The bug this guards: a binary first frame crashes the real server's handler and closes
-        // 1006, so the symptom is a network error and the cause is client ordering.
+        
+        
         service = FakeAiService().start()
 
         withTimeout(TIMEOUT_MS) {
@@ -99,8 +99,8 @@ class LiveRecitationSocketTest {
 
     @Test
     fun `unset start fields are omitted rather than sent as null`() = runBlocking {
-        // The contract reads an absent field as "use the server default"; an explicit null is a
-        // different message and not one the API documents.
+        
+        
         service = FakeAiService().start()
 
         withTimeout(TIMEOUT_MS) {
@@ -128,8 +128,8 @@ class LiveRecitationSocketTest {
         }
 
         assertEquals(4, service.binaryFrameCount.get())
-        // Binary, not text: the string overload would be swallowed as a control message, and
-        // the server would simply never hear the recitation.
+        
+        
         assertEquals(4 * RecitationAudioFormat.FRAME_BYTES, service.binaryByteCount.get())
     }
 
@@ -152,7 +152,7 @@ class LiveRecitationSocketTest {
 
         val words = feedback.feedback?.words.orEmpty()
         assertEquals(2, words.size)
-        // The word the API doc calls out: "correct" but trimmed, so it must not be shown correct.
+        
         val trimmed = words.single { it.trimmed }
         assertEquals("correct", trimmed.status)
         assertEquals(3, trimmed.wordIdx)
@@ -178,7 +178,7 @@ class LiveRecitationSocketTest {
         assertEquals(2, error.expectedLen)
         assertEquals(3, error.predictedLen)
         assertEquals(0.97f, error.confidence!!, 0.0001f)
-        // uthmani_pos is the field inline highlighting uses; the phoneme spans are diagnostic.
+        
         assertEquals(listOf(25, 26), error.uthmaniPos)
         assertEquals("المد الطبيعي", error.tajweedRules.single().nameAr)
     }
@@ -198,13 +198,13 @@ class LiveRecitationSocketTest {
         assertEquals("ambiguous", feedback.status)
         assertTrue("ambiguous chunk asserted words", feedback.words.isEmpty())
         assertEquals(2, feedback.candidates.size)
-        // Candidates carry their text, so the user is not asked to look up "(27, 30)" themselves.
+        
         assertNotNull(feedback.candidates.first().uthmaniText)
     }
 
     @Test
     fun `an engine substitution is visible in the ack`() = runBlocking {
-        // Requesting an unbuilt engine is not an error; the ack is the only place it shows.
+        
         service = FakeAiService(ackEngine = "real").start()
 
         val events = withTimeout(TIMEOUT_MS) {
@@ -255,8 +255,8 @@ class LiveRecitationSocketTest {
 
     @Test
     fun `the flush feedback after end is not lost`() = runBlocking {
-        // Tearing down on `end` instead of waiting for `done` drops the last chunk of the
-        // recitation — the one containing whatever the reciter just finished saying.
+        
+        
         service = FakeAiService(flushOnEnd = MADD_ERROR_FEEDBACK_JSON).start()
 
         val events = withTimeout(TIMEOUT_MS) {

@@ -10,11 +10,11 @@ import org.junit.rules.TemporaryFolder
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * The debug WAV only earns its keep if a desktop player opens it. A header that misreports the
- * sample rate would make correctly-captured audio play back at the wrong pitch — sending the
- * next debugging session after a bug that does not exist.
- */
+
+
+
+
+ 
 class WavFileWriterTest {
 
     @get:Rule
@@ -86,7 +86,7 @@ class WavFileWriterTest {
         val file = temporaryFolder.newFile("duration.wav")
 
         WavFileWriter(file).use { writer ->
-            // Exactly one second of audio: 10 frames of 100 ms.
+            
             repeat(10) {
                 writer.write(AudioFrame(ShortArray(RecitationAudioFormat.FRAME_SAMPLES), 0))
             }

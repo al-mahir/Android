@@ -12,37 +12,37 @@ import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-/**
- * Writes captured audio to a playable `.wav` under `cacheDir/recitation-debug/`, on debuggable
- * builds only.
- *
- * This exists because every failure mode of a capture pipeline sounds different and looks
- * identical: a wrong sample rate, a wrong byte order, a stereo buffer read as mono and a wrong
- * audio source all produce "the model returns nonsense". Listening to one file settles it in
- * seconds — a chipmunk pitch is the sample rate, static is the byte order.
- *
- * Retrieve the newest capture with:
- * ```
- * adb exec-out run-as com.iti.al_mahir sh -c 'cat cache/recitation-debug/capture-*' > capture.wav
- * ```
- *
- * The service itself expects *headerless* PCM — the 44-byte header here is for the desktop
- * player only, and is never sent over the socket (sending it is the first mistake API.md §5.3
- * lists).
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 class WavDebugSink(
     private val context: Context,
     private val enabled: Boolean = context.isDebuggable(),
     private val maxFiles: Int = DEFAULT_MAX_FILES,
 ) {
 
-    /**
-     * Opens a new capture file, or returns `null` on release builds and when the file cannot be
-     * created. A null return is never fatal: debug capture must not be able to break recording.
-     *
-     * [label] distinguishes streams captured in the same session — `raw` against `gated` is how
-     * the speech gate is verified, by listening to both.
-     */
+    
+
+
+
+
+
+ 
     fun open(label: String = "capture"): WavFileWriter? {
         if (!enabled) return null
         return runCatching {
@@ -57,7 +57,7 @@ class WavDebugSink(
         }.getOrNull()
     }
 
-    /** Keeps the debug directory bounded — these are throwaway files in the cache. */
+     
     private fun pruneOldest(directory: File) {
         val files = directory.listFiles { file -> file.extension == "wav" } ?: return
         if (files.size < maxFiles) return
@@ -69,17 +69,17 @@ class WavDebugSink(
     private companion object {
         const val DIRECTORY_NAME = "recitation-debug"
 
-        /** A session writes a raw and a gated file, so this holds a few sessions' worth. */
+         
         const val DEFAULT_MAX_FILES = 6
     }
 }
 
-/**
- * A single WAV file being written. The RIFF header carries byte counts that are only known once
- * writing finishes, so a placeholder goes down first and [close] seeks back and patches it. A
- * file whose [close] never ran is therefore unplayable — hence the `use`/`finally` at the call
- * site.
- */
+
+
+
+
+
+ 
 class WavFileWriter internal constructor(val file: File) : Closeable {
 
     private val output = RandomAccessFile(file, "rw")
@@ -87,7 +87,7 @@ class WavFileWriter internal constructor(val file: File) : Closeable {
 
     init {
         output.setLength(0)
-        output.write(ByteArray(HEADER_BYTES)) // Placeholder, patched in close().
+        output.write(ByteArray(HEADER_BYTES)) 
     }
 
     fun write(frame: AudioFrame) {
@@ -123,7 +123,7 @@ class WavFileWriter internal constructor(val file: File) : Closeable {
 
         return ByteBuffer.allocate(HEADER_BYTES).order(ByteOrder.LITTLE_ENDIAN).apply {
             put("RIFF".toByteArray(Charsets.US_ASCII))
-            putInt(CHUNK_SIZE_PREFIX_BYTES + dataByteCount) // Everything after this field.
+            putInt(CHUNK_SIZE_PREFIX_BYTES + dataByteCount) 
             put("WAVE".toByteArray(Charsets.US_ASCII))
             put("fmt ".toByteArray(Charsets.US_ASCII))
             putInt(PCM_SUBCHUNK_SIZE)
@@ -146,9 +146,9 @@ class WavFileWriter internal constructor(val file: File) : Closeable {
     }
 }
 
-/**
- * True on a debuggable build. Read from the manifest flag rather than a `BuildConfig` constant
- * so `:mushaf:data` does not need `buildConfig = true` for one boolean.
- */
+
+
+
+ 
 internal fun Context.isDebuggable(): Boolean =
     (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0

@@ -23,17 +23,17 @@ import com.example.mushaf.domain.model.recite.SpeechErrorType
 import com.example.mushaf.domain.model.recite.TajweedRuleReference
 import kotlinx.serialization.json.JsonPrimitive
 
-/**
- * Translates between the service's wire shapes and the domain.
- *
- * **Unknown values resolve towards silence, never towards accusation.** An unrecognised word
- * status becomes a hint rather than a mistake, and an unrecognised chunk status becomes "no
- * match" rather than a graded result. A server that grows a value should cost this client a
- * little precision, never cause it to correct a reciter who did nothing wrong.
- */
+
+
+
+
+
+
+
+ 
 object RecitationFeedbackMapper {
 
-    // ---- outbound ------------------------------------------------------------------------
+    
 
     fun toStartMessage(config: LiveRecitationConfig): StartSessionDto = StartSessionDto(
         sura = config.start?.sura,
@@ -41,7 +41,7 @@ object RecitationFeedbackMapper {
         wordIdx = config.start?.wordIndex,
         strictness = config.strictness.wireValue,
         engine = config.engine,
-        // Null and empty are different messages: null grades every rule, empty grades none.
+        
         rules = config.gradedRules?.toList(),
         moshaf = config.moshaf.takeIf { it.isNotEmpty() }?.mapValues { (_, value) ->
             when (value) {
@@ -51,7 +51,7 @@ object RecitationFeedbackMapper {
         },
     )
 
-    // ---- inbound -------------------------------------------------------------------------
+    
 
     fun toChunk(envelope: FeedbackEnvelopeDto): RecitationChunk = RecitationChunk(
         sequence = envelope.chunkSeq,
@@ -71,7 +71,7 @@ object RecitationFeedbackMapper {
 
         STATUS_AMBIGUOUS -> RecitationMatch.Ambiguous(candidates.map { it.toCandidate() })
 
-        // Includes `no_match` and anything unrecognised: assert nothing.
+        
         else -> RecitationMatch.NoMatch
     }
 
@@ -94,8 +94,8 @@ object RecitationFeedbackMapper {
     private fun toWordStatus(raw: String): RecitationWordStatus = when (raw.lowercase()) {
         "correct" -> RecitationWordStatus.CORRECT
         "error" -> RecitationWordStatus.ERROR
-        // `almost` and anything unknown. Softening an unrecognised status is the safe direction:
-        // a hint costs nothing, a false accusation is the failure this system must not produce.
+        
+        
         else -> RecitationWordStatus.ALMOST
     }
 
@@ -115,7 +115,7 @@ object RecitationFeedbackMapper {
     private fun toCategory(raw: String): MistakeCategory = when (raw.lowercase()) {
         "normal" -> MistakeCategory.MEMORIZATION
         "tashkeel" -> MistakeCategory.TASHKIL
-        // Ṣifāt are articulation attributes, which sit under tajwīd in the shared taxonomy.
+        
         "tajweed", "sifa" -> MistakeCategory.TAJWID
         else -> MistakeCategory.OTHER
     }
@@ -142,11 +142,11 @@ object RecitationFeedbackMapper {
         else -> NonVerseSegment.OTHER
     }
 
-    /**
-     * The service sends spans as a two-element array. Anything else is dropped rather than
-     * guessed at — a wrong span highlights the wrong letters, which reads as the model being
-     * confused about a word the reciter said correctly.
-     */
+    
+
+
+
+ 
     private fun List<Int>?.toSpan(): IntRange? {
         if (this == null || size != 2) return null
         val (start, end) = this

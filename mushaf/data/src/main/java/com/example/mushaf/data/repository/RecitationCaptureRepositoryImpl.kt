@@ -16,13 +16,13 @@ import com.example.mushaf.domain.repository.RecitationCaptureRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-/**
- * Wires the microphone to the domain, teeing audio into debug WAV files on debuggable builds.
- *
- * [captureSpeech] writes **two** files — the microphone as it arrived and the gated stream as it
- * would be sent. Listening to them side by side is the only practical way to tell "the gate is
- * saving bandwidth" apart from "the gate is eating words".
- */
+
+
+
+
+
+
+ 
 class RecitationCaptureRepositoryImpl(
     private val recorder: PcmRecorder,
     private val debugSink: WavDebugSink,
@@ -67,10 +67,10 @@ class RecitationCaptureRepositoryImpl(
         }
     }
 
-    /**
-     * The number that justifies the gate existing. If the dropped fraction is near zero the gate
-     * is not earning its risk; if it is very high on a real recitation, it is eating speech.
-     */
+    
+
+
+ 
     private fun logSavings(gate: SpeechGate, config: SpeechGateConfig) {
         val stats = gate.stats
         if (stats.framesIn == 0L) return
@@ -84,7 +84,7 @@ class RecitationCaptureRepositoryImpl(
         )
     }
 
-    // Debug capture is best-effort throughout: a failing file must never interrupt a recitation.
+    
     private fun WavFileWriter?.writeQuietly(frame: AudioFrame) {
         this ?: return
         runCatching { write(frame) }

@@ -33,10 +33,10 @@ import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Tests the assembled pipeline — microphone, speech gate and socket driven as one session —
- * against [FakeAiService].
- */
+
+
+
+ 
 class LiveRecitationRepositoryTest {
 
     private lateinit var service: FakeAiService
@@ -53,11 +53,11 @@ class LiveRecitationRepositoryTest {
         if (::service.isInitialized) service.stop()
     }
 
-    /** Emits [frameCount] frames, then stays open like a live microphone until cancelled. */
+     
     private class FakeCapture(private val frameCount: Int) : RecitationCaptureRepository {
         val isCapturing = AtomicBoolean(false)
 
-        /** Set when the microphone is released, so ordering against `end` can be asserted. */
+         
         @Volatile
         var releasedAt: Long = 0
 
@@ -90,13 +90,13 @@ class LiveRecitationRepositoryTest {
         socket = LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}")),
     )
 
-    /**
-     * Runs a session the way the app does: start it, let it reach a state worth acting on, then
-     * send controls.
-     *
-     * Emitting controls up front instead would race the handshake and test a sequence the UI
-     * cannot produce — while hiding the one it can.
-     */
+    
+
+
+
+
+
+ 
     private suspend fun runSession(
         capture: RecitationCaptureRepository,
         config: LiveRecitationConfig = LiveRecitationConfig(start = RecitationCursor(1, 1)),
@@ -106,8 +106,8 @@ class LiveRecitationRepositoryTest {
         val events = mutableListOf<LiveRecitationEvent>()
         coroutineScope {
             val session = launch { repositoryFor(capture).session(config, controls).toList(events) }
-            // A shared flow drops emissions with no subscriber, so wait for the session to be
-            // collecting before sending anything to it.
+            
+            
             awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
             beforeFinish(controls)
             controls.emit(RecitationControl.Finish)
@@ -116,7 +116,7 @@ class LiveRecitationRepositoryTest {
         events
     }
 
-    /** Polls [condition] until it holds, failing with [what] rather than hanging to the timeout. */
+     
     private suspend fun awaitUntil(what: String, condition: () -> Boolean) {
         val deadline = System.currentTimeMillis() + AWAIT_MS
         while (System.currentTimeMillis() < deadline) {
@@ -211,9 +211,9 @@ class LiveRecitationRepositoryTest {
 
     @Test
     fun `stopping before the handshake lands ends cleanly without opening the microphone`() = runBlocking {
-        // A reciter can tap the mic and immediately tap it again, and a first connection can be
-        // slow. Without a guard the late handshake opens the microphone and streams into an
-        // already-closed channel, crashing the session.
+        
+        
+        
         service = FakeAiService().start()
         val capture = FakeCapture(frameCount = 3)
         val controls = MutableSharedFlow<RecitationControl>(replay = 1)
@@ -234,7 +234,7 @@ class LiveRecitationRepositoryTest {
     private companion object {
         const val TIMEOUT_MS = 15_000L
 
-        /** Per-condition polling budget inside a session. */
+         
         const val AWAIT_MS = 5_000L
     }
 }
