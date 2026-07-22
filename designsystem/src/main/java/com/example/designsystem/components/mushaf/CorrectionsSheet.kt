@@ -3,6 +3,8 @@ package com.example.designsystem.components.mushaf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,15 +38,7 @@ data class CorrectionWordUi(
     val isMistake: Boolean,
 )
 
-/**
- * A single mistake, named.
- *
- * One entry per mistaken **word**, not per āyah: an āyah can go wrong in several places and for
- * different reasons, and collapsing them to one label per āyah hides all but the first.
- *
- * @param detail the concrete explanation when there is one — "المد الطبيعي: المتوقع ٢، قرأت ٣".
- *   Null when the finding carries no rule or lengths, rather than inventing prose.
- */
+
 data class CorrectionMistakeUi(
     val wordId: String,
     val word: String,
@@ -52,25 +46,20 @@ data class CorrectionMistakeUi(
     val detail: String? = null,
 )
 
-/** One āyah that contained at least one mistake. */
+
+data class CorrectionTabUi(
+    val label: String,
+    val count: Int,
+)
+
 data class CorrectionCardUi(
     val id: String,
     val ayahLabel: String,
-    /** The whole āyah, for context — a flagged word alone is unreadable. */
     val words: List<CorrectionWordUi>,
     val mistakes: List<CorrectionMistakeUi>,
 )
 
-/**
- * The session's mistakes, listed.
- *
- * Only confident mistakes appear here. Hints (`almost`) and unscored words are deliberately
- * absent from the *list* — the service softened those findings because it was not sure enough to
- * accuse, and a list is an accusation — though they still appear inside an āyah as context.
- *
- * Qur'an text comes from the service's Uthmani strings, which are ordinary Unicode Arabic rather
- * than the muṣḥaf's per-page glyph fonts, so it renders in the theme's Arabic face.
- */
+
 @Composable
 fun CorrectionsSheet(
     title: String,
@@ -79,6 +68,11 @@ fun CorrectionsSheet(
     emptyMessage: String,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    practiceTitle: String? = null,
+    practiceFocus: List<String> = emptyList(),
+    tabs: List<CorrectionTabUi> = emptyList(),
+    selectedTabIndex: Int = 0,
+    onTabSelected: (Int) -> Unit = {},
     onMistakeClick: (String) -> Unit = {},
 ) {
     AppBottomSheet(onDismiss = onDismiss, modifier = modifier) {
@@ -87,17 +81,17 @@ fun CorrectionsSheet(
             subtitle = subtitle,
             corrections = corrections,
             emptyMessage = emptyMessage,
+            practiceTitle = practiceTitle,
+            practiceFocus = practiceFocus,
+            tabs = tabs,
+            selectedTabIndex = selectedTabIndex,
+            onTabSelected = onTabSelected,
             onMistakeClick = onMistakeClick,
         )
     }
 }
 
-/**
- * The sheet's body without the modal around it.
- *
- * Internal so previews can render the layout directly — `ModalBottomSheet` does not appear on the
- * preview surface, and the list is the thing worth reviewing.
- */
+
 @Composable
 internal fun CorrectionsList(
     title: String,
@@ -105,6 +99,11 @@ internal fun CorrectionsList(
     corrections: List<CorrectionCardUi>,
     emptyMessage: String,
     modifier: Modifier = Modifier,
+    practiceTitle: String? = null,
+    practiceFocus: List<String> = emptyList(),
+    tabs: List<CorrectionTabUi> = emptyList(),
+    selectedTabIndex: Int = 0,
+    onTabSelected: (Int) -> Unit = {},
     onMistakeClick: (String) -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -127,6 +126,26 @@ internal fun CorrectionsList(
             )
         }
 
+        // Only when there is more than one channel to choose between. A single chip is a label
+        // pretending to be a control.
+        if (tabs.size > 1) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(bottom = Theme.spacing.medium),
+                horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    CorrectionFilterChip(
+                        tab = tab,
+                        selected = index == selectedTabIndex,
+                        onClick = { onTabSelected(index) },
+                    )
+                }
+            }
+        }
+
         if (corrections.isEmpty()) {
             BasicText(
                 text = emptyMessage,
@@ -147,10 +166,93 @@ internal fun CorrectionsList(
                 .padding(bottom = Theme.spacing.large),
             verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
         ) {
+            if (practiceTitle != null && practiceFocus.isNotEmpty()) {
+                item(key = "practice-focus") {
+                    PracticeFocusCard(title = practiceTitle, focus = practiceFocus)
+                }
+            }
+
             items(corrections, key = { it.id }) { correction ->
                 CorrectionCard(correction = correction, onMistakeClick = onMistakeClick)
             }
         }
+    }
+}
+
+/**
+ * What recurred, and how often.
+ *
+ * Sits above the list because it is the answer to the question the reciter actually has. A list
+ * of eleven corrections is a transcript; "المد الطبيعي ×4" is a lesson.
+ */
+@Composable
+private fun PracticeFocusCard(title: String, focus: List<String>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(Theme.shapes.medium)
+            .background(Theme.colors.primaryContainer)
+            .padding(Theme.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall),
+    ) {
+        BasicText(
+            text = title,
+            style = Theme.typography.body.medium.copy(
+                color = Theme.colors.onPrimaryContainer,
+                fontWeight = FontWeight.SemiBold,
+            ),
+        )
+        focus.forEach { line ->
+            BasicText(
+                text = line,
+                style = Theme.typography.body.small.copy(color = Theme.colors.onPrimaryContainer),
+            )
+        }
+    }
+}
+
+/**
+ * A filter chip.
+ *
+ * Filled when selected rather than underlined: the row scrolls, and an underline on an
+ * off-screen chip leaves no indication of what is being filtered.
+ */
+@Composable
+private fun CorrectionFilterChip(
+    tab: CorrectionTabUi,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val container = if (selected) Theme.colors.primary else Theme.colors.surface
+    val content = if (selected) Theme.colors.onPrimary else Theme.colors.primaryFont
+
+    Row(
+        modifier = Modifier
+            .clip(Theme.shapes.circle)
+            .background(container)
+            .then(
+                if (selected) {
+                    Modifier
+                } else {
+                    Modifier.border(1.dp, Theme.colors.border, Theme.shapes.circle)
+                },
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
+        horizontalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BasicText(
+            text = tab.label,
+            style = Theme.typography.body.small.copy(
+                color = content,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
+        )
+        BasicText(
+            text = tab.count.toString(),
+            style = Theme.typography.body.small.copy(color = content.copy(alpha = 0.7f)),
+        )
     }
 }
 
