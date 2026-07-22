@@ -85,9 +85,13 @@ The backend can build three engines. Only two are ever a user-facing choice:
 
 | Engine | Show to users? | Hardware | What it gives |
 |---|---|---|---|
-| `real` (Muaalem) | **Yes** | NVIDIA GPU | Phonemes, per-character confidence, all 10 ṣifāt, full tajwīd grading, the `almost` softening |
-| `zipformer` | **Yes** | CPU only | Phonemes, word-level correct/error. **No ṣifāt, no confidence, no `almost`** |
+| `real` (Muaalem) | **Yes** | NVIDIA GPU | Phonemes, per-character confidence, all 10 ṣifāt, full tajwīd grading, both `error` and `almost` |
+| `zipformer` | **Yes** | CPU only | Phonemes and word-level findings. **No ṣifāt, no confidence — and therefore only `almost`, never `error`** |
 | `mock` | **No** | Anything | Fabricated output for GPU-less development. Never a user choice |
+
+> **Correction to SETUP.md.** Its engine table describes zipformer as giving "word-level
+> correct/error marking. No ṣifāt, no confidence, no `almost`." The last clause is
+> backwards, and it matters more than any other line in this document — see below.
 
 Never show the raw wire name. The reference frontend labels `real` as **المُعلِّم** with
 the hint *"تحليل تجويد كامل، مع درجة ثقة لكل حرف"*, and `zipformer` as **Zipformer** with
@@ -95,12 +99,43 @@ the hint *"تحليل تجويد كامل، مع درجة ثقة لكل حرف"*
 
 ### Consequences of picking zipformer
 
-This is not merely "faster". Three things disappear:
+This is not merely "faster". Three things change, and the third is the one to design
+around.
 
-1. **All ṣifāt grading.** Every `sifa` finding is gone — 10 of the 18 gradeable rules.
-2. **Per-character confidence.** With no confidence there is no `almost`, so
-   **strictness becomes meaningless**. Grey out that control when zipformer is selected.
-3. **Tajwīd grading** in the full sense.
+1. **All ṣifāt grading disappears.** Every `sifa` finding is gone — 10 of the 18
+   gradeable rules.
+2. **Strictness stops doing anything.** With no confidence there is nothing to
+   threshold. Grey the control out.
+3. **Nothing is ever reported as `error`.** Every finding carries `confidence: null`,
+   and a null-confidence finding grades `almost` at *every* strictness level by design —
+   the server will not turn a guess into an accusation.
+
+### ⚠ What (3) means for your UI
+
+Measured on this server, same audio, all three strictness levels:
+
+| Engine | `dussary_002282.mp3` | `fatiha_long_track.wav` |
+|---|---|---|
+| `real` (normal) | 5 `error`, 22 correct | 20 `error`, 5 correct |
+| `real` (lenient) | 3 `error`, 2 `almost`, 22 correct | 19 `error`, 1 `almost`, 5 correct |
+| **`zipformer` (all 3 levels)** | **0 `error`, 5 `almost`**, 23 correct | **0 `error`, 11 `almost`**, 12 correct |
+
+Zipformer produced **zero** `error` findings in every run, and identical results across
+`lenient`/`normal`/`strict`.
+
+Now combine that with the rendering rule you are required to follow — *`almost` is a
+hint, never a mistake, never counted against a score*. The consequence:
+
+> **On zipformer, a correctly-implemented client never visibly flags a mistake.**
+
+That is not a bug in either layer. It is the honest outcome of an engine that cannot say
+how sure it is, feeding a system that refuses to accuse without confidence. But it means
+zipformer is a **reading-along / hifz-tracking** engine, not a correction engine. If your
+product's core promise is "it corrects your tajwīd", zipformer cannot deliver it, and
+offering it as a simple "lighter model" toggle will read as the app being broken.
+
+Either scope it to a "متابعة فقط" (follow-along) mode, or do not offer it. If you do
+offer it, say what it does not do.
 
 If your UI lets someone pick zipformer *and* set strictness *and* tick ṣifāt rules, you
 are offering three controls where two do nothing. Disable them, with a reason.
@@ -110,13 +145,13 @@ are offering three controls where two do nothing. Disable them, with a reason.
 `GET /health` returns `available_engines`. **Offer only what is in that list.**
 
 ```json
-{"status":"healthy","engine":"real","available_engines":["real"],
+{"status":"healthy","engine":"real","available_engines":["real","zipformer"],
  "device":"cuda","dtype":"bfloat16", "...": "..."}
 ```
 
-This server reports `["real"]` only — zipformer's gated model is not installed, and
-`mock` is not built when a GPU is present. A CPU deployment reports something different.
-Never assume a fixed list.
+This server reports `["real","zipformer"]` — both are installed and selectable
+per-session, with `real` as the default. `mock` is not built when a GPU is present, and a
+CPU-only deployment reports something different again. Never assume a fixed list.
 
 **Requesting an engine that does not exist is not an error.** The server silently uses
 its default. The only way to know is to compare the session ack's `engine` to what you
@@ -570,8 +605,14 @@ choice did not take. Read back what you got and show it.
 Settings bugs hide well, because a wrong setting still produces plausible feedback. Prove
 each layer end to end.
 
-**Engine.** Start a session with `"engine": "zipformer"` on this server, where it is not
-built. Ack should say `real`. Your UI must not keep claiming zipformer.
+**Engine.** Both `real` and `zipformer` are built here, so ask for each and confirm the
+ack echoes what you requested. Then prove the fallback path with a name that does not
+exist — `"engine": "banana"` — where the ack must come back as `real` (the default). Your
+UI must never keep claiming an engine the ack did not confirm.
+
+Also verify the zipformer consequence: on `zipformer`, no word should ever come back
+`error`, and all three strictness levels must give identical results. If you see `error`
+from zipformer, you are not on the engine you think you are.
 
 **Moshaf.** The cleanest proof, because madd length directly changes the reference:
 recite an āyah with a clear monfasel madd once at `madd_monfasel_len: 2` and once at `5`.
