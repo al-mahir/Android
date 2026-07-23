@@ -28,6 +28,7 @@ import com.example.mushaf.data.recite.remote.LiveRecitationSocket
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.serialization.kotlinx.json.json
@@ -37,10 +38,8 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.util.concurrent.TimeUnit
 
- 
 const val AI_SERVICE_CLIENT = "aiServiceClient"
-
-import io.ktor.client.plugins.HttpTimeout
+const val SEARCH_CLIENT = "searchClient"
 
 val mushafDataModule = module {
     single { MushafAssetDataSource(androidContext()) }
@@ -48,7 +47,7 @@ val mushafDataModule = module {
     single { QuranTextDataSource(androidContext()) }
     single { ReaderPreferencesDataStore(androidContext()) }
 
-    single { com.example.mushaf.data.search.remote.SearchApi(get()) }
+    single { com.example.mushaf.data.search.remote.SearchApi(get(named(SEARCH_CLIENT))) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
     single<MushafRepository> { MushafRepositoryImpl(get(), get(), get(), get()) }
@@ -94,7 +93,7 @@ val mushafDataModule = module {
 
     single<RecitationSchemaRepository> { RecitationSchemaRepositoryImpl(get()) }
 
-    single { HttpClient(Android) {
+    single(named(SEARCH_CLIENT)) { HttpClient(Android) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -107,7 +106,7 @@ val mushafDataModule = module {
             socketTimeoutMillis = 60_000L
         }
     } }
-    single { com.example.mushaf.data.recitation.remote.QuranApi(get()) }
+    single { com.example.mushaf.data.recitation.remote.QuranApi(get(named(SEARCH_CLIENT))) }
     single<com.example.mushaf.data.recitation.RecitationDataSource> { 
         com.example.mushaf.data.recitation.remote.RecitationRemoteDataSourceImpl(get()) 
     }
