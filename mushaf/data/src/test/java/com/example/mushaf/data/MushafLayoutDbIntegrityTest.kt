@@ -6,22 +6,22 @@ import org.junit.Test
 import java.io.File
 import java.sql.DriverManager
 
-/**
- * Guards the bundled `mushaf_v4_layout.db` against the glyph-misalignment class of bug.
- *
- * The QPC-V4 page fonts encode every page's tokens as one contiguous Private-Use block starting at
- * U+FC41 (word glyphs and interleaved pause/waqf-mark glyphs alike). The layout DB is correct for a
- * page iff concatenating that page's word glyph strings, in line then position order, reproduces
- * exactly `FC41, FC42, … FC41+N-1` with no gap, repeat, or early stop. A gap/short sequence is what
- * made lines end early and dropped trailing ayah markers. (Per-page equality with the actual font
- * glyph counts was verified at DB build time across all 604 pages.)
- */
+
+
+
+
+
+
+
+
+
+ 
 class MushafLayoutDbIntegrityTest {
 
     private val pua0 = 0xFC41
 
     private fun dbFile(): File {
-        // Unit tests run with the module dir as the working directory.
+        
         val candidates = listOf(
             "src/main/assets/databases/mushaf_v4_layout.db",
             "mushaf/data/src/main/assets/databases/mushaf_v4_layout.db",

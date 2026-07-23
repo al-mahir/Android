@@ -1,8 +1,8 @@
 package com.example.mushaf.domain.model
 
-/**
- * Represents a Quran reciter available in the catalog.
- */
+
+
+ 
 data class Reciter(
     val id: Int,
     val name: String,

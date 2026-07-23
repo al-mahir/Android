@@ -12,7 +12,24 @@ import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
 import com.example.mushaf.domain.usecase.GetRecitersUseCase
 import com.example.mushaf.domain.usecase.GetAyahTimingsUseCase
+import com.example.mushaf.domain.usecase.StartLiveRecitationUseCase
+import com.example.mushaf.domain.usecase.ObserveRecitationSettingsUseCase
+import com.example.mushaf.domain.usecase.UpdateRecitationSettingsUseCase
+import com.example.mushaf.domain.model.recite.RecitationSettings
+import com.iti.domain.usecase.SaveRecitationSessionUseCase
 import com.example.mushaf.domain.model.AyahTiming
+import com.example.mushaf.domain.model.recite.LiveRecitationConfig
+import com.example.mushaf.domain.model.recite.LiveRecitationEvent
+import com.example.mushaf.domain.model.recite.RecitationChunk
+import com.example.mushaf.domain.model.recite.RecitationControl
+import com.example.mushaf.domain.model.recite.RecitationCursor
+import com.example.mushaf.domain.model.recite.RecitationMatch
+import com.example.mushaf.domain.model.recite.RecitationPacer
+import com.example.mushaf.domain.model.recite.RecitationSessionRecorder
+import com.example.mushaf.domain.model.recite.mergedWith
+import com.example.mushaf.presentation.state.ChunkOutcome
+import com.example.mushaf.presentation.state.LiveCorrectionUiState
+import com.example.mushaf.presentation.state.CaptureError
 import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.presentation.audio.AudioPlayer
@@ -24,7 +41,11 @@ import com.example.mushaf.presentation.state.MushafEffect
 import com.iti.domain.core.Result
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.MushafUiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +57,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MushafViewModel(
     private val getPage: GetPageUseCase,
@@ -46,6 +68,10 @@ class MushafViewModel(
     private val getAyahTimings: GetAyahTimingsUseCase,
     private val getTafsirForAyah: com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase,
     private val playbackManager: AudioPlayer,
+    private val startLiveRecitation: StartLiveRecitationUseCase,
+    private val saveRecitationSession: SaveRecitationSessionUseCase,
+    private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
+    private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -62,9 +88,59 @@ class MushafViewModel(
 
     private var initialized = false
     private val loadJobs = mutableMapOf<Int, Job>()
+    private var sessionJob: Job? = null
+    private var controlChannel: Channel<RecitationControl>? = null
+
+     
+    private var lastCursor: RecitationCursor? = null
+    private var reconnectAttempts = 0
+
+     
+    private var isFinishing = false
+    private var smoothedMicLevel = 0f
+
+     
+    private var seekOnPageLoad: Int? = null
+
+    
+
+
+ 
+    private val pacer = RecitationPacer()
+
+    private var chunkSpeechFrames = 0
+
+    private var sessionStartedAtEpochMs = 0L
+
+
+    private var pendingRestart: SessionRestart? = null
+
+    private var recitationSettings = RecitationSettings()
+
+    private enum class SessionRestart {
+        BOUNDARY,
+
+        SETTINGS,
+    }
 
     private companion object {
         const val TAG = "Mushaf"
+
+
+        const val MIC_LEVEL_SMOOTHING = 0.3f
+
+        const val MIC_LEVEL_GAIN = 4f
+
+        const val CAPTURE_LOG_INTERVAL_MS = 1_000L
+
+        const val CLIPPING_THRESHOLD = 0.99f
+
+        
+
+
+ 
+        const val MAX_RECONNECT_ATTEMPTS = 3
+        const val RECONNECT_DELAY_MS = 1_000L
     }
 
     init {
@@ -119,6 +195,21 @@ class MushafViewModel(
 
         loadReciters()
 
+        observeRecitationSettings()
+            .catch { throwable ->
+                Log.e(TAG, "Failed to read recitation settings; using server defaults", throwable)
+            }
+            .onEach { settings ->
+                recitationSettings = settings
+                _state.update {
+                    it.copy(
+                        isTajweedGradingEnabled = settings.tajweedGradingEnabled,
+                        canGradeTajweed = settings.engineCanGradeTajweed,
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+
         observeReaderPreferences()
             .catch { throwable ->
                 Log.e(TAG, "Failed to read reader preferences; using defaults", throwable)
@@ -130,7 +221,7 @@ class MushafViewModel(
             .onEach { prefs ->
                 Log.d(TAG, "Preferences: tajweed=${prefs.tajweedEnabled}, lastPage=${prefs.lastPage}")
                 _state.update { it.copy(isTajweedEnabled = prefs.tajweedEnabled) }
-                if (!initialized || _state.value.currentPage != prefs.lastPage) {
+                if (!initialized) {
                     initialized = true
                     onIntent(MushafIntent.LoadPage(prefs.lastPage))
                 }
@@ -142,8 +233,8 @@ class MushafViewModel(
         when (intent) {
             is MushafIntent.LoadPage -> loadPage(intent.page)
             is MushafIntent.OpenAtPage -> {
-                // Claim the restore slot before loading, so the preferences observer treats
-                // the reader as already initialised whichever of the two arrives first.
+                
+                
                 Log.d(TAG, "OpenAtPage(${intent.page}) — suppressing last-page restore")
                 initialized = true
                 loadPage(intent.page)
@@ -159,6 +250,19 @@ class MushafViewModel(
             MushafIntent.RevealNextWord -> revealNextWord()
             MushafIntent.RevealNextAyah -> revealNextAyah()
             MushafIntent.ToggleRecording -> toggleRecording()
+            is MushafIntent.SetTajweedGrading -> setTajweedGrading(intent.enabled)
+            is MushafIntent.CaptureFailed -> failCapture(intent.error)
+            MushafIntent.DismissCaptureError -> _state.update { it.copy(captureError = null) }
+            is MushafIntent.SelectMistake -> _state.update {
+                it.copy(liveCorrection = it.liveCorrection.copy(selectedMistakeWordId = intent.wordId))
+            }
+            MushafIntent.DismissSessionSummary -> _state.update { it.copy(sessionSummary = null) }
+            MushafIntent.FinishAndStartNewSession -> finishAndStartNewSession()
+            is MushafIntent.SelectCandidate -> selectCandidate(intent.position)
+            MushafIntent.DismissCandidates -> clearCandidates()
+            MushafIntent.DismissEngineNotice -> _state.update {
+                it.copy(liveCorrection = it.liveCorrection.copy(engineSubstituted = false))
+            }
             
             is MushafIntent.SelectReciter -> selectReciter(intent.reciter)
             MushafIntent.PlayPauseAudio -> playPauseAudio()
@@ -236,7 +340,7 @@ class MushafViewModel(
     private fun selectReciter(reciter: Reciter) {
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            // Reload audio for current page
+            
             startFollowAlong()
         }
     }
@@ -257,10 +361,14 @@ class MushafViewModel(
     private fun loadPage(page: Int) {
         val clamped = MushafConstants.clampPage(page)
         Log.d(TAG, "loadPage(requested=$page, clamped=$clamped)")
+        val wasLive = _state.value.liveCorrection.isActive
         _state.update {
             it.copy(
                 currentPage = clamped,
-                highlightedWordId = null,
+                
+                
+                
+                highlightedWordId = if (wasLive) it.highlightedWordId else null,
                 revealedWordIds = emptySet(),
             )
         }
@@ -269,7 +377,16 @@ class MushafViewModel(
         requestPage(clamped + 1)
         requestPage(clamped - 2)
         requestPage(clamped + 2)
+
         
+        
+        
+        if (wasLive) {
+            
+            
+            seedPacerForCurrentPage()
+            startCursorForCurrentPage()?.let(::seekLiveCorrection) ?: run { seekOnPageLoad = clamped }
+        }
 
         viewModelScope.launch {
             runCatching { saveLastPage(clamped) }
@@ -296,6 +413,15 @@ class MushafViewModel(
                         failedPages = it.failedPages - page,
                     )
                 }
+
+                if (page == _state.value.currentPage && _state.value.isRecordingActive) {
+                    seedPacerForCurrentPage()
+                }
+
+                if (seekOnPageLoad == page && _state.value.liveCorrection.isActive) {
+                    seekOnPageLoad = null
+                    startCursorForCurrentPage()?.let(::seekLiveCorrection)
+                }
                 
 
             }
@@ -314,13 +440,19 @@ class MushafViewModel(
     private fun setMode(mode: MushafMode) {
         val current = _state.value
         if (current.isFollowAlongActive) stopFollowAlong()
-        if (current.isRecordingActive) _state.update { it.copy(isRecordingActive = false) }
+        if (current.isRecordingActive) {
+            
+            
+            clearLiveSession()
+            _state.update { it.copy(isRecordingActive = false) }
+        }
 
         _state.update {
             it.copy(
                 mushafMode = mode,
                 highlightedWordId = null,
                 revealedWordIds = emptySet(),
+                captureError = null,
             )
         }
 
@@ -386,12 +518,387 @@ class MushafViewModel(
         if (state.mushafMode != MushafMode.RECITATION && state.mushafMode != MushafMode.MUALLEM) return
 
         val nowRecording = !state.isRecordingActive
-        _state.update { it.copy(isRecordingActive = nowRecording) }
+        _state.update { it.copy(isRecordingActive = nowRecording, captureError = null) }
 
         if (nowRecording) {
-            state.page?.let { highlightDriver.start(it) }
+            
+            
+            if (state.mushafMode == MushafMode.RECITATION) {
+                startLiveCorrection()
+            } else {
+                state.page?.let { highlightDriver.start(it) }
+            }
         } else {
+            finishLiveCorrection()
             highlightDriver.stop()
+        }
+    }
+
+    
+
+    
+
+
+
+
+
+ 
+    private fun startLiveCorrection(resumeAt: RecitationCursor? = null) {
+        sessionJob?.cancel()
+        lastCursor = resumeAt ?: startCursorForCurrentPage()
+        isFinishing = false
+        reconnectAttempts = 0
+        pacer.reset()
+        chunkSpeechFrames = 0
+        sessionStartedAtEpochMs = System.currentTimeMillis()
+        seedPacerForCurrentPage()
+
+        _state.update {
+            it.copy(
+                captureError = null,
+                liveCorrection = LiveCorrectionUiState(isConnecting = true),
+            )
+        }
+
+        val controls = Channel<RecitationControl>(Channel.BUFFERED)
+        controlChannel = controls
+        sessionJob = viewModelScope.launch { runSession(controls) }
+    }
+
+    
+
+
+
+
+
+
+ 
+    private suspend fun runSession(controls: Channel<RecitationControl>) {
+        while (currentCoroutineContext().isActive) {
+            try {
+                startLiveRecitation(
+                    config = recitationSettings.toConfig(lastCursor),
+                    controls = controls.receiveAsFlow(),
+                ).collect { event -> onLiveEvent(event) }
+                return
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (securityError: SecurityException) {
+                Log.e(TAG, "Live correction lost microphone permission", securityError)
+                failCapture(CaptureError.PERMISSION_DENIED)
+                return
+            } catch (throwable: Throwable) {
+                if (isFinishing || reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                    Log.e(TAG, "Live correction session ended (finishing=$isFinishing)", throwable)
+                    if (!isFinishing) failCapture(CaptureError.SERVICE_UNREACHABLE)
+                    return
+                }
+                reconnectAttempts++
+                Log.w(
+                    TAG,
+                    "Live session dropped; reconnect $reconnectAttempts/$MAX_RECONNECT_ATTEMPTS " +
+                        "from ${lastCursor?.wordId}",
+                    throwable,
+                )
+                _state.update {
+                    it.copy(liveCorrection = it.liveCorrection.copy(isConnecting = true, isActive = false))
+                }
+                delay(RECONNECT_DELAY_MS)
+            }
+        }
+    }
+
+    private fun onLiveEvent(event: LiveRecitationEvent) {
+        when (event) {
+            is LiveRecitationEvent.Started -> {
+                reconnectAttempts = 0
+                Log.i(TAG, "Live session ${event.sessionId} on engine '${event.engine}'")
+                _state.update {
+                    it.copy(
+                        liveCorrection = it.liveCorrection.copy(
+                            isConnecting = false,
+                            isActive = true,
+                            engine = event.engine,
+                            engineSubstituted = event.engineSubstituted,
+                        ),
+                    )
+                }
+            }
+
+            is LiveRecitationEvent.Level -> updateMicLevel(event)
+
+            is LiveRecitationEvent.Graded -> mergeChunk(event.chunk)
+
+            LiveRecitationEvent.Finished -> {
+                Log.d(TAG, "Live session finished")
+
+                val restart = pendingRestart
+                pendingRestart = null
+                val restarting = restart != null
+
+                recordFinishedSession(showSummary = restart != SessionRestart.SETTINGS)
+
+                val resumeAt = lastCursor.takeIf { restart == SessionRestart.SETTINGS }
+
+                _state.update {
+                    it.copy(
+                        
+                        
+                        isRecordingActive = restarting,
+                        micLevel = 0f,
+                        isSpeechDetected = false,
+                        highlightedWordId = null,
+                        
+                        
+                        
+                        
+                        
+                        liveCorrection = LiveCorrectionUiState(),
+                    )
+                }
+                if (restarting) {
+
+
+                    sessionJob = null
+                    viewModelScope.launch { startLiveCorrection(resumeAt) }
+                }
+            }
+        }
+    }
+
+    private fun updateMicLevel(event: LiveRecitationEvent.Level) {
+        smoothedMicLevel = if (event.isSpeaking) {
+            smoothedMicLevel + (event.amplitude * MIC_LEVEL_GAIN - smoothedMicLevel) * MIC_LEVEL_SMOOTHING
+        } else {
+            0f
+        }
+
+        
+        
+        val followedWordId = if (event.isSpeaking) {
+            chunkSpeechFrames++
+            pacer.onSpeechFrame()
+        } else {
+            pacer.currentWordId
+        }
+
+        _state.update {
+            it.copy(
+                micLevel = smoothedMicLevel.coerceIn(0f, 1f),
+                isSpeechDetected = event.isSpeaking,
+                highlightedWordId = followedWordId ?: it.highlightedWordId,
+            )
+        }
+    }
+
+    private fun mergeChunk(chunk: RecitationChunk) {
+        chunk.cursor?.let { lastCursor = it }
+        Log.d(
+            TAG,
+            "Chunk ${chunk.sequence}: ${chunk.words.size} words, " +
+                "${chunk.mistakeWords.size} mistakes, cursor=${chunk.cursor?.wordId}",
+        )
+
+        
+        
+        
+        if (chunk.words.isNotEmpty()) {
+            pacer.observePace(wordCount = chunk.words.size, speechFrames = chunkSpeechFrames)
+        }
+        chunkSpeechFrames = 0
+        chunk.cursor?.let { pacer.confirm(it.wordId) }
+        advancePageIfRecitationMovedOn(chunk.cursor)
+
+        _state.update { state ->
+            val live = state.liveCorrection
+            state.copy(
+                highlightedWordId = pacer.currentWordId ?: state.highlightedWordId,
+                liveCorrection = live.copy(
+                    wordFeedback = live.wordFeedback.mergedWith(chunk),
+                    candidates = (chunk.match as? RecitationMatch.Ambiguous)?.candidates.orEmpty(),
+                    nonVerse = chunk.nonVerse,
+                    lastOutcome = chunk.match.toOutcome(),
+                    cursor = chunk.cursor ?: live.cursor,
+                ),
+            )
+        }
+    }
+
+
+    private fun advancePageIfRecitationMovedOn(cursor: RecitationCursor?) {
+        val wordId = cursor?.wordId ?: return
+        val state = _state.value
+        if (!state.isRecordingActive) return
+        if (state.wordsForCurrentPage().any { it.id == wordId }) return
+
+        val nextPage = state.currentPage + 1
+        val landsOnNextPage = state.pages[nextPage]
+            ?.lines
+            ?.any { line -> line.words.any { it.id == wordId } } == true
+
+        if (landsOnNextPage) {
+            Log.d(TAG, "Recitation crossed onto page $nextPage; following")
+            loadPage(nextPage)
+        }
+    }
+
+
+    private fun seedPacerForCurrentPage() {
+        val words = _state.value.wordsForCurrentPage().filterNot { it.isEndOfAyah }.map { it.id }
+        if (words.isEmpty()) return
+        pacer.setWords(words)
+
+        lastCursor?.wordId?.let { pacer.confirm(it) }
+        if (pacer.currentWordId == null) pacer.placeAtStart()
+
+        pacer.currentWordId?.let { wordId ->
+            _state.update { it.copy(highlightedWordId = wordId) }
+        }
+    }
+
+    private fun selectCandidate(position: RecitationCursor) {
+        seekLiveCorrection(position)
+        clearCandidates()
+    }
+
+    private fun clearCandidates() = _state.update {
+        it.copy(liveCorrection = it.liveCorrection.copy(candidates = emptyList()))
+    }
+
+    private fun finishAndStartNewSession() {
+        val state = _state.value
+        if (!state.isRecordingActive || state.mushafMode != MushafMode.RECITATION) return
+        pendingRestart = SessionRestart.BOUNDARY
+        finishLiveCorrection()
+    }
+
+    
+
+
+
+
+
+
+
+ 
+    private fun setTajweedGrading(enabled: Boolean) {
+        val current = recitationSettings
+        if (current.tajweedGradingEnabled == enabled) return
+
+        val updated = current.copy(tajweedGradingEnabled = enabled)
+        
+        
+        recitationSettings = updated
+        _state.update { it.copy(isTajweedGradingEnabled = enabled) }
+
+        viewModelScope.launch {
+            runCatching { updateRecitationSettings(updated) }
+                .onFailure { Log.e(TAG, "Failed to store the tajwid grading choice", it) }
+        }
+
+        val state = _state.value
+        if (state.isRecordingActive &&
+            state.mushafMode == MushafMode.RECITATION &&
+            state.liveCorrection.isActive
+        ) {
+            Log.d(TAG, "Tajwid grading -> $enabled; reopening the session at ${lastCursor?.wordId}")
+            pendingRestart = SessionRestart.SETTINGS
+            finishLiveCorrection()
+        }
+    }
+
+    private fun recordFinishedSession(showSummary: Boolean = true) {
+        if (sessionStartedAtEpochMs == 0L) return
+        val live = _state.value.liveCorrection
+
+        val summary = RecitationSessionRecorder.record(
+            id = UUID.randomUUID().toString(),
+            startedAtEpochMs = sessionStartedAtEpochMs,
+            durationMs = (System.currentTimeMillis() - sessionStartedAtEpochMs).coerceAtLeast(0L),
+            wordFeedback = live.wordFeedback,
+            fallbackPosition = live.cursor ?: lastCursor,
+        )
+
+        sessionStartedAtEpochMs = 0L
+        if (showSummary) _state.update { it.copy(sessionSummary = summary) }
+        viewModelScope.launch {
+            runCatching { saveRecitationSession(summary) }
+                .onFailure { Log.e(TAG, "Failed to save the session record", it) }
+        }
+    }
+
+    private fun RecitationMatch.toOutcome(): ChunkOutcome = when (this) {
+        is RecitationMatch.Matched -> ChunkOutcome.GRADED
+        is RecitationMatch.Ambiguous -> ChunkOutcome.AMBIGUOUS
+        RecitationMatch.NoMatch -> ChunkOutcome.NO_MATCH
+    }
+
+    
+
+
+
+
+ 
+    private fun finishLiveCorrection() {
+        isFinishing = true
+        val controls = controlChannel
+        if (controls == null) {
+            clearLiveSession()
+            return
+        }
+        if (controls.trySend(RecitationControl.Finish).isFailure) {
+            Log.w(TAG, "Could not request a flush; ending the session locally")
+            clearLiveSession()
+        }
+        _state.update { it.copy(micLevel = 0f, isSpeechDetected = false) }
+    }
+
+     
+    private fun clearLiveSession() {
+        isFinishing = true
+        sessionJob?.cancel()
+        sessionJob = null
+        controlChannel?.close()
+        controlChannel = null
+        smoothedMicLevel = 0f
+        pacer.reset()
+        chunkSpeechFrames = 0
+        sessionStartedAtEpochMs = 0L
+        pendingRestart = null
+        _state.update {
+            it.copy(
+                micLevel = 0f,
+                isSpeechDetected = false,
+                highlightedWordId = null,
+                liveCorrection = LiveCorrectionUiState(),
+            )
+        }
+    }
+
+     
+    private fun seekLiveCorrection(cursor: RecitationCursor) {
+        lastCursor = cursor
+        controlChannel?.trySend(RecitationControl.Seek(cursor))
+        Log.d(TAG, "Seek → ${cursor.wordId}")
+    }
+
+     
+    private fun startCursorForCurrentPage(): RecitationCursor? =
+        _state.value.wordsForCurrentPage()
+            .firstNotNullOfOrNull { RecitationCursor.fromWordId(it.id) }
+
+    private fun failCapture(error: CaptureError) {
+        clearLiveSession()
+        _state.update { it.copy(isRecordingActive = false, captureError = error) }
+    }
+
+
+    fun onScreenStopped() {
+        if (_state.value.isRecordingActive) {
+            Log.d(TAG, "Screen stopped while recording; releasing the microphone")
+            clearLiveSession()
+            highlightDriver.stop()
+            _state.update { it.copy(isRecordingActive = false) }
         }
     }
 
@@ -401,7 +908,7 @@ class MushafViewModel(
         
         Log.d(TAG, "startFollowAlong() started. Mode=${_state.value.mushafMode}, Reciter=${reciter?.name}, Page=${page.pageNumber}")
         
-        // Stop any currently playing audio before starting a new page
+        
         playbackManager.stop()
         
         _state.update { it.copy(isFollowAlongActive = true, playingPage = page.pageNumber) }
@@ -465,6 +972,7 @@ class MushafViewModel(
     }
 
     override fun onCleared() {
+        clearLiveSession()
         simulatedHighlightDriver.stop()
         audioHighlightDriver.stop()
         playbackManager.release()

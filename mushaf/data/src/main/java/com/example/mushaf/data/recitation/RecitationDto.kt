@@ -8,15 +8,15 @@ data class ReciterDto(
     val id: Int,
     val name: String,
     @SerialName("name_arabic") val nameArabic: String,
-    val style: String, // e.g. "Murattal"
+    val style: String, 
     @SerialName("audio_base_url") val audioBaseUrl: String,
 )
 
 @Serializable
 data class AyahTimingDto(
-    @SerialName("verse_key") val verseKey: String, // e.g. "1:1"
+    @SerialName("verse_key") val verseKey: String, 
     @SerialName("timestamp_from") val timestampFrom: Long,
     @SerialName("timestamp_to") val timestampTo: Long,
-    // List of arrays: [word_index, start_ms, end_ms]
+    
     val segments: List<List<Long>> 
 )

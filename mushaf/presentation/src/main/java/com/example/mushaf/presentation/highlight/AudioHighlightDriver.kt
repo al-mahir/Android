@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 
-/**
- * HighlightDriver that synchronizes highlighting with audio playback timestamps.
- */
+
+
+ 
 class AudioHighlightDriver(
     private val scope: CoroutineScope,
     private val playbackManager: AudioPlayer,
@@ -24,9 +24,9 @@ class AudioHighlightDriver(
     private var positionJob: Job? = null
     private var timingsList = emptyList<AyahTiming>()
 
-    /**
-     * Loads the timing data for a set of ayahs.
-     */
+    
+
+ 
     fun loadTimings(timings: List<AyahTiming>) {
         timingsList = timings
     }
@@ -55,7 +55,7 @@ class AudioHighlightDriver(
     }
 
     private fun updateHighlightForPosition(ayahTiming: AyahTiming, positionMs: Long) {
-        // Find the word where positionMs falls between its start and end
+        
         val wordTiming = ayahTiming.wordTimings.find { positionMs >= it.startMs && positionMs < it.endMs }
         
         if (wordTiming != null) {
@@ -66,7 +66,7 @@ class AudioHighlightDriver(
                 _currentWordId.value = wordId
             }
         } else {
-            // Check if we are past the last word
+            
             val lastWord = ayahTiming.wordTimings.lastOrNull()
             if (lastWord != null && positionMs >= lastWord.endMs) {
                 _currentWordId.value = null

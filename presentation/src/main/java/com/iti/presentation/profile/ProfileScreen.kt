@@ -28,6 +28,8 @@ fun ProfileScreen(
     onOpenLegalDocument: (LegalDocumentType) -> Unit,
     onSignedOut: () -> Unit,
     onOpenSettings: () -> Unit = {},
+    onOpenSessions: () -> Unit = {},
+    onOpenAttributions: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = koinViewModel(),
     reviewLauncher: AppReviewLauncher = koinInject(),
@@ -58,6 +60,10 @@ fun ProfileScreen(
             ProfileEffect.OpenPremium -> onOpenPremium()
 
             ProfileEffect.OpenSettings -> onOpenSettings()
+
+            ProfileEffect.OpenSessions -> onOpenSessions()
+
+            ProfileEffect.OpenAttributions -> onOpenAttributions()
 
             is ProfileEffect.OpenLegalDocument -> onOpenLegalDocument(effect.type)
 

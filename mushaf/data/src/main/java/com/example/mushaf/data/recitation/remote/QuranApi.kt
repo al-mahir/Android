@@ -10,7 +10,7 @@ class QuranApi(
 ) {
     suspend fun getVersesByPage(
         pageNumber: Int,
-        reciterId: Int = 7 // Default to Mishary Alafasy
+        reciterId: Int = 7 
     ): QuranApiVersesResponse {
         return client.get("https://api.quran.com/api/v4/verses/by_page/$pageNumber") {
             parameter("audio", reciterId)

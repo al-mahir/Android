@@ -31,7 +31,7 @@ class FakeDownloadableResourceRepository(
         resources.map { all -> all.filter { it.kind == kind } }
 
     override suspend fun startDownload(id: String) {
-        // Guard against a double-tap queuing two downloads for the same resource.
+        
         if (jobs[id]?.isActive == true) return
 
         jobs[id] = downloadScope.launch {
@@ -49,7 +49,7 @@ class FakeDownloadableResourceRepository(
 
     override suspend fun cancelDownload(id: String) {
         jobs.remove(id)?.cancel()
-        // Partial data is discarded rather than left occupying storage.
+        
         updateState(id, DownloadState.NotDownloaded)
     }
 
@@ -71,7 +71,7 @@ class FakeDownloadableResourceRepository(
         const val MB = 1024L * 1024L
 
         val SEED_RESOURCES: List<DownloadableResource> = listOf(
-            // ---- Reciters: subtitle carries the narration (riwāyah). ----
+            
             DownloadableResource(
                 id = "reciter_husary",
                 kind = ResourceKind.RECITER,
@@ -109,7 +109,7 @@ class FakeDownloadableResourceRepository(
                 sizeBytes = 705 * MB,
             ),
 
-            // ---- Tafseers ----
+            
             DownloadableResource(
                 id = "tafseer_muyassar",
                 kind = ResourceKind.TAFSEER,
@@ -136,7 +136,7 @@ class FakeDownloadableResourceRepository(
                 sizeBytes = 63 * MB,
             ),
 
-            // ---- Translations ----
+            
             DownloadableResource(
                 id = "translation_en_sahih",
                 kind = ResourceKind.TRANSLATION,

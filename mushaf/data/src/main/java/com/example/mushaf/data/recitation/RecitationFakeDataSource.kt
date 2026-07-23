@@ -9,13 +9,13 @@ class RecitationFakeDataSource : RecitationDataSource {
 
     override fun observeReciters(): Flow<List<ReciterDto>> = flow {
         emit(SEED_RECITERS)
-    }.onStart { delay(800) } // simulate network delay
+    }.onStart { delay(800) } 
 
     override fun observeTimingsForPage(reciterId: Int, pageNumber: Int): Flow<List<AyahTimingDto>> = flow {
         if (pageNumber == 1) {
             emit(SEED_FATIHA_TIMINGS)
         } else {
-            // For other pages, just emit empty or a basic fake for now
+            
             emit(emptyList()) 
         }
     }.onStart { delay(500) }

@@ -20,6 +20,7 @@ import com.example.designsystem.R as DesignSystemR
 @Composable
 fun MushafSettingsSection(
     onOpenDownloads: (ResourceKind) -> Unit,
+    onOpenReciteSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel: MushafSettingsViewModel = koinViewModel()
@@ -29,6 +30,7 @@ fun MushafSettingsSection(
         state = state,
         onIntent = viewModel::onIntent,
         onOpenDownloads = onOpenDownloads,
+        onOpenReciteSettings = onOpenReciteSettings,
         modifier = modifier,
     )
 }
@@ -38,10 +40,11 @@ fun MushafSettingsSectionContent(
     state: MushafSettingsUiState,
     onIntent: (MushafSettingsIntent) -> Unit,
     onOpenDownloads: (ResourceKind) -> Unit,
+    onOpenReciteSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        // ---- Reading preferences ----
+        
         SettingsSectionHeader(title = stringResource(R.string.settings_section_mushaf))
 
         SettingsItemRow(
@@ -54,6 +57,14 @@ fun MushafSettingsSectionContent(
                     onCheckedChange = { onIntent(MushafSettingsIntent.TajweedToggled(it)) },
                 )
             },
+        )
+
+        SettingsItemRow(
+            title = stringResource(R.string.recite_settings_title),
+            subtitle = stringResource(R.string.recite_settings_subtitle),
+            icon = painterResource(DesignSystemR.drawable.ic_tajweed),
+            onClick = onOpenReciteSettings,
+            trailingContent = { SettingsChevron() },
         )
 
         SettingsSectionHeader(title = stringResource(R.string.settings_section_downloads))

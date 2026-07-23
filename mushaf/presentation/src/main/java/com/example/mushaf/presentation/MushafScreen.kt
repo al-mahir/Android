@@ -1,5 +1,8 @@
 package com.example.mushaf.presentation
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -21,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,25 +35,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterItem
 import com.example.designsystem.components.mushaf.ReciterPickerSheet
 import com.example.designsystem.components.mushaf.SurahItem
 import com.example.designsystem.components.mushaf.SurahPickerSheet
 import com.example.designsystem.components.mushaf.TajweedLegendSheet
+import com.example.designsystem.components.mushaf.CorrectionsSheet
+import com.example.designsystem.components.session.SessionSummarySheet
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.SurahCatalog
 import com.example.mushaf.domain.model.SurahOrigin
 import com.example.mushaf.presentation.audio.AudioState
+import com.example.mushaf.presentation.components.GradingModeToggle
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
+import com.example.mushaf.presentation.recite.LiveSessionStatusRow
+import com.example.mushaf.presentation.recite.CorrectionFilter
+import com.example.mushaf.presentation.recite.CorrectionsUiMapper
+import com.example.mushaf.presentation.recite.correctionsSubtitle
+import com.example.mushaf.presentation.recite.label
+import com.example.mushaf.presentation.recite.toChip
+import com.example.mushaf.presentation.recite.breakdown
+import com.example.mushaf.presentation.recite.emptyMessageOrNull
+import com.example.mushaf.presentation.recite.headline
+import com.example.mushaf.presentation.recite.practiceLines
+import com.example.mushaf.presentation.recite.stats
+import com.example.mushaf.presentation.recite.subtitle
+import com.example.mushaf.presentation.recite.toCard
+import com.example.mushaf.presentation.recite.MicPrompt
+import com.example.mushaf.presentation.recite.MicPromptDialog
+import com.example.mushaf.presentation.recite.hasRecordAudioPermission
+import com.example.mushaf.presentation.recite.openAppSettings
+import com.example.mushaf.presentation.state.CaptureError
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.PageLoadState
 import org.koin.androidx.compose.koinViewModel
@@ -57,16 +89,12 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MushafScreen(
     modifier: Modifier = Modifier,
-    /**
-     * Page to open on, e.g. when arriving from Home's "Continue Reading". Null resumes the
-     * reader's own persisted last page.
-     */
     startPage: Int? = null,
     onBack: () -> Unit = {},
+    onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
-    onNavigateSearch: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -74,34 +102,82 @@ fun MushafScreen(
         initialPage = state.currentPage - 1,
         pageCount = { state.pageCount },
     )
-    
+
     var showReciterPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.settledPage }
-            .collect { page ->
-                val requestedPage = page + 1
-                if (requestedPage != viewModel.state.value.currentPage) {
-                    viewModel.onIntent(MushafIntent.LoadPage(requestedPage))
-                }
-            }
+    val context = LocalContext.current
+    var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
+    var showCorrections by remember { mutableStateOf(false) }
+    var correctionTabIndex by remember { mutableStateOf(0) }
+
+    
+    
+    val wordMarks by remember(state.liveCorrection.wordFeedback) {
+        derivedStateOf { state.liveCorrection.wordFeedback.mapValues { (_, word) -> word.mark } }
+    }
+    val corrections by remember(state.liveCorrection.wordFeedback) {
+        derivedStateOf { CorrectionsUiMapper.toCorrections(state.liveCorrection.wordFeedback) }
+    }
+    val correctionTabs by remember(corrections) {
+        derivedStateOf { CorrectionFilter.tabsFor(corrections) }
+    }
+    val selectedTab = correctionTabs.getOrNull(correctionTabIndex) ?: correctionTabs.firstOrNull()
+    val visibleCorrections by remember(corrections, selectedTab) {
+        derivedStateOf { CorrectionFilter.apply(corrections, selectedTab?.category) }
     }
 
-    // Declared after the pager effect on purpose. `state.currentPage` is the single source of
-    // truth for which page is shown; seeding the pager instead would make the two fight and
-    // oscillate. Dispatching here sets the state, and the sync effect below scrolls the pager
-    // to match. OpenAtPage (not LoadPage) so a late preferences emission cannot restore the
-    // previously-read page over the one the caller asked for.
-    LaunchedEffect(startPage) {
-        if (startPage != null) {
-            viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onIntent(MushafIntent.ToggleRecording)
+        } else {
+            micPrompt = MicPrompt.Denied
         }
     }
 
+    LaunchedEffect(state.captureError) {
+        when (state.captureError) {
+            CaptureError.PERMISSION_DENIED -> micPrompt = MicPrompt.Denied
+            CaptureError.MICROPHONE_UNAVAILABLE -> micPrompt = MicPrompt.Unavailable
+            
+            
+            CaptureError.SERVICE_UNREACHABLE -> micPrompt = MicPrompt.ServiceUnreachable
+            null -> Unit
+        }
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.onScreenStopped()
+    }
+
+    
+    
+    val haptics = LocalHapticFeedback.current
+    var lastMistakeCount by remember { mutableStateOf(0) }
+    LaunchedEffect(state.liveCorrection.mistakeCount) {
+        val count = state.liveCorrection.mistakeCount
+        if (count > lastMistakeCount) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        lastMistakeCount = count
+    }
+
+    // Pager → ViewModel: notify when the user settles on a new page.
+    LaunchedEffect(pagerState.currentPage) {
+        viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
+    }
+
+    // ViewModel → Pager: programmatic navigation (e.g. recitation auto-advance).
     LaunchedEffect(state.currentPage) {
         val target = (state.currentPage - 1).coerceIn(0, state.pageCount - 1)
         if (pagerState.currentPage != target) {
             pagerState.scrollToPage(target)
+        }
+    }
+
+    // Deep-link / explicit start page (e.g. tapped a surah from Home).
+    LaunchedEffect(startPage) {
+        if (startPage != null) {
+            viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
         }
     }
 
@@ -126,21 +202,26 @@ fun MushafScreen(
                     }
                 ) {
                     when (val pageState = state.pageState(pageNumber)) {
-                        is PageLoadState.Loaded ->
+                        is PageLoadState.Loaded -> {
+                            val isCurrent = pageNumber == state.currentPage
+
+                            val prefetchPages = if (isCurrent) {
+                                val before2 = state.pages[pageNumber - 2]
+                                val before1 = state.pages[pageNumber - 1]
+                                val after1 = state.pages[pageNumber + 1]
+                                val after2 = state.pages[pageNumber + 2]
+                                remember(before2, before1, after1, after2) {
+                                    listOfNotNull(before2, before1, after1, after2)
+                                }
+                            } else {
+                                emptyList()
+                            }
+
                             MushafPageView(
                                 page = pageState.page,
                                 mode = state.readingMode,
-                                highlightedWordId = if (pageNumber == state.currentPage) state.highlightedWordId else null,
-                                prefetchPages = if (pageNumber == state.currentPage) {
-                                    listOfNotNull(
-                                        state.pages[pageNumber - 2],
-                                        state.pages[pageNumber - 1],
-                                        state.pages[pageNumber + 1],
-                                        state.pages[pageNumber + 2],
-                                    )
-                                } else {
-                                    emptyList()
-                                },
+                                highlightedWordId = if (isCurrent) state.highlightedWordId else null,
+                                prefetchPages = prefetchPages,
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
                                 onWordClick = { wordId ->
@@ -155,8 +236,10 @@ fun MushafScreen(
                                 },
                                 onBlankClick = {
                                     viewModel.onIntent(MushafIntent.ToggleBars)
-                                }
+                                },
+                                wordMarks = if (isCurrent) wordMarks else emptyMap(),
                             )
+                        }
 
                         PageLoadState.Failed ->
                             MushafErrorState(onRetry = { viewModel.onIntent(MushafIntent.Retry) })
@@ -211,7 +294,54 @@ fun MushafScreen(
                 onRevealNextWord = { viewModel.onIntent(MushafIntent.RevealNextWord) },
                 onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
                 onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
-                onToggleRecording = { viewModel.onIntent(MushafIntent.ToggleRecording) },
+                micLevel = state.micLevel,
+                canFinishSession = state.isRecordingActive && state.liveCorrection.isActive,
+                onFinishSession = { viewModel.onIntent(MushafIntent.FinishAndStartNewSession) },
+                
+                
+                statusRow = if (state.mushafMode == MushafMode.RECITATION) {
+                    {
+                        LiveSessionStatusRow(
+                            live = state.liveCorrection,
+                            isRecording = state.isRecordingActive,
+                            onCorrectionsClick = { showCorrections = true },
+                            onDismissEngineNotice = {
+                                viewModel.onIntent(MushafIntent.DismissEngineNotice)
+                            },
+                            onSelectCandidate = { position ->
+                                viewModel.onIntent(MushafIntent.SelectCandidate(position))
+                            },
+                            onDismissCandidates = {
+                                viewModel.onIntent(MushafIntent.DismissCandidates)
+                            },
+                        )
+                    }
+                } else {
+                    null
+                },
+                gradingToggle = if (state.mushafMode == MushafMode.RECITATION) {
+                    {
+                        GradingModeToggle(
+                            tajweedGradingEnabled = state.isTajweedGradingEnabled,
+                            enabled = state.canGradeTajweed,
+                            onSelect = { enabled ->
+                                viewModel.onIntent(MushafIntent.SetTajweedGrading(enabled))
+                            },
+                        )
+                    }
+                } else {
+                    null
+                },
+                onToggleRecording = {
+                    when {
+                        
+                        state.isRecordingActive -> viewModel.onIntent(MushafIntent.ToggleRecording)
+                        context.hasRecordAudioPermission() ->
+                            viewModel.onIntent(MushafIntent.ToggleRecording)
+                        
+                        else -> micPrompt = MicPrompt.Preprompt
+                    }
+                },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -238,6 +368,64 @@ fun MushafScreen(
                     contentDescription = "دليل ألوان التجويد",
                 )
             }
+        }
+
+        if (showCorrections) {
+            CorrectionsSheet(
+                title = stringResource(R.string.mushaf_corrections_title),
+                subtitle = state.liveCorrection.correctionsSubtitle(),
+                corrections = visibleCorrections.map { it.toCard() },
+                tabs = correctionTabs.map { it.toChip() },
+                selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
+                onTabSelected = { correctionTabIndex = it },
+                emptyMessage = stringResource(R.string.mushaf_corrections_empty),
+                practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
+                practiceFocus = state.liveCorrection.practiceFocus.map { it.label() },
+                onDismiss = { showCorrections = false },
+                onMistakeClick = { wordId ->
+                    
+                    
+                    viewModel.onIntent(MushafIntent.HighlightWord(wordId))
+                    viewModel.onIntent(MushafIntent.SelectMistake(wordId))
+                    showCorrections = false
+                },
+            )
+        }
+
+        state.sessionSummary?.let { summary ->
+            SessionSummarySheet(
+                headline = summary.headline(),
+                subtitle = summary.subtitle(),
+                stats = summary.stats(),
+                breakdownTitle = stringResource(R.string.session_breakdown_title),
+                breakdown = summary.breakdown(),
+                practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
+                practiceFocus = summary.practiceLines(),
+                emptyMessage = summary.emptyMessageOrNull(),
+                dismissLabel = stringResource(R.string.session_summary_done),
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissSessionSummary) },
+            )
+        }
+
+        micPrompt?.let { prompt ->
+            val dismiss = {
+                micPrompt = null
+                viewModel.onIntent(MushafIntent.DismissCaptureError)
+            }
+            MicPromptDialog(
+                prompt = prompt,
+                onConfirm = {
+                    dismiss()
+                    when (prompt) {
+                        MicPrompt.Preprompt ->
+                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        MicPrompt.Denied -> context.openAppSettings()
+                        
+                        MicPrompt.Unavailable, MicPrompt.ServiceUnreachable -> Unit
+                    }
+                },
+                onDismiss = dismiss,
+            )
         }
         
         // ── Reciter Picker sheet ────────────────────────────────────────────────

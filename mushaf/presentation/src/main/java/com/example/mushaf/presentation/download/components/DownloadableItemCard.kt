@@ -66,7 +66,7 @@ fun DownloadableItemCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Reciters only — the narration (riwāyah) they recite in.
+            
             if (subtitle != null) {
                 Text(
                     text = subtitle,
@@ -115,8 +115,8 @@ private fun DownloadTrailing(
             )
 
             is DownloadState.Downloading -> {
-                // Determinate: the fake source reports real fractions, and an indeterminate
-                // spinner would hide that progress is actually advancing.
+                
+                
                 Box(
                     modifier = Modifier
                         .size(Theme.size.iconMedium)

@@ -146,6 +146,10 @@ class ProfileViewModel(
 
     private fun openMenuOption(menuType: ProfileMenuType) {
         val effect = when (menuType) {
+            ProfileMenuType.SESSIONS -> ProfileEffect.OpenSessions
+
+            ProfileMenuType.ATTRIBUTIONS -> ProfileEffect.OpenAttributions
+
             ProfileMenuType.SETTINGS -> ProfileEffect.OpenSettings
 
             ProfileMenuType.ABOUT ->
