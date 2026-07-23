@@ -8,7 +8,7 @@ import com.iti.presentation.auth.register.RegisterViewModel
 import com.iti.presentation.auth.session.SessionViewModel
 import com.iti.presentation.core.platform.CredentialManagerGoogleIdTokenProvider
 import com.iti.presentation.core.platform.GoogleIdTokenProvider
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val authPresentationModule = module {
