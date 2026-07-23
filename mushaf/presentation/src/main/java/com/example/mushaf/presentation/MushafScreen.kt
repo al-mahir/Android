@@ -224,7 +224,10 @@ fun MushafScreen(
                                 prefetchPages = prefetchPages,
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
-                                onWordClick = { wordId ->
+                                onWordClick = { 
+                                    viewModel.onIntent(MushafIntent.ToggleBars) 
+                                },
+                                onWordLongClick = { wordId ->
                                     val parts = wordId.split(":")
                                     if (parts.size >= 2) {
                                         val surah = parts[0].toIntOrNull()

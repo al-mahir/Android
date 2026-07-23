@@ -63,7 +63,10 @@ fun MushafTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(36.dp)
+            ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = stringResource(R.string.mushaf_cd_back),
@@ -76,7 +79,7 @@ fun MushafTopBar(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp),
+                    .padding(horizontal = 4.dp), // reduced horizontal space
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
@@ -86,11 +89,11 @@ fun MushafTopBar(
                         .clip(RoundedCornerShape(20.dp))
                         .clickable(onClick = onSurahNameClick)
                         .background(Theme.colors.primary.copy(alpha = 0.10f))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = surahName,
+                        text = surahName.replace("سورة ", ""),
                         style = Theme.typography.body.large,
                         color = Theme.colors.primary,
                         maxLines = 1,
@@ -107,16 +110,16 @@ fun MushafTopBar(
                     style = Theme.typography.body.medium,
                     color = Theme.colors.secondaryFont,
                 )
-                Spacer(modifier = Modifier.padding(horizontal = 2.dp))
-                Text(
-                    text = stringResource(R.string.mushaf_hizb_label, hizbNumber),
-                    style = Theme.typography.body.medium,
-                    color = Theme.colors.secondaryFont,
-                )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onSearchClick) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp) // space between icons
+            ) {
+                IconButton(
+                    onClick = onSearchClick,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = "بحث",
@@ -124,7 +127,10 @@ fun MushafTopBar(
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                 }
-                IconButton(onClick = onBookmark) {
+                IconButton(
+                    onClick = onBookmark,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                         contentDescription = stringResource(R.string.mushaf_cd_bookmark),
@@ -132,7 +138,10 @@ fun MushafTopBar(
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                 }
-                IconButton(onClick = onSettings) {
+                IconButton(
+                    onClick = onSettings,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Settings,
                         contentDescription = stringResource(R.string.mushaf_cd_settings),
