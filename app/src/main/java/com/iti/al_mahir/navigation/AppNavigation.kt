@@ -35,10 +35,6 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-<<<<<<< HEAD
-=======
-    data object Search : AppRoute
->>>>>>> feature/quran-search
     data class Mushaf(val startPage: Int? = null) : AppRoute
     data object Profile : AppRoute
     data object Search : AppRoute
