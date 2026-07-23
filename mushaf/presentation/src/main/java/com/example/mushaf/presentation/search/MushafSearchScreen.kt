@@ -79,11 +79,10 @@ internal fun MushafSearchContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = padding.calculateBottomPadding(), top = 12.dp)
+                .padding(bottom = padding.calculateBottomPadding())
                 .padding(horizontal = 18.dp)
         ) {
             TopHeaderSection(userInitials = "ق", onBack = onNavigateBack) // As requested by user: 'ق'
-            Spacer(Modifier.height(8.dp))
             
             SearchBar(
                 query = state.query,
