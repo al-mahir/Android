@@ -142,25 +142,23 @@ fun MushafScreen(
         lastMistakeCount = count
     }
 
+    // Pager → ViewModel: notify when the user settles on a new page.
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onIntent(MushafIntent.LoadPage(pagerState.currentPage + 1))
     }
 
-    
-    
-    
-    
-    
-    LaunchedEffect(startPage) {
-        if (startPage != null) {
-            viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
-        }
-    }
-
+    // ViewModel → Pager: programmatic navigation (e.g. recitation auto-advance).
     LaunchedEffect(state.currentPage) {
         val target = (state.currentPage - 1).coerceIn(0, state.pageCount - 1)
         if (pagerState.currentPage != target) {
             pagerState.scrollToPage(target)
+        }
+    }
+
+    // Deep-link / explicit start page (e.g. tapped a surah from Home).
+    LaunchedEffect(startPage) {
+        if (startPage != null) {
+            viewModel.onIntent(MushafIntent.OpenAtPage(startPage))
         }
     }
 
