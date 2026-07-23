@@ -12,6 +12,7 @@ import com.example.mushaf.domain.usecase.ObserveReaderPreferencesUseCase
 import com.example.mushaf.domain.usecase.ObserveRecitationSettingsUseCase
 import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
+import com.example.mushaf.domain.usecase.search.SearchAyahUseCase
 import com.example.mushaf.domain.usecase.StartResourceDownloadUseCase
 import com.example.mushaf.domain.usecase.UpdateRecitationSettingsUseCase
 import com.example.mushaf.presentation.MushafViewModel
@@ -27,6 +28,15 @@ val mushafPresentationModule = module {
     factory { ObserveReaderPreferencesUseCase(get()) }
     factory { SetTajweedEnabledUseCase(get()) }
     factory { SaveLastPageUseCase(get()) }
+
+    factory { com.example.mushaf.domain.usecase.GetLastReadUseCase() }
+    factory { com.example.mushaf.domain.usecase.search.SearchSurahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchJuzUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchHizbUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchPageUseCase(get()) }
+    factory { SearchAyahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -51,6 +61,18 @@ val mushafPresentationModule = module {
     viewModel {
         MushafViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
+    }
+
+    viewModel { 
+        com.example.mushaf.presentation.search.MushafSearchViewModel(
+            getLastReadUseCase = get(),
+            searchSurahUseCase = get(),
+            searchJuzUseCase = get(),
+            searchAyahUseCase = get(),
+            searchAyahByMeaningUseCase = get(),
+            getTargetPageUseCase = get(),
+            saveLastPageUseCase = get()
         )
     }
 
