@@ -37,6 +37,7 @@ fun AudioPlayerBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(Theme.spacing.medium),
         shape = RoundedCornerShape(16.dp),
         color = Theme.colors.surface,
@@ -56,6 +57,7 @@ fun AudioPlayerBar(
                 // Reciter Chip
                 Row(
                     modifier = Modifier
+                        .weight(1f, fill = false)
                         .clip(RoundedCornerShape(8.dp))
                         .clickable(onClick = onReciterClick)
                         .padding(horizontal = Theme.spacing.small, vertical = Theme.spacing.extraSmall),
@@ -74,13 +76,13 @@ fun AudioPlayerBar(
                         color = Theme.colors.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 150.dp)
+                        modifier = Modifier.weight(1f, fill = false)
                     )
                 }
 
                 // Speed Chip
                 Surface(
-                    modifier = Modifier.clickable(onClick = onSpeedClick),
+                    modifier = Modifier.padding(start = Theme.spacing.small).clickable(onClick = onSpeedClick),
                     shape = RoundedCornerShape(8.dp),
                     color = Theme.colors.surface,
                     border = androidx.compose.foundation.BorderStroke(1.dp, Theme.colors.outline)

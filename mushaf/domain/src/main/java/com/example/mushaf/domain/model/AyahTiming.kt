@@ -12,6 +12,9 @@ data class AyahTiming(
     
      
     val timestampTo: Long,
+
+    /** Audio URL for the entire ayah */
+    val audioUrl: String? = null,
     
      
     val wordTimings: List<WordTiming>,

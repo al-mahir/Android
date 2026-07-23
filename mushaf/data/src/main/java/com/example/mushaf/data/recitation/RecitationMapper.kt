@@ -39,6 +39,7 @@ object RecitationMapper {
             ayahNumber = ayah,
             timestampFrom = dto.timestampFrom,
             timestampTo = dto.timestampTo,
+            audioUrl = dto.audioUrl,
             wordTimings = wordTimings
         )
     }

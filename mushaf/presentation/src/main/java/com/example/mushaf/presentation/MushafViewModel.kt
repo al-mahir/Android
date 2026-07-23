@@ -299,10 +299,14 @@ class MushafViewModel(
     }
 
     private fun selectReciter(reciter: Reciter) {
+        val wasPlaying = _state.value.audioState == AudioState.PLAYING
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            
-            startFollowAlong()
+            if (wasPlaying) {
+                startFollowAlong()
+            } else {
+                _state.update { it.copy(isFollowAlongActive = false) }
+            }
         }
     }
 
@@ -418,7 +422,9 @@ class MushafViewModel(
         }
 
         when (mode) {
-            MushafMode.LISTEN -> startFollowAlong()
+            MushafMode.LISTEN -> {
+                // Audio will start when the user explicitly taps play.
+            }
             else -> Unit
         }
     }
@@ -918,9 +924,16 @@ class MushafViewModel(
 
     private fun buildAudioUrls(timings: List<AyahTiming>, reciter: Reciter): List<String> {
         return timings.map { timing ->
-            val paddedS = timing.surahNumber.toString().padStart(3, '0')
-            val paddedA = timing.ayahNumber.toString().padStart(3, '0')
-            "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            val audioUrl = timing.audioUrl
+            if (audioUrl != null) {
+                if (audioUrl.startsWith("http")) audioUrl
+                else if (audioUrl.startsWith("//")) "https:$audioUrl"
+                else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
+            } else {
+                val paddedS = timing.surahNumber.toString().padStart(3, '0')
+                val paddedA = timing.ayahNumber.toString().padStart(3, '0')
+                "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            }
         }
     }
 
