@@ -61,6 +61,7 @@ fun MushafSearchScreen(
 
     MushafSearchContent(
         state = state,
+        onNavigateBack = onNavigateBack,
         onIntent = viewModel::onIntent
     )
 }
@@ -68,6 +69,7 @@ fun MushafSearchScreen(
 @Composable
 internal fun MushafSearchContent(
     state: MushafSearchState,
+    onNavigateBack: () -> Unit,
     onIntent: (MushafSearchIntent) -> Unit
 ) {
     Scaffold(
@@ -86,7 +88,7 @@ internal fun MushafSearchContent(
                 .padding(bottom = padding.calculateBottomPadding(), top = 12.dp)
                 .padding(horizontal = 18.dp)
         ) {
-            TopHeaderSection(userInitials = "ق") // As requested by user: 'ق'
+            TopHeaderSection(userInitials = "ق", onBack = onNavigateBack) // As requested by user: 'ق'
             Spacer(Modifier.height(8.dp))
             
             SearchBar(
