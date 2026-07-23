@@ -16,7 +16,7 @@ private val Context.readerDataStore: DataStore<Preferences> by preferencesDataSt
     name = "mushaf_reader_prefs",
 )
 
-/** Low-level DataStore access for reader preferences. */
+ 
 class ReaderPreferencesDataStore(context: Context) {
 
     private val dataStore = context.applicationContext.readerDataStore

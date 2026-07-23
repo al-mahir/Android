@@ -35,7 +35,7 @@ class MushafMapperTest {
         val lines = listOf(line(2, "ayah"))
         val words = listOf(
             word(2, 1, "1:1:1", "ﱁ"),
-            word(2, 0, "1:1:2", "ﱂﱃ"), // out of order on purpose; carries a trailing mark glyph
+            word(2, 0, "1:1:2", "ﱂﱃ"), 
         )
 
         val page = MushafMapper.toDomain(1, lines, words)

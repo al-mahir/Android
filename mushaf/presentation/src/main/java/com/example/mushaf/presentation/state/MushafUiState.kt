@@ -1,6 +1,7 @@
 package com.example.mushaf.presentation.state
 
 import com.example.mushaf.domain.model.MushafConstants
+import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.MushafWord
@@ -21,8 +22,22 @@ data class MushafUiState(
     val areAyahsVisible: Boolean = true,
     val isRecordingActive: Boolean = false,
     val revealedWordIds: Set<String> = emptySet(),
+
+
+    val micLevel: Float = 0f,
+     
+    val isSpeechDetected: Boolean = false,
+    val captureError: CaptureError? = null,
+
+    val isTajweedGradingEnabled: Boolean = true,
+
+    val canGradeTajweed: Boolean = true,
+
+    val liveCorrection: LiveCorrectionUiState = LiveCorrectionUiState(),
+     
+    val sessionSummary: RecitationSessionSummary? = null,
+
     
-    // Listen Mode
     val currentReciter: Reciter? = null,
     val audioState: AudioState = AudioState.IDLE,
     val playingPage: Int? = null,
@@ -47,4 +62,11 @@ sealed interface PageLoadState {
     data class Loaded(val page: MushafPage) : PageLoadState
     data object Loading : PageLoadState
     data object Failed : PageLoadState
+}
+
+
+enum class CaptureError {
+    PERMISSION_DENIED,
+    MICROPHONE_UNAVAILABLE,
+    SERVICE_UNREACHABLE,
 }

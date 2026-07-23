@@ -21,6 +21,8 @@ import com.example.mushaf.presentation.MushafScreen
 import com.example.mushaf.presentation.download.navigation.DownloadsRoute
 import com.example.mushaf.presentation.download.navigation.downloadsEntries
 import com.example.mushaf.presentation.settings.MushafSettingsSection
+import com.example.mushaf.presentation.settings.recite.navigation.ReciteSettingsRoute
+import com.example.mushaf.presentation.settings.recite.navigation.reciteSettingsEntries
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
@@ -35,9 +37,8 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-
+    data object Search : AppRoute
     data class Mushaf(val startPage: Int? = null) : AppRoute
-
     data object Profile : AppRoute
 }
 
@@ -115,7 +116,10 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
 
                 entry<AppRoute.Home> {
                     HomeScreen(
-                        onOpenSearch = { },
+                        onOpenSearch = { 
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                         onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
                         onOpenMushafAtPage = { page ->
                             backStack.clear()
@@ -129,8 +133,21 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 entry<AppRoute.Mushaf> { route ->
                     MushafScreen(
                         startPage = route.startPage,
+                        onNavigateSearch = {
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                    )
+                }
+                entry<AppRoute.Search> {
+                    com.example.mushaf.presentation.search.MushafSearchScreen(
+                        viewModel = org.koin.androidx.compose.koinViewModel(),
+                        onNavigateToMushaf = {
+                            backStack.removeAll { it is AppRoute.Mushaf }
+                            backStack.add(AppRoute.Mushaf())
+                        }
                     )
                 }
                 entry<AppRoute.Profile> {
@@ -146,6 +163,8 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                             backStack.add(AuthRoute.Login)
                         },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                        onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
+                        onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
                     )
                 }
 
@@ -162,12 +181,17 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                                 onOpenDownloads = { kind ->
                                     backStack.add(DownloadsRoute.Downloads(kind))
                                 },
+                                onOpenReciteSettings = {
+                                    backStack.add(ReciteSettingsRoute.ReciteSettings)
+                                },
                             )
                         },
                     )
                 }
 
                 downloadsEntries(onBack = { backStack.removeLastOrNull() })
+
+                reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
             },
         )
 

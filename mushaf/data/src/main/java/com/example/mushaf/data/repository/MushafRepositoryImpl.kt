@@ -3,14 +3,25 @@ package com.example.mushaf.data.repository
 import android.util.Log
 import com.example.mushaf.data.MushafLog
 import com.example.mushaf.data.db.MushafAssetDataSource
+import com.example.mushaf.data.db.QuranMetadataDataSource
+import com.example.mushaf.data.db.QuranTextDataSource
 import com.example.mushaf.data.mapper.MushafMapper
+import com.example.mushaf.domain.model.AyahSearchResult
+import com.example.mushaf.domain.model.Hizb
+import com.example.mushaf.domain.model.Juz
 import com.example.mushaf.domain.model.MushafPage
+import com.example.mushaf.domain.model.Surah
 import com.example.mushaf.domain.repository.MushafRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+import com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource
+
 class MushafRepositoryImpl(
     private val dataSource: MushafAssetDataSource,
+    private val metadataDataSource: QuranMetadataDataSource,
+    private val textDataSource: QuranTextDataSource,
+    private val semanticSearchDataSource: SemanticSearchRemoteDataSource? = null
 ) : MushafRepository {
 
     override fun getPage(pageNumber: Int): Flow<MushafPage> = flow {
@@ -27,4 +38,77 @@ class MushafRepositoryImpl(
     }
 
     override suspend fun getPageCount(): Int = dataSource.getPageCount()
+
+    override suspend fun searchSurah(query: String): List<Surah> {
+        return metadataDataSource.searchSurah(query)
+    }
+
+    override suspend fun searchJuz(query: String): List<Juz> {
+        return metadataDataSource.searchJuz(query)
+    }
+
+    override suspend fun searchHizb(query: String): List<Hizb> {
+        return metadataDataSource.searchHizb(query)
+    }
+
+    override suspend fun searchPage(query: String): List<Int> {
+        return dataSource.searchPage(query)
+    }
+
+    override suspend fun searchAyah(query: String, limit: Int, offset: Int): List<AyahSearchResult> {
+        val rawResults = textDataSource.searchAyahs(query, limit, offset)
+        return rawResults.map { raw ->
+            val surah = metadataDataSource.getSurah(raw.surahNumber)
+            AyahSearchResult(
+                surahNumber = raw.surahNumber,
+                ayahNumber = raw.ayahNumber,
+                ayahText = raw.text,
+                surahNameArabic = surah?.nameAr ?: "",
+                surahNameEnglish = surah?.nameEn ?: ""
+            )
+        }
+    }
+
+    override suspend fun searchAyahByMeaning(
+        query: String,
+        mode: String,
+        hyde: Boolean,
+        limit: Int
+    ): List<AyahSearchResult> {
+        val dataSource = semanticSearchDataSource ?: return emptyList()
+        val response = dataSource.searchByMeaning(query, mode, hyde, limit)
+        return response.hits.map { hit ->
+            val surah = metadataDataSource.getSurah(hit.sura)
+            AyahSearchResult(
+                surahNumber = hit.sura,
+                ayahNumber = hit.aya,
+                ayahText = hit.textUthmani,
+                surahNameArabic = surah?.nameAr ?: "",
+                surahNameEnglish = surah?.nameEn ?: "",
+                translation = hit.translation,
+                score = hit.score,
+                hydeUsed = response.hydeUsed
+            )
+        }
+    }
+
+    override suspend fun getSurahStartingPage(surahNumber: Int): Int? {
+        return dataSource.getSurahStartingPage(surahNumber)
+    }
+
+    override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? {
+        return dataSource.getAyahPage(surahNumber, ayahNumber)
+    }
+
+    override suspend fun getJuzStartingPage(juzNumber: Int): Int? {
+        val juzPages = intArrayOf(
+            1, 22, 42, 62, 82, 102, 122, 142, 162, 182, 
+            202, 222, 242, 262, 282, 302, 322, 342, 362, 382, 
+            402, 422, 442, 462, 482, 502, 522, 542, 562, 582
+        )
+        if (juzNumber in 1..30) {
+            return juzPages[juzNumber - 1]
+        }
+        return null
+    }
 }

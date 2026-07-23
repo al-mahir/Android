@@ -33,18 +33,18 @@ import com.example.mushaf.presentation.download.state.DownloadsUiState
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/**
- * Stateful entry point. Owns the ViewModel and nothing else, so [DownloadsContent] stays
- * previewable and testable without Koin.
- */
+
+
+
+ 
 @Composable
 fun DownloadsScreen(
     kind: ResourceKind,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Keyed by kind: navigating reciters → tafseers must build a new ViewModel rather than
-    // reuse the one scoped to the previous kind.
+    
+    
     val viewModel: DownloadsViewModel = koinViewModel(
         key = kind.name,
         parameters = { parametersOf(kind) },

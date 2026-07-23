@@ -89,6 +89,14 @@ koin-android-test = { module = "io.insert-koin:koin-android-test" }
 ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-client-android = { module = "io.ktor:ktor-client-android" }
+# The Android engine does not implement WebSockets; the live recitation socket needs OkHttp.
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets" }
+# Test-only: an in-process stand-in for the AI service, so the protocol client is testable
+# without a GPU server on the other end.
+ktor-server-core = { module = "io.ktor:ktor-server-core" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging" }

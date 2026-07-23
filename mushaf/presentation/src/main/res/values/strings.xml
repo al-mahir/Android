@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Page navigation -->
-    <string name="mushaf_page_indicator">Page %1$d / %2$d</string>
+    <string name="mushaf_page_indicator">صفحة %1$d / %2$d</string>
 
     <!-- Loading / error states -->
-    <string name="mushaf_loading">Loading page…</string>
-    <string name="mushaf_error_title">Couldn\'t load this page</string>
-    <string name="mushaf_error_message">Something went wrong while opening the Mushaf.</string>
-    <string name="mushaf_retry">Retry</string>
+    <string name="mushaf_loading">جارٍ تحميل الصفحة…</string>
+    <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
+    <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
+    <string name="mushaf_retry">إعادة المحاولة</string>
 
     <!-- Tajweed toggle -->
-    <string name="mushaf_tajweed_label">Tajweed</string>
-    <string name="mushaf_tajweed_on">Tajweed coloring on</string>
-    <string name="mushaf_tajweed_off">Tajweed coloring off</string>
+    <string name="mushaf_tajweed_label">التجويد</string>
+    <string name="mushaf_tajweed_on">تلوين التجويد مُفعّل</string>
+    <string name="mushaf_tajweed_off">تلوين التجويد مُعطّل</string>
 
     <!-- Follow-along (highlighting) -->
-    <string name="mushaf_follow_along_start">Start follow-along</string>
-    <string name="mushaf_follow_along_stop">Stop follow-along</string>
+    <string name="mushaf_follow_along_start">بدء المتابعة</string>
+    <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
+
+    <!-- Search Screen -->
+    <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="revelation_meccan">مكية</string>
+    <string name="revelation_medinan">مدنية</string>
+    <string name="verses_count_format">%1$d آية</string>
+    <string name="hizb_format">الحزب %1$d</string>
+    <string name="page_format">صفحة %1$d</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_mushaf">المصحف</string>
+    <string name="nav_profile">حسابي</string>
+    <string name="last_read">آخر قراءة</string>
+    <string name="last_read_surah_name">%1$s</string>
+    <string name="ayah_and_page_format">آية %1$d · صفحة %2$d</string>
+    <string name="ayah_title_format">%1$s - آية %3$d</string>
 
     <!-- Top bar -->
     <string name="mushaf_juz_label">Juz %1$d</string>
@@ -42,6 +57,45 @@
     <!-- Bottom bar — mic -->
     <string name="mushaf_cd_start_recording">Start recording</string>
     <string name="mushaf_cd_stop_recording">Stop recording</string>
+
+    <!-- ===== Ta'ahud — microphone permission &amp; capture ===== -->
+    <string name="mushaf_mic_preprompt_title">We need your microphone</string>
+    <string name="mushaf_mic_preprompt_message">To correct your recitation live, Al-Mahir listens while you recite.</string>
+    <string name="mushaf_mic_preprompt_reason_manual">Recording starts only when you tap the mic</string>
+    <string name="mushaf_mic_preprompt_reason_storage">Your voice is not saved on the device or the server</string>
+    <string name="mushaf_mic_preprompt_reason_stop">You can stop at any time</string>
+    <string name="mushaf_mic_preprompt_confirm">Continue</string>
+    <string name="mushaf_mic_preprompt_dismiss">Not now</string>
+
+    <string name="mushaf_mic_denied_title">Microphone is off</string>
+    <string name="mushaf_mic_denied_message">Al-Mahir cannot hear your recitation without microphone access. You can turn it on in the app settings.</string>
+    <string name="mushaf_mic_denied_confirm">Open settings</string>
+    <string name="mushaf_mic_denied_dismiss">Cancel</string>
+
+    <string name="mushaf_mic_unavailable_title">Microphone unavailable</string>
+    <string name="mushaf_mic_unavailable_message">Another app may be using the microphone. Close it and try again.</string>
+    <string name="mushaf_mic_unavailable_confirm">OK</string>
+
+    <string name="mushaf_cd_mic_level">Recording level</string>
+
+    <string name="mushaf_live_unreachable_title">Live correction unavailable</string>
+    <string name="mushaf_live_unreachable_message">Al-Mahir could not reach the correction service, so your recitation was not checked. Check your connection and try again.</string>
+    <string name="mushaf_live_engine_notice">Running on \'%1$s\', not the model you chose — tajweed grading may be unavailable.</string>
+    <string name="mushaf_live_no_match">Didn\'t catch that</string>
+
+    <!-- Corrections sheet -->
+    <string name="mushaf_corrections_title">Corrections</string>
+    <string name="mushaf_corrections_range">%1$s — %2$s</string>
+    <string name="mushaf_corrections_empty">No mistakes detected yet. Keep reciting.</string>
+    <string name="mushaf_ayah_label">%1$d:%2$d</string>
+    <string name="mushaf_correction_extra_words">Extra words</string>
+    <string name="mushaf_correction_missing_words">Missing words</string>
+    <string name="mushaf_correction_wrong_words">Incorrect words</string>
+    <string name="mushaf_correction_tashkeel">Vowel mistake</string>
+    <string name="mushaf_correction_tajweed">Tajweed mistake</string>
+    <string name="mushaf_correction_generic">Mistake</string>
+    <string name="mushaf_correction_detail">%1$s: expected %2$d, you held %3$d</string>
+    <string name="mushaf_live_ambiguous">This passage appears in more than one place. Which are you reciting?</string>
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">Downloads</string>
@@ -69,4 +123,78 @@
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">Mushaf preferences</string>
     <string name="settings_tajweed_description">Colour the script by tajweed rules</string>
+    <!-- A count-bearing label must be a plural: Arabic has six forms, English two. -->
+    <plurals name="mushaf_cd_corrections">
+        <item quantity="one">Review %1$d mistake</item>
+        <item quantity="other">Review %1$d mistakes</item>
+    </plurals>
+    <string name="mushaf_cd_accuracy">Recitation accuracy so far</string>
+    <string name="mushaf_live_connecting">Connecting…</string>
+    <string name="mushaf_live_starting">Starting…</string>
+    <string name="mushaf_live_listening">Listening…</string>
+    <string name="mushaf_live_ambiguous_short">Which passage?</string>
+    <plurals name="mushaf_corrections_count">
+        <item quantity="one">%1$d mistake</item>
+        <item quantity="other">%1$d mistakes</item>
+    </plurals>
+    <string name="mushaf_practice_focus_title">Worth practising</string>
+    <string name="mushaf_practice_focus_item">%1$s ×%2$d</string>
+    <string name="session_headline_clean">Nothing to correct</string>
+    <string name="session_headline_reviewed">Session reviewed</string>
+    <string name="session_headline_nothing_checked">Nothing was checked</string>
+    <string name="session_range">%1$s — %2$s</string>
+    <string name="session_stat_accuracy">Accuracy</string>
+    <string name="session_stat_mistakes">Mistakes</string>
+    <string name="session_stat_words">Words checked</string>
+    <string name="session_stat_duration">Duration</string>
+    <string name="session_breakdown_title">Where the mistakes were</string>
+    <string name="session_category_memorization">Memorization</string>
+    <string name="session_nothing_checked_message">Your recitation was not checked, so this session says nothing about how it went. Check the connection and try again.</string>
+    <string name="session_summary_done">Done</string>
+    <string name="mushaf_correction_tab_all">All</string>
+    <string name="mushaf_correction_tab_memorization">Memorization</string>
+    <string name="mushaf_finish_session">Finish session</string>
+    <string name="mushaf_cd_finish_session">Finish this session and start a new one</string>
+    <string name="mushaf_cd_dismiss_notice">Dismiss</string>
+    <string name="mushaf_non_verse_istiaatha">Istiʿādha · not scored</string>
+    <string name="mushaf_non_verse_basmalah">Basmalah · not scored</string>
+    <string name="mushaf_non_verse_sadaka">Ṣadaqa · not scored</string>
+    <string name="mushaf_non_verse_other">Not scored</string>
+
+    <!-- Grading-scope toggle, shown in the muṣḥaf bottom bar during تلاوة -->
+    <string name="recite_grading_hifz_only">Memorization only</string>
+    <string name="recite_grading_with_tajweed">Memorization + tajwid</string>
+
+    <!-- Recitation settings screen -->
+    <string name="recite_settings_title">Correction settings</string>
+    <string name="recite_settings_subtitle">Engine, sensitivity, rules and recitation style</string>
+
+    <string name="recite_settings_engine">Engine</string>
+    <string name="recite_engine_teacher">Al-Muʿallim</string>
+    <string name="recite_engine_teacher_hint">Full tajwid analysis, with a confidence score for every letter</string>
+    <string name="recite_engine_follow">Follow along only</string>
+    <string name="recite_engine_follow_hint">Lighter and faster. Tracks your place on the page</string>
+    <string name="recite_engine_follow_warning">This engine does not correct. It follows where you are on the page, but reports no mistakes, no tajwid and no accuracy.</string>
+
+    <string name="recite_settings_sensitivity">Correction sensitivity</string>
+    <string name="recite_sensitivity_lenient">Lenient</string>
+    <string name="recite_sensitivity_lenient_hint">Only flags what it is very sure about</string>
+    <string name="recite_sensitivity_normal">Normal</string>
+    <string name="recite_sensitivity_normal_hint">The default balance</string>
+    <string name="recite_sensitivity_strict">Strict</string>
+    <string name="recite_sensitivity_strict_hint">Flags more, including what it is less sure about</string>
+    <string name="recite_sensitivity_disabled_hint">Unavailable on the follow-along engine, which reports no confidence to weigh.</string>
+
+    <string name="recite_settings_rules">Graded rules</string>
+    <string name="recite_rules_grade_tajweed">Grade tajwid</string>
+    <string name="recite_rules_grade_tajweed_hint">When off, only memorization and harakat are corrected</string>
+    <string name="recite_rules_all">All rules</string>
+    <string name="recite_rules_tajweed_group">Tajwid rules</string>
+    <string name="recite_rules_sifa_group">Letter qualities</string>
+    <string name="recite_rules_none_hint">No tajwid rule is selected, so only memorization and harakat will be corrected.</string>
+
+    <string name="recite_settings_moshaf">Recitation style</string>
+    <string name="recite_settings_moshaf_advanced">Advanced options</string>
+    <string name="recite_settings_moshaf_reset">Reset recitation style</string>
+    <string name="recite_settings_moshaf_reset_hint">Returns every ruling to the server default.</string>
 </resources>

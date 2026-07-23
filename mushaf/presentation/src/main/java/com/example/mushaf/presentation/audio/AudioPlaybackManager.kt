@@ -20,9 +20,9 @@ enum class AudioState {
     IDLE, BUFFERING, PLAYING, PAUSED, ERROR, ENDED
 }
 
-/**
- * Manages the ExoPlayer instance and exposes playback state via Flow.
- */
+
+
+ 
 class AudioPlaybackManager(
     private val context: Context,
 ) : AudioPlayer {
@@ -85,7 +85,7 @@ class AudioPlaybackManager(
         positionJob = scope.launch {
             while (isActive) {
                 _currentPosition.value = _player.currentPosition
-                delay(50L) // Poll every 50ms for smooth highlighting
+                delay(50L) 
             }
         }
     }
@@ -93,13 +93,13 @@ class AudioPlaybackManager(
     private fun stopPollingPosition() {
         positionJob?.cancel()
         positionJob = null
-        // One last update to ensure we have the exact stop position
+        
         _currentPosition.value = _player.currentPosition
     }
 
-    /**
-     * Plays a sequence of audio URLs (e.g., Ayah by Ayah)
-     */
+    
+
+ 
     override fun playUrls(urls: List<String>) {
         _player.stop()
         _player.clearMediaItems()

@@ -26,7 +26,7 @@ object RecitationMapper {
         val (surah, ayah) = dto.verseKey.split(":").map { it.toInt() }
         
         val wordTimings = dto.segments.map { segmentArray ->
-            // segmentArray is [word_index, start_ms, end_ms]
+            
             WordTiming(
                 wordIndex = segmentArray[0].toInt(),
                 startMs = segmentArray[1],

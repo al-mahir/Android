@@ -21,7 +21,7 @@ android {
 }
 
 dependencies {
-    // Framework-free domain layer: Kotlin + Coroutines/Flow only. No Room/Compose/UI deps.
+    
     implementation(libs.kotlinx.coroutines.core)
     implementation(project(":domain"))
 
