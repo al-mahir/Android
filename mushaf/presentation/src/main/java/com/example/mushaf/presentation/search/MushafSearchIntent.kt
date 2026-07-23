@@ -9,6 +9,7 @@ sealed interface MushafSearchIntent {
     data class HizbClicked(val hizb: com.example.mushaf.domain.model.Hizb) : MushafSearchIntent
     data class PageClicked(val page: Int) : MushafSearchIntent
     data class AyahClicked(val ayah: com.example.mushaf.domain.model.AyahSearchResult) : MushafSearchIntent
+    data class TafsirClicked(val tafsir: com.example.mushaf.domain.model.TafsirResult) : MushafSearchIntent
     data object LoadNextAyahsPage : MushafSearchIntent
     data object LastReadClicked : MushafSearchIntent
     data class SelectSearchType(val searchType: SearchType) : MushafSearchIntent

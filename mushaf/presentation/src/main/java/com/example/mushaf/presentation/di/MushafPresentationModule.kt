@@ -31,6 +31,8 @@ val mushafPresentationModule = module {
     factory { SearchAyahUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchTafsirUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -44,7 +46,7 @@ val mushafPresentationModule = module {
         com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
     }
 
-    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { MushafViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     viewModel { 
         com.example.mushaf.presentation.search.MushafSearchViewModel(
@@ -53,6 +55,7 @@ val mushafPresentationModule = module {
             searchJuzUseCase = get(),
             searchAyahUseCase = get(),
             searchAyahByMeaningUseCase = get(),
+            searchTafsirUseCase = get(),
             getTargetPageUseCase = get(),
             saveLastPageUseCase = get()
         )

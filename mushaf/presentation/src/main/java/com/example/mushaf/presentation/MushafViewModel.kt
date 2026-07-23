@@ -44,6 +44,7 @@ class MushafViewModel(
     private val saveLastPage: SaveLastPageUseCase,
     private val getReciters: GetRecitersUseCase,
     private val getAyahTimings: GetAyahTimingsUseCase,
+    private val getTafsirForAyah: com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase,
     private val playbackManager: AudioPlayer,
 ) : ViewModel() {
 
@@ -174,6 +175,10 @@ class MushafViewModel(
             // Tajweed Legend
             MushafIntent.ShowTajweedLegend -> _state.update { it.copy(showTajweedLegend = true) }
             MushafIntent.HideTajweedLegend -> _state.update { it.copy(showTajweedLegend = false) }
+
+            // Tafsir
+            is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
+            MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
         }
     }
 
@@ -196,6 +201,23 @@ class MushafViewModel(
             .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
         _state.update { it.copy(showSurahPicker = false) }
         loadPage(startPage)
+    }
+
+    private fun loadTafsir(surah: Int, ayah: Int) {
+        _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
+        viewModelScope.launch {
+            try {
+                val tafsir = getTafsirForAyah(surah, ayah)
+                if (tafsir != null) {
+                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
+                } else {
+                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error("Tafsir not found")) }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading tafsir", e)
+                _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(e.message ?: "Unknown error")) }
+            }
+        }
     }
 
     private fun loadReciters() {

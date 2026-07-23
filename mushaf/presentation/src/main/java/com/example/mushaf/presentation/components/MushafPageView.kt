@@ -37,6 +37,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun MushafPageView(
     page: MushafPage,
@@ -46,6 +49,8 @@ fun MushafPageView(
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
     revealedWordIds: Set<String> = emptySet(),
+    onWordClick: (String) -> Unit = {},
+    onBlankClick: () -> Unit = {},
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
@@ -131,7 +136,29 @@ fun MushafPageView(
             )
         }
 
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(tokens) {
+                detectTapGestures { offset ->
+                    var clickedWord: String? = null
+                    for (token in tokens) {
+                        if (token.wordId != null) {
+                            val right = token.left + token.layout.size.width
+                            val bottom = token.top + token.layout.size.height
+                            if (offset.x >= token.left && offset.x <= right && offset.y >= token.top && offset.y <= bottom) {
+                                clickedWord = token.wordId
+                                break
+                            }
+                        }
+                    }
+                    if (clickedWord != null) {
+                        onWordClick(clickedWord)
+                    } else {
+                        onBlankClick()
+                    }
+                }
+            }
+        ) {
             val highlighted = highlightedWordId
             tokens.forEach { token ->
                 val isAyahWord = token.wordId != null

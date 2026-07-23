@@ -24,12 +24,13 @@ val mushafDataModule = module {
     single { MushafAssetDataSource(androidContext()) }
     single { QuranMetadataDataSource(androidContext()) }
     single { QuranTextDataSource(androidContext()) }
+    single { com.example.mushaf.data.db.TafsirDataSource(androidContext()) }
     single { ReaderPreferencesDataStore(androidContext()) }
 
     single { com.example.mushaf.data.search.remote.SearchApi(get()) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
-    single<MushafRepository> { MushafRepositoryImpl(get(), get(), get(), get()) }
+    single<MushafRepository> { MushafRepositoryImpl(get(), get(), get(), get(), get()) }
     single<ReaderPreferencesRepository> { ReaderPreferencesRepositoryImpl(get()) }
 
     single<DownloadableResourceRepository> { FakeDownloadableResourceRepository() }

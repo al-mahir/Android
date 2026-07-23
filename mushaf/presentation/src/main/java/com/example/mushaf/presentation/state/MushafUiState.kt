@@ -34,6 +34,9 @@ data class MushafUiState(
 
     // Tajweed Legend
     val showTajweedLegend: Boolean = false,
+
+    // Tafsir
+    val tafsirState: TafsirState = TafsirState.Idle
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
@@ -54,4 +57,11 @@ sealed interface PageLoadState {
     data class Loaded(val page: MushafPage) : PageLoadState
     data object Loading : PageLoadState
     data object Failed : PageLoadState
+}
+
+sealed interface TafsirState {
+    data object Idle : TafsirState
+    data class Loading(val surah: Int, val ayah: Int) : TafsirState
+    data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
+    data class Error(val message: String) : TafsirState
 }

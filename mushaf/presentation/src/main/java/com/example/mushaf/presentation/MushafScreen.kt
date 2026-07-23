@@ -114,16 +114,17 @@ fun MushafScreen(
             HorizontalPager(
                 state = pagerState,
                 beyondViewportPageCount = 2,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            viewModel.onIntent(MushafIntent.ToggleBars)
-                        }
-                    },
+                modifier = Modifier.fillMaxSize(),
             ) { pageIndex ->
                 val pageNumber = pageIndex + 1
-                Box(modifier = Modifier.fillMaxSize().graphicsLayer()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().graphicsLayer().pointerInput(Unit) {
+                        detectTapGestures {
+                            // Only handle taps here if the child doesn't consume them (e.g. Loading/Error states)
+                            viewModel.onIntent(MushafIntent.ToggleBars)
+                        }
+                    }
+                ) {
                     when (val pageState = state.pageState(pageNumber)) {
                         is PageLoadState.Loaded ->
                             MushafPageView(
@@ -142,6 +143,19 @@ fun MushafScreen(
                                 },
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
+                                onWordClick = { wordId ->
+                                    val parts = wordId.split(":")
+                                    if (parts.size >= 2) {
+                                        val surah = parts[0].toIntOrNull()
+                                        val ayah = parts[1].toIntOrNull()
+                                        if (surah != null && ayah != null) {
+                                            viewModel.onIntent(MushafIntent.LoadTafsir(surah, ayah))
+                                        }
+                                    }
+                                },
+                                onBlankClick = {
+                                    viewModel.onIntent(MushafIntent.ToggleBars)
+                                }
                             )
 
                         PageLoadState.Failed ->
@@ -274,6 +288,14 @@ fun MushafScreen(
         if (state.showTajweedLegend) {
             TajweedLegendSheet(
                 onDismiss = { viewModel.onIntent(MushafIntent.HideTajweedLegend) },
+            )
+        }
+
+        // ── Tafsir sheet ────────────────────────────────────────────────────────
+        if (state.tafsirState !is com.example.mushaf.presentation.state.TafsirState.Idle) {
+            com.example.mushaf.presentation.components.TafsirBottomSheet(
+                tafsirState = state.tafsirState,
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) }
             )
         }
     }

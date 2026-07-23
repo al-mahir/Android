@@ -24,4 +24,7 @@ interface MushafRepository {
     suspend fun getSurahStartingPage(surahNumber: Int): Int?
     suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int?
     suspend fun getJuzStartingPage(juzNumber: Int): Int?
+
+    suspend fun getTafsirForAyah(surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult?
+    suspend fun searchTafsir(query: String, limit: Int = 50, offset: Int = 0): List<com.example.mushaf.domain.model.TafsirResult>
 }
