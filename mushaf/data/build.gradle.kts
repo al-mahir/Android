@@ -101,13 +101,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.sqlite.jdbc)
     
-<<<<<<< Updated upstream
     testImplementation(platform(libs.ktor.bom))
     testImplementation(libs.ktor.server.core)
     testImplementation(libs.ktor.server.cio)
     testImplementation(libs.ktor.server.websockets)
-=======
->>>>>>> Stashed changes
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
