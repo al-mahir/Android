@@ -74,13 +74,7 @@ internal fun MushafSearchContent(
 ) {
     Scaffold(
         containerColor = Theme.colors.backGround,
-        contentWindowInsets = WindowInsets(0.dp),
-        bottomBar = { 
-            MushafBottomBar(
-                selected = MushafDestination.MUSHAF, // Mock selected tab
-                onSelect = { onIntent(MushafSearchIntent.NavigateBottomTab(it.ordinal)) }
-            ) 
-        }
+        contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         Column(
             modifier = Modifier
