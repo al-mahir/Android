@@ -73,6 +73,7 @@ fun MushafScreen(
     modifier: Modifier = Modifier,
     startPage: Int? = null,
     onBack: () -> Unit = {},
+    onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {

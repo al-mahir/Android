@@ -37,10 +37,9 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import java.util.concurrent.TimeUnit
 
- 
-const val AI_SERVICE_CLIENT = "aiServiceClient"
-
 import io.ktor.client.plugins.HttpTimeout
+
+const val AI_SERVICE_CLIENT = "aiServiceClient"
 
 val mushafDataModule = module {
     single { MushafAssetDataSource(androidContext()) }
