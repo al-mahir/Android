@@ -13,6 +13,9 @@ sealed interface DownloadsRoute : NavKey {
 
     @Serializable
     data class Downloads(val kind: ResourceKind) : DownloadsRoute
+
+    @Serializable
+    data class SurahDownload(val reciterId: Int) : DownloadsRoute
 }
 
 fun EntryProviderScope<NavKey>.downloadsEntries(
@@ -21,6 +24,14 @@ fun EntryProviderScope<NavKey>.downloadsEntries(
     entry<DownloadsRoute.Downloads> { route ->
         DownloadsScreen(
             kind = route.kind,
+            onBack = onBack,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+    
+    entry<DownloadsRoute.SurahDownload> { route ->
+        com.example.mushaf.presentation.download.SurahDownloadScreen(
+            reciterId = route.reciterId,
             onBack = onBack,
             modifier = Modifier.fillMaxSize(),
         )
