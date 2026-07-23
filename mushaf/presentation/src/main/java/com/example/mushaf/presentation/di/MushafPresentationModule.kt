@@ -19,7 +19,7 @@ import com.example.mushaf.presentation.MushafViewModel
 import com.example.mushaf.presentation.download.DownloadsViewModel
 import com.example.mushaf.presentation.settings.MushafSettingsViewModel
 import com.example.mushaf.presentation.settings.recite.ReciteSettingsViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
 

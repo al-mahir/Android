@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
             }
 
             val locale = remember(preferences?.language) {
-                preferences?.language?.let { Locale(it.tag) } ?: Locale.getDefault()
+                preferences?.language?.let { Locale.forLanguageTag(it.tag) } ?: Locale.getDefault()
             }
 
             LaunchedEffect(preferences) {

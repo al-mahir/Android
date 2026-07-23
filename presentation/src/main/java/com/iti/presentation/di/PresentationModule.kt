@@ -28,7 +28,7 @@ import com.iti.presentation.profile.ProfileViewModel
 import com.iti.presentation.settings.SettingsViewModel
 import com.iti.presentation.staticcontent.StaticContentViewModel
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
