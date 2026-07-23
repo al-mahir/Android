@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -75,6 +80,7 @@ fun MushafScreen(
     onBack: () -> Unit = {},
     onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onNavigateToSurahDownload: (Int) -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -85,6 +91,7 @@ fun MushafScreen(
     )
 
     var showReciterPicker by remember { mutableStateOf(false) }
+    var showDownloadOptionsForReciter by remember { mutableStateOf<com.example.designsystem.components.mushaf.ReciterItem?>(null) }
 
     val context = LocalContext.current
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
@@ -396,7 +403,38 @@ fun MushafScreen(
                     viewModel.onIntent(MushafIntent.SelectReciter(domainReciter))
                     showReciterPicker = false
                 },
+                onDownloadClick = { selectedItem ->
+                    showDownloadOptionsForReciter = selectedItem
+                },
                 onDismiss = { showReciterPicker = false }
+            )
+        }
+
+        showDownloadOptionsForReciter?.let { reciter ->
+            AlertDialog(
+                onDismissRequest = { showDownloadOptionsForReciter = null },
+                title = { Text(text = "Download Recitation") },
+                text = { Text(text = "Do you want to download the entire Quran (~1.2 GB) or select specific Surahs?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.onIntent(MushafIntent.DownloadRecitation(reciter.id))
+                        showDownloadOptionsForReciter = null
+                    }) {
+                        Text("Entire Quran")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showDownloadOptionsForReciter = null
+                        showReciterPicker = false
+                        onNavigateToSurahDownload(reciter.id)
+                    }) {
+                        Text("Select Surahs")
+                    }
+                },
+                containerColor = Theme.colors.surface,
+                titleContentColor = Theme.colors.onSurface,
+                textContentColor = Theme.colors.onSurface
             )
         }
     }

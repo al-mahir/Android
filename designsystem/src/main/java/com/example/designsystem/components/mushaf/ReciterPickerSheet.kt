@@ -28,6 +28,7 @@ fun ReciterPickerSheet(
     reciters: List<ReciterItem>,
     selectedId: Int?,
     onReciterSelected: (ReciterItem) -> Unit,
+    onDownloadClick: ((ReciterItem) -> Unit)? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -63,7 +64,7 @@ fun ReciterPickerSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = reciter.nameArabic,
                                 style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
@@ -76,12 +77,23 @@ fun ReciterPickerSheet(
                             )
                         }
                         
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = Theme.colors.primary
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = Theme.colors.primary,
+                                    modifier = Modifier.padding(end = Theme.spacing.small)
+                                )
+                            }
+                            
+                            IconButton(onClick = { onDownloadClick?.invoke(reciter) }) {
+                                Icon(
+                                    painter = androidx.compose.ui.res.painterResource(id = android.R.drawable.stat_sys_download),
+                                    contentDescription = "Download options",
+                                    tint = Theme.colors.primary
+                                )
+                            }
                         }
                     }
                     

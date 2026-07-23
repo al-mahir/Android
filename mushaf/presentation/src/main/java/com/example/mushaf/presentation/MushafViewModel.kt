@@ -71,6 +71,7 @@ class MushafViewModel(
     private val saveRecitationSession: SaveRecitationSessionUseCase,
     private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
+    private val downloadRecitation: com.example.mushaf.domain.usecase.DownloadRecitationUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -269,6 +270,11 @@ class MushafViewModel(
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
             MushafIntent.NextAyahAudio -> Unit 
             MushafIntent.PrevAyahAudio -> Unit 
+            is MushafIntent.DownloadRecitation -> {
+                viewModelScope.launch {
+                    downloadRecitation(intent.reciterId, intent.surahNumber)
+                }
+            }
         }
     }
 

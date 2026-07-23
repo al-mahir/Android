@@ -139,6 +139,9 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                         },
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                        onNavigateToSurahDownload = { reciterId ->
+                            backStack.add(DownloadsRoute.SurahDownload(reciterId))
+                        }
                     )
                 }
                 entry<AppRoute.Search> {

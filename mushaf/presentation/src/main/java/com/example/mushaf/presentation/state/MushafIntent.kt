@@ -48,4 +48,5 @@ sealed interface MushafIntent {
     data class SeekAudio(val positionMs: Long) : MushafIntent
     data object NextAyahAudio : MushafIntent
     data object PrevAyahAudio : MushafIntent
+    data class DownloadRecitation(val reciterId: Int, val surahNumber: Int? = null) : MushafIntent
 }
