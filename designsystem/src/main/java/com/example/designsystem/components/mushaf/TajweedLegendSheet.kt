@@ -51,7 +51,7 @@ fun TajweedLegendSheet(onDismiss: () -> Unit) {
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    text = "نظام ألوان QUL للتجويد",
+                    text = "نظام ألوان ترتيل للتجويد",
                     style = Theme.typography.body.small,
                     color = Theme.colors.hint,
                     modifier = Modifier
