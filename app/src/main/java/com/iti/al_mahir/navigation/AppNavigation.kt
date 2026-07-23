@@ -30,10 +30,9 @@ import com.iti.presentation.settings.navigation.SettingsRoute
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-
     data class Mushaf(val startPage: Int? = null) : AppRoute
-
     data object Profile : AppRoute
+    data object Search : AppRoute
 }
 
 @Composable
@@ -90,7 +89,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
 
                 entry<AppRoute.Home> {
                     HomeScreen(
-                        onOpenSearch = { },
+                        onOpenSearch = { backStack.add(AppRoute.Search) },
                         onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
                         onOpenMushafAtPage = { page ->
                             backStack.clear()
@@ -106,6 +105,15 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                         startPage = route.startPage,
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                        onSearchClick = { backStack.add(AppRoute.Search) },
+                    )
+                }
+                entry<AppRoute.Search> {
+                    com.example.designsystem.components.placeholderscreens.EmptySearchScreen(
+                        title = "البحث قريبًا",
+                        description = "جاري تطوير ميزة البحث المتقدم (النصي والدلالي)...",
+                        actionButtonText = "عودة",
+                        onActionClick = { backStack.removeLastOrNull() }
                     )
                 }
                 entry<AppRoute.Profile> {
