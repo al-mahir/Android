@@ -62,6 +62,7 @@ fun MushafScreen(
     startPage: Int? = null,
     onBack: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -153,6 +154,7 @@ fun MushafScreen(
             onBookmark = {},
             onSettings = onOpenSettings,
             onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
+            onSearchClick = onSearchClick,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
