@@ -43,6 +43,7 @@ fun DownloadableItemCard(
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val subtitle = resource.subtitle?.resolve()
@@ -53,6 +54,7 @@ fun DownloadableItemCard(
             .fillMaxWidth()
             .clip(Theme.shapes.large)
             .background(Theme.colors.surface)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),

@@ -41,6 +41,7 @@ import org.koin.core.parameter.parametersOf
 fun DownloadsScreen(
     kind: ResourceKind,
     onBack: () -> Unit,
+    onNavigateToSurahList: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     
@@ -50,6 +51,17 @@ fun DownloadsScreen(
         parameters = { parametersOf(kind) },
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effect) { effect ->
+        when (effect) {
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.ShowMessage -> {
+                // To-Do: show snackbar
+            }
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.NavigateToSurahList -> {
+                onNavigateToSurahList(effect.reciterId)
+            }
+        }
+    }
 
     DownloadsContent(
         state = state,
@@ -102,6 +114,7 @@ fun DownloadsContent(
                         onDownload = { onIntent(DownloadsIntent.DownloadClicked(resource.id)) },
                         onCancel = { onIntent(DownloadsIntent.CancelClicked(resource.id)) },
                         onDelete = { onIntent(DownloadsIntent.DeleteClicked(resource.id)) },
+                        onClick = { onIntent(DownloadsIntent.ItemClicked(resource.id)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -109,6 +122,19 @@ fun DownloadsContent(
                 item { Box(modifier = Modifier.height(BottomSpacing)) }
             }
         }
+    }
+
+    state.pendingFullDownload?.let { target ->
+        ConfirmationDialog(
+            title = stringResource(R.string.downloads_full_quran_title), // Need to create this string resource
+            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve()), // Need to create this
+            confirmLabel = stringResource(R.string.downloads_action_download),
+            dismissLabel = stringResource(R.string.downloads_delete_cancel),
+            onConfirm = { onIntent(DownloadsIntent.DownloadFullConfirmed) },
+            onDismiss = { onIntent(DownloadsIntent.DownloadFullDismissed) },
+            confirmColor = Theme.colors.primary,
+            confirmContentColor = Theme.colors.onPrimary,
+        )
     }
 
     state.pendingDeletion?.let { target ->

@@ -40,7 +40,29 @@ class DownloadsViewModel(
 
     fun onIntent(intent: DownloadsIntent) {
         when (intent) {
-            is DownloadsIntent.DownloadClicked -> viewModelScope.launch { startDownload(intent.id) }
+            is DownloadsIntent.DownloadClicked -> {
+                if (kind == ResourceKind.RECITER) {
+                    val resource = currentState.resources.firstOrNull { it.id == intent.id }
+                    if (resource != null) {
+                        updateState { copy(pendingFullDownload = resource) }
+                    }
+                } else {
+                    viewModelScope.launch { startDownload(intent.id) }
+                }
+            }
+            DownloadsIntent.DownloadFullConfirmed -> {
+                val target = currentState.pendingFullDownload ?: return
+                updateState { copy(pendingFullDownload = null) }
+                viewModelScope.launch { startDownload(target.id) }
+            }
+            DownloadsIntent.DownloadFullDismissed -> {
+                updateState { copy(pendingFullDownload = null) }
+            }
+            is DownloadsIntent.ItemClicked -> {
+                if (kind == ResourceKind.RECITER) {
+                    sendEffect(DownloadsEffect.NavigateToSurahList(intent.id))
+                }
+            }
             is DownloadsIntent.CancelClicked -> viewModelScope.launch { cancelDownload(intent.id) }
             is DownloadsIntent.DeleteClicked -> confirmDeletion(intent.id)
             DownloadsIntent.DeleteConfirmed -> performDeletion()

@@ -47,6 +47,8 @@ val mushafPresentationModule = module {
     factory { com.example.mushaf.domain.usecase.GetAyahTimingsUseCase(get()) }
     factory { CaptureRecitationAudioUseCase(get()) }
     factory { StartLiveRecitationUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.DownloadRecitationUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetDownloadProgressUseCase(get()) }
     
     factory<com.example.mushaf.presentation.audio.AudioPlayer> { 
         com.example.mushaf.presentation.audio.AudioPlaybackManager(androidContext()) 
@@ -82,5 +84,9 @@ val mushafPresentationModule = module {
 
     viewModel { (kind: ResourceKind) ->
         DownloadsViewModel(kind, get(), get(), get(), get())
+    }
+
+    viewModel { (reciterId: Int) ->
+        com.example.mushaf.presentation.download.SurahDownloadViewModel(reciterId, get(), get())
     }
 }

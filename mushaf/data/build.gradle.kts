@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
-    
+    // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
@@ -94,14 +94,20 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
 
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.sqlite.jdbc)
     
+<<<<<<< Updated upstream
     testImplementation(platform(libs.ktor.bom))
     testImplementation(libs.ktor.server.core)
     testImplementation(libs.ktor.server.cio)
     testImplementation(libs.ktor.server.websockets)
+=======
+>>>>>>> Stashed changes
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)

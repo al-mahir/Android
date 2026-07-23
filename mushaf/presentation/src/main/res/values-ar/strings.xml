@@ -98,12 +98,16 @@
 
     <!-- Delete confirmation -->
     <string name="downloads_delete_title">حذف التنزيل؟</string>
-    <string name="downloads_delete_message">سيتم حذف %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
+    <string name="downloads_delete_message">سيتم إزالة %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
     <string name="downloads_delete_confirm">حذف</string>
     <string name="downloads_delete_cancel">إلغاء</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">تنزيل القرآن كاملًا؟</string>
+    <string name="downloads_full_quran_message">أنت على وشك تنزيل تلاوة القرآن كاملًا للشيخ %1$s. سيتطلب هذا حوالي 1.2 جيجابايت من مساحة التخزين.</string>
+
     <!-- Errors -->
-    <string name="downloads_error_generic">تعذّر تحميل هذه القائمة. حاول مرة أخرى.</string>
+    <string name="downloads_error_generic">لم نتمكن من تحميل هذه القائمة. يرجى المحاولة مرة أخرى.</string>
 
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">تفضيلات المصحف</string>

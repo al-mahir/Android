@@ -50,6 +50,15 @@ val mushafDataModule = module {
     single { com.example.mushaf.data.search.remote.SearchApi(get()) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
+    single {
+        androidx.room.Room.databaseBuilder(
+            androidContext(),
+            com.example.mushaf.data.recitation.local.RecitationDatabase::class.java,
+            "recitation_v1.db"
+        ).fallbackToDestructiveMigration().build()
+    }
+    single { get<com.example.mushaf.data.recitation.local.RecitationDatabase>().recitationDao() }
+
     single<MushafRepository> { MushafRepositoryImpl(get(), get(), get(), get()) }
     single<ReaderPreferencesRepository> { ReaderPreferencesRepositoryImpl(get()) }
 
@@ -111,6 +120,6 @@ val mushafDataModule = module {
         com.example.mushaf.data.recitation.remote.RecitationRemoteDataSourceImpl(get()) 
     }
     single<com.example.mushaf.domain.repository.RecitationRepository> { 
-        com.example.mushaf.data.repository.RecitationRepositoryImpl(get()) 
+        com.example.mushaf.data.repository.RecitationRepositoryImpl(get(), get(), get(), org.koin.android.ext.koin.androidContext()) 
     }
 }

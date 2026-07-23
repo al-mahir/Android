@@ -117,6 +117,10 @@
     <string name="downloads_delete_confirm">Delete</string>
     <string name="downloads_delete_cancel">Cancel</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">Download Entire Quran?</string>
+    <string name="downloads_full_quran_message">You are about to download the entire Quran recitation for %1$s. This will require approximately 1.2 GB of storage.</string>
+
     <!-- Errors -->
     <string name="downloads_error_generic">We could not load this list. Please try again.</string>
 
