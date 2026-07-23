@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 data class TajweedRule(
     val nameArabic: String,
     val nameEnglish: String,
+    val descriptionArabic: String,
     val color: Color,
 )
 
@@ -28,16 +29,16 @@ object TajweedColors {
 
     /** Ordered list for display in the legend sheet. */
     val rules: List<TajweedRule> = listOf(
-        TajweedRule("مَدّ لَازِم",          "Madd Lazim (Obligatory)",         madd),
-        TajweedRule("مَدّ عَارِض / صِلَة",  "Madd 'Arid / Silah",              Color(0xFFFF6666)),
-        TajweedRule("غُنَّة",               "Ghunnah (Nasalization)",           ghunnah),
-        TajweedRule("إِخفَاء",              "Ikhfa' (Concealment)",             ikhfaa),
-        TajweedRule("إِدغَام بِغُنَّة",     "Idgham with Ghunnah",             idghamBiGhunnah),
-        TajweedRule("إِدغَام بِلَا غُنَّة", "Idgham without Ghunnah",          idghamBilaGhunnah),
-        TajweedRule("إِقلَاب",              "Iqlab (Conversion)",               iqlab),
-        TajweedRule("قَلقَلَة",             "Qalqalah (Echo)",                  qalqalah),
-        TajweedRule("تَفخِيم",              "Tafkhim (Heaviness)",             tafkhim),
-        TajweedRule("لَام شَمسِيَّة",       "Lam Shamsiyyah (Solar Lam)",      laamShamsia),
-        TajweedRule("هَمزَة الوَصل",        "Hamzat Al-Wasl (Connecting Hamza)", hamzatulWasl),
+        TajweedRule("مَدّ لَازِم",          "Madd Lazim (Obligatory)",         "6 حركات", madd),
+        TajweedRule("مَدّ عَارِض / صِلَة",  "Madd 'Arid / Silah",              "2 أو 4 أو 6 حركات", Color(0xFFFF6666)),
+        TajweedRule("غُنَّة",               "Ghunnah (Nasalization)",           "حركتان", ghunnah),
+        TajweedRule("إِخفَاء",              "Ikhfa' (Concealment)",             "إخفاء مع الغنة مقدار حركتين", ikhfaa),
+        TajweedRule("إِدغَام بِغُنَّة",     "Idgham with Ghunnah",             "إدغام بغنة حركتين", idghamBiGhunnah),
+        TajweedRule("إِدغَام بِلَا غُنَّة", "Idgham without Ghunnah",          "إدغام كامل بدون غنة", idghamBilaGhunnah),
+        TajweedRule("إِقلَاب",              "Iqlab (Conversion)",               "قلب النون ميماً مع الغنة", iqlab),
+        TajweedRule("قَلقَلَة",             "Qalqalah (Echo)",                  "اهتزاز الصوت بالحرف الساكن", qalqalah),
+        TajweedRule("تَفخِيم",              "Tafkhim (Heaviness)",             "تغليظ الحرف", tafkhim),
+        TajweedRule("لَام شَمسِيَّة",       "Lam Shamsiyyah (Solar Lam)",      "تُدغم ولا تُلفظ", laamShamsia),
+        TajweedRule("هَمزَة الوَصل",        "Hamzat Al-Wasl (Connecting Hamza)", "تُكتب وتسقط وصلاً", hamzatulWasl),
     )
 }

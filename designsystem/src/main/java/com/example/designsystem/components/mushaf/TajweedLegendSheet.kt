@@ -3,6 +3,7 @@ package com.example.designsystem.components.mushaf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,11 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.color.TajweedColors
 import com.example.designsystem.color.TajweedRule
@@ -34,34 +38,38 @@ import com.example.designsystem.theme.Theme
 @Composable
 fun TajweedLegendSheet(onDismiss: () -> Unit) {
     AppBottomSheet(onDismiss = onDismiss) {
-        // Title
-        Text(
-            text = "دليل ألوان التجويد",
-            style = Theme.typography.title.copy(fontWeight = FontWeight.Bold),
-            color = Theme.colors.primaryFont,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "نظام ألوان QUL للتجويد",
-            style = Theme.typography.body.small,
-            color = Theme.colors.hint,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            textAlign = TextAlign.Center,
-        )
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Title
+                Text(
+                    text = "دليل ألوان التجويد",
+                    style = Theme.typography.title.copy(fontWeight = FontWeight.Bold),
+                    color = Theme.colors.primaryFont,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = "نظام ألوان QUL للتجويد",
+                    style = Theme.typography.body.small,
+                    color = Theme.colors.hint,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    textAlign = TextAlign.Center,
+                )
 
-        HorizontalDivider(color = Theme.colors.border)
-        Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = Theme.colors.border)
+                Spacer(Modifier.height(8.dp))
 
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(TajweedColors.rules) { rule ->
-                TajweedRuleRow(rule)
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(TajweedColors.rules) { rule ->
+                        TajweedRuleRow(rule)
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
             }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
@@ -71,21 +79,10 @@ private fun TajweedRuleRow(rule: TajweedRule) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = Arrangement.Start,
     ) {
-        // Arabic rule name
-        Text(
-            text = rule.nameArabic,
-            style = Theme.typography.body.medium.copy(fontWeight = FontWeight.Medium),
-            color = Theme.colors.primaryFont,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
-
-        Spacer(Modifier.width(12.dp))
-
         // Color swatch
         Box(
             modifier = Modifier
@@ -93,5 +90,29 @@ private fun TajweedRuleRow(rule: TajweedRule) {
                 .clip(RoundedCornerShape(6.dp))
                 .background(rule.color)
         )
+
+        Spacer(Modifier.width(16.dp))
+
+        // Text Content
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            // Arabic rule name
+            Text(
+                text = rule.nameArabic,
+                style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold),
+                color = Theme.colors.primaryFont,
+                textAlign = TextAlign.Start,
+            )
+            
+            // Description
+            Text(
+                text = rule.descriptionArabic,
+                style = Theme.typography.body.medium,
+                color = Theme.colors.secondaryFont,
+                textAlign = TextAlign.Start,
+            )
+        }
     }
 }
