@@ -120,6 +120,6 @@ val mushafDataModule = module {
         com.example.mushaf.data.recitation.remote.RecitationRemoteDataSourceImpl(get()) 
     }
     single<com.example.mushaf.domain.repository.RecitationRepository> { 
-        com.example.mushaf.data.repository.RecitationRepositoryImpl(get(), get(), get(), org.koin.android.ext.koin.androidContext()) 
+        com.example.mushaf.data.repository.RecitationRepositoryImpl(get(), get(), get(), androidContext()) 
     }
 }
