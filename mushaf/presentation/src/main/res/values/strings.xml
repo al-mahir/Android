@@ -1,22 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Page navigation -->
-    <string name="mushaf_page_indicator">Page %1$d / %2$d</string>
+    <string name="mushaf_page_indicator">صفحة %1$d / %2$d</string>
 
     <!-- Loading / error states -->
-    <string name="mushaf_loading">Loading page…</string>
-    <string name="mushaf_error_title">Couldn\'t load this page</string>
-    <string name="mushaf_error_message">Something went wrong while opening the Mushaf.</string>
-    <string name="mushaf_retry">Retry</string>
+    <string name="mushaf_loading">جارٍ تحميل الصفحة…</string>
+    <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
+    <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
+    <string name="mushaf_retry">إعادة المحاولة</string>
 
     <!-- Tajweed toggle -->
-    <string name="mushaf_tajweed_label">Tajweed</string>
-    <string name="mushaf_tajweed_on">Tajweed coloring on</string>
-    <string name="mushaf_tajweed_off">Tajweed coloring off</string>
+    <string name="mushaf_tajweed_label">التجويد</string>
+    <string name="mushaf_tajweed_on">تلوين التجويد مُفعّل</string>
+    <string name="mushaf_tajweed_off">تلوين التجويد مُعطّل</string>
 
     <!-- Follow-along (highlighting) -->
-    <string name="mushaf_follow_along_start">Start follow-along</string>
-    <string name="mushaf_follow_along_stop">Stop follow-along</string>
+    <string name="mushaf_follow_along_start">بدء المتابعة</string>
+    <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
+
+    <!-- Search Screen -->
+    <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="revelation_meccan">مكية</string>
+    <string name="revelation_medinan">مدنية</string>
+    <string name="verses_count_format">%1$d آية</string>
+    <string name="hizb_format">الحزب %1$d</string>
+    <string name="page_format">صفحة %1$d</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_mushaf">المصحف</string>
+    <string name="nav_profile">حسابي</string>
+    <string name="last_read">آخر قراءة</string>
+    <string name="last_read_surah_name">%1$s</string>
+    <string name="ayah_and_page_format">آية %1$d · صفحة %2$d</string>
+    <string name="ayah_title_format">%1$s - آية %3$d</string>
 
     <!-- Top bar -->
     <string name="mushaf_juz_label">Juz %1$d</string>

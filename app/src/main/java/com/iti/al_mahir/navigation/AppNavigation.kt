@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
@@ -21,23 +23,50 @@ import com.example.mushaf.presentation.download.navigation.downloadsEntries
 import com.example.mushaf.presentation.settings.MushafSettingsSection
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
+import com.iti.presentation.auth.session.SessionState
+import com.iti.presentation.auth.session.SessionViewModel
 import com.iti.presentation.home.HomeScreen
 import com.iti.presentation.profile.ProfileScreen
 import com.iti.presentation.profile.navigation.ProfileRoute
 import com.iti.presentation.profile.navigation.profileEntries
 import com.iti.presentation.settings.SettingsScreen
 import com.iti.presentation.settings.navigation.SettingsRoute
+import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
+<<<<<<< HEAD
+=======
+    data object Search : AppRoute
+>>>>>>> feature/quran-search
     data class Mushaf(val startPage: Int? = null) : AppRoute
     data object Profile : AppRoute
     data object Search : AppRoute
 }
 
+
 @Composable
 fun AppNavHost(modifier: Modifier = Modifier) {
-    val backStack = remember { mutableStateListOf<NavKey>(AuthRoute.Login) }
+    val sessionViewModel: SessionViewModel = koinViewModel()
+    val session by sessionViewModel.state.collectAsStateWithLifecycle()
+
+    when (val current = session) {
+        SessionState.Resolving -> Unit
+
+        else -> AppNavHost(
+            startDestination = if (current == SessionState.Authenticated) {
+                AppRoute.Home
+            } else {
+                AuthRoute.Login
+            },
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) {
+    val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
 
     fun selectTab(destination: AppBottomNavDestination) {
@@ -89,7 +118,10 @@ fun AppNavHost(modifier: Modifier = Modifier) {
 
                 entry<AppRoute.Home> {
                     HomeScreen(
-                        onOpenSearch = { backStack.add(AppRoute.Search) },
+                        onOpenSearch = { 
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                         onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
                         onOpenMushafAtPage = { page ->
                             backStack.clear()
@@ -105,15 +137,19 @@ fun AppNavHost(modifier: Modifier = Modifier) {
                         startPage = route.startPage,
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
-                        onSearchClick = { backStack.add(AppRoute.Search) },
+                        onSearchClick = {
+                            backStack.removeAll { it == AppRoute.Search }
+                            backStack.add(AppRoute.Search)
+                        },
                     )
                 }
                 entry<AppRoute.Search> {
-                    com.example.designsystem.components.placeholderscreens.EmptySearchScreen(
-                        title = "البحث قريبًا",
-                        description = "جاري تطوير ميزة البحث المتقدم (النصي والدلالي)...",
-                        actionButtonText = "عودة",
-                        onActionClick = { backStack.removeLastOrNull() }
+                    com.example.mushaf.presentation.search.MushafSearchScreen(
+                        viewModel = org.koin.androidx.compose.koinViewModel(),
+                        onNavigateToMushaf = {
+                            backStack.removeAll { it is AppRoute.Mushaf }
+                            backStack.add(AppRoute.Mushaf())
+                        }
                     )
                 }
                 entry<AppRoute.Profile> {

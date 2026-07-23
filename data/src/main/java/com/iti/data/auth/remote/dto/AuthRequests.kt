@@ -9,29 +9,33 @@ data class RegisterRequest(
     val lastName: String,
     val email: String,
     val password: String,
-    val confirmPassword: String,
-    val phoneNumber: String
+    val phoneNumber: String,
 )
 
 @Serializable
 data class LoginRequest(
     val email: String,
-    val password: String
+    val password: String,
 )
 
 @Serializable
 data class GoogleAuthRequest(
-    val idToken: String
+    val idToken: String,
+)
+
+@Serializable
+data class LogoutRequest(
+    val refreshToken: String,
 )
 
 @Serializable
 data class ForgotPasswordRequest(
-    val email: String
+    val email: String,
 )
 
 @Serializable
 data class ResetPasswordRequest(
     val token: String,
     val newPassword: String,
-    val confirmPassword: String
+    val confirmPassword: String,
 )

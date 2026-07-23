@@ -1,8 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+
+val googleWebClientId: String = Properties().apply {
+    val localProperties = rootProject.file("local.properties")
+    if (localProperties.exists()) localProperties.inputStream().use(::load)
+}.getProperty("GOOGLE_WEB_CLIENT_ID")
+    ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+    ?: ""
 
 android {
     namespace = "com.iti.presentation"
@@ -16,6 +26,8 @@ android {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -23,6 +35,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -55,6 +68,11 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+
+    // Google Sign-In (Credential Manager) for the auth screens.
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

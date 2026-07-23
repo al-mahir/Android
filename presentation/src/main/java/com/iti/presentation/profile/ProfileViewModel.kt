@@ -2,12 +2,13 @@ package com.iti.presentation.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.auth.usecase.LogoutUseCase
+import com.iti.domain.core.Result
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
-import com.iti.domain.usecase.user.LogoutUseCase
 import com.iti.presentation.R
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
@@ -122,26 +123,24 @@ class ProfileViewModel(
         updateState { copy(isProcessingDialogAction = true) }
 
         viewModelScope.launch {
-            val result = runCatching {
-                when (dialog) {
-                    ProfileDialog.LOGOUT -> logout()
-                    ProfileDialog.DELETE_ACCOUNT -> deleteAccount()
-                }
+            // Signing out always clears the local session, so it only fails if it never ran.
+            val succeeded = when (dialog) {
+                ProfileDialog.LOGOUT -> runCatching { logout() }.getOrNull() is Result.Success
+                ProfileDialog.DELETE_ACCOUNT -> runCatching { deleteAccount() }.isSuccess
             }
 
             updateState { copy(isProcessingDialogAction = false, dialog = null) }
 
-            result.fold(
+            if (succeeded) {
                 // Both paths end the session, so both land back on auth.
-                onSuccess = { sendEffect(ProfileEffect.NavigateToAuth) },
-                onFailure = {
-                    val messageRes = when (dialog) {
-                        ProfileDialog.LOGOUT -> R.string.profile_logout_failed
-                        ProfileDialog.DELETE_ACCOUNT -> R.string.profile_delete_account_failed
-                    }
-                    sendEffect(ProfileEffect.ShowMessage(messageRes))
-                },
-            )
+                sendEffect(ProfileEffect.NavigateToAuth)
+            } else {
+                val messageRes = when (dialog) {
+                    ProfileDialog.LOGOUT -> R.string.profile_logout_failed
+                    ProfileDialog.DELETE_ACCOUNT -> R.string.profile_delete_account_failed
+                }
+                sendEffect(ProfileEffect.ShowMessage(messageRes))
+            }
         }
     }
 

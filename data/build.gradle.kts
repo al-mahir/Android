@@ -21,6 +21,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -40,6 +44,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
+    implementation(libs.ktor.client.auth)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
@@ -61,6 +66,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(platform(libs.ktor.bom))
+    testImplementation(libs.ktor.client.mock)
     testImplementation(libs.room.testing)
     testImplementation(platform(libs.koin.bom))
     testImplementation(libs.koin.test)
