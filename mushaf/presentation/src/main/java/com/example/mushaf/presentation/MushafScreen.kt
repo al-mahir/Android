@@ -234,27 +234,33 @@ fun MushafScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        if (state.mushafMode == MushafMode.LISTEN && state.areBarsVisible) {
-            AudioPlayerBar(
-                isPlaying = state.audioState == AudioState.PLAYING,
-                reciterName = state.currentReciter?.nameArabic ?: "",
-                playbackSpeed = state.playbackSpeed,
-                onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
-                onNextClick = { viewModel.onIntent(MushafIntent.NextAyahAudio) },
-                onPrevClick = { viewModel.onIntent(MushafIntent.PrevAyahAudio) },
-                onReciterClick = { showReciterPicker = true },
-                onSpeedClick = {
-                    val nextSpeed = when (state.playbackSpeed) {
-                        0.75f -> 1.0f
-                        1.0f -> 1.25f
-                        1.25f -> 1.5f
-                        else -> 0.75f
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = state.mushafMode == MushafMode.LISTEN && state.areBarsVisible,
+                enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
+                exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
+            ) {
+                AudioPlayerBar(
+                    isPlaying = state.audioState == AudioState.PLAYING,
+                    reciterName = state.currentReciter?.nameArabic ?: "",
+                    playbackSpeed = state.playbackSpeed,
+                    onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
+                    onNextClick = { viewModel.onIntent(MushafIntent.NextAyahAudio) },
+                    onPrevClick = { viewModel.onIntent(MushafIntent.PrevAyahAudio) },
+                    onReciterClick = { showReciterPicker = true },
+                    onSpeedClick = {
+                        val nextSpeed = when (state.playbackSpeed) {
+                            0.75f -> 1.0f
+                            1.0f -> 1.25f
+                            1.25f -> 1.5f
+                            else -> 0.75f
+                        }
+                        viewModel.onIntent(MushafIntent.SetAudioSpeed(nextSpeed))
                     }
-                    viewModel.onIntent(MushafIntent.SetAudioSpeed(nextSpeed))
-                },
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
-        } else {
+                )
+            }
             MushafBottomBar(
                 visible = state.areBarsVisible,
                 mushafMode = state.mushafMode,
@@ -311,8 +317,7 @@ fun MushafScreen(
                         
                         else -> micPrompt = MicPrompt.Preprompt
                     }
-                },
-                modifier = Modifier.align(Alignment.BottomCenter),
+                }
             )
         }
 
