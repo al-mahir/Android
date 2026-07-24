@@ -9,6 +9,7 @@ import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.data.settings.repository.AppPreferencesRepositoryImpl
 import com.iti.data.settings.repository.FakeRecordingsRepository
 import com.iti.domain.repository.AlmahirRepository
+import com.iti.domain.repository.ReadingProgressRepository
 import com.iti.domain.repository.RecitationSessionRepository
 import com.iti.domain.settings.repository.AppPreferencesRepository
 import com.iti.domain.settings.repository.RecordingsRepository
@@ -20,6 +21,7 @@ val almahirDataModule = module {
     single<AlmahirDataSource> { AlmahirFakeDataSource() }
 
     single<AlmahirRepository> { AlmahirRepositoryImpl(get()) }
+    single<ReadingProgressRepository> { com.iti.data.repository.ReadingProgressRepositoryImpl(get()) }
 
     single { AppPreferencesDataStore(androidContext()) }
     single<AppPreferencesRepository> { AppPreferencesRepositoryImpl(get()) }

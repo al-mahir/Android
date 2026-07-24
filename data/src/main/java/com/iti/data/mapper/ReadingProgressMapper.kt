@@ -7,4 +7,8 @@ internal fun ReadingProgressDto.toDomain(): ReadingProgress = ReadingProgress(
     surahName = surahName,
     ayahNumber = ayahNumber,
     pageNumber = pageNumber,
+    juzNumber = juzNumber,
+    surahTotalAyahs = surahTotalAyahs,
+    surahReadAyahs = surahReadAyahs,
 )
+

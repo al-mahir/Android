@@ -92,6 +92,9 @@ class AlmahirFakeDataSource : AlmahirDataSource {
             surahName = "Al-Kahf",
             ayahNumber = 45,
             pageNumber = 298,
+            juzNumber = 15,
+            surahTotalAyahs = 110,
+            surahReadAyahs = 45,
         )
 
         val SEED_SHEIKHS = listOf(
