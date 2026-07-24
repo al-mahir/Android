@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
+import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getReadingProgress: GetReadingProgressUseCase,
+    private val getAyahOfTheDay: GetAyahOfTheDayUseCase,
     private val getSheikhs: GetSheikhsUseCase,
     private val getStudyCircles: GetStudyCirclesUseCase,
     private val joinStudyCircle: JoinStudyCircleUseCase,
@@ -60,10 +62,11 @@ class HomeViewModel(
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
+            getAyahOfTheDay(),
             getSheikhs(),
             getStudyCircles(),
-        ) { user, readingProgress, sheikhs, circles ->
-            HomeContentSnapshot(user, readingProgress, sheikhs, circles)
+        ) { user, readingProgress, ayahOfTheDay, sheikhs, circles ->
+            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, sheikhs, circles)
         }
             .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }
             .onEach { snapshot ->
@@ -73,6 +76,7 @@ class HomeViewModel(
                         errorMessageRes = null,
                         user = snapshot.user,
                         readingProgress = snapshot.readingProgress,
+                        ayahOfTheDay = snapshot.ayahOfTheDay,
                         sheikhs = snapshot.sheikhs,
                         circles = snapshot.circles,
                     )
