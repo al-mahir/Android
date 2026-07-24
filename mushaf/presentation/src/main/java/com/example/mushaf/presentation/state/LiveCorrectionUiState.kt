@@ -28,7 +28,6 @@ enum class ChunkOutcome {
 
  
 data class LiveCorrectionUiState(
-     
     val isConnecting: Boolean = false,
 
      

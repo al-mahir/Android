@@ -29,6 +29,8 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":mushaf:data"))
+    implementation(project(":mushaf:domain"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)

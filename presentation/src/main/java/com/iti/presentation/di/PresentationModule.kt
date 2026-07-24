@@ -8,6 +8,7 @@ import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.legal.GetLegalDocumentUseCase
+import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
@@ -35,6 +36,7 @@ import org.koin.dsl.module
 val presentationModule = module {
     factory { GetCurrentUserUseCase(get()) }
     factory { GetReadingProgressUseCase(get()) }
+    factory { GetAyahOfTheDayUseCase() }
     factory { GetSheikhsUseCase(get()) }
     factory { GetStudyCirclesUseCase(get()) }
     factory { JoinStudyCircleUseCase(get()) }
@@ -61,7 +63,7 @@ val presentationModule = module {
         }.getOrNull().orEmpty()
     }
 
-    viewModel { HomeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
 
     factory { ObserveRecitationSessionsUseCase(get()) }

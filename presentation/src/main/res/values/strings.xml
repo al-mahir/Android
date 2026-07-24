@@ -70,6 +70,12 @@
     <string name="home_last_read">LAST READ</string>
     <!-- %1$d = ayah number, %2$d = page number -->
     <string name="home_ayah_page">Ayah %1$d • Page %2$d</string>
+    <!-- %1$d = ayah number, %2$d = juz number -->
+    <string name="home_ayah_juz">Ayah %1$d • Juz %2$d</string>
+    <!-- %1$d = completion percentage (0-100) -->
+    <string name="home_surah_progress_percent">%1$d%% completed</string>
+    <string name="home_resume_reading">Resume reading &#8594;</string>
+    <string name="home_search_content_description">Search</string>
     <string name="home_continue_reading_content_description">Continue reading</string>
 
     <!-- %1$s = sheikh name -->
@@ -84,6 +90,12 @@
 
     <string name="home_error_generic">We couldn\'t load your home content. Please try again.</string>
     <string name="home_join_failed">Couldn\'t join the circle. Please try again.</string>
+
+    <!-- Ayah of the Day -->
+    <string name="home_section_ayah_of_the_day">Ayah of the Day</string>
+    <string name="home_ayah_of_the_day_label">AYAH OF THE DAY</string>
+    <!-- %1$s = surah name, %2$d = ayah number -->
+    <string name="home_ayah_surah_label">%1$s • Ayah %2$d</string>
 
     <!-- ===== Profile ===== -->
     <string name="profile_avatar_content_description">Profile picture</string>

@@ -227,8 +227,8 @@ fun MushafScreen(
                                 prefetchPages = prefetchPages,
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
-                                onWordClick = { 
-                                    viewModel.onIntent(MushafIntent.ToggleBars) 
+                                onWordClick = {
+                                    viewModel.onIntent(MushafIntent.ToggleBars)
                                 },
                                 onWordLongClick = { wordId ->
                                     val parts = wordId.split(":")
