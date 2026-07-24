@@ -189,4 +189,15 @@
     <string name="recite_settings_moshaf_advanced">خيارات متقدمة</string>
     <string name="recite_settings_moshaf_reset">إعادة ضبط رواية التلاوة</string>
     <string name="recite_settings_moshaf_reset_hint">تُعيد كل حكم إلى الوضع الافتراضي في الخادم.</string>
+
+    <!-- User Guide -->
+    <string name="guide_step_counter">الخطوة %1$d من %2$d</string>
+    <string name="guide_surah_name">اضغط هنا لاستعراض السور الـ 114</string>
+    <string name="guide_ayah_long_press">اضغط مطولاً على أي آية لعرض تفسيرها</string>
+    <string name="guide_mode_reading">استخدم وضع القراءة لعرض المصحف التقليدي</string>
+    <string name="guide_mode_listen">استخدم وضع الاستماع لسماع التلاوات</string>
+    <string name="guide_mode_recitation">استخدم وضع التلاوة للحصول على تصحيح مباشر لتلاوتك باستخدام الذكاء الاصطناعي</string>
+    <string name="guide_mode_muallem">استخدم وضع المُعلِّم للتكرار بعد الشيخ</string>
+    <string name="guide_next">→ التالي</string>
+    <string name="guide_got_it">فهمت!</string>
 </resources>

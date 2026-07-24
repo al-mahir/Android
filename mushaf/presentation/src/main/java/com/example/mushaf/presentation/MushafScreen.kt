@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterItem
 import com.example.designsystem.components.mushaf.ReciterPickerSheet
@@ -109,6 +111,14 @@ fun MushafScreen(
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
     var showCorrections by remember { mutableStateOf(false) }
     var correctionTabIndex by remember { mutableStateOf(0) }
+
+    // User Guide Coordinates
+    var topBarSurahCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    var mushafPageCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    var modeReadingCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    var modeListenCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    var modeReciteCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+    var modeMuallemCoords by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
 
     
     
@@ -251,6 +261,14 @@ fun MushafScreen(
                     }
                 }
             }
+
+            // Invisible target in the center of the page for Step 2 tooltip
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(200.dp, 60.dp)
+                    .onGloballyPositioned { mushafPageCoords = it }
+            )
         }
 
         MushafTopBar(
@@ -265,6 +283,7 @@ fun MushafScreen(
             onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
             onSearchClick = onSearchClick,
             modifier = Modifier.align(Alignment.TopCenter),
+            onSurahPillPositioned = { topBarSurahCoords = it },
         )
 
         androidx.compose.foundation.layout.Column(
@@ -304,6 +323,14 @@ fun MushafScreen(
                 onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
                 onModeSelected = { mode -> viewModel.onIntent(MushafIntent.SetMode(mode)) },
                 micLevel = state.micLevel,
+                onModeTabPositioned = { mode, coords ->
+                    when (mode) {
+                        MushafMode.READING -> modeReadingCoords = coords
+                        MushafMode.LISTEN -> modeListenCoords = coords
+                        MushafMode.RECITATION -> modeReciteCoords = coords
+                        MushafMode.MUALLEM -> modeMuallemCoords = coords
+                    }
+                },
                 canFinishSession = state.isRecordingActive && state.liveCorrection.isActive,
                 onFinishSession = { viewModel.onIntent(MushafIntent.FinishAndStartNewSession) },
                 
@@ -494,5 +521,40 @@ fun MushafScreen(
                 onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) }
             )
         }
+
+        // ── User Guide Tooltip Overlay ──────────────────────────────────────────
+        com.example.mushaf.presentation.guide.GuideTooltip(
+            visible = state.showUserGuide,
+            stepCounterText = stringResource(
+                id = R.string.guide_step_counter,
+                state.guideStep,
+                com.example.mushaf.presentation.guide.MushafGuideStep.entries.size
+            ),
+            instructionText = stringResource(
+                id = when (state.guideStep) {
+                    1 -> R.string.guide_surah_name
+                    2 -> R.string.guide_ayah_long_press
+                    3 -> R.string.guide_mode_reading
+                    4 -> R.string.guide_mode_listen
+                    5 -> R.string.guide_mode_recitation
+                    6 -> R.string.guide_mode_muallem
+                    else -> R.string.guide_surah_name
+                }
+            ),
+            nextButtonText = stringResource(
+                id = if (state.guideStep >= 6) R.string.guide_got_it else R.string.guide_next
+            ),
+            targetCoordinates = when (state.guideStep) {
+                1 -> topBarSurahCoords
+                2 -> mushafPageCoords
+                3 -> modeReadingCoords
+                4 -> modeListenCoords
+                5 -> modeReciteCoords
+                6 -> modeMuallemCoords
+                else -> null
+            },
+            onNext = { viewModel.onIntent(MushafIntent.GuideNextStep) },
+            onDismiss = { viewModel.onIntent(MushafIntent.DismissGuide) }
+        )
     }
 }

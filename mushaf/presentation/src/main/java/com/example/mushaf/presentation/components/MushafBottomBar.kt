@@ -67,6 +67,7 @@ fun MushafBottomBar(
     onToggleRecording: () -> Unit,
     modifier: Modifier = Modifier,
     micLevel: Float = 0f,
+    onModeTabPositioned: ((MushafMode, androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
     
 
 
@@ -122,6 +123,7 @@ fun MushafBottomBar(
                 MushafModeSelector(
                     selectedMode = mushafMode,
                     onModeSelected = onModeSelected,
+                    onTabPositioned = onModeTabPositioned,
                 )
 
                 MicSection(

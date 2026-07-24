@@ -4,6 +4,7 @@ package com.example.mushaf.domain.model
 data class ReaderPreferences(
     val tajweedEnabled: Boolean = true,
     val lastPage: Int = MushafConstants.FIRST_PAGE,
+    val isFirstMushafLaunch: Boolean = true,
 )
 
 object MushafConstants {

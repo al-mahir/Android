@@ -25,6 +25,7 @@ class ReaderPreferencesDataStore(context: Context) {
         ReaderPreferences(
             tajweedEnabled = prefs[KEY_TAJWEED] ?: true,
             lastPage = prefs[KEY_LAST_PAGE] ?: MushafConstants.FIRST_PAGE,
+            isFirstMushafLaunch = prefs[KEY_FIRST_MUSHAF_LAUNCH] ?: true,
         )
     }
 
@@ -36,8 +37,13 @@ class ReaderPreferencesDataStore(context: Context) {
         dataStore.edit { it[KEY_LAST_PAGE] = MushafConstants.clampPage(page) }
     }
 
+    suspend fun setFirstMushafLaunchCompleted() {
+        dataStore.edit { it[KEY_FIRST_MUSHAF_LAUNCH] = false }
+    }
+
     private companion object {
         val KEY_TAJWEED = booleanPreferencesKey("tajweed_enabled")
         val KEY_LAST_PAGE = intPreferencesKey("last_page")
+        val KEY_FIRST_MUSHAF_LAUNCH = booleanPreferencesKey("first_mushaf_launch")
     }
 }

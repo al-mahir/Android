@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
@@ -47,6 +48,7 @@ fun MushafTopBar(
     onSurahNameClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onSurahPillPositioned: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -89,7 +91,8 @@ fun MushafTopBar(
                         .clip(RoundedCornerShape(20.dp))
                         .clickable(onClick = onSurahNameClick)
                         .background(Theme.colors.primary.copy(alpha = 0.10f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .onGloballyPositioned { onSurahPillPositioned?.invoke(it) },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(

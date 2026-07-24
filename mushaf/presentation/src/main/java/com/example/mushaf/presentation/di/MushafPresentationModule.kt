@@ -27,6 +27,7 @@ val mushafPresentationModule = module {
     factory { GetPageUseCase(get()) }
     factory { ObserveReaderPreferencesUseCase(get()) }
     factory { SetTajweedEnabledUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(get()) }
     factory { SaveLastPageUseCase(get()) }
 
     factory { com.example.mushaf.domain.usecase.GetLastReadUseCase() }
@@ -62,7 +63,7 @@ val mushafPresentationModule = module {
 
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 

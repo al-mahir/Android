@@ -11,4 +11,6 @@ interface ReaderPreferencesRepository {
     suspend fun setTajweedEnabled(enabled: Boolean)
 
     suspend fun setLastPage(page: Int)
+
+    suspend fun setFirstMushafLaunchCompleted()
 }
