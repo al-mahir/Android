@@ -26,6 +26,7 @@ import com.example.mushaf.domain.model.AyahSearchResult
 @Composable
 fun AyahListItem(
     ayah: AyahSearchResult,
+    query: String = "",
     onClick: (AyahSearchResult) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -55,7 +56,7 @@ fun AyahListItem(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = ayah.ayahText,
+                text = ayah.ayahText.highlight(query, Theme.colors.primary),
                 style = Theme.typography.body.large.copy(
                     fontWeight = FontWeight.Bold,
                     textDirection = TextDirection.Rtl
@@ -68,7 +69,7 @@ fun AyahListItem(
             if (!translation.isNullOrBlank()) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = translation,
+                    text = translation.highlight(query, Theme.colors.primary),
                     style = Theme.typography.body.medium,
                     color = Theme.colors.secondaryFont,
                     modifier = Modifier.fillMaxWidth()
