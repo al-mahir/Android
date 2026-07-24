@@ -6,12 +6,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterItem
 import com.example.designsystem.components.mushaf.ReciterPickerSheet
@@ -355,6 +358,11 @@ fun MushafScreen(
         }
 
         // ── Tajweed Legend FAB ──────────────────────────────────────────────────
+        val fabBottomPadding by animateDpAsState(
+            targetValue = if (state.mushafMode == MushafMode.LISTEN) 144.dp else 80.dp,
+            label = "fabBottomPadding"
+        )
+        
         AnimatedVisibility(
             visible = state.areBarsVisible,
             enter = fadeIn(),
@@ -362,7 +370,7 @@ fun MushafScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = 80.dp), // above the bottom bar
+                .padding(end = 16.dp, bottom = fabBottomPadding),
         ) {
             FloatingActionButton(
                 onClick = { viewModel.onIntent(MushafIntent.ShowTajweedLegend) },
@@ -494,5 +502,36 @@ fun MushafScreen(
                 onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) }
             )
         }
+
+        // ── User Guide Tooltip Overlay ──────────────────────────────────────────
+        com.example.mushaf.presentation.guide.GuideTooltip(
+            visible = state.showUserGuide,
+            stepCounterText = stringResource(
+                id = R.string.guide_step_counter,
+                state.guideStep,
+                com.example.mushaf.presentation.guide.MushafGuideStep.entries.size
+            ),
+            instructionText = stringResource(
+                id = when (state.guideStep) {
+                    1 -> R.string.guide_surah_name
+                    2 -> R.string.guide_ayah_long_press
+                    3 -> R.string.guide_mode_reading
+                    4 -> R.string.guide_mode_listen
+                    5 -> R.string.guide_mode_recitation
+                    6 -> R.string.guide_mode_muallem
+                    else -> R.string.guide_surah_name
+                }
+            ),
+            nextButtonText = stringResource(
+                id = if (state.guideStep >= 6) R.string.guide_got_it else R.string.guide_next
+            ),
+            anchor = when (state.guideStep) {
+                1    -> com.example.mushaf.presentation.guide.TooltipAnchor.TOP
+                2    -> com.example.mushaf.presentation.guide.TooltipAnchor.CENTER
+                else -> com.example.mushaf.presentation.guide.TooltipAnchor.BOTTOM
+            },
+            onNext = { viewModel.onIntent(MushafIntent.GuideNextStep) },
+            onDismiss = { viewModel.onIntent(MushafIntent.DismissGuide) }
+        )
     }
 }

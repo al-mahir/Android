@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
@@ -25,6 +26,7 @@ fun MushafModeSelector(
     selectedMode: MushafMode,
     onModeSelected: (MushafMode) -> Unit,
     modifier: Modifier = Modifier,
+    onTabPositioned: ((MushafMode, androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
 ) {
     val containerShape = RoundedCornerShape(20.dp)
     Row(
@@ -39,6 +41,9 @@ fun MushafModeSelector(
                 label = mode.label(),
                 selected = mode == selectedMode,
                 onClick = { onModeSelected(mode) },
+                modifier = Modifier.onGloballyPositioned { coords ->
+                    onTabPositioned?.invoke(mode, coords)
+                }
             )
         }
     }

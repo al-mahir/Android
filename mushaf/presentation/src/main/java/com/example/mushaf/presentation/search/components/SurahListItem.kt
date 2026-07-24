@@ -33,6 +33,7 @@ import com.example.mushaf.presentation.font.rememberSurahNameFontFamily
 @Composable
 fun SurahListItem(
     surah: Surah,
+    query: String = "",
     onClick: (Surah) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -69,7 +70,7 @@ fun SurahListItem(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = surah.nameEn,
+                    text = surah.nameEn.highlight(query, Theme.colors.primary),
                     style = Theme.typography.body.large.copy(fontWeight = FontWeight.Bold),
                     color = Theme.colors.primaryFont
                 )
@@ -98,7 +99,7 @@ fun SurahListItem(
                 )
             } else {
                 Text(
-                    text = surah.nameAr,
+                    text = surah.nameAr.highlight(query, Theme.colors.primary),
                     style = Theme.typography.title,
                     color = Theme.colors.primaryFont
                 )

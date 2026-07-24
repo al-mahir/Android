@@ -15,4 +15,7 @@ class ReaderPreferencesRepositoryImpl(
         dataStore.setTajweedEnabled(enabled)
 
     override suspend fun setLastPage(page: Int) = dataStore.setLastPage(page)
+
+    override suspend fun setFirstMushafLaunchCompleted() =
+        dataStore.setFirstMushafLaunchCompleted()
 }

@@ -51,7 +51,11 @@ data class MushafUiState(
     val showTajweedLegend: Boolean = false,
 
     // Tafsir
-    val tafsirState: TafsirState = TafsirState.Idle
+    val tafsirState: TafsirState = TafsirState.Idle,
+
+    // User Guide
+    val showUserGuide: Boolean = false,
+    val guideStep: Int = 1,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
