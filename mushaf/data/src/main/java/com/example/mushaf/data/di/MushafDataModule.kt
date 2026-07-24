@@ -13,12 +13,16 @@ import com.example.mushaf.domain.repository.RecitationSettingsRepository
 import com.example.mushaf.data.recite.audio.AudioRecordPcmRecorder
 import com.example.mushaf.data.recite.audio.PcmRecorder
 import com.example.mushaf.data.recite.audio.WavDebugSink
+import com.example.mushaf.data.recite.local.AndroidOnDeviceSpeechRecognizer
 import com.example.mushaf.data.repository.LiveRecitationRepositoryImpl
+import com.example.mushaf.data.repository.LocalWordCorpusRepositoryImpl
 import com.example.mushaf.data.repository.MushafRepositoryImpl
 import com.example.mushaf.data.repository.ReaderPreferencesRepositoryImpl
 import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
 import com.example.mushaf.domain.repository.LiveRecitationRepository
+import com.example.mushaf.domain.repository.LocalSpeechRecognizer
+import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
@@ -52,6 +56,8 @@ val mushafDataModule = module {
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
     single<MushafRepository> { MushafRepositoryImpl(get(), get(), get(), get(), get()) }
+    single<LocalWordCorpusRepository> { LocalWordCorpusRepositoryImpl(get(), get()) }
+    single<LocalSpeechRecognizer> { AndroidOnDeviceSpeechRecognizer(androidContext()) }
     single<ReaderPreferencesRepository> { ReaderPreferencesRepositoryImpl(get()) }
 
     single<DownloadableResourceRepository> { FakeDownloadableResourceRepository() }

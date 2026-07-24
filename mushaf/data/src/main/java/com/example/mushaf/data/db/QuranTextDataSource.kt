@@ -109,9 +109,21 @@ class QuranTextDataSource(
         results
     }
 
+       suspend fun getVerseText(sura: Int, ayah: Int): String? = withContext(Dispatchers.IO) {
+        try {
+            database().rawQuery(QUERY_VERSE_TEXT, arrayOf(sura.toString(), ayah.toString())).use { c ->
+                if (c.moveToFirst()) return@withContext c.getString(0)
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Verse text query failed for $sura:$ayah", t)
+        }
+        null
+    }
+
     private companion object {
         const val DB_NAME = "quran_text.db"
         const val ASSET_PATH = "databases/quran_text.db"
         const val DB_VERSION = 1
+        const val QUERY_VERSE_TEXT = "SELECT text FROM verses WHERE surah = ? AND ayah = ? LIMIT 1"
     }
 }

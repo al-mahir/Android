@@ -27,6 +27,10 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationPacer
 import com.example.mushaf.domain.model.recite.RecitationSessionRecorder
 import com.example.mushaf.domain.model.recite.mergedWith
+import com.example.mushaf.domain.model.recite.local.RecitationStartDetector
+import com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability
+import com.example.mushaf.domain.repository.LocalSpeechRecognizer
+import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.presentation.state.ChunkOutcome
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 import com.example.mushaf.presentation.state.CaptureError
@@ -56,7 +60,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 class MushafViewModel(
@@ -72,6 +79,8 @@ class MushafViewModel(
     private val saveRecitationSession: SaveRecitationSessionUseCase,
     private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
+    private val localSpeechRecognizer: LocalSpeechRecognizer,
+    private val localWordCorpusRepository: LocalWordCorpusRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -89,6 +98,8 @@ class MushafViewModel(
     private var initialized = false
     private val loadJobs = mutableMapOf<Int, Job>()
     private var sessionJob: Job? = null
+    private var pendingStartDetection = false
+    private var detectionJob: Job? = null
     private var controlChannel: Channel<RecitationControl>? = null
 
      
@@ -134,6 +145,11 @@ class MushafViewModel(
         const val CAPTURE_LOG_INTERVAL_MS = 1_000L
 
         const val CLIPPING_THRESHOLD = 0.99f
+
+        // Generous on purpose: a careful reciter plus network-recognizer round-trip latency
+        // per word can easily need several seconds just to produce the 2 consecutive words
+        // RecitationStartDetector requires to disambiguate a common word like "الله".
+        const val START_DETECTION_TIMEOUT_MS = 15_000L
 
         
 
@@ -540,20 +556,23 @@ class MushafViewModel(
         }
     }
 
-    
-
-    
-
-
-
-
-
- 
     private fun startLiveCorrection(resumeAt: RecitationCursor? = null) {
         sessionJob?.cancel()
-        lastCursor = resumeAt ?: startCursorForCurrentPage()
+        detectionJob?.cancel()
         isFinishing = false
         reconnectAttempts = 0
+
+        // Real capture starts immediately, unconditionally - anything said before local
+        // detection (if it even runs) locks still reaches the server and gets graded against
+        // this cursor, exactly as if detection didn't exist. A known resume point (settings
+        // restart, reconnect) already knows exactly where the reciter is, so there is nothing
+        // to detect there; only a genuinely fresh start needs it.
+        pendingStartDetection = resumeAt == null
+        beginServerSession(resumeAt ?: startCursorForCurrentPage())
+    }
+
+    private fun beginServerSession(startCursor: RecitationCursor?) {
+        lastCursor = startCursor
         pacer.reset()
         chunkSpeechFrames = 0
         sessionStartedAtEpochMs = System.currentTimeMillis()
@@ -569,6 +588,63 @@ class MushafViewModel(
         val controls = Channel<RecitationControl>(Channel.BUFFERED)
         controlChannel = controls
         sessionJob = viewModelScope.launch { runSession(controls) }
+    }
+
+    /**
+     * Runs alongside the already-live session, never before it or in place of it - see
+     * docs/features/06-taahud-local-recitation-tracking-plan.md. Triggered once the server has
+     * actually acknowledged the session (from [onLiveEvent]'s `Started` case), so the real
+     * capture path claims the microphone first: if this device can't run both a raw capture and
+     * the OS speech recognizer at once, it's this best-effort enhancement that should lose that
+     * race, not the grading pipeline. If it locks onto a word other than [startCursor], it
+     * re-points the running session at it via the same Seek path the ambiguous-candidate picker
+     * already uses.
+     */
+    private fun beginBackgroundStartDetection(startCursor: RecitationCursor) {
+        val pageWordCount = _state.value.wordsForCurrentPage().count { !it.isEndOfAyah }
+        val availability = localSpeechRecognizer.availability()
+        Log.i(
+            TAG,
+            "Start detection: page=${_state.value.currentPage} pageStart=${startCursor.wordId} " +
+                "pageWordCount=$pageWordCount availability=$availability",
+        )
+
+        if (pageWordCount == 0 || availability == SpeechRecognitionAvailability.UNAVAILABLE) {
+            Log.i(TAG, "Start detection: skipped")
+            return
+        }
+
+        detectionJob = viewModelScope.launch {
+            val detected = runCatching { detectStartCursor(startCursor, pageWordCount) }
+                .onFailure { Log.w(TAG, "Local start detection failed", it) }
+                .getOrNull()
+            Log.i(TAG, "Start detection: result=${detected?.wordId ?: "none"}")
+            if (detected != null) {
+                pacer.confirm(detected.wordId)
+                _state.update { it.copy(highlightedWordId = pacer.currentWordId ?: detected.wordId) }
+                seekLiveCorrection(detected)
+            }
+        }
+    }
+
+    /** Null means "gave up" (unavailable, no corpus coverage for this page, or the timeout
+     * elapsed with nothing usable) - never thrown; the already-running session just keeps
+     * grading from [pageStart] as though detection never ran. */
+    private suspend fun detectStartCursor(pageStart: RecitationCursor, pageWordCount: Int): RecitationCursor? {
+        val window = localWordCorpusRepository.wordsFrom(pageStart, pageWordCount)
+        Log.i(TAG, "Start detection: corpus window size=${window.size} (requested $pageWordCount from ${pageStart.wordId})")
+        if (window.isEmpty()) return null
+
+        val detector = RecitationStartDetector(window)
+        val detected = withTimeoutOrNull(START_DETECTION_TIMEOUT_MS) {
+            localSpeechRecognizer.listen()
+                .onEach { word -> Log.i(TAG, "Start detection: heard '$word'") }
+                .map { word -> detector.offer(word) }
+                .filterNotNull()
+                .first()
+        }
+        if (detected == null) Log.i(TAG, "Start detection: timed out after ${START_DETECTION_TIMEOUT_MS}ms with no lock")
+        return detected?.wordId?.let(RecitationCursor::fromWordId)
     }
 
     
@@ -628,6 +704,10 @@ class MushafViewModel(
                             engineSubstituted = event.engineSubstituted,
                         ),
                     )
+                }
+                if (pendingStartDetection) {
+                    pendingStartDetection = false
+                    lastCursor?.let(::beginBackgroundStartDetection)
                 }
             }
 
@@ -864,6 +944,9 @@ class MushafViewModel(
         isFinishing = true
         sessionJob?.cancel()
         sessionJob = null
+        detectionJob?.cancel()
+        detectionJob = null
+        pendingStartDetection = false
         controlChannel?.close()
         controlChannel = null
         smoothedMicLevel = 0f
