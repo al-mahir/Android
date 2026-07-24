@@ -25,6 +25,8 @@ interface AlmahirDataSource {
 
     suspend fun joinStudyCircle(circleId: String)
 
+    suspend fun cancelJoinCircle(circleId: String)
+
     suspend fun restorePurchases(): Boolean
 
     suspend fun logout()
