@@ -17,10 +17,14 @@ import kotlinx.coroutines.flow.flow
 
 import com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource
 
+import com.example.mushaf.data.db.TafsirDataSource
+import com.example.mushaf.domain.model.TafsirResult
+
 class MushafRepositoryImpl(
     private val dataSource: MushafAssetDataSource,
     private val metadataDataSource: QuranMetadataDataSource,
     private val textDataSource: QuranTextDataSource,
+    private val tafsirDataSource: TafsirDataSource,
     private val semanticSearchDataSource: SemanticSearchRemoteDataSource? = null
 ) : MushafRepository {
 
@@ -110,5 +114,26 @@ class MushafRepositoryImpl(
             return juzPages[juzNumber - 1]
         }
         return null
+    }
+
+    override suspend fun getTafsirForAyah(surah: Int, ayah: Int): TafsirResult? {
+        return tafsirDataSource.getTafsirForAyah(surah, ayah)?.let { raw ->
+            val surahMeta = metadataDataSource.getSurah(raw.surahNumber)
+            raw.copy(
+                surahNameArabic = surahMeta?.nameAr ?: "",
+                surahNameEnglish = surahMeta?.nameEn ?: ""
+            )
+        }
+    }
+
+    override suspend fun searchTafsir(query: String, limit: Int, offset: Int): List<TafsirResult> {
+        val rawResults = tafsirDataSource.searchTafsir(query, limit, offset)
+        return rawResults.map { raw ->
+            val surahMeta = metadataDataSource.getSurah(raw.surahNumber)
+            raw.copy(
+                surahNameArabic = surahMeta?.nameAr ?: "",
+                surahNameEnglish = surahMeta?.nameEn ?: ""
+            )
+        }
     }
 }

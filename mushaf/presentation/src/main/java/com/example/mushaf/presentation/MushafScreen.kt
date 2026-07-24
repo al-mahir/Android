@@ -3,21 +3,34 @@ package com.example.mushaf.presentation
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -29,23 +42,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.example.designsystem.components.mushaf.AudioPlayerBar
+import com.example.designsystem.components.mushaf.ReciterItem
+import com.example.designsystem.components.mushaf.ReciterPickerSheet
+import com.example.designsystem.components.mushaf.SurahItem
+import com.example.designsystem.components.mushaf.SurahPickerSheet
+import com.example.designsystem.components.mushaf.TajweedLegendSheet
+import com.example.designsystem.components.mushaf.CorrectionsSheet
+import com.example.designsystem.components.session.SessionSummarySheet
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.domain.model.MushafMode
+import com.example.mushaf.domain.model.SurahCatalog
+import com.example.mushaf.domain.model.SurahOrigin
+import com.example.mushaf.presentation.audio.AudioState
 import com.example.mushaf.presentation.components.GradingModeToggle
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
-import com.example.designsystem.components.mushaf.AudioPlayerBar
-import com.example.designsystem.components.mushaf.ReciterPickerSheet
-import com.example.designsystem.components.mushaf.ReciterItem
-import com.example.designsystem.components.mushaf.CorrectionsSheet
-import com.example.designsystem.components.session.SessionSummarySheet
-import com.example.mushaf.presentation.audio.AudioState
-import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.presentation.recite.LiveSessionStatusRow
 import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionsUiMapper
@@ -75,6 +93,7 @@ fun MushafScreen(
     onBack: () -> Unit = {},
     onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -171,16 +190,17 @@ fun MushafScreen(
             HorizontalPager(
                 state = pagerState,
                 beyondViewportPageCount = 2,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            viewModel.onIntent(MushafIntent.ToggleBars)
-                        }
-                    },
+                modifier = Modifier.fillMaxSize(),
             ) { pageIndex ->
                 val pageNumber = pageIndex + 1
-                Box(modifier = Modifier.fillMaxSize().graphicsLayer()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().graphicsLayer().pointerInput(Unit) {
+                        detectTapGestures {
+                            // Only handle taps here if the child doesn't consume them (e.g. Loading/Error states)
+                            viewModel.onIntent(MushafIntent.ToggleBars)
+                        }
+                    }
+                ) {
                     when (val pageState = state.pageState(pageNumber)) {
                         is PageLoadState.Loaded -> {
                             val isCurrent = pageNumber == state.currentPage
@@ -204,6 +224,22 @@ fun MushafScreen(
                                 prefetchPages = prefetchPages,
                                 areAyahsHidden = !state.areAyahsVisible,
                                 revealedWordIds = state.revealedWordIds,
+                                onWordClick = { 
+                                    viewModel.onIntent(MushafIntent.ToggleBars) 
+                                },
+                                onWordLongClick = { wordId ->
+                                    val parts = wordId.split(":")
+                                    if (parts.size >= 2) {
+                                        val surah = parts[0].toIntOrNull()
+                                        val ayah = parts[1].toIntOrNull()
+                                        if (surah != null && ayah != null) {
+                                            viewModel.onIntent(MushafIntent.LoadTafsir(surah, ayah))
+                                        }
+                                    }
+                                },
+                                onBlankClick = {
+                                    viewModel.onIntent(MushafIntent.ToggleBars)
+                                },
                                 wordMarks = if (isCurrent) wordMarks else emptyMap(),
                             )
                         }
@@ -219,16 +255,15 @@ fun MushafScreen(
 
         MushafTopBar(
             visible = state.areBarsVisible,
-            surahName = state.page?.lines
-                ?.firstOrNull { it.surahNumber != null }
-                ?.let { SurahNameResolver.nameFor(it.surahNumber) }
-                ?: "",
+            surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
             juzNumber = 1,
             hizbNumber = 1,
             isBookmarked = false,
             onBack = onBack,
             onBookmark = {},
             onSettings = onOpenSettings,
+            onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
+            onSearchClick = onSearchClick,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
@@ -319,6 +354,30 @@ fun MushafScreen(
             )
         }
 
+        // ── Tajweed Legend FAB ──────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = state.areBarsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(end = 16.dp, bottom = 80.dp), // above the bottom bar
+        ) {
+            FloatingActionButton(
+                onClick = { viewModel.onIntent(MushafIntent.ShowTajweedLegend) },
+                shape = CircleShape,
+                containerColor = Theme.colors.surface,
+                contentColor = Theme.colors.primary,
+                elevation = FloatingActionButtonDefaults.elevation(4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Palette,
+                    contentDescription = "دليل ألوان التجويد",
+                )
+            }
+        }
+
         if (showCorrections) {
             CorrectionsSheet(
                 title = stringResource(R.string.mushaf_corrections_title),
@@ -377,6 +436,7 @@ fun MushafScreen(
             )
         }
         
+        // ── Reciter Picker sheet ────────────────────────────────────────────────
         if (showReciterPicker) {
             val reciterItems = state.availableReciters.map {
                 ReciterItem(
@@ -395,6 +455,43 @@ fun MushafScreen(
                     showReciterPicker = false
                 },
                 onDismiss = { showReciterPicker = false }
+            )
+        }
+
+        // ── Surah Picker sheet ──────────────────────────────────────────────────
+        if (state.showSurahPicker) {
+            val surahItems = remember {
+                SurahCatalog.all.map { s ->
+                    SurahItem(
+                        number = s.number,
+                        nameArabic = s.nameArabic,
+                        nameEnglish = s.nameEnglish,
+                        isMeccan = s.origin == com.example.mushaf.domain.model.SurahOrigin.MECCAN,
+                    )
+                }
+            }
+            SurahPickerSheet(
+                surahs = surahItems,
+                currentSurahNumber = state.currentSurahNumber,
+                onSurahSelected = { item ->
+                    viewModel.onIntent(MushafIntent.NavigateToSurah(item.number))
+                },
+                onDismiss = { viewModel.onIntent(MushafIntent.HideSurahPicker) },
+            )
+        }
+
+        // ── Tajweed Legend sheet ────────────────────────────────────────────────
+        if (state.showTajweedLegend) {
+            TajweedLegendSheet(
+                onDismiss = { viewModel.onIntent(MushafIntent.HideTajweedLegend) },
+            )
+        }
+
+        // ── Tafsir sheet ────────────────────────────────────────────────────────
+        if (state.tafsirState !is com.example.mushaf.presentation.state.TafsirState.Idle) {
+            com.example.mushaf.presentation.components.TafsirBottomSheet(
+                tafsirState = state.tafsirState,
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) }
             )
         }
     }

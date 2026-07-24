@@ -144,8 +144,14 @@ private fun EyeSection(
     onRevealNextWord: () -> Unit,
     onRevealNextAyah: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onToggleAyahVisibility) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        IconButton(
+            onClick = onToggleAyahVisibility,
+            modifier = Modifier.size(36.dp)
+        ) {
             Icon(
                 imageVector = if (areAyahsVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
                 contentDescription = stringResource(
@@ -161,8 +167,11 @@ private fun EyeSection(
             enter = slideInHorizontally { -it } + fadeIn(),
             exit = slideOutHorizontally { -it } + fadeOut(),
         ) {
-            Row {
-                IconButton(onClick = onRevealNextWord) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                IconButton(
+                    onClick = onRevealNextWord,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                         contentDescription = stringResource(R.string.mushaf_cd_next_word),
@@ -170,7 +179,10 @@ private fun EyeSection(
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                 }
-                IconButton(onClick = onRevealNextAyah) {
+                IconButton(
+                    onClick = onRevealNextAyah,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Filled.KeyboardDoubleArrowLeft,
                         contentDescription = stringResource(R.string.mushaf_cd_next_ayah),

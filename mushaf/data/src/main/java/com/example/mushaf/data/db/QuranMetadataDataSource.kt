@@ -28,12 +28,17 @@ class QuranMetadataDataSource(private val context: Context) {
             val surahList = mutableListOf<Surah>()
             for (i in 0 until surahsArray.length()) {
                 val obj = surahsArray.getJSONObject(i)
+                val type = obj.getString("type")
                 surahList.add(
                     Surah(
                         number = obj.getInt("id"),
-                        nameAr = obj.getString("name_ar"),
-                        nameEn = obj.getString("name"),
-                        revelationType = obj.getString("type"),
+                        nameArabic = obj.getString("name_ar"),
+                        nameEnglish = obj.getString("name"),
+                        origin = if (type.equals("meccan", ignoreCase = true)) 
+                            com.example.mushaf.domain.model.SurahOrigin.MECCAN 
+                        else 
+                            com.example.mushaf.domain.model.SurahOrigin.MEDINAN,
+                        revelationType = type,
                         verseCount = obj.getInt("total_verses")
                     )
                 )

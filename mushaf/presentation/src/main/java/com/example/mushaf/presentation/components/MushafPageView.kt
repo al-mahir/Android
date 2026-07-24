@@ -40,6 +40,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+
 @Composable
 fun MushafPageView(
     page: MushafPage,
@@ -49,7 +52,9 @@ fun MushafPageView(
     prefetchPages: List<MushafPage> = emptyList(),
     areAyahsHidden: Boolean = false,
     revealedWordIds: Set<String> = emptySet(),
-     
+    onWordClick: (String) -> Unit = {},
+    onWordLongClick: (String) -> Unit = {},
+    onBlankClick: () -> Unit = {},
     wordMarks: Map<String, RecitationWordMark> = emptyMap(),
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
@@ -92,7 +97,7 @@ fun MushafPageView(
 
 
         val prefetchKey = prefetchPages.map { it.pageNumber }
-        LaunchedEffect(prefetchKey, mode, availableWidthPx, availableHeightPx, contentColor) {
+        LaunchedEffect(prefetchPages, availableWidthPx) {
             if (prefetchPages.isEmpty() || availableWidthPx <= 0) return@LaunchedEffect
             withContext(Dispatchers.Default) {
                 prefetchPages.forEach { neighbor ->
@@ -139,7 +144,47 @@ fun MushafPageView(
             )
         }
 
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(tokens) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        var clickedWord: String? = null
+                        for (token in tokens) {
+                            if (token.wordId != null) {
+                                val right = token.left + token.layout.size.width
+                                val bottom = token.top + token.layout.size.height
+                                if (offset.x >= token.left && offset.x <= right && offset.y >= token.top && offset.y <= bottom) {
+                                    clickedWord = token.wordId
+                                    break
+                                }
+                            }
+                        }
+                        if (clickedWord != null) {
+                            onWordClick(clickedWord)
+                        } else {
+                            onBlankClick()
+                        }
+                    },
+                    onLongPress = { offset ->
+                        var clickedWord: String? = null
+                        for (token in tokens) {
+                            if (token.wordId != null) {
+                                val right = token.left + token.layout.size.width
+                                val bottom = token.top + token.layout.size.height
+                                if (offset.x >= token.left && offset.x <= right && offset.y >= token.top && offset.y <= bottom) {
+                                    clickedWord = token.wordId
+                                    break
+                                }
+                            }
+                        }
+                        if (clickedWord != null) {
+                            onWordLongClick(clickedWord)
+                        }
+                    }
+                )
+            }
+        ) {
             val highlighted = highlightedWordId
             tokens.forEach { token ->
                 val isAyahWord = token.wordId != null

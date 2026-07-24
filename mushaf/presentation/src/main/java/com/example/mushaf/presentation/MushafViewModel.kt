@@ -66,6 +66,7 @@ class MushafViewModel(
     private val saveLastPage: SaveLastPageUseCase,
     private val getReciters: GetRecitersUseCase,
     private val getAyahTimings: GetAyahTimingsUseCase,
+    private val getTafsirForAyah: com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase,
     private val playbackManager: AudioPlayer,
     private val startLiveRecitation: StartLiveRecitationUseCase,
     private val saveRecitationSession: SaveRecitationSessionUseCase,
@@ -267,8 +268,21 @@ class MushafViewModel(
             MushafIntent.PlayPauseAudio -> playPauseAudio()
             is MushafIntent.SetAudioSpeed -> playbackManager.setSpeed(intent.speed)
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
-            MushafIntent.NextAyahAudio -> Unit 
-            MushafIntent.PrevAyahAudio -> Unit 
+            MushafIntent.NextAyahAudio -> Unit // TODO: implement next ayah
+            MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
+
+            // Surah Picker
+            MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
+            MushafIntent.HideSurahPicker -> _state.update { it.copy(showSurahPicker = false) }
+            is MushafIntent.NavigateToSurah -> navigateToSurah(intent.surahNumber)
+
+            // Tajweed Legend
+            MushafIntent.ShowTajweedLegend -> _state.update { it.copy(showTajweedLegend = true) }
+            MushafIntent.HideTajweedLegend -> _state.update { it.copy(showTajweedLegend = false) }
+
+            // Tafsir
+            is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
+            MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
         }
     }
 
@@ -281,6 +295,31 @@ class MushafViewModel(
                 )
             } else {
                 state.copy(highlightedWordId = wordId)
+            }
+        }
+    }
+
+    private fun navigateToSurah(surahNumber: Int) {
+        val idx = surahNumber - 1
+        val startPage = com.example.mushaf.domain.model.MushafConstants.SURAH_START_PAGES
+            .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
+        _state.update { it.copy(showSurahPicker = false) }
+        loadPage(startPage)
+    }
+
+    private fun loadTafsir(surah: Int, ayah: Int) {
+        _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
+        viewModelScope.launch {
+            try {
+                val tafsir = getTafsirForAyah(surah, ayah)
+                if (tafsir != null) {
+                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
+                } else {
+                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error("Tafsir not found")) }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading tafsir", e)
+                _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(e.message ?: "Unknown error")) }
             }
         }
     }

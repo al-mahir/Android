@@ -22,6 +22,14 @@ sealed interface MushafIntent {
 
     data object ToggleRecording : MushafIntent
 
+    // Surah Picker
+    data object ShowSurahPicker : MushafIntent
+    data object HideSurahPicker : MushafIntent
+    data class NavigateToSurah(val surahNumber: Int) : MushafIntent
+
+    // Tajweed Legend
+    data object ShowTajweedLegend : MushafIntent
+    data object HideTajweedLegend : MushafIntent
 
     data class SetTajweedGrading(val enabled: Boolean) : MushafIntent
 
@@ -41,11 +49,14 @@ sealed interface MushafIntent {
     data object DismissSessionSummary : MushafIntent
 
     data object FinishAndStartNewSession : MushafIntent
-
     data class SelectReciter(val reciter: Reciter) : MushafIntent
     data object PlayPauseAudio : MushafIntent
     data class SetAudioSpeed(val speed: Float) : MushafIntent
     data class SeekAudio(val positionMs: Long) : MushafIntent
     data object NextAyahAudio : MushafIntent
     data object PrevAyahAudio : MushafIntent
+
+    // Tafsir
+    data class LoadTafsir(val surah: Int, val ayah: Int) : MushafIntent
+    data object DismissTafsir : MushafIntent
 }

@@ -37,9 +37,9 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-    data object Search : AppRoute
     data class Mushaf(val startPage: Int? = null) : AppRoute
     data object Profile : AppRoute
+    data object Search : AppRoute
 }
 
 
@@ -133,17 +133,18 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 entry<AppRoute.Mushaf> { route ->
                     MushafScreen(
                         startPage = route.startPage,
-                        onNavigateSearch = {
+                        onBack = { selectTab(AppBottomNavDestination.Home) },
+                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                        onSearchClick = {
                             backStack.removeAll { it == AppRoute.Search }
                             backStack.add(AppRoute.Search)
                         },
-                        onBack = { selectTab(AppBottomNavDestination.Home) },
-                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                     )
                 }
                 entry<AppRoute.Search> {
                     com.example.mushaf.presentation.search.MushafSearchScreen(
                         viewModel = org.koin.androidx.compose.koinViewModel(),
+                        onNavigateBack = { backStack.removeLast() },
                         onNavigateToMushaf = {
                             backStack.removeAll { it is AppRoute.Mushaf }
                             backStack.add(AppRoute.Mushaf())

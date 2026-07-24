@@ -43,10 +43,20 @@ data class MushafUiState(
     val playingPage: Int? = null,
     val playbackSpeed: Float = 1.0f,
     val availableReciters: List<Reciter> = emptyList(),
+
+    // Surah Picker
+    val showSurahPicker: Boolean = false,
+
+    // Tajweed Legend
+    val showTajweedLegend: Boolean = false,
+
+    // Tafsir
+    val tafsirState: TafsirState = TafsirState.Idle
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
+    val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)
 
     fun pageState(pageNumber: Int): PageLoadState = when {
         pages.containsKey(pageNumber) -> PageLoadState.Loaded(pages.getValue(pageNumber))
@@ -64,6 +74,12 @@ sealed interface PageLoadState {
     data object Failed : PageLoadState
 }
 
+sealed interface TafsirState {
+    data object Idle : TafsirState
+    data class Loading(val surah: Int, val ayah: Int) : TafsirState
+    data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
+    data class Error(val message: String) : TafsirState
+}
 
 enum class CaptureError {
     PERMISSION_DENIED,

@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +26,7 @@ import com.example.designsystem.theme.Theme
 @Composable
 fun TopHeaderSection(
     userInitials: String,
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -30,11 +35,22 @@ fun TopHeaderSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Al-Māhir",
-                color = Theme.colors.primary,
-                style = Theme.typography.title.copy(fontWeight = FontWeight.Bold)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onBack != null) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "عودة",
+                            tint = Theme.colors.primaryFont
+                        )
+                    }
+                }
+                Text(
+                    text = "Al-Māhir",
+                    color = Theme.colors.primary,
+                    style = Theme.typography.title.copy(fontWeight = FontWeight.Bold)
+                )
+            }
             Box(
                 modifier = Modifier
                     .size(36.dp)
