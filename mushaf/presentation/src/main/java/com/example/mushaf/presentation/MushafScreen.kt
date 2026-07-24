@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -357,6 +358,11 @@ fun MushafScreen(
         }
 
         // ── Tajweed Legend FAB ──────────────────────────────────────────────────
+        val fabBottomPadding by animateDpAsState(
+            targetValue = if (state.mushafMode == MushafMode.LISTEN) 144.dp else 80.dp,
+            label = "fabBottomPadding"
+        )
+        
         AnimatedVisibility(
             visible = state.areBarsVisible,
             enter = fadeIn(),
@@ -364,7 +370,7 @@ fun MushafScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
-                .padding(end = 16.dp, bottom = 80.dp), // above the bottom bar
+                .padding(end = 16.dp, bottom = fabBottomPadding),
         ) {
             FloatingActionButton(
                 onClick = { viewModel.onIntent(MushafIntent.ShowTajweedLegend) },
