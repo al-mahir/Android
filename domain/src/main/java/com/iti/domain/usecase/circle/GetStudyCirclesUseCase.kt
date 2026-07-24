@@ -1,16 +1,12 @@
 package com.iti.domain.usecase.circle
 
 import com.iti.domain.model.StudyCircle
-import com.iti.domain.repository.AlmahirRepository
+import com.iti.domain.repository.CircleRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
 
 class GetStudyCirclesUseCase(
-    private val repository: AlmahirRepository,
+    private val repository: CircleRepository,
 ) {
     operator fun invoke(): Flow<List<StudyCircle>> =
-        repository.observeStudyCircles().map { circles ->
-            circles.sortedBy { circle -> circle.isJoined }
-        }
+        repository.observeStudyCircles()
 }
