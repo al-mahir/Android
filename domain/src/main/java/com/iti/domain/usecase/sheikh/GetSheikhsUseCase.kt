@@ -2,20 +2,15 @@ package com.iti.domain.usecase.sheikh
 
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
-import com.iti.domain.repository.AlmahirRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
+import com.iti.domain.repository.SheikhRepository
 
 class GetSheikhsUseCase(
-    private val repository: AlmahirRepository,
+    private val repository: SheikhRepository,
 ) {
-    operator fun invoke(): Flow<List<Sheikh>> =
-        repository.observeSheikhs().map { sheikhs ->
-            sheikhs.sortedWith(
-                compareBy<Sheikh> { it.availability.rank() }.thenByDescending { it.rating },
-            )
-        }
+    suspend operator fun invoke(): List<Sheikh> =
+        repository.getSheikhs().sortedWith(
+            compareBy<Sheikh> { it.availability.rank() }.thenByDescending { it.rating },
+        )
 
     private fun SheikhAvailability.rank(): Int = when (this) {
         SheikhAvailability.AVAILABLE -> 0
