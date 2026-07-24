@@ -40,7 +40,7 @@ fun ActiveCircleRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(Theme.shapes.large)
-            .background(Theme.colors.surface)
+            .background(Theme.colors.surfaceContainer)
             .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = Theme.shapes.large)
             .padding(Theme.spacing.medium),
     ) {
@@ -72,7 +72,7 @@ fun ActiveCircleRow(
             onClick = onJoinClick,
             isLoading = isJoining,
             isDisabled = circle.isJoined,
-            height = ButtonHeightCompact,
+            height = 36.dp,
             shape = CircleShape,
             captionStyle = Theme.typography.body.medium,
             modifier = Modifier.widthIn(min = JoinButtonMinWidth),

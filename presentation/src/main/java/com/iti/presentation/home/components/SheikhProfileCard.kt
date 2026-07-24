@@ -43,7 +43,7 @@ fun SheikhProfileCard(
         modifier = modifier
             .width(CardWidth)
             .clip(Theme.shapes.large)
-            .background(Theme.colors.surface)
+            .background(Theme.colors.surfaceContainer)
             .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = Theme.shapes.large)
             .clickable(onClick = onClick)
             .semantics(mergeDescendants = true) { role = Role.Button }
