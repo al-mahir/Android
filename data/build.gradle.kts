@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
@@ -16,6 +19,14 @@ android {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+        val baseUrl = localProperties.getProperty("baseUrl", "")
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
