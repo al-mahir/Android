@@ -13,15 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.painterResource
+import com.example.designsystem.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -102,13 +99,15 @@ fun AudioPlayerBar(
                     .padding(horizontal = 4.dp, vertical = 2.dp),
             )
 
+
+
             // ── Prev ──────────────────────────────────────────────────────
             IconButton(
                 onClick = onPrevClick,
                 modifier = Modifier.size(36.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.SkipPrevious,
+                    painter = painterResource(R.drawable.ic_skip_previous),
                     contentDescription = "السابق",
                     tint = Theme.colors.secondaryFont,
                     modifier = Modifier.size(20.dp),
@@ -129,7 +128,7 @@ fun AudioPlayerBar(
                     ),
             ) {
                 Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
                     contentDescription = if (isPlaying) "إيقاف" else "تشغيل",
                     tint = playIconColor,
                     modifier = Modifier.size(22.dp),
@@ -142,7 +141,7 @@ fun AudioPlayerBar(
                 modifier = Modifier.size(36.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Default.SkipNext,
+                    painter = painterResource(R.drawable.ic_skip_next),
                     contentDescription = "التالي",
                     tint = Theme.colors.secondaryFont,
                     modifier = Modifier.size(20.dp),

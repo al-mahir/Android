@@ -10,26 +10,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 
-/**
- * A dismissible notice about the session itself.
- *
- * Used for things the service reports that change what the app can do — chiefly running a
- * different engine than the one asked for, which silently removes tajwīd grading. Those are
- * easy to swallow, and swallowing them leaves the reciter trusting feedback that was never
- * produced.
- */
 @Composable
 fun LiveNoticeBanner(
     text: String,
@@ -48,7 +39,7 @@ fun LiveNoticeBanner(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Outlined.Info,
+            painter = painterResource(R.drawable.ic_info),
             // The text carries the meaning; a second announcement would be read out twice.
             contentDescription = null,
             tint = Theme.colors.onSurface,
@@ -60,7 +51,7 @@ fun LiveNoticeBanner(
             modifier = Modifier.weight(1f),
         )
         Icon(
-            imageVector = Icons.Filled.Close,
+            painter = painterResource(R.drawable.ic_cancel),
             contentDescription = dismissContentDescription,
             tint = Theme.colors.onSurface,
             modifier = Modifier
@@ -77,16 +68,6 @@ data class RecitationCandidateUi(
     val text: String?,
 )
 
-/**
- * The passage occurs in more than one place; which one is being recited?
- *
- * Shown rather than guessed. Scoring someone against a verse they were not reciting is the worst
- * failure this system has available, so the service declines to place the passage and hands back
- * candidates instead — and a client that hides them turns a considered refusal into silence.
- *
- * Non-modal on purpose: the contract allows simply waiting for the next chunk to resolve it, so
- * this must not block a reciter who is still going.
- */
 @Composable
 fun RecitationCandidatesCard(
     title: String,
@@ -118,7 +99,7 @@ fun RecitationCandidatesCard(
                 ),
             )
             Icon(
-                imageVector = Icons.Filled.Close,
+                painter = painterResource(R.drawable.ic_cancel),
                 contentDescription = dismissContentDescription,
                 tint = Theme.colors.secondaryFont,
                 modifier = Modifier

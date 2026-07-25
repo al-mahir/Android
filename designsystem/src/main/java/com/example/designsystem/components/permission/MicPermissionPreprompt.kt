@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -66,7 +64,7 @@ fun MicPermissionPreprompt(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Mic,
+                    painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_mic),
                     // Decorative: the title and message carry the meaning.
                     contentDescription = null,
                     tint = Theme.colors.onPrimaryContainer,
