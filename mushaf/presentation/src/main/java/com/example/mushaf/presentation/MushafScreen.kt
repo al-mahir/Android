@@ -380,7 +380,7 @@ fun MushafScreen(
                 elevation = FloatingActionButtonDefaults.elevation(4.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Palette,
+                    painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_palette),
                     contentDescription = "دليل ألوان التجويد",
                 )
             }
