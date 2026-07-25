@@ -74,7 +74,7 @@
     <string name="home_ayah_juz">الآية %1$d • الجزء %2$d</string>
     <!-- %1$d = completion percentage (0-100) -->
     <string name="home_surah_progress_percent">%1$d%% مكتمل</string>
-    <string name="home_resume_reading">استئناف القراءة &#8594;</string>
+    <string name="home_resume_reading">استئناف القراءة </string>
     <string name="home_search_content_description">بحث</string>
     <string name="home_continue_reading_content_description">متابعة القراءة</string>
 

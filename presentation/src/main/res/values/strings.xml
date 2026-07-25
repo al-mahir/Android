@@ -74,7 +74,7 @@
     <string name="home_ayah_juz">Ayah %1$d • Juz %2$d</string>
     <!-- %1$d = completion percentage (0-100) -->
     <string name="home_surah_progress_percent">%1$d%% completed</string>
-    <string name="home_resume_reading">Resume reading &#8594;</string>
+    <string name="home_resume_reading">Resume reading</string>
     <string name="home_search_content_description">Search</string>
     <string name="home_continue_reading_content_description">Continue reading</string>
 

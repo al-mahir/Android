@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
@@ -84,7 +85,7 @@ class HomeViewModel(
                         user = snapshot.user,
                         readingProgress = snapshot.readingProgress,
                         ayahOfTheDay = snapshot.ayahOfTheDay,
-                        circles = snapshot.circles,
+                        circles = snapshot.circles.take(2),
                     )
                 }
             }
