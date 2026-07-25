@@ -209,6 +209,7 @@ internal fun MushafSearchContent(
                         items(state.surahs, key = { it.number }) { surah ->
                             SurahListItem(
                                 surah = surah,
+                                query = state.query,
                                 onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
                             )
                         }
@@ -217,6 +218,7 @@ internal fun MushafSearchContent(
                         items(state.tafsirs, key = { "tafsir-${it.surahNumber}-${it.ayahNumber}" }) { tafsir ->
                             com.example.mushaf.presentation.search.components.TafsirListItem(
                                 tafsir = tafsir,
+                                query = state.query,
                                 onClick = { onIntent(MushafSearchIntent.TafsirClicked(tafsir)) }
                             )
                         }
@@ -224,6 +226,7 @@ internal fun MushafSearchContent(
                         items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
                             AyahListItem(
                                 ayah = ayah,
+                                query = state.query,
                                 onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
                             )
                         }

@@ -15,12 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -28,9 +22,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.designsystem.R as DesignsystemR
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
 
@@ -47,6 +44,7 @@ fun MushafTopBar(
     onSurahNameClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onSurahPillPositioned: ((androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -68,7 +66,7 @@ fun MushafTopBar(
                 modifier = Modifier.size(36.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    painter = painterResource(DesignsystemR.drawable.ic_arrow_back_rotated),
                     contentDescription = stringResource(R.string.mushaf_cd_back),
                     tint = Theme.colors.onSurface,
                     modifier = Modifier.size(Theme.size.iconMedium),
@@ -89,7 +87,8 @@ fun MushafTopBar(
                         .clip(RoundedCornerShape(20.dp))
                         .clickable(onClick = onSurahNameClick)
                         .background(Theme.colors.primary.copy(alpha = 0.10f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .onGloballyPositioned { onSurahPillPositioned?.invoke(it) },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -121,7 +120,7 @@ fun MushafTopBar(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Search,
+                        painter = painterResource(DesignsystemR.drawable.ic_search),
                         contentDescription = "بحث",
                         tint = Theme.colors.onSurface,
                         modifier = Modifier.size(Theme.size.iconMedium),
@@ -132,7 +131,7 @@ fun MushafTopBar(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = if (isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                        painter = painterResource(if (isBookmarked) DesignsystemR.drawable.ic_bookmark_filled else DesignsystemR.drawable.ic_bookmark),
                         contentDescription = stringResource(R.string.mushaf_cd_bookmark),
                         tint = if (isBookmarked) Theme.colors.primary else Theme.colors.onSurface,
                         modifier = Modifier.size(Theme.size.iconMedium),
@@ -143,7 +142,7 @@ fun MushafTopBar(
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Settings,
+                        painter = painterResource(DesignsystemR.drawable.ic_settings),
                         contentDescription = stringResource(R.string.mushaf_cd_settings),
                         tint = Theme.colors.onSurface,
                         modifier = Modifier.size(Theme.size.iconMedium),

@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -16,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.core.os.ConfigurationCompat
+import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 import java.text.NumberFormat
 
@@ -32,6 +32,8 @@ import java.text.NumberFormat
  * Show it only when there is something to show — a permanent "0 mistakes" badge reads as a score,
  * and the underlying grading is not calibrated to support one.
  */
+
+
 @Composable
 fun CorrectionsBadge(
     count: Int,
@@ -53,7 +55,7 @@ fun CorrectionsBadge(
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall),
     ) {
         Icon(
-            imageVector = Icons.Outlined.ErrorOutline,
+            painter = painterResource(R.drawable.ic_info),
             // The row carries the description; a second one would be read out twice.
             contentDescription = null,
             tint = Theme.colors.onError,

@@ -70,6 +70,7 @@ class MushafViewModel(
     private val getPage: GetPageUseCase,
     private val observeReaderPreferences: ObserveReaderPreferencesUseCase,
     private val setTajweedEnabled: SetTajweedEnabledUseCase,
+    private val setFirstMushafLaunchCompleted: com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase,
     private val saveLastPage: SaveLastPageUseCase,
     private val getReciters: GetRecitersUseCase,
     private val getAyahTimings: GetAyahTimingsUseCase,
@@ -236,7 +237,12 @@ class MushafViewModel(
             }
             .onEach { prefs ->
                 Log.d(TAG, "Preferences: tajweed=${prefs.tajweedEnabled}, lastPage=${prefs.lastPage}")
-                _state.update { it.copy(isTajweedEnabled = prefs.tajweedEnabled) }
+                _state.update { 
+                    it.copy(
+                        isTajweedEnabled = prefs.tajweedEnabled,
+                        showUserGuide = prefs.isFirstMushafLaunch
+                    ) 
+                }
                 if (!initialized) {
                     initialized = true
                     onIntent(MushafIntent.LoadPage(prefs.lastPage))
@@ -299,6 +305,19 @@ class MushafViewModel(
             // Tafsir
             is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
             MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
+            
+            // User Guide
+            MushafIntent.GuideNextStep -> {
+                val currentStep = _state.value.guideStep
+                if (currentStep < 6) { // 6 is the max step we will define
+                    _state.update { it.copy(guideStep = currentStep + 1) }
+                } else {
+                    viewModelScope.launch { setFirstMushafLaunchCompleted() }
+                }
+            }
+            MushafIntent.DismissGuide -> {
+                viewModelScope.launch { setFirstMushafLaunchCompleted() }
+            }
         }
     }
 

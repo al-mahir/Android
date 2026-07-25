@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 @Composable
 fun TafsirListItem(
     tafsir: TafsirResult,
+    query: String = "",
     onClick: () -> Unit
 ) {
     Column(
@@ -46,7 +47,7 @@ fun TafsirListItem(
         Spacer(modifier = Modifier.height(8.dp))
         val parsedHtml = HtmlCompat.fromHtml(tafsir.tafsirText, HtmlCompat.FROM_HTML_MODE_COMPACT).toString()
         Text(
-            text = parsedHtml,
+            text = parsedHtml.highlight(query, Theme.colors.primary),
             style = Theme.typography.body.medium.copy(
                 color = Theme.colors.primaryFont,
                 lineHeight = 24.sp

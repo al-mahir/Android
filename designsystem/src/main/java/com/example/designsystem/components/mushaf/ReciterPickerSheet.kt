@@ -78,7 +78,7 @@ fun ReciterPickerSheet(
                         
                         if (isSelected) {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_check),
                                 contentDescription = "Selected",
                                 tint = Theme.colors.primary
                             )
