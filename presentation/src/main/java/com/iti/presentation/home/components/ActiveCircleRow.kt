@@ -49,7 +49,7 @@ fun ActiveCircleRow(
             modifier = Modifier.weight(1f),
         ) {
             BasicText(
-                text = circle.title,
+                text = circle.surahName,
                 style = Theme.typography.body.large.copy(
                     color = Theme.colors.primaryFont,
                     fontWeight = FontWeight.SemiBold,

@@ -26,6 +26,10 @@ interface AlmahirRepository {
 
     suspend fun joinStudyCircle(circleId: String)
 
+    suspend fun cancelJoinCircle(circleId: String)
+
+    fun observeSheikhCircles(sheikhId: String): Flow<List<StudyCircle>>
+
 
     suspend fun restorePurchases(): Boolean
 

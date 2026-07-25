@@ -59,14 +59,21 @@ class HomeViewModel(
         contentJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
 
+        // Load sheikhs from real API in parallel (one-shot suspend).
+        viewModelScope.launch {
+            runCatching { getSheikhs() }
+                .onSuccess { sheikhs -> updateState { copy(sheikhs = sheikhs) } }
+                .onFailure { /* Home shows error only if all sources fail; ignore partial sheikh failure */ }
+        }
+
+        // Observe user, reading progress, ayah of the day, and circles as continuous streams.
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
             getAyahOfTheDay(),
-            getSheikhs(),
             getStudyCircles(),
-        ) { user, readingProgress, ayahOfTheDay, sheikhs, circles ->
-            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, sheikhs, circles)
+        ) { user, readingProgress, ayahOfTheDay, circles ->
+            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles)
         }
             .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }
             .onEach { snapshot ->
@@ -77,7 +84,6 @@ class HomeViewModel(
                         user = snapshot.user,
                         readingProgress = snapshot.readingProgress,
                         ayahOfTheDay = snapshot.ayahOfTheDay,
-                        sheikhs = snapshot.sheikhs,
                         circles = snapshot.circles,
                     )
                 }

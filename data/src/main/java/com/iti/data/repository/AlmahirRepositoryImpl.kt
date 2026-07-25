@@ -41,6 +41,15 @@ class AlmahirRepositoryImpl(
         dataSource.joinStudyCircle(circleId)
     }
 
+    override suspend fun cancelJoinCircle(circleId: String) {
+        dataSource.cancelJoinCircle(circleId)
+    }
+
+    override fun observeSheikhCircles(sheikhId: String): Flow<List<StudyCircle>> =
+        dataSource.observeStudyCircles().map { dtos ->
+            dtos.filter { it.hostId == sheikhId }.map { it.toDomain() }
+        }
+
     override suspend fun restorePurchases(): Boolean = dataSource.restorePurchases()
 
     override suspend fun logout() {

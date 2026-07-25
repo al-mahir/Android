@@ -224,4 +224,49 @@
     <string name="attribution_mushaf_body">رسم المصحف وتخطيط صفحاته © مجمع الملك فهد لطباعة المصحف الشريف.</string>
     <string name="attribution_models_title">تحليل التلاوة</string>
     <string name="attribution_models_body">يعتمد التصحيح المباشر على نموذجَي Muaalem وrecitation-segmenter من obadx.</string>
+    <!-- ===== Sheikh List ===== -->
+    <string name="sheikh_list_title">المعلمون</string>
+    <string name="sheikh_search_hint">ابحث هنا…</string>
+    <string name="sheikh_filter_all">كل المعلمين</string>
+    <string name="sheikh_filter_available">المتاحون فقط</string>
+    <string name="sheikh_filter_busy">في جلسة</string>
+    <string name="sheikh_list_count">%1$d معلم متاح</string>
+    <string name="sheikh_cd_favourite">إضافة للمفضلة</string>
+    <string name="sheikh_status_available">متاح</string>
+    <string name="sheikh_status_in_session">في جلسة</string>
+    <string name="sheikh_status_offline">غير متصل</string>
+
+    <!-- ===== Sheikh Details ===== -->
+    <string name="sheikh_details_title">ملف الشيخ</string>
+    <string name="sheikh_stat_rating">التقييم</string>
+    <string name="sheikh_stat_reviews">التقييمات</string>
+    <string name="sheikh_stat_students">الطلاب</string>
+    <string name="sheikh_stat_circles">الحلقات</string>
+    <string name="sheikh_section_bio">نبذة</string>
+    <string name="sheikh_section_active_circles">الحلقات النشطة</string>
+
+    <!-- ===== Circle List ===== -->
+    <string name="circle_list_title">الحلقات النشطة</string>
+    <string name="circle_search_hint">ابحث بالسورة أو الشيخ…</string>
+    <string name="circle_join">انضم</string>
+    <string name="circle_waiting">بانتظار القبول</string>
+    <string name="circle_participants_label">%1$d/%2$d · %3$s</string>
+    <string name="circle_difficulty_beginner">مبتدئ</string>
+    <string name="circle_difficulty_intermediate">متوسط</string>
+    <string name="circle_difficulty_advanced">متقدم</string>
+
+    <!-- ===== Joining Circle ===== -->
+    <string name="joining_circle_title">الانضمام للحلقة</string>
+    <string name="joining_circle_waiting_title">في انتظار الموافقة…</string>
+    <string name="joining_circle_waiting_body">يتحقق المضيف من طلبك للانضمام إلى حلقة %1$s.</string>
+    <string name="joining_circle_cancel">إلغاء الطلب</string>
+
+    <!-- ===== In Session ===== -->
+    <string name="session_leave">مغادرة</string>
+    <string name="session_host_speaking">المضيف · يتحدث</string>
+    <string name="session_mic_on">الميكروفون</string>
+    <string name="session_mic_off">مكتوم</string>
+    <string name="session_mushaf">المصحف</string>
+    <string name="session_raise_hand">رفع اليد</string>
+    <string name="session_chat">المحادثة</string>
 </resources>

@@ -8,9 +8,9 @@ import com.iti.data.dto.SubscriptionDto
 import com.iti.data.dto.UserDto
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 
@@ -46,7 +46,17 @@ class AlmahirFakeDataSource : AlmahirDataSource {
         delay(JOIN_DELAY_MS)
         circles.update { current ->
             current.map { circle ->
-                if (circle.id == circleId) circle.copy(isJoined = true) else circle
+                if (circle.id == circleId) circle.copy(isWaitingApproval = true) else circle
+            }
+        }
+    }
+
+    override suspend fun cancelJoinCircle(circleId: String) {
+        delay(JOIN_DELAY_MS)
+        circles.update { current ->
+            current.map { circle ->
+                if (circle.id == circleId) circle.copy(isWaitingApproval = false, isJoined = false)
+                else circle
             }
         }
     }
@@ -76,7 +86,6 @@ class AlmahirFakeDataSource : AlmahirDataSource {
         const val LOGOUT_DELAY_MS = 500L
         const val DELETE_ACCOUNT_DELAY_MS = 1_200L
 
-        /** 2026-07-14T00:00:00Z. */
         const val JOINED_AT_EPOCH_MILLIS = 1_783_987_200_000L
 
         val SEED_USER = UserDto(
@@ -100,34 +109,144 @@ class AlmahirFakeDataSource : AlmahirDataSource {
         val SEED_SHEIKHS = listOf(
             SheikhDto(
                 id = "sheikh-ahmad",
-                name = "الشيخ أحمد",
-                rating = 4.9,
+                name = "أحمد محمد موسى محمد",
+                rating = 5.0,
+                reviewCount = 128,
                 availability = "in_session",
+                specialization = "حفظ القرآن الكريم",
+                bio = "شيخ متخصص في تعليم حفظ القرآن الكريم بأسانيد عالية، خبرة تزيد عن ١٥ عاماً.",
+                activeCircleCount = 2,
+                totalStudents = 340,
+            ),
+            SheikhDto(
+                id = "sheikh-wahib",
+                name = "أحمد وهيب إبراهيم علي",
+                rating = 4.9,
+                reviewCount = 95,
+                availability = "in_session",
+                specialization = "تجويد القرآن",
+                bio = "معلم تجويد معتمد من الأزهر الشريف، يدرّس عبر الإنترنت منذ ٢٠١٥.",
+                activeCircleCount = 1,
+                totalStudents = 215,
+            ),
+            SheikhDto(
+                id = "sheikh-ayman",
+                name = "أيمن جاد الحسيني",
+                rating = 4.9,
+                reviewCount = 74,
+                availability = "available",
+                specialization = "مراجعة وتثبيت الحفظ",
+                bio = "متخصص في برامج مراجعة الحفظ وتثبيته مع الفهم والتدبر.",
+                activeCircleCount = 3,
+                totalStudents = 180,
+            ),
+            SheikhDto(
+                id = "sheikh-ibrahim",
+                name = "إبراهيم أكرم الدسوقي",
+                rating = 4.8,
+                reviewCount = 61,
+                availability = "available",
+                specialization = "تعليم الأطفال",
+                bio = "خبير في أساليب تعليم القرآن للأطفال باستخدام الطرق التفاعلية الحديثة.",
+                activeCircleCount = 2,
+                totalStudents = 290,
             ),
             SheikhDto(
                 id = "sheikh-omar",
-                name = "الشيخ عمر",
+                name = "الشيخ عمر الفاضل",
                 rating = 5.0,
+                reviewCount = 203,
                 availability = "available",
+                specialization = "حفظ وتجويد",
+                bio = "شيخ محقق في علوم القرآن، حاصل على إجازة بالسند المتصل.",
+                activeCircleCount = 1,
+                totalStudents = 510,
             ),
             SheikhDto(
-                id = "sheikh-yusuf",
-                name = "الشيخ يوسف",
+                id = "sheikh-hassan",
+                name = "الشيخ حسن خليل",
                 rating = 4.7,
+                reviewCount = 49,
                 availability = "offline",
+                specialization = "حفظ للمبتدئين",
+                bio = "يتميز بأسلوب المبسط لحفظ القرآن للمبتدئين والأطفال.",
+                activeCircleCount = 0,
+                totalStudents = 155,
             ),
         )
 
         val SEED_CIRCLES = listOf(
             StudyCircleDto(
-                id = "circle-baqarah",
-                title = "دورة مراجعة البقرة",
-                hostName = "Omar Al-Fadl",
+                id = "circle-yasin",
+                surahName = "Surah Yasin",
+                hostId = "sheikh-ahmad",
+                hostName = "Sheikh Ahmad",
+                hostInitials = "أح",
+                isLive = true,
+                difficulty = "intermediate",
+                participantCount = 12,
+                maxParticipants = 20,
+                currentActivity = "Reading",
             ),
             StudyCircleDto(
-                id = "circle-kids",
-                title = "حلقة الأطفال المبتدئين",
-                hostName = "Hassan Khalil",
+                id = "circle-kahf",
+                surahName = "Surah Al-Kahf",
+                hostId = "sheikh-omar",
+                hostName = "Sheikh Omar",
+                hostInitials = "عم",
+                isLive = true,
+                difficulty = "beginner",
+                participantCount = 8,
+                maxParticipants = 15,
+                currentActivity = "Reading",
+            ),
+            StudyCircleDto(
+                id = "circle-baqarah",
+                surahName = "Surah Al-Baqarah",
+                hostId = "sheikh-hassan",
+                hostName = "Sheikh Hassan",
+                hostInitials = "حس",
+                isLive = true,
+                difficulty = "advanced",
+                participantCount = 25,
+                maxParticipants = 25,
+                currentActivity = "Reading",
+            ),
+            StudyCircleDto(
+                id = "circle-juzzamma",
+                surahName = "Juz Amma",
+                hostId = "sheikh-ibrahim",
+                hostName = "Sheikh Ibrahim",
+                hostInitials = "إب",
+                isLive = true,
+                difficulty = "beginner",
+                participantCount = 5,
+                maxParticipants = 12,
+                currentActivity = "Reading",
+            ),
+            StudyCircleDto(
+                id = "circle-ayman-baqarah",
+                surahName = "Surah Al-Baqarah",
+                hostId = "sheikh-ayman",
+                hostName = "Sheikh Ayman",
+                hostInitials = "أي",
+                isLive = true,
+                difficulty = "intermediate",
+                participantCount = 10,
+                maxParticipants = 20,
+                currentActivity = "Review",
+            ),
+            StudyCircleDto(
+                id = "circle-wahib-yasin",
+                surahName = "Surah Yasin",
+                hostId = "sheikh-wahib",
+                hostName = "Sheikh Wahib",
+                hostInitials = "وه",
+                isLive = true,
+                difficulty = "beginner",
+                participantCount = 7,
+                maxParticipants = 15,
+                currentActivity = "Reading",
             ),
         )
 
@@ -139,19 +258,7 @@ class AlmahirFakeDataSource : AlmahirDataSource {
                 body = """
                     # الماهر
 
-                    تطبيق الماهر رفيقك في تلاوة القرآن الكريم وحفظه، يجمع بين المصحف
-                    الرقمي وتصحيح التلاوة بالذكاء الاصطناعي وحلقات التعلّم مع الشيوخ.
-
-                    ## ما الذي يميّزنا
-
-                    - مصحف بخطوط المدينة الرسمية مع التجويد الملوّن.
-                    - تصحيح فوري للتلاوة أثناء القراءة.
-                    - حلقات مباشرة مع شيوخ معتمدين.
-                    - متابعة لتقدّمك في الحفظ والمراجعة.
-
-                    ## تواصل معنا
-
-                    يسعدنا سماع رأيك واقتراحاتك عبر مركز المساعدة داخل التطبيق.
+                    تطبيق الماهر رفيقك في تلاوة القرآن الكريم وحفظه.
                 """.trimIndent(),
             ),
             "terms_of_service" to LegalDocumentDto(
@@ -162,20 +269,6 @@ class AlmahirFakeDataSource : AlmahirDataSource {
                     # شروط الخدمة
 
                     باستخدامك تطبيق الماهر فإنك توافق على الشروط الموضّحة أدناه.
-
-                    ## استخدام الحساب
-
-                    - أنت مسؤول عن الحفاظ على سرية بيانات دخولك.
-                    - يُمنع استخدام التطبيق لأي غرض مخالف للأنظمة المعمول بها.
-
-                    ## الاشتراكات
-
-                    - تُجدَّد الاشتراكات تلقائياً ما لم يتم إلغاؤها قبل موعد التجديد.
-                    - تتم إدارة المدفوعات عبر متجر التطبيقات، وتخضع لسياساته.
-
-                    ## إنهاء الخدمة
-
-                    يحق لنا تعليق الحساب عند مخالفة هذه الشروط، مع إشعارك بذلك.
                 """.trimIndent(),
             ),
             "privacy_policy" to LegalDocumentDto(
@@ -186,22 +279,6 @@ class AlmahirFakeDataSource : AlmahirDataSource {
                     # سياسة الخصوصية
 
                     نحرص على حماية بياناتك ونجمع الحد الأدنى اللازم لتشغيل الخدمة.
-
-                    ## البيانات التي نجمعها
-
-                    - بيانات الحساب: الاسم والبريد الإلكتروني.
-                    - بيانات التلاوة: التسجيلات الصوتية المستخدمة للتصحيح.
-                    - بيانات التقدّم: الصفحات المقروءة ونتائج المراجعة.
-
-                    ## حقوقك
-
-                    - يمكنك حذف تسجيلاتك الصوتية مع الاحتفاظ بإحصاءات تقدّمك.
-                    - يمكنك طلب نسخة من بياناتك الشخصية أو حذف حسابك نهائياً.
-
-                    ## الأمان
-
-                    تُشفَّر البيانات أثناء النقل وعند التخزين، ولا نشاركها مع أطراف
-                    ثالثة لأغراض إعلانية.
                 """.trimIndent(),
             ),
         )
