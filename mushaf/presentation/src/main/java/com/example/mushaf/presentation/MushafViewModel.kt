@@ -374,7 +374,7 @@ class MushafViewModel(
                     attempts++
                 }
                 if (_state.value.pages[startPage] != null) {
-                    startFollowAlong(startPage)
+                    startFollowAlong(startPage, targetSurahNumber = surahNumber)
                 }
             }
         }
@@ -1048,7 +1048,7 @@ class MushafViewModel(
         }
     }
 
-    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage) {
+    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage, targetSurahNumber: Int? = null) {
         val page = _state.value.pages[targetPageNumber] ?: return
         val reciter = _state.value.currentReciter
         
@@ -1072,8 +1072,14 @@ class MushafViewModel(
                         Log.d(TAG, "requested link is : ${urls.first().url}")
                     }
                     
-                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page")
-                    playbackManager.playTracks(urls)
+                    val startIndex = if (targetSurahNumber != null) {
+                        timings.indexOfFirst { it.surahNumber == targetSurahNumber }.coerceAtLeast(0)
+                    } else {
+                        0
+                    }
+                    
+                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page, startIndex=$startIndex")
+                    playbackManager.playTracks(urls, startIndex)
                     audioHighlightDriver.start(page)
                 } else {
                     Log.w(TAG, "No timings were loaded. Cannot play audio.")
