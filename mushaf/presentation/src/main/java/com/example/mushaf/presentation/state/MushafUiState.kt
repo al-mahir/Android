@@ -62,6 +62,7 @@ data class MushafUiState(
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
     val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)
+    val currentJuzNumber: Int get() = MushafConstants.juzForPage(currentPage)
 
     fun pageState(pageNumber: Int): PageLoadState = when {
         pages.containsKey(pageNumber) -> PageLoadState.Loaded(pages.getValue(pageNumber))

@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
 
     private var isPreferencesReady = false
 
+    private val pendingAction = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
 
@@ -70,9 +72,12 @@ class MainActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        intent?.action?.let { pendingAction.value = it }
+
         enableEdgeToEdge()
         setContent {
             val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
+            val action by pendingAction.collectAsStateWithLifecycle()
 
             val systemInDarkTheme = isSystemInDarkTheme()
             val view = LocalView.current
@@ -105,9 +110,17 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(Theme.colors.backGround),
                 ) {
-                    AppNavHost()
+                    AppNavHost(
+                        pendingAction = action,
+                        onActionHandled = { pendingAction.value = null }
+                    )
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        intent.action?.let { pendingAction.value = it }
     }
 }
