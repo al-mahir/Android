@@ -296,7 +296,12 @@ class MushafViewModel(
                     navigateToSurah(next)
                 }
             }
-            MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
+            MushafIntent.PrevSurahAudio -> {
+                val prev = (_state.value.currentSurahNumber - 1).coerceAtLeast(1)
+                if (prev != _state.value.currentSurahNumber) {
+                    navigateToSurah(prev)
+                }
+            }
 
             // Surah Picker
             MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
