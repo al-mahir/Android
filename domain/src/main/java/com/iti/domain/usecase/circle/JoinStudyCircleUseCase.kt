@@ -1,12 +1,13 @@
 package com.iti.domain.usecase.circle
 
+import com.iti.domain.core.Result
 import com.iti.domain.repository.CircleRepository
 
 class JoinStudyCircleUseCase(
     private val repository: CircleRepository,
 ) {
-    suspend operator fun invoke(circleId: String) {
+    suspend operator fun invoke(circleId: String): Result<Unit> {
         require(circleId.isNotBlank()) { "circleId must not be blank" }
-        repository.joinStudyCircle(circleId)
+        return repository.joinStudyCircle(circleId)
     }
 }

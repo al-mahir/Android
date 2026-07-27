@@ -37,6 +37,20 @@ class TokenStorage(context: Context) : TokenStore {
         emit(readTokens())
     }
 
+    override val userId: Flow<String?> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == KEY_USER_ID) {
+                trySend(readUserId())
+            }
+        }
+        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }.onStart {
+        emit(readUserId())
+    }
+
     private fun readTokens(): TokenPair? {
         val accessToken = sharedPrefs.getString(KEY_ACCESS_TOKEN, null)
         val refreshToken = sharedPrefs.getString(KEY_REFRESH_TOKEN, null)
@@ -47,7 +61,11 @@ class TokenStorage(context: Context) : TokenStore {
         }
     }
 
+    private fun readUserId(): String? = sharedPrefs.getString(KEY_USER_ID, null)
+
     override suspend fun getTokens(): TokenPair? = readTokens()
+
+    override suspend fun getUserId(): String? = readUserId()
 
     override suspend fun save(tokens: TokenPair) {
         sharedPrefs.edit()
@@ -56,15 +74,24 @@ class TokenStorage(context: Context) : TokenStore {
             .apply()
     }
 
+    override suspend fun saveUserId(userId: String) {
+        sharedPrefs.edit()
+            .putString(KEY_USER_ID, userId)
+            .apply()
+    }
+
     override suspend fun clear() {
         sharedPrefs.edit()
             .remove(KEY_ACCESS_TOKEN)
             .remove(KEY_REFRESH_TOKEN)
+            .remove(KEY_USER_ID)
             .apply()
     }
 
     private companion object {
         const val KEY_ACCESS_TOKEN = "access_token"
         const val KEY_REFRESH_TOKEN = "refresh_token"
+        const val KEY_USER_ID = "user_id"
     }
 }
+

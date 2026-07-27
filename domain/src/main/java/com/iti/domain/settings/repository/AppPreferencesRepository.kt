@@ -1,5 +1,6 @@
 package com.iti.domain.settings.repository
 
+import com.iti.domain.core.Result
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
@@ -10,13 +11,13 @@ interface AppPreferencesRepository {
 
     val preferences: Flow<AppPreferences>
 
-    suspend fun setThemeMode(mode: ThemeMode)
+    suspend fun setThemeMode(mode: ThemeMode): Result<Unit>
 
-    suspend fun setLanguage(language: AppLanguage)
+    suspend fun setLanguage(language: AppLanguage): Result<Unit>
 
-    suspend fun setRemindersEnabled(enabled: Boolean)
+    suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit>
 
-    suspend fun setErrorSoundsEnabled(enabled: Boolean)
+    suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit>
 
-    suspend fun setDataSaverEnabled(enabled: Boolean)
+    suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit>
 }
