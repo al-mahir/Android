@@ -3,12 +3,13 @@ package com.example.mushaf.domain.usecase
 import com.example.mushaf.domain.model.DownloadableResource
 import com.example.mushaf.domain.model.ResourceKind
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
+import com.iti.domain.core.Result
 import kotlinx.coroutines.flow.Flow
 
 class ObserveDownloadableResourcesUseCase(
     private val repository: DownloadableResourceRepository,
 ) {
-    operator fun invoke(kind: ResourceKind): Flow<List<DownloadableResource>> =
+    operator fun invoke(kind: ResourceKind): Flow<Result<List<DownloadableResource>>> =
         repository.observeResources(kind)
 }
 
