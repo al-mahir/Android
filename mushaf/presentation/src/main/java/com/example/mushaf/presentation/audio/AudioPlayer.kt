@@ -7,6 +7,7 @@ interface AudioPlayer {
     val currentPosition: StateFlow<Long>
     val currentTrackIndex: StateFlow<Int>
     val playbackSpeed: StateFlow<Float>
+    val externalCommands: kotlinx.coroutines.flow.SharedFlow<String>
 
     fun playUrls(urls: List<String>)
     fun play()

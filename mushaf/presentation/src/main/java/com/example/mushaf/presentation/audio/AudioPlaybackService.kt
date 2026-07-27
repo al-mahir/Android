@@ -10,8 +10,18 @@ class AudioPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val player = ExoPlayer.Builder(this).build()
-        mediaSession = MediaSession.Builder(this, player).build()
+        val exoPlayer = ExoPlayer.Builder(this).build()
+        val forwardingPlayer = object : androidx.media3.common.ForwardingPlayer(exoPlayer) {
+            override fun seekToNext() {
+                val command = androidx.media3.session.SessionCommand("ACTION_NEXT_SURAH", android.os.Bundle.EMPTY)
+                mediaSession?.broadcastCustomCommand(command, android.os.Bundle.EMPTY)
+            }
+            override fun seekToPrevious() {
+                val command = androidx.media3.session.SessionCommand("ACTION_PREV_SURAH", android.os.Bundle.EMPTY)
+                mediaSession?.broadcastCustomCommand(command, android.os.Bundle.EMPTY)
+            }
+        }
+        mediaSession = MediaSession.Builder(this, forwardingPlayer).build()
 
         val notificationProvider = androidx.media3.session.DefaultMediaNotificationProvider(this).apply {
             setSmallIcon(android.R.drawable.ic_media_play)

@@ -9,6 +9,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.Futures
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,6 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -44,6 +46,9 @@ class AudioPlaybackManager(
     
     private val _playbackSpeed = MutableStateFlow(1f)
     override val playbackSpeed: StateFlow<Float> = _playbackSpeed
+
+    private val _externalCommands = kotlinx.coroutines.flow.MutableSharedFlow<String>()
+    override val externalCommands: kotlinx.coroutines.flow.SharedFlow<String> = _externalCommands.asSharedFlow()
 
     private var positionJob: Job? = null
 
@@ -75,7 +80,21 @@ class AudioPlaybackManager(
 
     init {
         val sessionToken = SessionToken(context, ComponentName(context, AudioPlaybackService::class.java))
-        controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
+        val listener = object : MediaController.Listener {
+            override fun onCustomCommand(
+                controller: MediaController,
+                command: androidx.media3.session.SessionCommand,
+                args: android.os.Bundle
+            ): ListenableFuture<androidx.media3.session.SessionResult> {
+                scope.launch {
+                    _externalCommands.emit(command.customAction)
+                }
+                return Futures.immediateFuture(androidx.media3.session.SessionResult(androidx.media3.session.SessionResult.RESULT_SUCCESS))
+            }
+        }
+        controllerFuture = MediaController.Builder(context, sessionToken)
+            .setListener(listener)
+            .buildAsync()
         controllerFuture?.addListener(
             {
                 _player = controllerFuture?.get()

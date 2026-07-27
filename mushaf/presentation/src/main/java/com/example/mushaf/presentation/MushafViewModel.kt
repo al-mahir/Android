@@ -210,6 +210,15 @@ class MushafViewModel(
             .onEach { speed -> _state.update { it.copy(playbackSpeed = speed) } }
             .launchIn(viewModelScope)
 
+        playbackManager.externalCommands
+            .onEach { command ->
+                when (command) {
+                    "ACTION_NEXT_SURAH" -> onIntent(MushafIntent.NextSurahAudio)
+                    "ACTION_PREV_SURAH" -> onIntent(MushafIntent.PrevSurahAudio)
+                }
+            }
+            .launchIn(viewModelScope)
+
         loadReciters()
 
         observeRecitationSettings()
