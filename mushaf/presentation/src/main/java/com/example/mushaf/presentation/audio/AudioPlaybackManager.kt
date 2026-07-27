@@ -147,12 +147,12 @@ class AudioPlaybackManager(
     }
 
     override fun seekTo(positionMs: Long) {
-        _player.seekTo(positionMs)
+        _player?.seekTo(positionMs)
         _currentPosition.value = positionMs
     }
 
     override fun setSpeed(speed: Float) {
-        _player.setPlaybackSpeed(speed)
+        _player?.setPlaybackSpeed(speed)
         _playbackSpeed.value = speed
     }
 
