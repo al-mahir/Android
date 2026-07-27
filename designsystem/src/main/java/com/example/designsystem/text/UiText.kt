@@ -1,4 +1,4 @@
-package com.iti.presentation.core.ui
+package com.example.designsystem.text
 
 import android.content.Context
 import androidx.annotation.StringRes
@@ -10,16 +10,16 @@ sealed interface UiText {
 
     data class Dynamic(val value: String) : UiText
 
-    data class Resource(@param:StringRes val id: Int) : UiText
+    data class Resource(@param:StringRes val id: Int, val args: List<Any> = emptyList()) : UiText
 }
 
 @Composable
 fun UiText.asString(): String = when (this) {
     is UiText.Dynamic -> value
-    is UiText.Resource -> stringResource(id)
+    is UiText.Resource -> stringResource(id, *args.toTypedArray())
 }
 
 fun UiText.resolve(context: Context): String = when (this) {
     is UiText.Dynamic -> value
-    is UiText.Resource -> context.getString(id)
+    is UiText.Resource -> context.getString(id, *args.toTypedArray())
 }

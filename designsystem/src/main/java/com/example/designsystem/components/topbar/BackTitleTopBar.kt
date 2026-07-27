@@ -20,7 +20,7 @@ fun BackTitleTopBar(
     title: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backIcon: Painter = painterResource(R.drawable.ic_arrow_back_rotated),
+    backIcon: Painter = painterResource(R.drawable.ic_arrow_back),
     iconStyle: TopBarIconStyle = TopBarIconStyle.CircularBackground(),
     decoration: (@Composable BoxScope.() -> Unit)? = null,
     end: (@Composable RowScope.() -> Unit)? = null,
