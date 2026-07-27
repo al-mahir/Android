@@ -267,7 +267,7 @@ fun MushafScreen(
         MushafTopBar(
             visible = state.areBarsVisible,
             surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
-            juzNumber = 1,
+            juzNumber = state.currentJuzNumber,
             hizbNumber = 1,
             isBookmarked = false,
             onBack = onBack,
