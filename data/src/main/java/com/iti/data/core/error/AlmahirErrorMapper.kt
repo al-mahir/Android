@@ -6,11 +6,7 @@ import com.iti.domain.core.DomainError
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ResponseException
 
-/**
- * Maps a non-success [ApiResponse] envelope (`{ "success": false, ... }`) to a [DomainError].
- * Shared by every repository that talks to the Almahir backend, so the same envelope shape is
- * classified consistently everywhere instead of once per repository.
- */
+
 internal fun ApiResponse<*>.toDomainError(): DomainError {
     val reason = message ?: UNKNOWN_ERROR
     val errors = fieldErrors.orEmpty()
@@ -21,10 +17,7 @@ internal fun ApiResponse<*>.toDomainError(): DomainError {
     }
 }
 
-/**
- * Maps a raw [Throwable] from an Almahir HTTP call to a [DomainError], reading the HTTP status
- * and, where present, the [ApiErrorResponse] body for a server-supplied reason/field errors.
- */
+
 internal suspend fun Throwable.toDomainError(): DomainError {
     if (this !is ResponseException) return DomainError.NetworkError(this)
 

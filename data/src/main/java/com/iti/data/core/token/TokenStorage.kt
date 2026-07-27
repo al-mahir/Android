@@ -1,97 +1,62 @@
 package com.iti.data.core.token
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
-import kotlinx.coroutines.channels.awaitClose
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+private val Context.tokenDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "auth_tokens_secure"
+)
 
 class TokenStorage(context: Context) : TokenStore {
 
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val dataStore = context.tokenDataStore
 
-    private val sharedPrefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        "auth_tokens_secure",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
-
-    override val tokens: Flow<TokenPair?> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_ACCESS_TOKEN || key == KEY_REFRESH_TOKEN) {
-                trySend(readTokens())
-            }
-        }
-        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
-        awaitClose {
-            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }.onStart {
-        emit(readTokens())
+    override val tokens: Flow<TokenPair?> = dataStore.data.map { prefs ->
+        val accessToken = prefs[KEY_ACCESS_TOKEN]
+        val refreshToken = prefs[KEY_REFRESH_TOKEN]
+        if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) null
+        else TokenPair(accessToken, refreshToken)
     }
 
-    override val userId: Flow<String?> = callbackFlow {
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_USER_ID) {
-                trySend(readUserId())
-            }
-        }
-        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
-        awaitClose {
-            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
-        }
-    }.onStart {
-        emit(readUserId())
+    override val userId: Flow<String?> = dataStore.data.map { prefs ->
+        prefs[KEY_USER_ID]
     }
 
-    private fun readTokens(): TokenPair? {
-        val accessToken = sharedPrefs.getString(KEY_ACCESS_TOKEN, null)
-        val refreshToken = sharedPrefs.getString(KEY_REFRESH_TOKEN, null)
-        return if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
-            null
-        } else {
-            TokenPair(accessToken, refreshToken)
-        }
-    }
+    override suspend fun getTokens(): TokenPair? = tokens.first()
 
-    private fun readUserId(): String? = sharedPrefs.getString(KEY_USER_ID, null)
-
-    override suspend fun getTokens(): TokenPair? = readTokens()
-
-    override suspend fun getUserId(): String? = readUserId()
+    override suspend fun getUserId(): String? = userId.first()
 
     override suspend fun save(tokens: TokenPair) {
-        sharedPrefs.edit()
-            .putString(KEY_ACCESS_TOKEN, tokens.accessToken)
-            .putString(KEY_REFRESH_TOKEN, tokens.refreshToken)
-            .apply()
+        dataStore.edit { prefs ->
+            prefs[KEY_ACCESS_TOKEN] = tokens.accessToken
+            prefs[KEY_REFRESH_TOKEN] = tokens.refreshToken
+        }
     }
 
     override suspend fun saveUserId(userId: String) {
-        sharedPrefs.edit()
-            .putString(KEY_USER_ID, userId)
-            .apply()
+        dataStore.edit { prefs ->
+            prefs[KEY_USER_ID] = userId
+        }
     }
 
     override suspend fun clear() {
-        sharedPrefs.edit()
-            .remove(KEY_ACCESS_TOKEN)
-            .remove(KEY_REFRESH_TOKEN)
-            .remove(KEY_USER_ID)
-            .apply()
+        dataStore.edit { prefs ->
+            prefs.remove(KEY_ACCESS_TOKEN)
+            prefs.remove(KEY_REFRESH_TOKEN)
+            prefs.remove(KEY_USER_ID)
+        }
     }
 
     private companion object {
-        const val KEY_ACCESS_TOKEN = "access_token"
-        const val KEY_REFRESH_TOKEN = "refresh_token"
-        const val KEY_USER_ID = "user_id"
+        val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
+        val KEY_REFRESH_TOKEN = stringPreferencesKey("refresh_token")
+        val KEY_USER_ID = stringPreferencesKey("user_id")
     }
 }
-
