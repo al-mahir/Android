@@ -13,12 +13,15 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.model.recite.SpeechGateConfig
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
+import com.iti.domain.core.Result
+import com.iti.domain.core.getOrNull
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -64,9 +67,9 @@ class LiveRecitationRepositoryTest {
         @Volatile
         var releasedAt: Long = 0
 
-        override fun capture(): Flow<AudioFrame> = throw UnsupportedOperationException()
+        override fun capture(): Flow<Result<AudioFrame>> = throw UnsupportedOperationException()
 
-        override fun captureSpeech(config: SpeechGateConfig): Flow<SpeechEvent> = flow {
+        override fun captureSpeech(config: SpeechGateConfig): Flow<Result<SpeechEvent>> = flow {
             isCapturing.set(true)
             try {
                 repeat(frameCount) { index ->
@@ -86,7 +89,7 @@ class LiveRecitationRepositoryTest {
                 isCapturing.set(false)
                 releasedAt = System.nanoTime()
             }
-        }
+        }.map { Result.Success(it) }
     }
 
     private fun repositoryFor(capture: RecitationCaptureRepository) = LiveRecitationRepositoryImpl(
@@ -109,7 +112,9 @@ class LiveRecitationRepositoryTest {
         val controls = MutableSharedFlow<RecitationControl>()
         val events = mutableListOf<LiveRecitationEvent>()
         coroutineScope {
-            val session = launch { repositoryFor(capture).session(config, controls).toList(events) }
+            val session = launch {
+                repositoryFor(capture).session(config, controls).map { it.getOrNull()!! }.toList(events)
+            }
             
             
             awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
@@ -251,7 +256,7 @@ class LiveRecitationRepositoryTest {
             repositoryFor(capture).session(
                 config = LiveRecitationConfig(start = RecitationCursor(1, 1)),
                 controls = controls,
-            ).toList()
+            ).map { it.getOrNull()!! }.toList()
         }
 
         assertTrue("session did not end cleanly", events.last() is LiveRecitationEvent.Finished)

@@ -2,6 +2,8 @@ package com.iti.presentation.sheikh
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.fold
+import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhByIdUseCase
@@ -39,8 +41,8 @@ class SheikhDetailsViewModel(
         // Load sheikh from real API (suspend)
         viewModelScope.launch {
             updateState { copy(isLoading = true, isError = false) }
-            runCatching { getSheikhById(sheikhId) }
-                .onSuccess { sheikh ->
+            getSheikhById(sheikhId).fold(
+                onSuccess = { sheikh ->
                     updateState {
                         copy(
                             sheikh = sheikh,
@@ -48,16 +50,18 @@ class SheikhDetailsViewModel(
                             isError = sheikh == null,
                         )
                     }
-                }
-                .onFailure {
+                },
+                onError = {
                     updateState { copy(isLoading = false, isError = true) }
-                }
+                },
+            )
         }
 
         // Observe circles from fake/reactive source (Flow)
         getStudyCircles()
             .catch { /* circles are non-critical; swallow errors silently */ }
-            .onEach { circles ->
+            .onEach { result ->
+                val circles = result.getOrNull() ?: return@onEach
                 updateState { copy(circles = circles.filter { it.hostId == sheikhId }) }
             }
             .launchIn(viewModelScope)
@@ -65,7 +69,7 @@ class SheikhDetailsViewModel(
 
     private fun join(circleId: String) {
         viewModelScope.launch {
-            runCatching { joinCircle(circleId) }
+            joinCircle(circleId)
             sendEffect(SheikhDetailsEffect.NavigateToJoiningCircle(circleId))
         }
     }

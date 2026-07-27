@@ -1,8 +1,17 @@
 package com.iti.data
 
+import com.iti.data.datasource.AlmahirDataSource
+import com.iti.data.datasource.circle.CircleDataSource
+import com.iti.data.datasource.sheikh.SheikhDataSource
+import com.iti.data.dto.LegalDocumentDto
+import com.iti.data.dto.StudyCircleDto
+import com.iti.data.dto.SubscriptionDto
+import com.iti.data.dto.UserDto
+import com.iti.data.dto.sheikh.SheikhApiDto
 import com.iti.data.local.recitation.RecitationSessionDao
 import com.iti.data.local.recitation.RecitationSessionEntity
-import com.iti.data.repository.RecitationSessionRepositoryImpl
+import com.iti.data.repository.AlmahirRepositoryImpl
+import com.iti.domain.core.getOrNull
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.model.recitation.SessionMistake
 import com.iti.domain.model.recitation.SessionMistakeCategory
@@ -48,8 +57,35 @@ class RecitationSessionRepositoryTest {
         }
     }
 
+    private class StubAlmahirDataSource : AlmahirDataSource {
+        override fun observeCurrentUser(): Flow<UserDto> = MutableStateFlow(UserDto(id = "u", displayName = "u"))
+        override fun observeSubscription(): Flow<SubscriptionDto> = MutableStateFlow(SubscriptionDto(plan = "none"))
+        override fun observeLegalDocument(documentType: String): Flow<LegalDocumentDto> =
+            MutableStateFlow(LegalDocumentDto(type = documentType, title = "", body = ""))
+        override suspend fun restorePurchases(): Boolean = false
+        override suspend fun logout() = Unit
+        override suspend fun deleteAccount() = Unit
+    }
+
+    private class StubSheikhDataSource : SheikhDataSource {
+        override suspend fun getSheikhs(): List<SheikhApiDto> = emptyList()
+        override suspend fun getSheikhById(id: String): SheikhApiDto? = null
+        override suspend fun searchSheikhs(name: String): List<SheikhApiDto> = emptyList()
+    }
+
+    private class StubCircleDataSource : CircleDataSource {
+        override fun observeStudyCircles(): Flow<List<StudyCircleDto>> = MutableStateFlow(emptyList())
+        override suspend fun joinStudyCircle(circleId: String) = Unit
+        override suspend fun cancelJoinCircle(circleId: String) = Unit
+    }
+
     private val dao = InMemoryDao()
-    private val repository = RecitationSessionRepositoryImpl(dao)
+    private val repository = AlmahirRepositoryImpl(
+        dataSource = StubAlmahirDataSource(),
+        sheikhDataSource = StubSheikhDataSource(),
+        circleDataSource = StubCircleDataSource(),
+        dao = dao,
+    )
 
     private fun summary(id: String = "s1") = RecitationSessionSummary(
         id = id,
@@ -86,7 +122,7 @@ class RecitationSessionRepositoryTest {
     fun `a saved session comes back intact`() = runTest {
         repository.save(summary())
 
-        val stored = repository.observeSessions().first().single()
+        val stored = repository.observeSessions().first().getOrNull()!!.single()
         assertEquals(summary(), stored)
     }
 
@@ -94,7 +130,7 @@ class RecitationSessionRepositoryTest {
     fun `Arabic text and rule names survive the round trip`() = runTest {
         repository.save(summary())
 
-        val mistake = repository.observeSession("s1").first()!!.mistakes.first()
+        val mistake = repository.observeSession("s1").first().getOrNull()!!.mistakes.first()
         assertEquals("ٱلرَّحْمَٰنِ", mistake.word)
         assertEquals("المد الطبيعي", mistake.ruleName)
         assertEquals(2, mistake.expectedLength)
@@ -105,7 +141,7 @@ class RecitationSessionRepositoryTest {
     fun `derived figures are recomputed from what was stored`() = runTest {
         repository.save(summary())
 
-        val stored = repository.observeSession("s1").first()!!
+        val stored = repository.observeSession("s1").first().getOrNull()!!
         assertEquals(2, stored.mistakeCount)
         assertEquals((29 - 2) / 29f, stored.accuracy!!, 0.0001f)
         assertEquals(1, stored.mistakesByCategory[SessionMistakeCategory.TAJWID])
@@ -117,7 +153,7 @@ class RecitationSessionRepositoryTest {
         // connection indistinguishable from a session that never happened.
         repository.save(summary().copy(scoredWordCount = 0, mistakes = emptyList()))
 
-        val stored = repository.observeSessions().first().single()
+        val stored = repository.observeSessions().first().getOrNull()!!.single()
         assertTrue(stored.gradedNothing)
         assertNull(stored.accuracy)
     }
@@ -137,7 +173,7 @@ class RecitationSessionRepositoryTest {
             ),
         )
 
-        val stored = repository.observeSession("future").first()!!
+        val stored = repository.observeSession("future").first().getOrNull()!!
         assertEquals(SessionMistakeCategory.OTHER, stored.mistakes.single().category)
     }
 
@@ -156,7 +192,7 @@ class RecitationSessionRepositoryTest {
             ),
         )
 
-        val stored = repository.observeSession("corrupt").first()!!
+        val stored = repository.observeSession("corrupt").first().getOrNull()!!
         assertTrue(stored.mistakes.isEmpty())
         assertTrue(stored.practiceFocus.isEmpty())
         assertEquals(5, stored.scoredWordCount)
@@ -167,7 +203,7 @@ class RecitationSessionRepositoryTest {
         repository.save(summary())
         repository.save(summary().copy(scoredWordCount = 99))
 
-        val all = repository.observeSessions().first()
+        val all = repository.observeSessions().first().getOrNull()!!
         assertEquals(1, all.size)
         assertEquals(99, all.single().scoredWordCount)
     }
@@ -179,7 +215,7 @@ class RecitationSessionRepositoryTest {
 
         repository.delete("a")
 
-        assertEquals(listOf("b"), repository.observeSessions().first().map { it.id })
-        assertNull(repository.observeSession("a").first())
+        assertEquals(listOf("b"), repository.observeSessions().first().getOrNull()!!.map { it.id })
+        assertNull(repository.observeSession("a").first().getOrNull())
     }
 }

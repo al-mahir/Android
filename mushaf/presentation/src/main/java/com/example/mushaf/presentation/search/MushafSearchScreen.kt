@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.search.SearchBar
+import com.example.designsystem.text.asString
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.Surah
@@ -167,7 +168,7 @@ internal fun MushafSearchContent(
             if (state.errorMessage != null) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = state.errorMessage,
+                    text = state.errorMessage.asString(),
                     style = Theme.typography.body.small,
                     color = Color.Red,
                     modifier = Modifier.padding(horizontal = 4.dp)

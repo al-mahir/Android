@@ -8,7 +8,7 @@ import com.iti.presentation.R
 import com.iti.presentation.auth.login.LoginEffect
 import com.iti.presentation.auth.login.LoginIntent
 import com.iti.presentation.auth.login.LoginViewModel
-import com.iti.presentation.core.ui.UiText
+import com.example.designsystem.text.UiText
 import com.iti.presentation.testing.FakeAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

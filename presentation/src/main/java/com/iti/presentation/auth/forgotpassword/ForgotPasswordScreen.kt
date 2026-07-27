@@ -19,6 +19,7 @@ import com.iti.presentation.R
 
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.designsystem.text.asString
 
 @Composable
 fun ForgotPasswordScreen(
@@ -60,7 +61,7 @@ fun ForgotPasswordScreen(
             hint = stringResource(id = R.string.auth_enter_email),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = state.emailError != null,
-            errorMessage = state.emailError,
+            errorMessage = state.emailError?.asString(),
             modifier = Modifier.fillMaxWidth()
         )
         

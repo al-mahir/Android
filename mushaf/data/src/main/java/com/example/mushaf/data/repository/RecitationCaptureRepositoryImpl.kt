@@ -13,6 +13,8 @@ import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.model.recite.SpeechGate
 import com.example.mushaf.domain.model.recite.SpeechGateConfig
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
+import com.iti.domain.core.Result
+import com.iti.domain.core.asResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -29,7 +31,7 @@ class RecitationCaptureRepositoryImpl(
 ) : RecitationCaptureRepository {
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    override fun capture(): Flow<AudioFrame> = flow {
+    override fun capture(): Flow<Result<AudioFrame>> = flow {
         val writer = debugSink.open(label = "raw")
         try {
             recorder.record().collect { frame ->
@@ -39,10 +41,10 @@ class RecitationCaptureRepositoryImpl(
         } finally {
             writer.closeQuietly()
         }
-    }
+    }.asResult()
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    override fun captureSpeech(config: SpeechGateConfig): Flow<SpeechEvent> = flow {
+    override fun captureSpeech(config: SpeechGateConfig): Flow<Result<SpeechEvent>> = flow {
         val gate = SpeechGate(config)
         val rawWriter = debugSink.open(label = "raw")
         val gatedWriter = debugSink.open(label = "gated")
@@ -67,7 +69,7 @@ class RecitationCaptureRepositoryImpl(
             rawWriter.closeQuietly()
             gatedWriter.closeQuietly()
         }
-    }
+    }.asResult()
 
     
 

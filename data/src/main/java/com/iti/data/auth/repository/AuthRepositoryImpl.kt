@@ -9,9 +9,9 @@ import com.iti.data.auth.remote.dto.LogoutRequest
 import com.iti.data.auth.remote.dto.RegisterRequest
 import com.iti.data.auth.remote.dto.ResetPasswordRequest
 import com.iti.data.auth.remote.dto.UserDto
-import com.iti.data.core.network.dto.ApiErrorResponse
 import com.iti.data.core.network.dto.ApiResponse
 import com.iti.data.core.network.dto.RefreshTokenRequest
+import com.iti.data.core.error.toDomainError
 import com.iti.data.core.token.TokenPair
 import com.iti.data.core.token.TokenStore
 import com.iti.data.core.token.getRefreshToken
@@ -22,8 +22,6 @@ import com.iti.domain.auth.model.User
 import com.iti.domain.auth.repository.AuthRepository
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
-import io.ktor.client.call.body
-import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
@@ -54,7 +52,11 @@ class AuthRepositoryImpl(
                 )
             )
         },
-        onSuccess = { it.toDomain() },
+        onSuccess = { 
+            val user = it.toDomain()
+            tokenStore.saveUserId(user.id)
+            user
+        },
     )
 
     override suspend fun login(email: String, password: String): Result<AuthData> = apiCall(
@@ -110,9 +112,11 @@ class AuthRepositoryImpl(
         if (tokens.accessToken.isNotBlank() && tokens.refreshToken.isNotBlank()) {
             tokenStore.save(TokenPair(tokens.accessToken, tokens.refreshToken))
         }
+        val domainUser = user.toDomain()
+        tokenStore.saveUserId(domainUser.id)
         return AuthData(
             tokens = tokens,
-            user = user.toDomain(),
+            user = domainUser,
             isNewUser = isNewUser ?: false,
         )
     }
@@ -145,32 +149,6 @@ class AuthRepositoryImpl(
         Result.Error(throwable.toDomainError())
     }
 
-    private fun ApiResponse<*>.toDomainError(): DomainError {
-        val reason = message ?: UNKNOWN_ERROR
-        val errors = fieldErrors.orEmpty()
-        return if (errors.isEmpty()) {
-            DomainError.ServerError(reason)
-        } else {
-            DomainError.ValidationError(reason, errors)
-        }
-    }
-
-    private suspend fun Throwable.toDomainError(): DomainError {
-        if (this !is ResponseException) return DomainError.NetworkError(this)
-
-        val status = response.status
-        val error = runCatching { response.body<ApiErrorResponse>() }.getOrNull()
-        val reason = error?.message ?: status.description
-        val fieldErrors = error?.fieldErrors.orEmpty()
-
-        return when (status.value) {
-            HTTP_BAD_REQUEST, HTTP_UNPROCESSABLE_ENTITY -> DomainError.ValidationError(reason, fieldErrors)
-            HTTP_UNAUTHORIZED, HTTP_FORBIDDEN -> DomainError.Unauthorized(reason)
-            HTTP_CONFLICT -> DomainError.ConflictError(reason, fieldErrors)
-            else -> DomainError.ServerError(reason, status.value)
-        }
-    }
-
     private fun UserDto?.toDomain(): User = User(
         id = this?.id.orEmpty(),
         username = this?.username.orEmpty(),
@@ -184,15 +162,8 @@ class AuthRepositoryImpl(
     )
 
     private companion object {
-        const val UNKNOWN_ERROR = "Something went wrong. Please try again."
         const val EMPTY_PAYLOAD = "The server returned an empty response."
         const val NO_ACTIVE_SESSION = "No active session."
         const val NOT_IMPLEMENTED = "Profile endpoint is not available yet."
-
-        const val HTTP_BAD_REQUEST = 400
-        const val HTTP_UNAUTHORIZED = 401
-        const val HTTP_FORBIDDEN = 403
-        const val HTTP_CONFLICT = 409
-        const val HTTP_UNPROCESSABLE_ENTITY = 422
     }
 }

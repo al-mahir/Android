@@ -66,7 +66,7 @@ fun MushafTopBar(
                 modifier = Modifier.size(36.dp)
             ) {
                 Icon(
-                    painter = painterResource(DesignsystemR.drawable.ic_arrow_back_rotated),
+                    painter = painterResource(DesignsystemR.drawable.ic_arrow_back),
                     contentDescription = stringResource(R.string.mushaf_cd_back),
                     tint = Theme.colors.onSurface,
                     modifier = Modifier.size(Theme.size.iconMedium),

@@ -1,5 +1,6 @@
 package com.iti.presentation.settings
 
+import com.iti.domain.core.Result
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
@@ -166,24 +167,29 @@ private class FakeAppPreferencesRepository(
 
     override val preferences: Flow<AppPreferences> = state
 
-    override suspend fun setThemeMode(mode: ThemeMode) {
+    override suspend fun setThemeMode(mode: ThemeMode): Result<Unit> {
         state.value = state.value.copy(themeMode = mode)
+        return Result.Success(Unit)
     }
 
-    override suspend fun setLanguage(language: AppLanguage) {
+    override suspend fun setLanguage(language: AppLanguage): Result<Unit> {
         state.value = state.value.copy(language = language)
+        return Result.Success(Unit)
     }
 
-    override suspend fun setRemindersEnabled(enabled: Boolean) {
+    override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> {
         state.value = state.value.copy(remindersEnabled = enabled)
+        return Result.Success(Unit)
     }
 
-    override suspend fun setErrorSoundsEnabled(enabled: Boolean) {
+    override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> {
         state.value = state.value.copy(errorSoundsEnabled = enabled)
+        return Result.Success(Unit)
     }
 
-    override suspend fun setDataSaverEnabled(enabled: Boolean) {
+    override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> {
         state.value = state.value.copy(dataSaverEnabled = enabled)
+        return Result.Success(Unit)
     }
 }
 
@@ -191,7 +197,8 @@ private class FakeRecordingsRepository : RecordingsRepository {
     var deleteAllCount = 0
         private set
 
-    override suspend fun deleteAll() {
+    override suspend fun deleteAll(): Result<Unit> {
         deleteAllCount++
+        return Result.Success(Unit)
     }
 }

@@ -2,6 +2,7 @@ package com.iti.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.circle.CancelJoinCircleUseCase
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.presentation.circle.state.JoiningCircleEffect
@@ -37,7 +38,8 @@ class JoiningCircleViewModel(
     private fun observeCircle() {
         getCircles()
             .catch {}
-            .onEach { circles ->
+            .onEach { result ->
+                val circles = result.getOrNull() ?: return@onEach
                 val circle = circles.firstOrNull { it.id == circleId }
                 updateState { copy(circle = circle, isLoading = circle == null) }
             }
@@ -53,7 +55,7 @@ class JoiningCircleViewModel(
 
     private fun cancel() {
         viewModelScope.launch {
-            runCatching { cancelJoin(circleId) }
+            cancelJoin(circleId)
             sendEffect(JoiningCircleEffect.NavigateBack)
         }
     }

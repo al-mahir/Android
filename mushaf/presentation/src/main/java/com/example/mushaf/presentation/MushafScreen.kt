@@ -1,15 +1,19 @@
 package com.example.mushaf.presentation
 
 import android.Manifest
+import android.R.attr.animation
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -278,13 +282,13 @@ fun MushafScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            androidx.compose.animation.AnimatedVisibility(
+            AnimatedVisibility(
                 visible = state.mushafMode == MushafMode.LISTEN && state.areBarsVisible,
-                enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
             ) {
                 AudioPlayerBar(
                     isPlaying = state.audioState == AudioState.PLAYING,

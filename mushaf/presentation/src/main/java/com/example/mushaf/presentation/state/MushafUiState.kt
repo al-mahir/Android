@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation.state
 
+import com.example.designsystem.text.UiText
 import com.example.mushaf.domain.model.MushafConstants
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.example.mushaf.domain.model.MushafMode
@@ -83,7 +84,7 @@ sealed interface TafsirState {
     data object Idle : TafsirState
     data class Loading(val surah: Int, val ayah: Int) : TafsirState
     data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
-    data class Error(val message: String) : TafsirState
+    data class Error(val message: UiText) : TafsirState
 }
 
 enum class CaptureError {

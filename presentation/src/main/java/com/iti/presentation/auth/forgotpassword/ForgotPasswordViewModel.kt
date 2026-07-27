@@ -2,13 +2,18 @@ package com.iti.presentation.auth.forgotpassword
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.auth.model.AuthField
 import com.iti.domain.auth.usecase.ForgotPasswordUseCase
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
+import com.iti.presentation.R
+import com.iti.presentation.auth.fieldError
+import com.iti.presentation.auth.toUiText
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
+import com.example.designsystem.text.UiText
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
@@ -27,12 +32,12 @@ class ForgotPasswordViewModel(
     private fun submit() {
         val email = currentState.email
         if (email.isBlank()) {
-            updateState { copy(emailError = "Email cannot be empty") }
+            updateState { copy(emailError = UiText.Resource(R.string.auth_error_required)) }
             return
         }
 
-        updateState { copy(isLoading = true) }
-        
+        updateState { copy(isLoading = true, emailError = null) }
+
         viewModelScope.launch {
             when (val result = forgotPasswordUseCase(email)) {
                 is Result.Success -> {
@@ -49,19 +54,11 @@ class ForgotPasswordViewModel(
     }
 
     private fun handleDomainError(error: DomainError) {
-        when (error) {
-            is DomainError.ValidationError -> {
-                updateState { copy(emailError = error.fieldErrors["email"]) }
-            }
-            is DomainError.ServerError -> {
-                sendEffect(ForgotPasswordEffect.ShowError(error.message))
-            }
-            is DomainError.NetworkError -> {
-                sendEffect(ForgotPasswordEffect.ShowError("Network error. Please try again."))
-            }
-            else -> {
-                sendEffect(ForgotPasswordEffect.ShowError("An unknown error occurred"))
-            }
+        val emailError = error.fieldError(AuthField.EMAIL)
+        if (emailError != null) {
+            updateState { copy(emailError = emailError) }
+            return
         }
+        sendEffect(ForgotPasswordEffect.ShowError(error.toUiText()))
     }
 }

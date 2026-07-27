@@ -105,6 +105,7 @@ class QuranTextDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Ayah search failed for query: $query", t)
+            throw t
         }
         results
     }
@@ -116,6 +117,7 @@ class QuranTextDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Verse text query failed for $sura:$ayah", t)
+            throw t
         }
         null
     }

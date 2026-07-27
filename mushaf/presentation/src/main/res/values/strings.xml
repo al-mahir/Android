@@ -120,6 +120,12 @@
     <!-- Errors -->
     <string name="downloads_error_generic">We could not load this list. Please try again.</string>
 
+    <!-- ===== Shared domain error messages ===== -->
+    <string name="error_network">Network error. Please check your connection and try again.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="error_unauthorized">Your session has expired. Please sign in again.</string>
+    <string name="error_not_found">We couldn\'t find what you were looking for.</string>
+
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">Mushaf preferences</string>
     <string name="settings_tajweed_description">Colour the script by tajweed rules</string>

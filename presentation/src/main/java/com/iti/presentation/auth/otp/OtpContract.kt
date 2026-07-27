@@ -1,5 +1,7 @@
 package com.iti.presentation.auth.otp
 
+import com.example.designsystem.text.UiText
+
 data class OtpState(
     val email: String = "",
     val otpCode: String = "",
@@ -20,6 +22,6 @@ sealed class OtpIntent {
 sealed class OtpEffect {
     object NavigateToHome : OtpEffect()
     object NavigateToLogin : OtpEffect()
-    data class ShowError(val message: String) : OtpEffect()
+    data class ShowError(val message: UiText) : OtpEffect()
     object NavigateBack : OtpEffect()
 }

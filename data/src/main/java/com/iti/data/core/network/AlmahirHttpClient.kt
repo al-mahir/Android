@@ -1,5 +1,6 @@
 package com.iti.data.core.network
 
+import android.util.Log
 import com.iti.data.BuildConfig
 import com.iti.data.core.network.dto.ApiResponse
 import com.iti.data.core.network.dto.RefreshTokenRequest
@@ -66,7 +67,11 @@ fun createAlmahirHttpClient(
 
     if (enableLogging) {
         install(Logging) {
-            logger = Logger.DEFAULT
+            logger = object : Logger {
+                override fun log(message: String) {
+                    Log.d("HttpClient", message)
+                }
+            }
             level = LogLevel.BODY
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
