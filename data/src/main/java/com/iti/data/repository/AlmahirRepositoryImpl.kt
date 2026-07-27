@@ -10,6 +10,7 @@ import com.iti.data.local.recitation.StoredMistake
 import com.iti.data.local.recitation.StoredPracticeFocus
 import com.iti.data.mapper.toDomain
 import com.iti.data.mapper.toSlug
+import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.domain.core.Result
 import com.iti.domain.core.asResult
 import com.iti.domain.core.resultOf
@@ -38,6 +39,7 @@ class AlmahirRepositoryImpl(
     private val sheikhDataSource: SheikhDataSource,
     private val circleDataSource: CircleDataSource,
     private val dao: RecitationSessionDao,
+    private val appPreferencesDataStore: AppPreferencesDataStore,
     private val json: Json = SessionJson,
 ) : AlmahirRepository, SheikhRepository, CircleRepository, RecitationSessionRepository {
 
@@ -55,9 +57,15 @@ class AlmahirRepositoryImpl(
     override suspend fun restorePurchases(): Result<Boolean> =
         resultOf { dataSource.restorePurchases() }
 
-    override suspend fun logout(): Result<Unit> = resultOf { dataSource.logout() }
+    override suspend fun logout(): Result<Unit> = resultOf {
+        dataSource.logout()
+        appPreferencesDataStore.clearUser()
+    }
 
-    override suspend fun deleteAccount(): Result<Unit> = resultOf { dataSource.deleteAccount() }
+    override suspend fun deleteAccount(): Result<Unit> = resultOf {
+        dataSource.deleteAccount()
+        appPreferencesDataStore.clearUser()
+    }
 
     // ── SheikhRepository ──────────────────────────────────────────────────
 

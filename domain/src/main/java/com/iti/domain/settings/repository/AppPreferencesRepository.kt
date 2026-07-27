@@ -1,6 +1,7 @@
 package com.iti.domain.settings.repository
 
 import com.iti.domain.core.Result
+import com.iti.domain.model.User
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
@@ -20,4 +21,8 @@ interface AppPreferencesRepository {
     suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit>
 
     suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit>
+    
+    suspend fun saveUser(user: User): Result<Unit>
+    
+    suspend fun clearUser(): Result<Unit>
 }

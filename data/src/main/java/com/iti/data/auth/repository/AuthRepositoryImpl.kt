@@ -25,9 +25,12 @@ import com.iti.domain.core.Result
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
+import com.iti.data.settings.local.AppPreferencesDataStore
+
 class AuthRepositoryImpl(
     private val remoteDataSource: AuthRemoteDataSource,
     private val tokenStore: TokenStore,
+    private val appPreferencesDataStore: AppPreferencesDataStore,
 ) : AuthRepository {
 
     override val authState: Flow<Boolean> = tokenStore.isLoggedIn
@@ -55,6 +58,16 @@ class AuthRepositoryImpl(
         onSuccess = { 
             val user = it.toDomain()
             tokenStore.saveUserId(user.id)
+            appPreferencesDataStore.saveUser(
+                com.iti.domain.model.User(
+                    id = user.id,
+                    displayName = "${user.firstName} ${user.lastName}".trim(),
+                    initials = "${user.firstName.firstOrNull() ?: ""}${user.lastName.firstOrNull() ?: ""}".uppercase(),
+                    avatarUrl = user.profilePictureUrl,
+                    email = user.email,
+                    joinedAtEpochMillis = System.currentTimeMillis() // Or parse from Dto if available
+                )
+            )
             user
         },
     )
@@ -90,6 +103,7 @@ class AuthRepositoryImpl(
             Result.Success(Unit)
         } finally {
             tokenStore.clear()
+            appPreferencesDataStore.clearUser()
         }
     }
 
@@ -114,6 +128,18 @@ class AuthRepositoryImpl(
         }
         val domainUser = user.toDomain()
         tokenStore.saveUserId(domainUser.id)
+        
+        appPreferencesDataStore.saveUser(
+            com.iti.domain.model.User(
+                id = domainUser.id,
+                displayName = "${domainUser.firstName} ${domainUser.lastName}".trim(),
+                initials = "${domainUser.firstName.firstOrNull() ?: ""}${domainUser.lastName.firstOrNull() ?: ""}".uppercase(),
+                avatarUrl = domainUser.profilePictureUrl,
+                email = domainUser.email,
+                joinedAtEpochMillis = System.currentTimeMillis() // Or parse from Dto if available
+            )
+        )
+        
         return AuthData(
             tokens = tokens,
             user = domainUser,

@@ -11,5 +11,5 @@ val authDataModule = module {
     includes(networkModule)
 
     single { AuthRemoteDataSource(client = get(AlmahirClient), json = get(AlmahirClient)) }
-    single<AuthRepository> { AuthRepositoryImpl(remoteDataSource = get(), tokenStore = get()) }
+    single<AuthRepository> { AuthRepositoryImpl(remoteDataSource = get(), tokenStore = get(), appPreferencesDataStore = get()) }
 }
