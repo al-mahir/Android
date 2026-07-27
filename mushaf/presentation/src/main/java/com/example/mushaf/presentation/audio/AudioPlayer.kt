@@ -9,7 +9,13 @@ interface AudioPlayer {
     val playbackSpeed: StateFlow<Float>
     val externalCommands: kotlinx.coroutines.flow.SharedFlow<String>
 
-    fun playUrls(urls: List<String>)
+    data class AudioTrackInfo(
+        val url: String,
+        val title: String,
+        val artist: String
+    )
+
+    fun playTracks(tracks: List<AudioTrackInfo>)
     fun play()
     fun pause()
     fun stop()

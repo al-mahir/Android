@@ -136,12 +136,21 @@ class AudioPlaybackManager(
         }
     }
 
-    override fun playUrls(urls: List<String>) {
+    override fun playTracks(tracks: List<AudioPlayer.AudioTrackInfo>) {
         val player = _player ?: return
         player.stop()
         player.clearMediaItems()
         
-        val mediaItems = urls.map { MediaItem.fromUri(it) }
+        val mediaItems = tracks.map { track -> 
+            val metadata = androidx.media3.common.MediaMetadata.Builder()
+                .setTitle(track.title)
+                .setArtist(track.artist)
+                .build()
+            MediaItem.Builder()
+                .setUri(track.url)
+                .setMediaMetadata(metadata)
+                .build()
+        }
         player.addMediaItems(mediaItems)
         player.prepare()
         player.play()

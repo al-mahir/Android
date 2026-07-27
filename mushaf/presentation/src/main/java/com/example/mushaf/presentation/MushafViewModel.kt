@@ -354,11 +354,29 @@ class MushafViewModel(
     }
 
     private fun navigateToSurah(surahNumber: Int) {
+        val wasPlaying = _state.value.audioState == com.example.mushaf.presentation.audio.AudioState.PLAYING
+        if (wasPlaying) {
+            playbackManager.pause()
+        }
+
         val idx = surahNumber - 1
         val startPage = com.example.mushaf.domain.model.MushafConstants.SURAH_START_PAGES
             .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
         _state.update { it.copy(showSurahPicker = false) }
         loadPage(startPage)
+
+        if (wasPlaying) {
+            viewModelScope.launch {
+                var attempts = 0
+                while (_state.value.pages[startPage] == null && attempts < 50) {
+                    kotlinx.coroutines.delay(100)
+                    attempts++
+                }
+                if (_state.value.pages[startPage] != null) {
+                    startFollowAlong(startPage)
+                }
+            }
+        }
     }
 
     private fun loadTafsir(surah: Int, ayah: Int) {
@@ -1045,16 +1063,16 @@ class MushafViewModel(
                 val timings = fetchTimingsForPage(page.pageNumber, reciter.id)
                 if (timings.isNotEmpty()) {
                     audioHighlightDriver.loadTimings(timings)
-                    val urls = buildAudioUrls(timings, reciter)
+                    val urls = buildAudioTracks(timings, reciter)
                     
                     if (urls.isNotEmpty() && timings.isNotEmpty()) {
                         val firstSurah = timings.first().surahNumber
                         Log.d(TAG, "First surah on page: $firstSurah")
-                        Log.d(TAG, "requested link is : ${urls.first()}")
+                        Log.d(TAG, "requested link is : ${urls.first().url}")
                     }
                     
                     Log.d(TAG, "Playing ${urls.size} audio URLs for this page")
-                    playbackManager.playUrls(urls)
+                    playbackManager.playTracks(urls)
                     audioHighlightDriver.start(page)
                 } else {
                     Log.w(TAG, "No timings were loaded. Cannot play audio.")
@@ -1082,10 +1100,10 @@ class MushafViewModel(
         }
     }
 
-    private fun buildAudioUrls(timings: List<AyahTiming>, reciter: Reciter): List<String> {
+    private fun buildAudioTracks(timings: List<AyahTiming>, reciter: Reciter): List<AudioPlayer.AudioTrackInfo> {
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
-            if (audioUrl != null) {
+            val finalUrl = if (audioUrl != null) {
                 if (audioUrl.startsWith("http")) audioUrl
                 else if (audioUrl.startsWith("//")) "https:$audioUrl"
                 else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
@@ -1094,6 +1112,15 @@ class MushafViewModel(
                 val paddedA = timing.ayahNumber.toString().padStart(3, '0')
                 "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
             }
+            
+            val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)
+            val surahName = surah?.nameArabic ?: "Surah ${timing.surahNumber}"
+            
+            AudioPlayer.AudioTrackInfo(
+                url = finalUrl,
+                title = "$surahName - Ayah ${timing.ayahNumber}",
+                artist = reciter.name
+            )
         }
     }
 
