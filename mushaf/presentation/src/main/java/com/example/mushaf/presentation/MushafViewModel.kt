@@ -82,6 +82,7 @@ class MushafViewModel(
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -1100,7 +1101,8 @@ class MushafViewModel(
         }
     }
 
-    private fun buildAudioTracks(timings: List<AyahTiming>, reciter: Reciter): List<AudioPlayer.AudioTrackInfo> {
+    private suspend fun buildAudioTracks(timings: List<AyahTiming>, reciter: Reciter): List<AudioPlayer.AudioTrackInfo> {
+        val isArabic = observeAppPreferences().first().language == com.iti.domain.settings.model.AppLanguage.ARABIC
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
             val finalUrl = if (audioUrl != null) {
@@ -1114,12 +1116,14 @@ class MushafViewModel(
             }
             
             val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)
-            val surahName = surah?.nameArabic ?: "Surah ${timing.surahNumber}"
+            val surahName = if (isArabic) surah?.nameArabic ?: "Surah ${timing.surahNumber}" else surah?.nameEnglish ?: "Surah ${timing.surahNumber}"
+            val ayahLabel = if (isArabic) "آية" else "Ayah"
+            val reciterName = if (isArabic) reciter.nameArabic else reciter.name
             
             AudioPlayer.AudioTrackInfo(
-                url = finalUrl,
-                title = "$surahName - Ayah ${timing.ayahNumber}",
-                artist = reciter.name
+                title = "$surahName - $ayahLabel ${timing.ayahNumber}",
+                artist = reciterName,
+                url = finalUrl
             )
         }
     }
