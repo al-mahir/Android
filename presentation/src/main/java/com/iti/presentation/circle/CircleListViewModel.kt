@@ -2,6 +2,7 @@ package com.iti.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.fold
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.presentation.circle.state.CircleListEffect
@@ -38,20 +39,25 @@ class CircleListViewModel(
     private fun load() {
         updateState { copy(isLoading = true, isError = false) }
         getCircles()
-            .catch { updateState { copy(isLoading = false, isError = true) } }
-            .onEach { circles ->
-                val tags = listOf(TAG_ALL) +
-                    circles.map { it.surahName }.distinct().sorted()
-                updateState {
-                    copy(
-                        circles = circles,
-                        filteredCircles = circles.applyFilters(searchQuery, selectedTag),
-                        availableTags = tags,
-                        isLoading = false,
-                        isError = false,
-                    )
-                }
+            .onEach { result ->
+                result.fold(
+                    onSuccess = { circles ->
+                        val tags = listOf(TAG_ALL) +
+                            circles.map { it.surahName }.distinct().sorted()
+                        updateState {
+                            copy(
+                                circles = circles,
+                                filteredCircles = circles.applyFilters(searchQuery, selectedTag),
+                                availableTags = tags,
+                                isLoading = false,
+                                isError = false,
+                            )
+                        }
+                    },
+                    onError = { updateState { copy(isLoading = false, isError = true) } },
+                )
             }
+            .catch { updateState { copy(isLoading = false, isError = true) } }
             .launchIn(viewModelScope)
     }
 
@@ -75,7 +81,7 @@ class CircleListViewModel(
 
     private fun join(circleId: String) {
         viewModelScope.launch {
-            runCatching { joinCircle(circleId) }
+            joinCircle(circleId)
             sendEffect(CircleListEffect.NavigateToJoiningCircle(circleId))
         }
     }

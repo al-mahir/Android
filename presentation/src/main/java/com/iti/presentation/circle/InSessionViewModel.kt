@@ -2,6 +2,7 @@ package com.iti.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
@@ -38,7 +39,8 @@ class InSessionViewModel(
     private fun observeCircle() {
         getCircles()
             .catch {}
-            .onEach { circles ->
+            .onEach { result ->
+                val circles = result.getOrNull() ?: return@onEach
                 val circle = circles.firstOrNull { it.id == circleId }
                 updateState { copy(circle = circle) }
             }

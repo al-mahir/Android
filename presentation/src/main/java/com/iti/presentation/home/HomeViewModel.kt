@@ -2,6 +2,8 @@ package com.iti.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.fold
+import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
@@ -62,9 +64,10 @@ class HomeViewModel(
 
         // Load sheikhs from real API in parallel (one-shot suspend).
         viewModelScope.launch {
-            runCatching { getSheikhs() }
-                .onSuccess { sheikhs -> updateState { copy(sheikhs = sheikhs) } }
-                .onFailure { /* Home shows error only if all sources fail; ignore partial sheikh failure */ }
+            getSheikhs().fold(
+                onSuccess = { sheikhs -> updateState { copy(sheikhs = sheikhs) } },
+                onError = { /* Home shows error only if all sources fail; ignore partial sheikh failure */ },
+            )
         }
 
         // Observe user, reading progress, ayah of the day, and circles as continuous streams.
@@ -73,7 +76,9 @@ class HomeViewModel(
             getReadingProgress(),
             getAyahOfTheDay(),
             getStudyCircles(),
-        ) { user, readingProgress, ayahOfTheDay, circles ->
+        ) { userResult, readingProgress, ayahOfTheDay, circlesResult ->
+            val user = userResult.getOrNull() ?: error("Failed to load current user")
+            val circles = circlesResult.getOrNull() ?: error("Failed to load study circles")
             HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles)
         }
             .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }

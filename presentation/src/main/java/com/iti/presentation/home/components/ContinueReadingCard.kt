@@ -142,7 +142,7 @@ fun ContinueReadingCard(
 
                 PrimaryButton(
                     caption = stringResource(R.string.home_resume_reading),
-                    iconPainter = painterResource(DesignSystemR.drawable.ic_arrow_back),
+                    iconPainter = painterResource(DesignSystemR.drawable.ic_arrow_back_rotated),
                     iconPosition = ButtonIconPosition.End,
                     modifier = Modifier.width(ButtonHeightCompact * 3),
                     height = 36.dp,

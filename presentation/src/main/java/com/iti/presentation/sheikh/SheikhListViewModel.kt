@@ -2,6 +2,7 @@ package com.iti.presentation.sheikh
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.fold
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
@@ -34,8 +35,8 @@ class SheikhListViewModel(
     private fun load() {
         viewModelScope.launch {
             updateState { copy(isLoading = true, isError = false) }
-            runCatching { getSheikhs() }
-                .onSuccess { list ->
+            getSheikhs().fold(
+                onSuccess = { list ->
                     updateState {
                         copy(
                             sheikhs = list,
@@ -44,10 +45,11 @@ class SheikhListViewModel(
                             isError = false,
                         )
                     }
-                }
-                .onFailure {
+                },
+                onError = {
                     updateState { copy(isLoading = false, isError = true) }
-                }
+                },
+            )
         }
     }
 

@@ -2,6 +2,7 @@ package com.iti.presentation.staticcontent
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.getOrNull
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.legal.GetLegalDocumentUseCase
 import com.iti.presentation.R
@@ -49,9 +50,16 @@ class StaticContentViewModel(
                     copy(isLoading = false, errorMessageRes = R.string.static_content_error_generic)
                 }
             }
-            .onEach { document ->
-                updateState {
-                    copy(isLoading = false, errorMessageRes = null, document = document)
+            .onEach { result ->
+                val document = result.getOrNull()
+                if (document == null) {
+                    updateState {
+                        copy(isLoading = false, errorMessageRes = R.string.static_content_error_generic)
+                    }
+                } else {
+                    updateState {
+                        copy(isLoading = false, errorMessageRes = null, document = document)
+                    }
                 }
             }
             .launchIn(viewModelScope)
