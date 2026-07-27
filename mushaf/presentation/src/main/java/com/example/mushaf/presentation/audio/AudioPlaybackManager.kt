@@ -121,26 +121,28 @@ class AudioPlaybackManager(
 
  
     override fun playUrls(urls: List<String>) {
-        _player.stop()
-        _player.clearMediaItems()
+        val player = _player ?: return
+        player.stop()
+        player.clearMediaItems()
         
         val mediaItems = urls.map { MediaItem.fromUri(it) }
-        _player.addMediaItems(mediaItems)
-        _player.prepare()
-        _player.play()
+        player.addMediaItems(mediaItems)
+        player.prepare()
+        player.play()
     }
 
     override fun play() {
-        _player.play()
+        _player?.play()
     }
 
     override fun pause() {
-        _player.pause()
+        _player?.pause()
     }
 
     override fun stop() {
-        _player.stop()
-        _player.clearMediaItems()
+        val player = _player ?: return
+        player.stop()
+        player.clearMediaItems()
         _currentPosition.value = 0L
     }
 
