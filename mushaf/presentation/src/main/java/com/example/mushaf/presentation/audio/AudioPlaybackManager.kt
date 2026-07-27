@@ -1,10 +1,14 @@
 package com.example.mushaf.presentation.audio
 
 import android.content.Context
+import android.content.ComponentName
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,15 +23,6 @@ import kotlinx.coroutines.launch
 enum class AudioState {
     IDLE, BUFFERING, PLAYING, PAUSED, ERROR, ENDED
 }
-
-
-
- 
-import android.content.ComponentName
-import androidx.media3.session.MediaController
-import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
 
 class AudioPlaybackManager(
     private val context: Context,
@@ -73,7 +68,7 @@ class AudioPlaybackManager(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            android.util.Log.e("AudioPlaybackManager", "Player error occurred: ${error.message}", error)
+            android.util.Log.e("AudioPlaybackManager", "Player error occurred: \${error.message}", error)
             _audioState.value = AudioState.ERROR
         }
     }
@@ -91,10 +86,11 @@ class AudioPlaybackManager(
     }
 
     private fun updateState() {
-        _audioState.value = when (_player.playbackState) {
+        val player = _player ?: return
+        _audioState.value = when (player.playbackState) {
             Player.STATE_IDLE -> AudioState.IDLE
             Player.STATE_BUFFERING -> AudioState.BUFFERING
-            Player.STATE_READY -> if (_player.isPlaying) AudioState.PLAYING else AudioState.PAUSED
+            Player.STATE_READY -> if (player.isPlaying) AudioState.PLAYING else AudioState.PAUSED
             Player.STATE_ENDED -> AudioState.ENDED
             else -> AudioState.IDLE
         }
@@ -104,7 +100,9 @@ class AudioPlaybackManager(
         positionJob?.cancel()
         positionJob = scope.launch {
             while (isActive) {
-                _currentPosition.value = _player.currentPosition
+                _player?.let {
+                    _currentPosition.value = it.currentPosition
+                }
                 delay(50L) 
             }
         }
@@ -114,12 +112,11 @@ class AudioPlaybackManager(
         positionJob?.cancel()
         positionJob = null
         
-        _currentPosition.value = _player.currentPosition
+        _player?.let {
+            _currentPosition.value = it.currentPosition
+        }
     }
 
-    
-
- 
     override fun playUrls(urls: List<String>) {
         val player = _player ?: return
         player.stop()
@@ -158,7 +155,8 @@ class AudioPlaybackManager(
 
     override fun release() {
         stopPollingPosition()
-        _player.release()
+        _player?.removeListener(playerListener)
+        controllerFuture?.let { MediaController.releaseFuture(it) }
         scope.cancel()
     }
 }
