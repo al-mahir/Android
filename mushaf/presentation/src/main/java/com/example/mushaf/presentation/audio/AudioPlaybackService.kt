@@ -24,7 +24,7 @@ class AudioPlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, forwardingPlayer).build()
 
         val notificationProvider = androidx.media3.session.DefaultMediaNotificationProvider(this).apply {
-            setSmallIcon(android.R.drawable.ic_media_play)
+            setSmallIcon(com.example.designsystem.R.drawable.ic_book_unselected)
         }
         setMediaNotificationProvider(object : androidx.media3.session.MediaNotification.Provider {
             override fun createNotification(
@@ -35,11 +35,10 @@ class AudioPlaybackService : MediaSessionService() {
             ): androidx.media3.session.MediaNotification {
                 val notification = notificationProvider.createNotification(session, customLayout, actionFactory, onNotificationChangedCallback)
                 
-                // Add color via reflection or we can't easily change it if we use DefaultMediaNotificationProvider directly,
-                // but wait, in Media3 1.0/1.1 createNotification is the method. 
-                // Let's just create a completely custom notification or use the default and hope it picks up the app's color.
-                // Wait, the requirement says "add a minimal app theme compitable as the green but with the app color pallete to control the quran from inside and outside the app".
-                return notification
+                val builder = androidx.core.app.NotificationCompat.Builder(this@AudioPlaybackService, notification.notification)
+                builder.setColor(android.graphics.Color.parseColor("#014F39"))
+                
+                return androidx.media3.session.MediaNotification(notification.notificationId, builder.build())
             }
             override fun handleCustomCommand(session: MediaSession, action: String, extras: android.os.Bundle): Boolean {
                 return notificationProvider.handleCustomCommand(session, action, extras)
