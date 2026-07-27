@@ -290,7 +290,12 @@ class MushafViewModel(
             MushafIntent.PlayPauseAudio -> playPauseAudio()
             is MushafIntent.SetAudioSpeed -> playbackManager.setSpeed(intent.speed)
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
-            MushafIntent.NextAyahAudio -> Unit // TODO: implement next ayah
+            MushafIntent.NextSurahAudio -> {
+                val next = (_state.value.currentSurahNumber + 1).coerceAtMost(114)
+                if (next != _state.value.currentSurahNumber) {
+                    navigateToSurah(next)
+                }
+            }
             MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
 
             // Surah Picker
