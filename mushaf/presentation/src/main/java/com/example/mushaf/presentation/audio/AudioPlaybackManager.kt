@@ -142,7 +142,7 @@ class AudioPlaybackManager(
         player.clearMediaItems()
         
         val greenBitmap = android.graphics.Bitmap.createBitmap(256, 256, android.graphics.Bitmap.Config.ARGB_8888)
-        greenBitmap.eraseColor(android.graphics.Color.parseColor("#014F39"))
+        greenBitmap.eraseColor(androidx.core.content.ContextCompat.getColor(context, com.example.designsystem.R.color.primary_brand))
         val stream = java.io.ByteArrayOutputStream()
         greenBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
         val artworkData = stream.toByteArray()
