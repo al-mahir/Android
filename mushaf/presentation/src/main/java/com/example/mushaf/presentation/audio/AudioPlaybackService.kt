@@ -21,7 +21,17 @@ class AudioPlaybackService : MediaSessionService() {
                 mediaSession?.broadcastCustomCommand(command, android.os.Bundle.EMPTY)
             }
         }
-        mediaSession = MediaSession.Builder(this, forwardingPlayer).build()
+        val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            action = "ACTION_OPEN_MUSHAF_LISTEN"
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = intent?.let {
+            android.app.PendingIntent.getActivity(this, 0, it, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT)
+        }
+        
+        val builder = MediaSession.Builder(this, forwardingPlayer)
+        if (pendingIntent != null) builder.setSessionActivity(pendingIntent)
+        mediaSession = builder.build()
 
         val notificationProvider = androidx.media3.session.DefaultMediaNotificationProvider(this).apply {
             setSmallIcon(com.example.designsystem.R.drawable.ic_book_unselected)
