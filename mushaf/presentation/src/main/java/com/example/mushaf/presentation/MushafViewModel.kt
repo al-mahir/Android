@@ -82,6 +82,7 @@ class MushafViewModel(
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -210,6 +211,15 @@ class MushafViewModel(
             .onEach { speed -> _state.update { it.copy(playbackSpeed = speed) } }
             .launchIn(viewModelScope)
 
+        playbackManager.externalCommands
+            .onEach { command ->
+                when (command) {
+                    "ACTION_NEXT_SURAH" -> onIntent(MushafIntent.NextSurahAudio)
+                    "ACTION_PREV_SURAH" -> onIntent(MushafIntent.PrevSurahAudio)
+                }
+            }
+            .launchIn(viewModelScope)
+
         loadReciters()
 
         observeRecitationSettings()
@@ -290,8 +300,18 @@ class MushafViewModel(
             MushafIntent.PlayPauseAudio -> playPauseAudio()
             is MushafIntent.SetAudioSpeed -> playbackManager.setSpeed(intent.speed)
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
-            MushafIntent.NextAyahAudio -> Unit // TODO: implement next ayah
-            MushafIntent.PrevAyahAudio -> Unit // TODO: implement prev ayah
+            MushafIntent.NextSurahAudio -> {
+                val next = (_state.value.currentSurahNumber + 1).coerceAtMost(114)
+                if (next != _state.value.currentSurahNumber) {
+                    navigateToSurah(next)
+                }
+            }
+            MushafIntent.PrevSurahAudio -> {
+                val prev = (_state.value.currentSurahNumber - 1).coerceAtLeast(1)
+                if (prev != _state.value.currentSurahNumber) {
+                    navigateToSurah(prev)
+                }
+            }
 
             // Surah Picker
             MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
@@ -335,11 +355,29 @@ class MushafViewModel(
     }
 
     private fun navigateToSurah(surahNumber: Int) {
+        val wasPlaying = _state.value.audioState == com.example.mushaf.presentation.audio.AudioState.PLAYING
+        if (wasPlaying) {
+            playbackManager.pause()
+        }
+
         val idx = surahNumber - 1
         val startPage = com.example.mushaf.domain.model.MushafConstants.SURAH_START_PAGES
             .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
         _state.update { it.copy(showSurahPicker = false) }
         loadPage(startPage)
+
+        if (wasPlaying) {
+            viewModelScope.launch {
+                var attempts = 0
+                while (_state.value.pages[startPage] == null && attempts < 50) {
+                    kotlinx.coroutines.delay(100)
+                    attempts++
+                }
+                if (_state.value.pages[startPage] != null) {
+                    startFollowAlong(startPage, targetSurahNumber = surahNumber)
+                }
+            }
+        }
     }
 
     private fun loadTafsir(surah: Int, ayah: Int) {
@@ -374,13 +412,10 @@ class MushafViewModel(
 
     private fun selectReciter(reciter: Reciter) {
         val wasPlaying = _state.value.audioState == AudioState.PLAYING
+        val currentTrack = playbackManager.currentTrackIndex.value
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            if (wasPlaying) {
-                startFollowAlong()
-            } else {
-                _state.update { it.copy(isFollowAlongActive = false) }
-            }
+            startFollowAlong(targetTrackIndex = currentTrack, autoPlay = wasPlaying)
         }
     }
 
@@ -1010,7 +1045,7 @@ class MushafViewModel(
         }
     }
 
-    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage) {
+    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage, targetSurahNumber: Int? = null, targetTrackIndex: Int? = null, autoPlay: Boolean = true) {
         val page = _state.value.pages[targetPageNumber] ?: return
         val reciter = _state.value.currentReciter
         
@@ -1026,16 +1061,22 @@ class MushafViewModel(
                 val timings = fetchTimingsForPage(page.pageNumber, reciter.id)
                 if (timings.isNotEmpty()) {
                     audioHighlightDriver.loadTimings(timings)
-                    val urls = buildAudioUrls(timings, reciter)
+                    val urls = buildAudioTracks(timings, reciter)
                     
                     if (urls.isNotEmpty() && timings.isNotEmpty()) {
                         val firstSurah = timings.first().surahNumber
                         Log.d(TAG, "First surah on page: $firstSurah")
-                        Log.d(TAG, "requested link is : ${urls.first()}")
+                        Log.d(TAG, "requested link is : ${urls.first().url}")
                     }
                     
-                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page")
-                    playbackManager.playUrls(urls)
+                    val startIndex = when {
+                        targetTrackIndex != null -> targetTrackIndex.coerceIn(0, timings.lastIndex)
+                        targetSurahNumber != null -> timings.indexOfFirst { it.surahNumber == targetSurahNumber }.coerceAtLeast(0)
+                        else -> 0
+                    }
+                    
+                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page, startIndex=$startIndex")
+                    playbackManager.playTracks(urls, startIndex, autoPlay)
                     audioHighlightDriver.start(page)
                 } else {
                     Log.w(TAG, "No timings were loaded. Cannot play audio.")
@@ -1063,10 +1104,11 @@ class MushafViewModel(
         }
     }
 
-    private fun buildAudioUrls(timings: List<AyahTiming>, reciter: Reciter): List<String> {
+    private suspend fun buildAudioTracks(timings: List<AyahTiming>, reciter: Reciter): List<AudioPlayer.AudioTrackInfo> {
+        val isArabic = observeAppPreferences().first().language == com.iti.domain.settings.model.AppLanguage.ARABIC
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
-            if (audioUrl != null) {
+            val finalUrl = if (audioUrl != null) {
                 if (audioUrl.startsWith("http")) audioUrl
                 else if (audioUrl.startsWith("//")) "https:$audioUrl"
                 else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
@@ -1075,6 +1117,17 @@ class MushafViewModel(
                 val paddedA = timing.ayahNumber.toString().padStart(3, '0')
                 "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
             }
+            
+            val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)
+            val surahName = if (isArabic) surah?.nameArabic ?: "Surah ${timing.surahNumber}" else surah?.nameEnglish ?: "Surah ${timing.surahNumber}"
+            val ayahLabel = if (isArabic) "آية" else "Ayah"
+            val reciterName = if (isArabic) reciter.nameArabic else reciter.name
+            
+            AudioPlayer.AudioTrackInfo(
+                title = "$surahName - $ayahLabel ${timing.ayahNumber}",
+                artist = reciterName,
+                url = finalUrl
+            )
         }
     }
 

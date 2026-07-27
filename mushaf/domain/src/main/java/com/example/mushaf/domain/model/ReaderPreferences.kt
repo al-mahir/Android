@@ -36,12 +36,28 @@ object MushafConstants {
     /** Returns the 1-based surah number that contains [page]. */
     fun surahForPage(page: Int): Int {
         val clamped = clampPage(page)
-        // Binary search: find last surah whose start ≤ clamped
+        // Binary search: find last surah whose start <= clamped
         var lo = 0; var hi = SURAH_START_PAGES.size - 1
         while (lo < hi) {
             val mid = (lo + hi + 1) / 2
             if (SURAH_START_PAGES[mid] <= clamped) lo = mid else hi = mid - 1
         }
         return lo + 1 // 1-based surah number
+    }
+
+    val JUZ_START_PAGES = intArrayOf(
+        1,   22,  42,  62,  82,  102, 121, 142, 162, 182,
+        201, 221, 242, 262, 282, 302, 322, 342, 362, 382,
+        402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+    )
+
+    fun juzForPage(page: Int): Int {
+        val clamped = clampPage(page)
+        var lo = 0; var hi = JUZ_START_PAGES.size - 1
+        while (lo < hi) {
+            val mid = (lo + hi + 1) / 2
+            if (JUZ_START_PAGES[mid] <= clamped) lo = mid else hi = mid - 1
+        }
+        return lo + 1
     }
 }

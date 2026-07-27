@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -42,7 +43,7 @@ import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-    data class Mushaf(val startPage: Int? = null) : AppRoute
+    data class Mushaf(val startPage: Int? = null, val openInListenMode: Boolean = false) : AppRoute
     data object Profile : AppRoute
     data object Search : AppRoute
     data object SheikhList : AppRoute
@@ -53,7 +54,11 @@ sealed interface AppRoute : NavKey {
 }
 
 @Composable
-fun AppNavHost(modifier: Modifier = Modifier) {
+fun AppNavHost(
+    modifier: Modifier = Modifier,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {}
+) {
     val sessionViewModel: SessionViewModel = koinViewModel()
     val session by sessionViewModel.state.collectAsStateWithLifecycle()
 
@@ -66,15 +71,30 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             } else {
                 AuthRoute.Login
             },
+            pendingAction = pendingAction,
+            onActionHandled = onActionHandled,
             modifier = modifier,
         )
     }
 }
 
 @Composable
-private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) {
+private fun AppNavHost(
+    startDestination: NavKey,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
+
+    LaunchedEffect(pendingAction) {
+        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
+            backStack.removeAll { it is AppRoute.Mushaf }
+            backStack.add(AppRoute.Mushaf(openInListenMode = true))
+            onActionHandled()
+        }
+    }
 
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
@@ -135,6 +155,7 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 entry<AppRoute.Mushaf> { route ->
                     MushafScreen(
                         startPage = route.startPage,
+                        openInListenMode = route.openInListenMode,
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onSearchClick = {
