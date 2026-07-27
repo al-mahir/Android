@@ -43,6 +43,9 @@ import com.example.mushaf.presentation.highlight.HighlightDriver
 import com.example.mushaf.presentation.highlight.SimulatedHighlightDriver
 import com.example.mushaf.presentation.state.MushafEffect
 import com.iti.domain.core.Result
+import com.iti.domain.core.getOrNull
+import com.example.designsystem.text.UiText
+import com.example.mushaf.presentation.core.error.toUiText
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.MushafUiState
 import kotlinx.coroutines.CancellationException
@@ -179,9 +182,7 @@ class MushafViewModel(
                     if (nextPage <= MushafConstants.LAST_PAGE) {
                         viewModelScope.launch {
                             if (!_state.value.pages.containsKey(nextPage)) {
-                                kotlin.runCatching {
-                                    getPage(nextPage).first()
-                                }.getOrNull()?.let { loaded ->
+                                getPage(nextPage).first().getOrNull()?.let { loaded ->
                                     _state.update { it.copy(pages = it.pages + (nextPage to loaded)) }
                                 }
                             }
@@ -345,16 +346,24 @@ class MushafViewModel(
     private fun loadTafsir(surah: Int, ayah: Int) {
         _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
         viewModelScope.launch {
-            try {
-                val tafsir = getTafsirForAyah(surah, ayah)
-                if (tafsir != null) {
-                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
-                } else {
-                    _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error("Tafsir not found")) }
+            val result = getTafsirForAyah(surah, ayah)
+            when (result) {
+                is Result.Success -> {
+                    val tafsir = result.data
+                    if (tafsir != null) {
+                        _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
+                    } else {
+                        _state.update {
+                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(UiText.Resource(R.string.error_not_found)))
+                        }
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error loading tafsir", e)
-                _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(e.message ?: "Unknown error")) }
+                is Result.Error -> {
+                    Log.e(TAG, "Error loading tafsir: ${result.error}")
+                    _state.update {
+                        it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(result.error.toUiText()))
+                    }
+                }
             }
         }
     }
@@ -444,7 +453,13 @@ class MushafViewModel(
                 Log.e(TAG, "Failed to load page $page", throwable)
                 _state.update { it.copy(failedPages = it.failedPages + page) }
             }
-            .onEach { loaded ->
+            .onEach { result ->
+                val loaded = result.getOrNull()
+                if (loaded == null) {
+                    Log.e(TAG, "Failed to load page $page: $result")
+                    _state.update { it.copy(failedPages = it.failedPages + page) }
+                    return@onEach
+                }
                 Log.d(TAG, "Page $page loaded with ${loaded.lines.size} lines")
                 _state.update {
                     it.copy(
@@ -650,7 +665,7 @@ class MushafViewModel(
      * elapsed with nothing usable) - never thrown; the already-running session just keeps
      * grading from [pageStart] as though detection never ran. */
     private suspend fun detectStartCursor(pageStart: RecitationCursor, pageWordCount: Int): RecitationCursor? {
-        val window = localWordCorpusRepository.wordsFrom(pageStart, pageWordCount)
+        val window = localWordCorpusRepository.wordsFrom(pageStart, pageWordCount).getOrNull() ?: emptyList()
         Log.i(TAG, "Start detection: corpus window size=${window.size} (requested $pageWordCount from ${pageStart.wordId})")
         if (window.isEmpty()) return null
 
@@ -680,7 +695,17 @@ class MushafViewModel(
                 startLiveRecitation(
                     config = recitationSettings.toConfig(lastCursor),
                     controls = controls.receiveAsFlow(),
-                ).collect { event -> onLiveEvent(event) }
+                ).collect { result ->
+                    when (result) {
+                        is Result.Success -> onLiveEvent(result.data)
+                        // The repository already caught whatever failed; re-throw the original
+                        // exception (when carried) so the catch clauses below keep dispatching on
+                        // its real type (e.g. SecurityException for a lost mic permission).
+                        is Result.Error -> throw (result.error as? com.iti.domain.core.DomainError.Unknown)?.exception
+                            ?: (result.error as? com.iti.domain.core.DomainError.NetworkError)?.exception
+                            ?: IllegalStateException("Live recitation failed: ${result.error}")
+                    }
+                }
                 return
             } catch (cancellation: CancellationException) {
                 throw cancellation

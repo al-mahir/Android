@@ -105,6 +105,12 @@
     <!-- Errors -->
     <string name="downloads_error_generic">تعذّر تحميل هذه القائمة. حاول مرة أخرى.</string>
 
+    <!-- ===== Shared domain error messages ===== -->
+    <string name="error_network">خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.</string>
+    <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+    <string name="error_unauthorized">انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.</string>
+    <string name="error_not_found">تعذّر العثور على ما كنت تبحث عنه.</string>
+
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">تفضيلات المصحف</string>
     <string name="settings_tajweed_description">تلوين النص وفق أحكام التجويد</string>

@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.HtmlCompat
+import com.example.designsystem.text.asString
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.state.TafsirState
 import androidx.compose.ui.text.style.TextAlign
@@ -51,7 +52,7 @@ fun TafsirBottomSheet(
                 is TafsirState.Error -> {
                     Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            text = tafsirState.message,
+                            text = tafsirState.message.asString(),
                             color = Theme.colors.error,
                             style = MaterialTheme.typography.bodyLarge
                         )
