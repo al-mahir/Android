@@ -115,7 +115,8 @@ class MushafAssetDataSource(
                 }
             }
         } catch (t: Throwable) {
-            Log.e(MushafLog.TAG, "Failed to read page count; falling back to $DEFAULT_PAGE_COUNT", t)
+            Log.e(MushafLog.TAG, "Failed to read page count", t)
+            throw t
         }
         DEFAULT_PAGE_COUNT
     }
@@ -134,6 +135,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Page search failed for query: $query", t)
+            throw t
         }
         results
     }
@@ -148,6 +150,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Failed to find starting page for Surah $surahNumber", t)
+            throw t
         }
         null
     }
@@ -164,6 +167,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Word count query failed for ayah $surahNumber:$ayahNumber", t)
+            throw t
         }
         0
     }
@@ -179,6 +183,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Failed to find page for Ayah $surahNumber:$ayahNumber", t)
+            throw t
         }
         null
     }

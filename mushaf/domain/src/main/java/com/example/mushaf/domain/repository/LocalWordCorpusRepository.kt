@@ -2,6 +2,7 @@ package com.example.mushaf.domain.repository
 
 import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.local.LocalWordEntry
+import com.iti.domain.core.Result
 
 /**
  * Plain, ASR-comparable Qur'an text, entirely local/offline. Deliberately not the same source as
@@ -18,5 +19,5 @@ interface LocalWordCorpusRepository {
      * like "يا أيها" written as one Uthmani word but two plain words — is skipped entirely rather
      * than risk mis-addressing a word; callers see a shorter (possibly empty) window instead.
      */
-    suspend fun wordsFrom(cursor: RecitationCursor, count: Int): List<LocalWordEntry>
+    suspend fun wordsFrom(cursor: RecitationCursor, count: Int): Result<List<LocalWordEntry>>
 }

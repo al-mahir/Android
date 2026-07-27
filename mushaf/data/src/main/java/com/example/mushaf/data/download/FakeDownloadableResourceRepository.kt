@@ -5,6 +5,9 @@ import com.example.mushaf.domain.model.DownloadableResource
 import com.example.mushaf.domain.model.LocalizedText
 import com.example.mushaf.domain.model.ResourceKind
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
+import com.iti.domain.core.Result
+import com.iti.domain.core.asResult
+import com.iti.domain.core.resultOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -27,12 +30,11 @@ class FakeDownloadableResourceRepository(
 
     private val jobs = mutableMapOf<String, Job>()
 
-    override fun observeResources(kind: ResourceKind): Flow<List<DownloadableResource>> =
-        resources.map { all -> all.filter { it.kind == kind } }
+    override fun observeResources(kind: ResourceKind): Flow<Result<List<DownloadableResource>>> =
+        resources.map { all -> all.filter { it.kind == kind } }.asResult()
 
-    override suspend fun startDownload(id: String) {
-        
-        if (jobs[id]?.isActive == true) return
+    override suspend fun startDownload(id: String): Result<Unit> = resultOf {
+        if (jobs[id]?.isActive == true) return@resultOf
 
         jobs[id] = downloadScope.launch {
             try {
@@ -47,13 +49,12 @@ class FakeDownloadableResourceRepository(
         }
     }
 
-    override suspend fun cancelDownload(id: String) {
+    override suspend fun cancelDownload(id: String): Result<Unit> = resultOf {
         jobs.remove(id)?.cancel()
-        
         updateState(id, DownloadState.NotDownloaded)
     }
 
-    override suspend fun deleteDownload(id: String) {
+    override suspend fun deleteDownload(id: String): Result<Unit> = resultOf {
         jobs.remove(id)?.cancel()
         updateState(id, DownloadState.NotDownloaded)
     }

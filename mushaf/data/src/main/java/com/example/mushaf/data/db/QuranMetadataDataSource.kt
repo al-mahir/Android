@@ -1,6 +1,8 @@
 package com.example.mushaf.data.db
 
 import android.content.Context
+import android.util.Log
+import com.example.mushaf.data.MushafLog
 import com.example.mushaf.domain.model.Hizb
 import com.example.mushaf.domain.model.Juz
 import com.example.mushaf.domain.model.Surah
@@ -69,7 +71,8 @@ class QuranMetadataDataSource(private val context: Context) {
             hizbs = hizbList
             isLoaded = true
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(MushafLog.TAG, "Failed to load Quran metadata (surahs/juzs)", e)
+            throw e
         }
     }
 
