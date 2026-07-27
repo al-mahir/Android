@@ -141,10 +141,17 @@ class AudioPlaybackManager(
         player.stop()
         player.clearMediaItems()
         
+        val greenBitmap = android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+        greenBitmap.eraseColor(android.graphics.Color.parseColor("#014F39"))
+        val stream = java.io.ByteArrayOutputStream()
+        greenBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        val artworkData = stream.toByteArray()
+        
         val mediaItems = tracks.map { track -> 
             val metadata = androidx.media3.common.MediaMetadata.Builder()
                 .setTitle(track.title)
                 .setArtist(track.artist)
+                .setArtworkData(artworkData, androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER)
                 .build()
             MediaItem.Builder()
                 .setUri(track.url)
