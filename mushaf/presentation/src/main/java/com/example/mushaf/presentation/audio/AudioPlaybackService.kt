@@ -47,6 +47,7 @@ class AudioPlaybackService : MediaSessionService() {
                 
                 val builder = androidx.core.app.NotificationCompat.Builder(this@AudioPlaybackService, notification.notification)
                 builder.setColor(android.graphics.Color.parseColor("#014F39"))
+                builder.setColorized(true)
                 
                 return androidx.media3.session.MediaNotification(notification.notificationId, builder.build())
             }
