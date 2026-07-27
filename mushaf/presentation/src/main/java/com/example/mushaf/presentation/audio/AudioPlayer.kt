@@ -15,7 +15,7 @@ interface AudioPlayer {
         val artist: String
     )
 
-    fun playTracks(tracks: List<AudioTrackInfo>, startIndex: Int = 0)
+    fun playTracks(tracks: List<AudioTrackInfo>, startIndex: Int = 0, autoPlay: Boolean = true)
     fun play()
     fun pause()
     fun stop()

@@ -136,7 +136,7 @@ class AudioPlaybackManager(
         }
     }
 
-    override fun playTracks(tracks: List<AudioPlayer.AudioTrackInfo>, startIndex: Int) {
+    override fun playTracks(tracks: List<AudioPlayer.AudioTrackInfo>, startIndex: Int, autoPlay: Boolean) {
         val player = _player ?: return
         player.stop()
         player.clearMediaItems()
@@ -163,7 +163,11 @@ class AudioPlaybackManager(
         if (startIndex in tracks.indices) {
             player.seekToDefaultPosition(startIndex)
         }
-        player.play()
+        if (autoPlay) {
+            player.play()
+        } else {
+            player.pause()
+        }
     }
 
     override fun play() {

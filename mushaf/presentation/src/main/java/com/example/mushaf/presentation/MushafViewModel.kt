@@ -412,13 +412,10 @@ class MushafViewModel(
 
     private fun selectReciter(reciter: Reciter) {
         val wasPlaying = _state.value.audioState == AudioState.PLAYING
+        val currentTrack = playbackManager.currentTrackIndex.value
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            if (wasPlaying) {
-                startFollowAlong()
-            } else {
-                _state.update { it.copy(isFollowAlongActive = false) }
-            }
+            startFollowAlong(targetTrackIndex = currentTrack, autoPlay = wasPlaying)
         }
     }
 
@@ -1048,7 +1045,7 @@ class MushafViewModel(
         }
     }
 
-    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage, targetSurahNumber: Int? = null) {
+    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage, targetSurahNumber: Int? = null, targetTrackIndex: Int? = null, autoPlay: Boolean = true) {
         val page = _state.value.pages[targetPageNumber] ?: return
         val reciter = _state.value.currentReciter
         
@@ -1072,14 +1069,14 @@ class MushafViewModel(
                         Log.d(TAG, "requested link is : ${urls.first().url}")
                     }
                     
-                    val startIndex = if (targetSurahNumber != null) {
-                        timings.indexOfFirst { it.surahNumber == targetSurahNumber }.coerceAtLeast(0)
-                    } else {
-                        0
+                    val startIndex = when {
+                        targetTrackIndex != null -> targetTrackIndex.coerceIn(0, timings.lastIndex)
+                        targetSurahNumber != null -> timings.indexOfFirst { it.surahNumber == targetSurahNumber }.coerceAtLeast(0)
+                        else -> 0
                     }
                     
                     Log.d(TAG, "Playing ${urls.size} audio URLs for this page, startIndex=$startIndex")
-                    playbackManager.playTracks(urls, startIndex)
+                    playbackManager.playTracks(urls, startIndex, autoPlay)
                     audioHighlightDriver.start(page)
                 } else {
                     Log.w(TAG, "No timings were loaded. Cannot play audio.")
