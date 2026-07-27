@@ -283,8 +283,8 @@ fun MushafScreen(
                     reciterName = state.currentReciter?.nameArabic ?: "",
                     playbackSpeed = state.playbackSpeed,
                     onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
-                    onNextClick = { viewModel.onIntent(MushafIntent.NextAyahAudio) },
-                    onPrevClick = { viewModel.onIntent(MushafIntent.PrevAyahAudio) },
+                    onNextClick = { viewModel.onIntent(MushafIntent.NextSurahAudio) },
+                    onPrevClick = { viewModel.onIntent(MushafIntent.PrevSurahAudio) },
                     onReciterClick = { showReciterPicker = true },
                     onSpeedClick = {
                         val nextSpeed = when (state.playbackSpeed) {
