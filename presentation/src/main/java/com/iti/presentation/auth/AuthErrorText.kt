@@ -3,7 +3,7 @@ package com.iti.presentation.auth
 import com.iti.domain.auth.model.AuthValidationCode
 import com.iti.domain.core.DomainError
 import com.iti.presentation.R
-import com.iti.presentation.core.ui.UiText
+import com.example.designsystem.text.UiText
 
 
 internal fun DomainError.toUiText(): UiText = when (this) {
@@ -12,6 +12,7 @@ internal fun DomainError.toUiText(): UiText = when (this) {
     is DomainError.Unauthorized -> message.toUiText(R.string.auth_error_invalid_credentials)
     is DomainError.ServerError -> message.toUiText(R.string.error_generic)
     is DomainError.NetworkError -> UiText.Resource(R.string.error_network)
+    is DomainError.NotFound -> message.toUiText(R.string.error_generic)
     is DomainError.Unknown -> UiText.Resource(R.string.error_generic)
 }
 

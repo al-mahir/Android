@@ -1,6 +1,6 @@
 package com.iti.presentation.auth.login
 
-import com.iti.presentation.core.ui.UiText
+import com.example.designsystem.text.UiText
 
 data class LoginState(
     val email: String = "",
