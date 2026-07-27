@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterItem
@@ -93,13 +94,20 @@ import org.koin.androidx.compose.koinViewModel
 fun MushafScreen(
     modifier: Modifier = Modifier,
     startPage: Int? = null,
+    openInListenMode: Boolean = false,
     onBack: () -> Unit = {},
     onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(openInListenMode) {
+        if (openInListenMode) {
+            viewModel.onIntent(MushafIntent.SetMode(MushafMode.LISTEN))
+        }
+    }
 
     val pagerState = rememberPagerState(
         initialPage = state.currentPage - 1,
