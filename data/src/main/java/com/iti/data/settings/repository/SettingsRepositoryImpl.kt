@@ -3,6 +3,7 @@ package com.iti.data.settings.repository
 import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.domain.core.Result
 import com.iti.domain.core.resultOf
+import com.iti.domain.model.User
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
@@ -33,6 +34,12 @@ class SettingsRepositoryImpl(
 
     override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> =
         resultOf { dataStore.setDataSaverEnabled(enabled) }
+        
+    override suspend fun saveUser(user: User): Result<Unit> =
+        resultOf { dataStore.saveUser(user) }
+        
+    override suspend fun clearUser(): Result<Unit> =
+        resultOf { dataStore.clearUser() }
 
     // ── RecordingsRepository ──────────────────────────────────────────────
     // Fake pending a real recordings backend.

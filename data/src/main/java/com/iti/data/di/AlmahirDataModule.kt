@@ -35,7 +35,7 @@ val almahirDataModule = module {
     //    and saved recitation sessions all live on one merged repository ──────
     single { AlmahirDatabase.create(androidContext()) }
     single { get<AlmahirDatabase>().recitationSessionDao() }
-    single { AlmahirRepositoryImpl(get(), get(), get(), get()) }
+    single { AlmahirRepositoryImpl(get(), get(), get(), get(), get()) }
     single<AlmahirRepository> { get<AlmahirRepositoryImpl>() }
     single<SheikhRepository> { get<AlmahirRepositoryImpl>() }
     single<CircleRepository> { get<AlmahirRepositoryImpl>() }
