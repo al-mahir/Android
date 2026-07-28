@@ -1,9 +1,10 @@
 package com.iti.data.core.network
 
+import com.iti.data.BuildConfig
 
 object AlmahirApi {
 
-    val BASE_URL: String get() = "https://almahir-production.up.railway.app"
+    val BASE_URL: String get() = BuildConfig.BASE_URL
 
     object Auth {
         const val REGISTER = "api/auth/user/register"
@@ -18,6 +19,18 @@ object AlmahirApi {
 
         fun isPublic(encodedPath: String): Boolean =
             encodedPath.trim('/') in PUBLIC
+
+        object Sheikh {
+            const val REGISTER = "api/auth/sheikh/register"
+            const val LOGIN = "api/auth/sheikh/login"
+            const val GOOGLE = "api/auth/sheikh/google"
+            const val REFRESH = "api/auth/sheikh/refresh"
+
+            private val PUBLIC = setOf(REGISTER, LOGIN, GOOGLE, REFRESH)
+
+            fun isPublic(encodedPath: String): Boolean =
+                encodedPath.trim('/') in PUBLIC
+        }
     }
 
     object Sheikh {
