@@ -1,0 +1,26 @@
+<resources>
+    <string name="sheikh_home_brand_title">المَاهِر</string>
+    <string name="sheikh_home_greeting">أهلاً بعودتك</string>
+    <string name="sheikh_home_greeting_subtitle">إدارة حالة التواجد والحلقات الخاصة بك.</string>
+    <string name="sheikh_home_avatar_content_description">فتح الملف الشخصي</string>
+
+    <string name="sheikh_home_availability_toggle_on_description">متاح لطلبات الجلسات الفردية. اضغط لإيقاف التواجد.</string>
+    <string name="sheikh_home_availability_toggle_off_description">غير متصل لطلبات الجلسات الفردية. اضغط لتفعيل التواجد.</string>
+
+    <string name="sheikh_home_status_available">متاح</string>
+    <string name="sheikh_home_status_available_description">أنت ظاهر للطلاب لطلبات الجلسات الفردية.</string>
+    <string name="sheikh_home_status_in_session">في جلسة</string>
+    <string name="sheikh_home_status_in_session_description">أنت حالياً في جلسة — سيُستأنف التواجد تلقائياً بعد انتهائها.</string>
+    <string name="sheikh_home_status_offline">غير متصل</string>
+    <string name="sheikh_home_status_offline_description">لن تصلك طلبات جلسات فردية جديدة.</string>
+
+    <string name="sheikh_home_error_generic">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="sheikh_home_availability_update_failed">تعذر تحديث حالة التواجد. حاول مرة أخرى.</string>
+
+    <string name="sheikh_home_illustration_available_title">أنت متاح الآن</string>
+    <string name="sheikh_home_illustration_available_description">يمكن للطلاب إرسال طلبات جلسات فردية إليك الآن.</string>
+    <string name="sheikh_home_illustration_in_session_title">في جلسة</string>
+    <string name="sheikh_home_illustration_in_session_description">ستصبح متاحاً مرة أخرى بعد انتهاء هذه الجلسة.</string>
+    <string name="sheikh_home_illustration_offline_title">أنت غير متصل</string>
+    <string name="sheikh_home_illustration_offline_description">فعّل التواجد أعلاه لبدء استقبال طلبات الجلسات الفردية.</string>
+</resources>

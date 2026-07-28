@@ -24,6 +24,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "Al-Mahir"
 include(":app")
+include(":sheikh-app")
+include(":sheikh:presentation")
 include(":mushaf:domain")
 include(":mushaf:data")
 include(":mushaf:presentation")

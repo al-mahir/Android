@@ -18,6 +18,9 @@
             <option value="$PROJECT_DIR$/mushaf/domain" />
             <option value="$PROJECT_DIR$/mushaf/presentation" />
             <option value="$PROJECT_DIR$/presentation" />
+            <option value="$PROJECT_DIR$/sheikh" />
+            <option value="$PROJECT_DIR$/sheikh-app" />
+            <option value="$PROJECT_DIR$/sheikh/presentation" />
           </set>
         </option>
       </GradleProjectSettings>
