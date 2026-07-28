@@ -3,8 +3,8 @@ package com.iti.al_mahir
 import android.app.Application
 import com.example.mushaf.data.di.mushafDataModule
 import com.example.mushaf.presentation.di.mushafPresentationModule
-import com.iti.data.auth.di.authDataModule
 import com.iti.data.di.almahirDataModule
+import com.iti.data.user.auth.di.authDataModule
 import com.iti.domain.auth.di.authDomainModule
 import com.iti.presentation.auth.di.authPresentationModule
 import com.iti.presentation.di.presentationModule

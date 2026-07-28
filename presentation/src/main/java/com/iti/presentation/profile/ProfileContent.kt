@@ -42,6 +42,7 @@ fun ProfileContent(
     onSocialChannelClick: (SocialChannel) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
+    visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
 ) {
     val rootModifier = modifier
         .fillMaxSize()
@@ -105,7 +106,8 @@ fun ProfileContent(
                     }
                 }
 
-                items(items = MenuEntries, key = { entry -> entry.type.name }) { entry ->
+                val visibleEntries = MenuEntries.filter { it.type in visibleMenuItems }
+                items(items = visibleEntries, key = { entry -> entry.type.name }) { entry ->
                     ProfileMenuRow(
                         title = stringResource(entry.titleRes),
                         iconRes = entry.iconRes,
