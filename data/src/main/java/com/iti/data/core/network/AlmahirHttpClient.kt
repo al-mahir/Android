@@ -51,6 +51,8 @@ fun createAlmahirHttpClient(
     json: Json = AlmahirJson,
     engine: HttpClientEngine = Android.create(),
     enableLogging: Boolean = BuildConfig.DEBUG,
+    refreshEndpoint: String = AlmahirApi.Auth.REFRESH,
+    isPublicEndpoint: (String) -> Boolean = AlmahirApi.Auth::isPublic,
 ): HttpClient = HttpClient(engine) {
 
     expectSuccess = true
@@ -77,13 +79,13 @@ fun createAlmahirHttpClient(
         }
     }
 
-    install(PublicEndpointGuard)
+    install(createPublicEndpointGuard(isPublicEndpoint))
 
     install(Auth) {
         bearer {
             loadTokens { tokenStore.getTokens()?.toBearerTokens() }
-            refreshTokens { refreshSession(tokenStore) }
-            sendWithoutRequest { request -> !request.isPublicEndpoint() }
+            refreshTokens { refreshSession(tokenStore, refreshEndpoint) }
+            sendWithoutRequest { request -> !request.isPublicEndpoint(isPublicEndpoint) }
         }
     }
 
@@ -94,21 +96,25 @@ fun createAlmahirHttpClient(
 }
 
 
-private val PublicEndpointGuard = createClientPlugin("PublicEndpointGuard") {
-    onRequest { request, _ ->
-        if (request.isPublicEndpoint()) request.attributes.put(AuthCircuitBreaker, Unit)
+private fun createPublicEndpointGuard(isPublicEndpoint: (String) -> Boolean) =
+    createClientPlugin("PublicEndpointGuard") {
+        onRequest { request, _ ->
+            if (request.isPublicEndpoint(isPublicEndpoint)) request.attributes.put(AuthCircuitBreaker, Unit)
+        }
     }
-}
 
-private fun HttpRequestBuilder.isPublicEndpoint(): Boolean =
-    AlmahirApi.Auth.isPublic(url.encodedPathSegments.joinToString("/"))
+private fun HttpRequestBuilder.isPublicEndpoint(isPublicEndpoint: (String) -> Boolean): Boolean =
+    isPublicEndpoint(url.encodedPathSegments.joinToString("/"))
 
 
-private suspend fun RefreshTokensParams.refreshSession(tokenStore: TokenStore): BearerTokens? {
+private suspend fun RefreshTokensParams.refreshSession(
+    tokenStore: TokenStore,
+    refreshEndpoint: String,
+): BearerTokens? {
     val refreshToken = tokenStore.getRefreshToken() ?: return null
 
     val refreshResponse = runCatching {
-        client.post(AlmahirApi.Auth.REFRESH) {
+        client.post(refreshEndpoint) {
             markAsRefreshTokenRequest()
             expectSuccess = false
             contentType(ContentType.Application.Json)

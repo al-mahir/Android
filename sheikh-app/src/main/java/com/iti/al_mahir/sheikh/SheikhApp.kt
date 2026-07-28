@@ -1,27 +1,27 @@
-package com.iti.al_mahir
+package com.iti.al_mahir.sheikh
 
 import android.app.Application
-import com.example.mushaf.data.di.mushafDataModule
-import com.example.mushaf.presentation.di.mushafPresentationModule
 import com.iti.data.di.almahirDataModule
-import com.iti.data.user.auth.di.authDataModule
+import com.iti.data.sheikh.auth.di.sheikhAuthDataModule
+import com.iti.data.sheikh.di.almahirSheikhDataModule
 import com.iti.domain.auth.di.authDomainModule
 import com.iti.presentation.auth.di.authPresentationModule
 import com.iti.presentation.di.presentationModule
+import com.iti.sheikh.presentation.di.sheikhPresentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class AlMahirApp : Application() {
+class SheikhApp : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            androidContext(this@AlMahirApp)
+            androidContext(this@SheikhApp)
             modules(
                 almahirDataModule,
                 presentationModule,
-                mushafDataModule,
-                mushafPresentationModule,
-                authDataModule,
+                sheikhPresentationModule,
+                sheikhAuthDataModule,
+                almahirSheikhDataModule,
                 authDomainModule,
                 authPresentationModule,
             )

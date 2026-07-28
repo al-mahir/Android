@@ -1,0 +1,26 @@
+<resources>
+    <string name="sheikh_home_brand_title">Al-Māhir</string>
+    <string name="sheikh_home_greeting">welcome back</string>
+    <string name="sheikh_home_greeting_subtitle">Manage your availability and circles.</string>
+    <string name="sheikh_home_avatar_content_description">Open profile</string>
+
+    <string name="sheikh_home_availability_toggle_on_description">Available for 1:1 session requests. Tap to go offline.</string>
+    <string name="sheikh_home_availability_toggle_off_description">Offline for 1:1 session requests. Tap to become available.</string>
+
+    <string name="sheikh_home_status_available">Available</string>
+    <string name="sheikh_home_status_available_description">You\'re visible to students for 1:1 session requests.</string>
+    <string name="sheikh_home_status_in_session">In session</string>
+    <string name="sheikh_home_status_in_session_description">You\'re currently in a session — availability resumes automatically once it ends.</string>
+    <string name="sheikh_home_status_offline">Offline</string>
+    <string name="sheikh_home_status_offline_description">You won\'t receive new 1:1 session requests.</string>
+
+    <string name="sheikh_home_error_generic">Something went wrong. Please try again.</string>
+    <string name="sheikh_home_availability_update_failed">Couldn\'t update your availability. Please try again.</string>
+
+    <string name="sheikh_home_illustration_available_title">You\'re available</string>
+    <string name="sheikh_home_illustration_available_description">Students can send you 1:1 session requests right now.</string>
+    <string name="sheikh_home_illustration_in_session_title">In a session</string>
+    <string name="sheikh_home_illustration_in_session_description">You\'ll be available again once this session ends.</string>
+    <string name="sheikh_home_illustration_offline_title">You\'re offline</string>
+    <string name="sheikh_home_illustration_offline_description">Turn on availability above to start receiving 1:1 session requests.</string>
+</resources>
