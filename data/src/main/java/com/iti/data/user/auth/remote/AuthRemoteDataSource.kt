@@ -1,13 +1,13 @@
-package com.iti.data.auth.remote
+package com.iti.data.user.auth.remote
 
-import com.iti.data.auth.remote.dto.AuthDataDto
-import com.iti.data.auth.remote.dto.ForgotPasswordRequest
-import com.iti.data.auth.remote.dto.GoogleAuthRequest
-import com.iti.data.auth.remote.dto.LoginRequest
-import com.iti.data.auth.remote.dto.LogoutRequest
-import com.iti.data.auth.remote.dto.RegisterRequest
-import com.iti.data.auth.remote.dto.ResetPasswordRequest
-import com.iti.data.auth.remote.dto.UserDto
+import com.iti.data.user.auth.remote.dto.AuthDataDto
+import com.iti.data.user.auth.remote.dto.ForgotPasswordRequest
+import com.iti.data.user.auth.remote.dto.GoogleAuthRequest
+import com.iti.data.user.auth.remote.dto.LoginRequest
+import com.iti.data.user.auth.remote.dto.LogoutRequest
+import com.iti.data.user.auth.remote.dto.RegisterRequest
+import com.iti.data.user.auth.remote.dto.ResetPasswordRequest
+import com.iti.data.user.auth.remote.dto.UserDto
 import com.iti.data.core.network.AlmahirApi
 import com.iti.data.core.network.dto.ApiResponse
 import com.iti.data.core.network.dto.RefreshTokenRequest

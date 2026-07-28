@@ -1,7 +1,7 @@
-package com.iti.data.auth.di
+package com.iti.data.user.auth.di
 
-import com.iti.data.auth.remote.AuthRemoteDataSource
-import com.iti.data.auth.repository.AuthRepositoryImpl
+import com.iti.data.user.auth.remote.AuthRemoteDataSource
+import com.iti.data.user.auth.repository.AuthRepositoryImpl
 import com.iti.data.core.di.AlmahirClient
 import com.iti.data.core.di.networkModule
 import com.iti.domain.auth.repository.AuthRepository

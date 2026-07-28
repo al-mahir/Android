@@ -1,4 +1,4 @@
-package com.iti.data.auth.remote.dto
+package com.iti.data.user.auth.remote.dto
 
 import kotlinx.serialization.Serializable
 
