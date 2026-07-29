@@ -7,4 +7,5 @@ data class TafsirBook(
     val languageName: String,
     val downloadUrl: String,
     val fileSizeBytes: Long,
+    val state: DownloadState = DownloadState.NotDownloaded,
 )

@@ -40,6 +40,8 @@ val mushafPresentationModule = module {
     factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchTafsirUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -65,7 +67,7 @@ val mushafPresentationModule = module {
 
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 

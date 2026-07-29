@@ -52,7 +52,7 @@ data class MushafUiState(
 
     // Tafsir
     val tafsirState: TafsirState = TafsirState.Idle,
-    val selectedTafsirKey: String = "ibn-kathir",
+    val selectedTafsirKey: String = "mukhtasar",
     val availableTafsirBooks: List<com.example.mushaf.domain.model.TafsirBook> = emptyList(),
 
     // User Guide

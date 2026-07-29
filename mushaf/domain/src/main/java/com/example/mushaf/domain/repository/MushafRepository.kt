@@ -40,6 +40,12 @@ interface MushafRepository {
 
     /** List all Tafsir books available for selection from the backend. */
     suspend fun getAvailableTafsirBooks(): List<TafsirBook>
+    fun observeAvailableTafsirBooks(): Flow<List<TafsirBook>>
+
+    suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String)
+    fun deleteTafsirBook(tafsirKey: String)
+
+    suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): TafsirResult?
 
     suspend fun searchTafsir(query: String, limit: Int = 50, offset: Int = 0): List<TafsirResult>
 }

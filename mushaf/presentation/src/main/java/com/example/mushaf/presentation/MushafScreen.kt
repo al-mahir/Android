@@ -500,6 +500,8 @@ fun MushafScreen(
             val tafsirState = state.tafsirState
             com.example.mushaf.presentation.components.TafsirBottomSheet(
                 tafsirState = tafsirState,
+                availableBooks = state.availableTafsirBooks,
+                selectedKey = state.selectedTafsirKey,
                 onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) },
                 onRetry = if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Error) {
                     {
@@ -508,6 +510,9 @@ fun MushafScreen(
                         viewModel.onIntent(MushafIntent.DismissTafsir)
                     }
                 } else null,
+                onChangeTafsir = { viewModel.onIntent(MushafIntent.ChangeTafsirSource(it)) },
+                onDownloadTafsir = { key, url -> viewModel.onIntent(MushafIntent.DownloadTafsir(key, url)) },
+                onDeleteTafsir = { viewModel.onIntent(MushafIntent.DeleteTafsir(it)) }
             )
         }
 
