@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation.state
 
+import com.example.designsystem.text.UiText
 import com.example.mushaf.domain.model.MushafConstants
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.example.mushaf.domain.model.MushafMode
@@ -63,6 +64,7 @@ data class MushafUiState(
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
     val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)
+    val currentJuzNumber: Int get() = MushafConstants.juzForPage(currentPage)
 
     fun pageState(pageNumber: Int): PageLoadState = when {
         pages.containsKey(pageNumber) -> PageLoadState.Loaded(pages.getValue(pageNumber))
@@ -84,7 +86,7 @@ sealed interface TafsirState {
     data object Idle : TafsirState
     data class Loading(val surah: Int, val ayah: Int) : TafsirState
     data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
-    data class Error(val message: String) : TafsirState
+    data class Error(val message: UiText) : TafsirState
 }
 
 enum class CaptureError {

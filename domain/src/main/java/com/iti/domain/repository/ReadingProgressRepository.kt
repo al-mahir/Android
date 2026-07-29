@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 /**
  * Provides the user's actual reading position as persisted by the Mushaf reader.
  *
- * Implemented in `:data` by reading from the same DataStore that
+ * Implemented in `:mushaf:data` by reading from the same DataStore that
  * [SaveLastPageUseCase][com.example.mushaf.domain.usecase.SaveLastPageUseCase] writes to,
  * so the home-screen card always reflects what the user last read.
  */

@@ -1,0 +1,518 @@
+{
+  "info": {
+    "name": "Circle & Sheikh Meeting Feature (Agora MVP)",
+    "description": "REST contract for the Circle (group session) and Sheikh (1:1 meeting request) features. WebSocket (STOMP) and Push payloads are documented in API-Contract.md -- Postman does not natively execute STOMP frames, so they are not included as runnable requests here. The 'Sheikh Management' folder documents already-live production endpoints for reference; everything else is net-new.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "sheikhBaseUrl",
+      "value": "https://almahir-production.up.railway.app"
+    },
+    {
+      "key": "jwt",
+      "value": "REPLACE_WITH_USER_JWT"
+    },
+    {
+      "key": "circleId",
+      "value": "c-8f72c4"
+    },
+    {
+      "key": "guestId",
+      "value": "user-404"
+    },
+    {
+      "key": "sheikhId",
+      "value": "sh-77"
+    },
+    {
+      "key": "sheikhUsername",
+      "value": "sheikh_amina"
+    },
+    {
+      "key": "sheikhEmail",
+      "value": "amina@example.com"
+    },
+    {
+      "key": "requestId",
+      "value": "req-9f21"
+    }
+  ],
+  "item": [
+    {
+      "name": "Feature 1 - Circles (Group Sessions)",
+      "item": [
+        {
+          "name": "1. Create Circle (Host)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Daily Fajr Recitation\",\n  \"topicType\": \"SURAH\",\n  \"topicValue\": \"Al-Baqarah\",\n  \"visibility\": \"PUBLIC\",\n  \"participantLimit\": 10,\n  \"requireApproval\": true\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles"
+              },
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"circleId\": \"c-8f72c4\",\n  \"channelName\": \"circle_8f72c4\",\n  \"hostAgoraToken\": \"007eJxTY...\",\n  \"uid\": 101,\n  \"status\": \"ACTIVE\",\n  \"name\": \"Daily Fajr Recitation\",\n  \"topicType\": \"SURAH\",\n  \"topicValue\": \"Al-Baqarah\",\n  \"visibility\": \"PUBLIC\",\n  \"participantLimit\": 10,\n  \"requireApproval\": true,\n  \"createdAt\": \"2026-07-27T14:58:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "2. Get Circle Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/circles/{{circleId}}"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/circles/{{circleId}}"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"circleId\": \"c-8f72c4\",\n  \"name\": \"Daily Fajr Recitation\",\n  \"status\": \"ACTIVE\",\n  \"hostId\": \"user-101\",\n  \"visibility\": \"PUBLIC\",\n  \"requireApproval\": true,\n  \"participantLimit\": 10,\n  \"waitingCount\": 2,\n  \"activeParticipants\": 4\n}"
+            }
+          ]
+        },
+        {
+          "name": "3. Search Active Public Circles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/circles?visibility=PUBLIC&search=fajr"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/circles?visibility=PUBLIC&search=fajr"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"circles\": [\n    {\n      \"circleId\": \"c-8f72c4\",\n      \"name\": \"Daily Fajr Recitation\",\n      \"topicType\": \"SURAH\",\n      \"topicValue\": \"Al-Baqarah\",\n      \"activeParticipants\": 4,\n      \"participantLimit\": 10,\n      \"requireApproval\": true\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "4. Join Circle (requireApproval=false -> immediate)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+          },
+          "response": [
+            {
+              "name": "200 OK - Joined directly (open circle)",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"JOINED\",\n  \"agoraToken\": \"007eJxTY...\",\n  \"channelName\": \"circle_8f72c4\",\n  \"uid\": 404\n}"
+            },
+            {
+              "name": "202 Accepted - Pending (requireApproval=true)",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "body": "{\n  \"status\": \"PENDING_APPROVAL\",\n  \"message\": \"Waiting for host to admit you.\"\n}"
+            },
+            {
+              "name": "409 Circle Full",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+              },
+              "status": "Conflict",
+              "code": 409,
+              "body": "{\n  \"error\": \"CIRCLE_FULL\",\n  \"message\": \"This circle has reached its participant limit.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "5. Cancel Own Join Request (Guest)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/circles/{{circleId}}/join-requests"
+              },
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "6. Approve Guest (Host)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles/{{circleId}}/approve",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guestId\": \"{{guestId}}\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/approve"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"APPROVED\",\n  \"guestId\": \"user-404\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "7. Reject Guest (Host)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles/{{circleId}}/reject",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guestId\": \"{{guestId}}\",\n  \"reason\": \"Circle is full\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/reject"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"REJECTED\",\n  \"guestId\": \"user-404\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "8. List Active Participants",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/circles/{{circleId}}/participants"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/circles/{{circleId}}/participants"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"participants\": [\n    { \"userId\": \"user-101\", \"name\": \"Yassen\", \"uid\": 101, \"role\": \"HOST\" },\n    { \"userId\": \"user-404\", \"name\": \"Nour\", \"uid\": 404, \"role\": \"GUEST\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "9. Leave Circle",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles/{{circleId}}/leave"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/leave"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"LEFT\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "10. End Circle (Host)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/circles/{{circleId}}/end"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/circles/{{circleId}}/end"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ENDED\",\n  \"endedAt\": \"2026-07-27T15:47:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sheikh Management (already implemented - reference only)",
+      "item": [
+        {
+          "name": "Get Sheikh by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{sheikhBaseUrl}}/api/sheikh/{{sheikhId}}"
+          }
+        },
+        {
+          "name": "Update Sheikh Profile",
+          "request": {
+            "method": "PUT",
+            "url": "{{sheikhBaseUrl}}/api/sheikh/{{sheikhId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Amina\",\n  \"subject\": \"Calculus\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Sheikhs",
+          "request": {
+            "method": "GET",
+            "url": "{{sheikhBaseUrl}}/api/sheikh"
+          }
+        },
+        {
+          "name": "Get Sheikh by Username",
+          "request": {
+            "method": "GET",
+            "url": "{{sheikhBaseUrl}}/api/sheikh/username/{{sheikhUsername}}"
+          }
+        },
+        {
+          "name": "Search Sheikhs",
+          "request": {
+            "method": "GET",
+            "url": "{{sheikhBaseUrl}}/api/sheikh/search?query=amina"
+          }
+        },
+        {
+          "name": "Get Sheikh by Email",
+          "request": {
+            "method": "GET",
+            "url": "{{sheikhBaseUrl}}/api/sheikh/email/{{sheikhEmail}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feature 2 - Sheikh Availability & Meeting Requests (NEW endpoints)",
+      "item": [
+        {
+          "name": "1. Set Availability (Sheikh)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/sheikh/{{sheikhId}}/availability",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"AVAILABLE\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "url": "{{baseUrl}}/sheikh/{{sheikhId}}/availability"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"sheikhId\": \"sh-77\",\n  \"status\": \"AVAILABLE\",\n  \"updatedAt\": \"2026-07-27T15:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "2. Get Sheikh Availability",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sheikh/{{sheikhId}}/availability"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": "{{baseUrl}}/sheikh/{{sheikhId}}/availability"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"sheikhId\": \"sh-77\",\n  \"status\": \"AVAILABLE\",\n  \"updatedAt\": \"2026-07-27T15:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "3. Send Meeting Request (Student)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sheikh/{{sheikhId}}/meeting-requests",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"I'd like guidance on Surah Al-Mulk tajweed\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "202 Accepted",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/sheikh/{{sheikhId}}/meeting-requests"
+              },
+              "status": "Accepted",
+              "code": 202,
+              "body": "{\n  \"requestId\": \"req-9f21\",\n  \"status\": \"PENDING\",\n  \"expiresAt\": \"2026-07-27T15:10:30Z\"\n}"
+            },
+            {
+              "name": "409 Sheikh Unavailable",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/sheikh/{{sheikhId}}/meeting-requests"
+              },
+              "status": "Conflict",
+              "code": 409,
+              "body": "{\n  \"error\": \"SHEIKH_UNAVAILABLE\",\n  \"message\": \"Sheikh is not currently available.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "4. Cancel Meeting Request (Student)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/meeting-requests/{{requestId}}"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": "{{baseUrl}}/meeting-requests/{{requestId}}"
+              },
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "5. Accept Meeting Request (Sheikh)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/meeting-requests/{{requestId}}/accept"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/meeting-requests/{{requestId}}/accept"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"ACCEPTED\",\n  \"circleId\": \"c-3c91\",\n  \"channelName\": \"circle_3c91\",\n  \"sheikhAgoraToken\": \"007eJxTY...\",\n  \"uid\": 501\n}"
+            }
+          ]
+        },
+        {
+          "name": "6. Decline Meeting Request (Sheikh)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/meeting-requests/{{requestId}}/decline",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"In another session\"\n}"
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "{{baseUrl}}/meeting-requests/{{requestId}}/decline"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"DECLINED\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package com.example.mushaf.domain.usecase
 import android.util.Log
 import com.example.mushaf.domain.model.TafsirResult
 import com.example.mushaf.domain.repository.MushafRepository
+import com.iti.domain.core.Result
 
 class GetTafsirForAyahUseCase(
     private val repository: MushafRepository,
@@ -16,7 +17,7 @@ class GetTafsirForAyahUseCase(
         ayahNumber: Int,
         tafsirKey: String = "mukhtasar",
         lang: String = "ar",
-    ): TafsirResult? {
+    ): Result<TafsirResult?> {
         // 1. If explicitly requesting the bundled fallback DB
         if (tafsirKey == "mukhtasar") {
             return repository.getTafsirForAyah(surahNumber, ayahNumber)
@@ -25,13 +26,17 @@ class GetTafsirForAyahUseCase(
         // 2. Check if we have it downloaded locally
         val localJsonResult = repository.getTafsirFromLocalJson(tafsirKey, surahNumber, ayahNumber)
         if (localJsonResult != null) {
-            return localJsonResult
+            return com.iti.domain.core.Result.Success(localJsonResult)
         }
 
         // 3. Try to fetch from API
         return try {
-            repository.getTafsirFromApi(surahNumber, ayahNumber, lang, tafsirKey)
-                ?: repository.getTafsirForAyah(surahNumber, ayahNumber)
+            val apiResult = repository.getTafsirFromApi(surahNumber, ayahNumber, lang, tafsirKey)
+            if (apiResult != null) {
+                com.iti.domain.core.Result.Success(apiResult)
+            } else {
+                repository.getTafsirForAyah(surahNumber, ayahNumber)
+            }
         } catch (e: Exception) {
             Log.w("GetTafsirForAyahUseCase", "Online fetch failed, falling back to local DB", e)
             repository.getTafsirForAyah(surahNumber, ayahNumber)

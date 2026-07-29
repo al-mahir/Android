@@ -102,7 +102,7 @@ fun SurahPickerSheet(
             },
             leadingIcon = {
                 Icon(
-                    Icons.Default.Search,
+                    painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_search),
                     contentDescription = null,
                     tint = Theme.colors.hint,
                 )

@@ -14,6 +14,9 @@ import com.example.mushaf.domain.model.recite.RecitationControl
 import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.repository.LiveRecitationRepository
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
+import com.iti.domain.core.Result
+import com.iti.domain.core.asResult
+import com.iti.domain.core.getOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -41,7 +44,7 @@ class LiveRecitationRepositoryImpl(
     override fun session(
         config: LiveRecitationConfig,
         controls: Flow<RecitationControl>,
-    ): Flow<LiveRecitationEvent> = channelFlow {
+    ): Flow<Result<LiveRecitationEvent>> = channelFlow {
         
         
         val commands = Channel<LiveSessionCommand>(Channel.BUFFERED)
@@ -92,7 +95,7 @@ class LiveRecitationRepositoryImpl(
             controlJob.cancel()
             commands.close()
         }
-    }
+    }.asResult()
 
     
 
@@ -105,7 +108,10 @@ class LiveRecitationRepositoryImpl(
         commands: SendChannel<LiveSessionCommand>,
         config: LiveRecitationConfig,
     ) {
-        capture.captureSpeech(config.speechGate).collect { event ->
+        capture.captureSpeech(config.speechGate).collect { result ->
+            // A single dropped audio frame shouldn't end the whole live session; skip it and
+            // keep streaming — the mic/gate will simply resume on the next frame.
+            val event = result.getOrNull() ?: return@collect
             when (event) {
                 is SpeechEvent.Audio -> {
                     commands.send(LiveSessionCommand.Audio(event.frame))

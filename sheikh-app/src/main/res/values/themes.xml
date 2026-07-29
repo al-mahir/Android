@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Mirrors app/src/main/res/values/themes.xml — the light-bar flags must live on the theme,
+      not only on the Compose insets controller (see that file for the full rationale).
+    -->
+    <style name="Base.Theme.AlMahir" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Theme.AlMahir" parent="Base.Theme.AlMahir" />
+
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo_scaled</item>
+        <item name="postSplashScreenTheme">@style/Theme.AlMahir</item>
+    </style>
+</resources>

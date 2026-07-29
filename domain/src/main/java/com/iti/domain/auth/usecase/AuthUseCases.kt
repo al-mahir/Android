@@ -105,3 +105,4 @@ private const val OTP_LENGTH = 6
 
 private fun validationFailure(fieldErrors: Map<String, String>): Result<Nothing> =
     Result.Error(DomainError.ValidationError(AuthValidationCode.VALIDATION_FAILED, fieldErrors))
+

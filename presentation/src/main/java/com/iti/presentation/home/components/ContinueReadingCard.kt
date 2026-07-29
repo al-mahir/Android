@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.components.button.ButtonHeightCompact
+import com.example.designsystem.components.button.ButtonIconPosition
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.theme.Theme
@@ -141,6 +142,8 @@ fun ContinueReadingCard(
 
                 PrimaryButton(
                     caption = stringResource(R.string.home_resume_reading),
+                    iconPainter = painterResource(DesignSystemR.drawable.ic_arrow_back_rotated),
+                    iconPosition = ButtonIconPosition.End,
                     modifier = Modifier.width(ButtonHeightCompact * 3),
                     height = 36.dp,
                     onClick = onClick,

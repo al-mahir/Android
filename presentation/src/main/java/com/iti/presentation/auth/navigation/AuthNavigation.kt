@@ -28,7 +28,7 @@ import com.iti.presentation.auth.register.RegisterViewModel
 import com.iti.presentation.core.mvi.ObserveEffect
 import com.iti.presentation.core.platform.GoogleIdTokenProvider
 import com.iti.presentation.core.platform.GoogleIdTokenResult
-import com.iti.presentation.core.ui.resolve
+import com.example.designsystem.text.resolve
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -57,7 +57,13 @@ private fun rememberGoogleSignInLauncher(
 
     return remember(provider, context, scope) {
         {
-            scope.launch { currentOnResult(provider.requestIdToken(context)) }
+            scope.launch {
+                val result = provider.requestIdToken(context)
+                if (result is GoogleIdTokenResult.Failed) {
+                    android.util.Log.e("GoogleSignIn", "Google Sign In Failed", result.cause)
+                }
+                currentOnResult(result)
+            }
             Unit
         }
     }
@@ -143,6 +149,7 @@ fun EntryProviderScope<NavKey>.authEntries(
     entry<AuthRoute.ForgotPassword> {
         val viewModel: ForgotPasswordViewModel = koinViewModel()
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
 
         ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
@@ -150,7 +157,7 @@ fun EntryProviderScope<NavKey>.authEntries(
                     onNavigate(AuthRoute.OtpVerify(effect.email))
 
                 is ForgotPasswordEffect.NavigateBack -> onBack()
-                is ForgotPasswordEffect.ShowError -> onShowMessage(effect.message)
+                is ForgotPasswordEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
 
@@ -164,6 +171,7 @@ fun EntryProviderScope<NavKey>.authEntries(
     entry<AuthRoute.OtpVerify> { route ->
         val viewModel: OtpViewModel = koinViewModel()
         val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
 
         // Seed the ViewModel with the address the code was sent to.
         LaunchedEffect(route.email) {
@@ -175,7 +183,7 @@ fun EntryProviderScope<NavKey>.authEntries(
                 is OtpEffect.NavigateToLogin -> onNavigate(AuthRoute.Login)
                 is OtpEffect.NavigateToHome -> onAuthenticated()
                 is OtpEffect.NavigateBack -> onBack()
-                is OtpEffect.ShowError -> onShowMessage(effect.message)
+                is OtpEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
 

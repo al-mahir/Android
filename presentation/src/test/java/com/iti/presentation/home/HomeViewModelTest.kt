@@ -1,8 +1,9 @@
 package com.iti.presentation.home
 
-import com.iti.domain.repository.AlmahirRepository
+import com.iti.domain.repository.ReadingProgressRepository
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
+import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
@@ -11,7 +12,10 @@ import com.iti.presentation.home.state.HomeIntent
 import com.iti.presentation.testing.FakeAlmahirRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -19,7 +23,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -43,7 +46,7 @@ class HomeViewModelTest {
 
         val state = viewModel.state.value
         assertFalse(state.isLoading)
-        assertNull(state.errorMessageRes)
+        assertEquals(null, state.errorMessageRes)
         assertEquals("JD", state.user?.initials)
         assertEquals(298, state.readingProgress?.pageNumber)
         assertEquals(1, state.sheikhs.size)
@@ -51,22 +54,36 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `a missing reading position still renders the rest of the screen`() =
+    fun `a brand-new reader still renders the rest of the screen`() =
         runTest(dispatcher) {
-            val viewModel = viewModel(FakeAlmahirRepository(readingProgress = null))
+            val viewModel = viewModel(FakeAlmahirRepository(), lastPage = 1)
 
             testScheduler.advanceUntilIdle()
 
             val state = viewModel.state.value
             assertFalse(state.isLoading)
-            assertNull(state.readingProgress)
+            assertEquals(1, state.readingProgress?.pageNumber)
             assertEquals(1, state.sheikhs.size)
         }
 
     @Test
-    fun `one failing resource surfaces the error instead of hanging on loading`() =
+    fun `a sheikh-only failure does not surface as a page error`() =
         runTest(dispatcher) {
+            // HomeViewModel loads sheikhs as a separate one-shot call and deliberately ignores
+            // a partial sheikh failure so the rest of the screen still renders.
             val viewModel = viewModel(FakeAlmahirRepository(failSheikhs = true))
+
+            testScheduler.advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertFalse(state.isLoading)
+            assertFalse(state.hasError)
+        }
+
+    @Test
+    fun `a failure in the core content streams surfaces the error instead of hanging on loading`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel(FakeAlmahirRepository(), failReadingProgress = true)
 
             testScheduler.advanceUntilIdle()
 
@@ -84,19 +101,6 @@ class HomeViewModelTest {
             viewModel.onIntent(HomeIntent.ContinueReadingClicked)
 
             assertEquals(HomeEffect.OpenMushafAtPage(298), viewModel.effect.first())
-        }
-
-    @Test
-    fun `continue reading intent is ignored when there is no saved position`() =
-        runTest(dispatcher) {
-            val viewModel = viewModel(FakeAlmahirRepository(readingProgress = null))
-            testScheduler.advanceUntilIdle()
-
-            viewModel.onIntent(HomeIntent.ContinueReadingClicked)
-            // Nothing to navigate to, so no effect and no crash.
-            viewModel.onIntent(HomeIntent.SearchClicked)
-
-            assertEquals(HomeEffect.OpenSearch, viewModel.effect.first())
         }
 
     @Test
@@ -128,12 +132,27 @@ class HomeViewModelTest {
             assertEquals(listOf("circle-1"), repository.joined)
         }
 
-    private fun viewModel(repository: AlmahirRepository) = HomeViewModel(
+    private fun viewModel(
+        repository: FakeAlmahirRepository,
+        lastPage: Int = 298,
+        failReadingProgress: Boolean = false,
+    ) = HomeViewModel(
         getCurrentUser = GetCurrentUserUseCase(repository),
-        getReadingProgress = GetReadingProgressUseCase(repository),
+        getReadingProgress = GetReadingProgressUseCase(
+            FakeReadingProgressRepository(lastPage, failReadingProgress),
+        ),
+        getAyahOfTheDay = GetAyahOfTheDayUseCase(),
         getSheikhs = GetSheikhsUseCase(repository),
         getStudyCircles = GetStudyCirclesUseCase(repository),
         joinStudyCircle = JoinStudyCircleUseCase(repository),
     )
 
+    private class FakeReadingProgressRepository(
+        private val page: Int,
+        private val fail: Boolean = false,
+    ) : ReadingProgressRepository {
+        override fun observeLastPage(): Flow<Int> =
+            if (fail) flow { throw IllegalStateException("boom") } else flowOf(page)
+    }
 }
+

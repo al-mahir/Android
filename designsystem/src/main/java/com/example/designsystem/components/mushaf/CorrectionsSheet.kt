@@ -14,14 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.example.designsystem.R
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -314,7 +314,7 @@ private fun MistakeRow(
         verticalAlignment = Alignment.Top,
     ) {
         Icon(
-            imageVector = Icons.Outlined.ErrorOutline,
+            painter = painterResource(R.drawable.ic_info),
             // The row's text says what is wrong; a second announcement would be noise.
             contentDescription = null,
             tint = Theme.colors.error,

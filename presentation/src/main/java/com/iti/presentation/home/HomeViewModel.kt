@@ -2,6 +2,8 @@ package com.iti.presentation.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.fold
+import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
 import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
@@ -59,14 +62,24 @@ class HomeViewModel(
         contentJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
 
+        // Load sheikhs from real API in parallel (one-shot suspend).
+        viewModelScope.launch {
+            getSheikhs().fold(
+                onSuccess = { sheikhs -> updateState { copy(sheikhs = sheikhs) } },
+                onError = { /* Home shows error only if all sources fail; ignore partial sheikh failure */ },
+            )
+        }
+
+        // Observe user, reading progress, ayah of the day, and circles as continuous streams.
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
             getAyahOfTheDay(),
-            getSheikhs(),
             getStudyCircles(),
-        ) { user, readingProgress, ayahOfTheDay, sheikhs, circles ->
-            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, sheikhs, circles)
+        ) { userResult, readingProgress, ayahOfTheDay, circlesResult ->
+            val user = userResult.getOrNull() ?: error("Failed to load current user")
+            val circles = circlesResult.getOrNull() ?: error("Failed to load study circles")
+            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles)
         }
             .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }
             .onEach { snapshot ->
@@ -77,8 +90,7 @@ class HomeViewModel(
                         user = snapshot.user,
                         readingProgress = snapshot.readingProgress,
                         ayahOfTheDay = snapshot.ayahOfTheDay,
-                        sheikhs = snapshot.sheikhs,
-                        circles = snapshot.circles,
+                        circles = snapshot.circles.take(2),
                     )
                 }
             }

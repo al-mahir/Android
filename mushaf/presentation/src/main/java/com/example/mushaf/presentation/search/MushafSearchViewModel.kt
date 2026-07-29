@@ -8,6 +8,10 @@ import com.example.mushaf.domain.usecase.search.SearchJuzUseCase
 import com.example.mushaf.domain.usecase.search.SearchSurahUseCase
 import com.example.mushaf.domain.usecase.GetTargetPageUseCase
 import com.example.mushaf.domain.usecase.SaveLastPageUseCase
+import com.example.mushaf.presentation.core.error.toUiText
+import com.example.designsystem.text.UiText
+import com.iti.domain.core.fold
+import com.iti.domain.core.getOrNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +49,7 @@ class MushafSearchViewModel(
     private val _isPaginatingAyahs = MutableStateFlow(false)
     private val _hasReachedEndAyahs = MutableStateFlow(false)
     private val _hydeUsed = MutableStateFlow(false)
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<UiText?>(null)
     private var currentAyahOffset = 0
     private val AYAH_PAGE_SIZE = 50
 
@@ -56,21 +60,21 @@ class MushafSearchViewModel(
             _errorMessage.value = null
             _hydeUsed.value = false
             if (query.isBlank()) {
-                val allJuzs = searchJuzUseCase("").getOrDefault(emptyList())
+                val allJuzs = searchJuzUseCase("").getOrNull() ?: emptyList()
                 emit(MushafSearchStateUpdate(juzs = allJuzs))
             } else if (searchType == SearchType.TEXT) {
-                val matchedSurahs = searchSurahUseCase(query).getOrDefault(emptyList())
-                
+                val matchedSurahs = searchSurahUseCase(query).getOrNull() ?: emptyList()
+
                 // Reset pagination
                 currentAyahOffset = 0
                 _hasReachedEndAyahs.value = false
                 _ayahs.value = emptyList()
                 _isPaginatingAyahs.value = true
-                val res = searchAyahUseCase(query, AYAH_PAGE_SIZE, currentAyahOffset).getOrDefault(emptyList())
+                val res = searchAyahUseCase(query, AYAH_PAGE_SIZE, currentAyahOffset).getOrNull() ?: emptyList()
                 if (res.size < AYAH_PAGE_SIZE) _hasReachedEndAyahs.value = true
                 _ayahs.value = res
                 _isPaginatingAyahs.value = false
-                
+
                 emit(MushafSearchStateUpdate(surahs = matchedSurahs))
             } else if (searchType == SearchType.TAFSIR) {
                 // Search Tafsir Meaning
@@ -79,11 +83,11 @@ class MushafSearchViewModel(
                 _ayahs.value = emptyList()
                 _tafsirs.value = emptyList()
                 _isPaginatingAyahs.value = true
-                val res = searchTafsirUseCase(query, AYAH_PAGE_SIZE, currentAyahOffset)
+                val res = searchTafsirUseCase(query, AYAH_PAGE_SIZE, currentAyahOffset).getOrNull() ?: emptyList()
                 if (res.size < AYAH_PAGE_SIZE) _hasReachedEndAyahs.value = true
                 _tafsirs.value = res
                 _isPaginatingAyahs.value = false
-                
+
                 emit(MushafSearchStateUpdate(surahs = emptyList()))
             } else {
                 // Search by Meaning (Semantic / Hybrid search via Backend AI service)
@@ -100,12 +104,15 @@ class MushafSearchViewModel(
                     limit = 20
                 )
 
-                result.onSuccess { res ->
-                    _ayahs.value = res
-                    _hydeUsed.value = res.firstOrNull()?.hydeUsed ?: false
-                }.onFailure { error ->
-                    _errorMessage.value = error.message ?: "Failed to perform semantic search"
-                }
+                result.fold(
+                    onSuccess = { res ->
+                        _ayahs.value = res
+                        _hydeUsed.value = res.firstOrNull()?.hydeUsed ?: false
+                    },
+                    onError = { error ->
+                        _errorMessage.value = error.toUiText()
+                    },
+                )
 
                 _isPaginatingAyahs.value = false
                 emit(MushafSearchStateUpdate(surahs = emptyList()))
@@ -136,7 +143,7 @@ class MushafSearchViewModel(
         val isPaginating = args[6] as Boolean
         val hasReachedEnd = args[7] as Boolean
         val hydeUsed = args[8] as Boolean
-        val errorMessage = args[9] as String?
+        val errorMessage = args[9] as UiText?
         val lastRead = args[10] as com.example.mushaf.domain.model.LastReadSession?
         val shouldNavigate = args[11] as Boolean
         
@@ -168,12 +175,12 @@ class MushafSearchViewModel(
             is MushafSearchIntent.ToggleHyDe -> _useHyDe.update { intent.enabled }
             is MushafSearchIntent.SurahClicked -> {
                 viewModelScope.launch {
-                    getTargetPageUseCase.forSurah(intent.surah.number)?.let { navigateToPage(it) }
+                    getTargetPageUseCase.forSurah(intent.surah.number).getOrNull()?.let { navigateToPage(it) }
                 }
             }
             is MushafSearchIntent.JuzClicked -> {
                 viewModelScope.launch {
-                    getTargetPageUseCase.forJuz(intent.juz.number)?.let { navigateToPage(it) }
+                    getTargetPageUseCase.forJuz(intent.juz.number).getOrNull()?.let { navigateToPage(it) }
                 }
             }
             is MushafSearchIntent.HizbClicked -> { /* Not supported yet */ }
@@ -182,12 +189,14 @@ class MushafSearchViewModel(
             }
             is MushafSearchIntent.AyahClicked -> {
                 viewModelScope.launch {
-                    getTargetPageUseCase.forAyah(intent.ayah.surahNumber, intent.ayah.ayahNumber)?.let { navigateToPage(it) }
+                    getTargetPageUseCase.forAyah(intent.ayah.surahNumber, intent.ayah.ayahNumber).getOrNull()
+                        ?.let { navigateToPage(it) }
                 }
             }
             is MushafSearchIntent.TafsirClicked -> {
                 viewModelScope.launch {
-                    getTargetPageUseCase.forAyah(intent.tafsir.surahNumber, intent.tafsir.ayahNumber)?.let { navigateToPage(it) }
+                    getTargetPageUseCase.forAyah(intent.tafsir.surahNumber, intent.tafsir.ayahNumber).getOrNull()
+                        ?.let { navigateToPage(it) }
                 }
             }
             is MushafSearchIntent.LoadNextAyahsPage -> loadNextAyahsPage()
@@ -215,13 +224,13 @@ class MushafSearchViewModel(
         
         viewModelScope.launch {
             if (_searchType.value == SearchType.TEXT) {
-                val newAyahs = searchAyahUseCase(_query.value, AYAH_PAGE_SIZE, currentAyahOffset).getOrDefault(emptyList())
+                val newAyahs = searchAyahUseCase(_query.value, AYAH_PAGE_SIZE, currentAyahOffset).getOrNull() ?: emptyList()
                 if (newAyahs.size < AYAH_PAGE_SIZE) {
                     _hasReachedEndAyahs.value = true
                 }
                 _ayahs.value = _ayahs.value + newAyahs
             } else if (_searchType.value == SearchType.TAFSIR) {
-                val newTafsirs = searchTafsirUseCase(_query.value, AYAH_PAGE_SIZE, currentAyahOffset)
+                val newTafsirs = searchTafsirUseCase(_query.value, AYAH_PAGE_SIZE, currentAyahOffset).getOrNull() ?: emptyList()
                 if (newTafsirs.size < AYAH_PAGE_SIZE) {
                     _hasReachedEndAyahs.value = true
                 }

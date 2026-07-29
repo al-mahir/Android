@@ -50,7 +50,13 @@ class MapperTest {
 
     @Test
     fun `study circle defaults to not joined`() {
-        val circle = StudyCircleDto(id = "c1", title = "t", hostName = "h").toDomain()
+        val circle = StudyCircleDto(
+            id = "c1",
+            surahName = "t",
+            hostId = "h1",
+            hostName = "h",
+            hostInitials = "HH",
+        ).toDomain()
         assertFalse(circle.isJoined)
         assertEquals("c1", circle.id)
     }

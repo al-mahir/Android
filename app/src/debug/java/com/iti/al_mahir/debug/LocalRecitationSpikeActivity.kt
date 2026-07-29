@@ -33,6 +33,7 @@ import com.example.mushaf.domain.model.recite.local.LocalRecitationCursor
 import com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability
 import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
+import com.iti.domain.core.getOrNull
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -90,7 +91,7 @@ private fun SpikeScreen(recognizer: LocalSpeechRecognizer, corpus: LocalWordCorp
 
     fun loadWindow(sura: Int, aya: Int) {
         scope.launch {
-            window = corpus.wordsFrom(RecitationCursor(sura, aya, 0), count = 15)
+            window = corpus.wordsFrom(RecitationCursor(sura, aya, 0), count = 15).getOrNull() ?: emptyList()
             biasIndex = 0
             attempts.clear()
         }

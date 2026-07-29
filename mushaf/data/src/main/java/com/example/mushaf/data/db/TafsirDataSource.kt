@@ -105,6 +105,7 @@ class TafsirDataSource(
             }
         } catch (e: Exception) {
             Log.e(MushafLog.TAG, "Error fetching Tafsir for $ayahKey", e)
+            throw e
         }
         return@withContext null
     }
@@ -138,6 +139,7 @@ class TafsirDataSource(
             }
         } catch (e: Exception) {
             Log.e(MushafLog.TAG, "Error searching Tafsir for query: $q", e)
+            throw e
         }
         return@withContext results
     }

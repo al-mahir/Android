@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
@@ -92,7 +93,7 @@ internal fun BaseButton(
                     Image(
                         painter = iconPainter,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(16.dp),
                         colorFilter = if (tintIcon) {
                             ColorFilter.tint(if (isDisabled) Theme.colors.onDisable else contentColor)
                         } else null
@@ -106,6 +107,7 @@ internal fun BaseButton(
                         style = (captionStyle ?: Theme.typography.body.large).copy(
                             color = if (isDisabled) Theme.colors.onDisable else contentColor
                         ),
+                        modifier = if (iconPainter != null) Modifier.padding(start = 8.dp) else Modifier
                     )
                 }
             }

@@ -1,8 +1,10 @@
 package com.iti.presentation.testing
 
+import com.iti.domain.core.DomainError
+import com.iti.domain.core.Result
+import com.iti.domain.model.CircleDifficulty
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
-import com.iti.domain.model.ReadingProgress
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
 import com.iti.domain.model.StudyCircle
@@ -10,29 +12,35 @@ import com.iti.domain.model.Subscription
 import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
+import com.iti.domain.repository.CircleRepository
+import com.iti.domain.repository.SheikhRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 /**
- * In-memory [AlmahirRepository] shared by the presentation tests.
+ * In-memory [AlmahirRepository] + [SheikhRepository] + [CircleRepository] shared by the
+ * presentation tests — mirrors the merged `AlmahirRepositoryImpl` in `:data`, which implements
+ * all three on one class.
  *
  * Every failure mode is a constructor flag rather than a subclass, so a test reads as one line
  * of setup, and recorded calls (`joined`, `loggedOut`, `deletedAccount`) let a test assert that
- * the ViewModel actually reached the repository instead of only mutating its own state.
+ * the ViewModel actually reached the repository instead of only mutating its own state. Failures
+ * are returned as [Result.Error], never thrown — matching the real repository's contract.
  */
 class FakeAlmahirRepository(
     private val user: User = USER,
-    private val readingProgress: ReadingProgress? = PROGRESS,
     private val subscription: Subscription = FREE_SUBSCRIPTION,
+    private val sheikhs: List<Sheikh> = listOf(SHEIKH),
+    initialCircles: List<StudyCircle> = listOf(CIRCLE),
     private val failSheikhs: Boolean = false,
     private val failSubscription: Boolean = false,
     private val failLogout: Boolean = false,
     private val failDeleteAccount: Boolean = false,
     private val failRestore: Boolean = false,
     private val restoreResult: Boolean = false,
-) : AlmahirRepository {
+) : AlmahirRepository, SheikhRepository, CircleRepository {
 
     val joined = mutableListOf<String>()
     var loggedOut = false
@@ -42,52 +50,77 @@ class FakeAlmahirRepository(
     var restoreCount = 0
         private set
 
-    private val circles = MutableStateFlow(listOf(CIRCLE))
+    private val circles = MutableStateFlow(initialCircles)
 
-    override fun observeCurrentUser(): Flow<User> = flowOf(user)
+    // ── AlmahirRepository ────────────────────────────────────────────────
 
-    override fun observeReadingProgress(): Flow<ReadingProgress?> = flowOf(readingProgress)
+    override fun observeCurrentUser(): Flow<Result<User>> = flowOf(Result.Success(user))
 
-    override fun observeSheikhs(): Flow<List<Sheikh>> =
-        if (failSheikhs) flow { throw IllegalStateException("boom") } else flowOf(listOf(SHEIKH))
+    override fun observeSubscription(): Flow<Result<Subscription>> = flowOf(
+        if (failSubscription) Result.Error(BOOM) else Result.Success(subscription)
+    )
 
-    override fun observeStudyCircles(): Flow<List<StudyCircle>> = circles
-
-    override fun observeSubscription(): Flow<Subscription> =
-        if (failSubscription) flow { throw IllegalStateException("boom") } else flowOf(subscription)
-
-    override fun observeLegalDocument(type: LegalDocumentType): Flow<LegalDocument> = flowOf(
-        LegalDocument(
-            type = type,
-            title = "title-${type.name}",
-            body = "# Heading\n\nBody text.",
-            updatedAtEpochMillis = null,
+    override fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>> = flowOf(
+        Result.Success(
+            LegalDocument(
+                type = type,
+                title = "title-${type.name}",
+                body = "# Heading\n\nBody text.",
+                updatedAtEpochMillis = null,
+            )
         )
     )
 
-    override suspend fun joinStudyCircle(circleId: String) {
-        joined += circleId
-    }
-
-    override suspend fun restorePurchases(): Boolean {
+    override suspend fun restorePurchases(): Result<Boolean> {
         restoreCount++
-        if (failRestore) throw IllegalStateException("boom")
-        return restoreResult
+        return if (failRestore) Result.Error(BOOM) else Result.Success(restoreResult)
     }
 
-    override suspend fun logout() {
-        if (failLogout) throw IllegalStateException("boom")
+    override suspend fun logout(): Result<Unit> {
+        if (failLogout) return Result.Error(BOOM)
         loggedOut = true
+        return Result.Success(Unit)
     }
 
-    override suspend fun deleteAccount() {
-        if (failDeleteAccount) throw IllegalStateException("boom")
+    override suspend fun deleteAccount(): Result<Unit> {
+        if (failDeleteAccount) return Result.Error(BOOM)
         deletedAccount = true
+        return Result.Success(Unit)
+    }
+
+    // ── SheikhRepository ──────────────────────────────────────────────────
+
+    override suspend fun getSheikhs(): Result<List<Sheikh>> =
+        if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)
+
+    override suspend fun getSheikhById(id: String): Result<Sheikh?> =
+        Result.Success(sheikhs.firstOrNull { it.id == id })
+
+    override suspend fun searchSheikhs(name: String): Result<List<Sheikh>> =
+        Result.Success(sheikhs.filter { it.name.contains(name, ignoreCase = true) })
+
+    // ── CircleRepository ──────────────────────────────────────────────────
+
+    override fun observeStudyCircles(): Flow<Result<List<StudyCircle>>> = circles.map { Result.Success(it) }
+
+    override fun observeSheikhCircles(sheikhId: String): Flow<Result<List<StudyCircle>>> =
+        circles.map { all -> Result.Success(all.filter { it.hostName == sheikhId }) }
+
+    override suspend fun joinStudyCircle(circleId: String): Result<Unit> {
+        joined += circleId
+        return Result.Success(Unit)
+    }
+
+    override suspend fun cancelJoinCircle(circleId: String): Result<Unit> {
+        joined -= circleId
+        return Result.Success(Unit)
     }
 
     companion object {
         /** 2026-07-14T00:00:00Z. */
         const val JOINED_AT_EPOCH_MILLIS = 1_783_987_200_000L
+
+        private val BOOM = DomainError.Unknown(IllegalStateException("boom"))
 
         val USER = User(
             id = "user-1",
@@ -105,7 +138,6 @@ class FakeAlmahirRepository(
             plan = SubscriptionPlan.PREMIUM,
             renewsAtEpochMillis = JOINED_AT_EPOCH_MILLIS,
         )
-        val PROGRESS = ReadingProgress(surahName = "Al-Kahf", ayahNumber = 45, pageNumber = 298)
         val SHEIKH = Sheikh(
             id = "sheikh-1",
             name = "الشيخ أحمد",
@@ -116,9 +148,17 @@ class FakeAlmahirRepository(
         )
         val CIRCLE = StudyCircle(
             id = "circle-1",
-            title = "دورة",
+            surahName = "دورة",
+            hostId = "sheikh-1",
             hostName = "Omar",
+            hostInitials = "عم",
+            isLive = true,
+            difficulty = CircleDifficulty.BEGINNER,
+            participantCount = 8,
+            maxParticipants = 15,
+            currentActivity = "Reading",
             isJoined = false,
         )
     }
 }
+

@@ -1,15 +1,19 @@
 package com.example.mushaf.presentation
 
 import android.Manifest
+import android.R.attr.animation
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -47,6 +51,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.designsystem.components.mushaf.AudioPlayerBar
 import com.example.designsystem.components.mushaf.ReciterItem
@@ -93,13 +98,20 @@ import org.koin.androidx.compose.koinViewModel
 fun MushafScreen(
     modifier: Modifier = Modifier,
     startPage: Int? = null,
+    openInListenMode: Boolean = false,
     onBack: () -> Unit = {},
     onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(openInListenMode) {
+        if (openInListenMode) {
+            viewModel.onIntent(MushafIntent.SetMode(MushafMode.LISTEN))
+        }
+    }
 
     val pagerState = rememberPagerState(
         initialPage = state.currentPage - 1,
@@ -259,7 +271,7 @@ fun MushafScreen(
         MushafTopBar(
             visible = state.areBarsVisible,
             surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
-            juzNumber = 1,
+            juzNumber = state.currentJuzNumber,
             hizbNumber = 1,
             isBookmarked = false,
             onBack = onBack,
@@ -270,21 +282,21 @@ fun MushafScreen(
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            androidx.compose.animation.AnimatedVisibility(
+            AnimatedVisibility(
                 visible = state.mushafMode == MushafMode.LISTEN && state.areBarsVisible,
-                enter = androidx.compose.animation.slideInVertically { it } + androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.slideOutVertically { it } + androidx.compose.animation.fadeOut(),
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
             ) {
                 AudioPlayerBar(
                     isPlaying = state.audioState == AudioState.PLAYING,
                     reciterName = state.currentReciter?.nameArabic ?: "",
                     playbackSpeed = state.playbackSpeed,
                     onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
-                    onNextClick = { viewModel.onIntent(MushafIntent.NextAyahAudio) },
-                    onPrevClick = { viewModel.onIntent(MushafIntent.PrevAyahAudio) },
+                    onNextClick = { viewModel.onIntent(MushafIntent.NextSurahAudio) },
+                    onPrevClick = { viewModel.onIntent(MushafIntent.PrevSurahAudio) },
                     onReciterClick = { showReciterPicker = true },
                     onSpeedClick = {
                         val nextSpeed = when (state.playbackSpeed) {
@@ -380,7 +392,7 @@ fun MushafScreen(
                 elevation = FloatingActionButtonDefaults.elevation(4.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Palette,
+                    painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_palette),
                     contentDescription = "دليل ألوان التجويد",
                 )
             }

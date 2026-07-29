@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.usecase.LogoutUseCase
 import com.iti.domain.core.Result
+import com.iti.domain.core.fold
+import com.iti.domain.core.getOrNull
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
@@ -66,7 +68,9 @@ class ProfileViewModel(
         accountJob = combine(
             getCurrentUser(),
             getSubscription(),
-        ) { user, subscription ->
+        ) { userResult, subscriptionResult ->
+            val user = userResult.getOrNull() ?: error("Failed to load current user")
+            val subscription = subscriptionResult.getOrNull() ?: error("Failed to load subscription")
             ProfileAccountSnapshot(user, subscription)
         }
             .catch {
@@ -92,14 +96,13 @@ class ProfileViewModel(
         updateState { copy(isRestoringPurchases = true) }
 
         viewModelScope.launch {
-            val messageRes = runCatching { restorePurchases() }
-                .fold(
-                    onSuccess = { restored ->
-                        if (restored) R.string.profile_restore_succeeded
-                        else R.string.profile_restore_nothing_found
-                    },
-                    onFailure = { R.string.profile_restore_failed },
-                )
+            val messageRes = restorePurchases().fold(
+                onSuccess = { restored ->
+                    if (restored) R.string.profile_restore_succeeded
+                    else R.string.profile_restore_nothing_found
+                },
+                onError = { R.string.profile_restore_failed },
+            )
 
             updateState { copy(isRestoringPurchases = false) }
             sendEffect(ProfileEffect.ShowMessage(messageRes))
@@ -125,8 +128,8 @@ class ProfileViewModel(
         viewModelScope.launch {
             // Signing out always clears the local session, so it only fails if it never ran.
             val succeeded = when (dialog) {
-                ProfileDialog.LOGOUT -> runCatching { logout() }.getOrNull() is Result.Success
-                ProfileDialog.DELETE_ACCOUNT -> runCatching { deleteAccount() }.isSuccess
+                ProfileDialog.LOGOUT -> logout() is Result.Success
+                ProfileDialog.DELETE_ACCOUNT -> deleteAccount() is Result.Success
             }
 
             updateState { copy(isProcessingDialogAction = false, dialog = null) }

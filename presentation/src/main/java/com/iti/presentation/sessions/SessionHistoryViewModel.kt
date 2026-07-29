@@ -2,6 +2,7 @@ package com.iti.presentation.sessions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.getOrNull
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.usecase.DeleteRecitationSessionUseCase
 import com.iti.domain.usecase.ObserveRecitationSessionsUseCase
@@ -44,7 +45,10 @@ class SessionHistoryViewModel(
     init {
         observeSessions()
             .catch { updateState { copy(isLoading = false) } }
-            .onEach { sessions -> updateState { copy(isLoading = false, sessions = sessions) } }
+            .onEach { result ->
+                val sessions = result.getOrNull() ?: return@onEach
+                updateState { copy(isLoading = false, sessions = sessions) }
+            }
             .launchIn(viewModelScope)
     }
 
@@ -55,7 +59,7 @@ class SessionHistoryViewModel(
                 // Close the detail first: leaving it open on a row that is about to vanish would
                 // show a stale session for a frame.
                 updateState { copy(selectedId = selectedId.takeIf { it != intent.id }) }
-                viewModelScope.launch { runCatching { deleteSession(intent.id) } }
+                viewModelScope.launch { deleteSession(intent.id) }
             }
         }
     }

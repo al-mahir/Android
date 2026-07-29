@@ -1,10 +1,15 @@
 package com.example.mushaf.presentation.audio
 
 import android.content.Context
+import android.content.ComponentName
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.Futures
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,6 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -20,15 +26,14 @@ enum class AudioState {
     IDLE, BUFFERING, PLAYING, PAUSED, ERROR, ENDED
 }
 
-
-
- 
 class AudioPlaybackManager(
     private val context: Context,
 ) : AudioPlayer {
     
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private val _player: ExoPlayer = ExoPlayer.Builder(context).build()
+    
+    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private var _player: Player? = null
     
     private val _audioState = MutableStateFlow(AudioState.IDLE)
     override val audioState: StateFlow<AudioState> = _audioState
@@ -42,39 +47,69 @@ class AudioPlaybackManager(
     private val _playbackSpeed = MutableStateFlow(1f)
     override val playbackSpeed: StateFlow<Float> = _playbackSpeed
 
+    private val _externalCommands = kotlinx.coroutines.flow.MutableSharedFlow<String>()
+    override val externalCommands: kotlinx.coroutines.flow.SharedFlow<String> = _externalCommands.asSharedFlow()
+
     private var positionJob: Job? = null
 
+    private val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            updateState()
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            _player?.let {
+                _currentTrackIndex.value = it.currentMediaItemIndex
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            updateState()
+            if (isPlaying) {
+                startPollingPosition()
+            } else {
+                stopPollingPosition()
+            }
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            android.util.Log.e("AudioPlaybackManager", "Player error occurred: \${error.message}", error)
+            _audioState.value = AudioState.ERROR
+        }
+    }
+
     init {
-        _player.addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                updateState()
-            }
-
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                _currentTrackIndex.value = _player.currentMediaItemIndex
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                updateState()
-                if (isPlaying) {
-                    startPollingPosition()
-                } else {
-                    stopPollingPosition()
+        val sessionToken = SessionToken(context, ComponentName(context, AudioPlaybackService::class.java))
+        val listener = object : MediaController.Listener {
+            override fun onCustomCommand(
+                controller: MediaController,
+                command: androidx.media3.session.SessionCommand,
+                args: android.os.Bundle
+            ): ListenableFuture<androidx.media3.session.SessionResult> {
+                scope.launch {
+                    _externalCommands.emit(command.customAction)
                 }
+                return Futures.immediateFuture(androidx.media3.session.SessionResult(androidx.media3.session.SessionResult.RESULT_SUCCESS))
             }
-
-            override fun onPlayerError(error: PlaybackException) {
-                android.util.Log.e("AudioPlaybackManager", "Player error occurred: ${error.message}", error)
-                _audioState.value = AudioState.ERROR
-            }
-        })
+        }
+        controllerFuture = MediaController.Builder(context, sessionToken)
+            .setListener(listener)
+            .buildAsync()
+        controllerFuture?.addListener(
+            {
+                _player = controllerFuture?.get()
+                _player?.addListener(playerListener)
+            },
+            MoreExecutors.directExecutor()
+        )
     }
 
     private fun updateState() {
-        _audioState.value = when (_player.playbackState) {
+        val player = _player ?: return
+        _audioState.value = when (player.playbackState) {
             Player.STATE_IDLE -> AudioState.IDLE
             Player.STATE_BUFFERING -> AudioState.BUFFERING
-            Player.STATE_READY -> if (_player.isPlaying) AudioState.PLAYING else AudioState.PAUSED
+            Player.STATE_READY -> if (player.isPlaying) AudioState.PLAYING else AudioState.PAUSED
             Player.STATE_ENDED -> AudioState.ENDED
             else -> AudioState.IDLE
         }
@@ -84,7 +119,9 @@ class AudioPlaybackManager(
         positionJob?.cancel()
         positionJob = scope.launch {
             while (isActive) {
-                _currentPosition.value = _player.currentPosition
+                _player?.let {
+                    _currentPosition.value = it.currentPosition
+                }
                 delay(50L) 
             }
         }
@@ -94,49 +131,74 @@ class AudioPlaybackManager(
         positionJob?.cancel()
         positionJob = null
         
-        _currentPosition.value = _player.currentPosition
+        _player?.let {
+            _currentPosition.value = it.currentPosition
+        }
     }
 
-    
-
- 
-    override fun playUrls(urls: List<String>) {
-        _player.stop()
-        _player.clearMediaItems()
+    override fun playTracks(tracks: List<AudioPlayer.AudioTrackInfo>, startIndex: Int, autoPlay: Boolean) {
+        val player = _player ?: return
+        player.stop()
+        player.clearMediaItems()
         
-        val mediaItems = urls.map { MediaItem.fromUri(it) }
-        _player.addMediaItems(mediaItems)
-        _player.prepare()
-        _player.play()
+        val greenBitmap = android.graphics.Bitmap.createBitmap(256, 256, android.graphics.Bitmap.Config.ARGB_8888)
+        greenBitmap.eraseColor(androidx.core.content.ContextCompat.getColor(context, com.example.designsystem.R.color.primary_brand))
+        val stream = java.io.ByteArrayOutputStream()
+        greenBitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        val artworkData = stream.toByteArray()
+        
+        val mediaItems = tracks.map { track -> 
+            val metadata = androidx.media3.common.MediaMetadata.Builder()
+                .setTitle(track.title)
+                .setArtist(track.artist)
+                .setArtworkData(artworkData, androidx.media3.common.MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                .build()
+            MediaItem.Builder()
+                .setUri(track.url)
+                .setMediaMetadata(metadata)
+                .build()
+        }
+        player.addMediaItems(mediaItems)
+        player.prepare()
+        if (startIndex in tracks.indices) {
+            player.seekToDefaultPosition(startIndex)
+        }
+        if (autoPlay) {
+            player.play()
+        } else {
+            player.pause()
+        }
     }
 
     override fun play() {
-        _player.play()
+        _player?.play()
     }
 
     override fun pause() {
-        _player.pause()
+        _player?.pause()
     }
 
     override fun stop() {
-        _player.stop()
-        _player.clearMediaItems()
+        val player = _player ?: return
+        player.stop()
+        player.clearMediaItems()
         _currentPosition.value = 0L
     }
 
     override fun seekTo(positionMs: Long) {
-        _player.seekTo(positionMs)
+        _player?.seekTo(positionMs)
         _currentPosition.value = positionMs
     }
 
     override fun setSpeed(speed: Float) {
-        _player.setPlaybackSpeed(speed)
+        _player?.setPlaybackSpeed(speed)
         _playbackSpeed.value = speed
     }
 
     override fun release() {
         stopPollingPosition()
-        _player.release()
+        _player?.removeListener(playerListener)
+        controllerFuture?.let { MediaController.releaseFuture(it) }
         scope.cancel()
     }
 }

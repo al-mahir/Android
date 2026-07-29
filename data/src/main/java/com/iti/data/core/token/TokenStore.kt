@@ -12,9 +12,15 @@ interface TokenStore {
 
     val tokens: Flow<TokenPair?>
 
+    val userId: Flow<String?>
+
     suspend fun getTokens(): TokenPair?
 
+    suspend fun getUserId(): String?
+
     suspend fun save(tokens: TokenPair)
+
+    suspend fun saveUserId(userId: String)
 
     suspend fun clear()
 }
@@ -24,3 +30,4 @@ val TokenStore.isLoggedIn: Flow<Boolean> get() = tokens.map { it != null }
 suspend fun TokenStore.getAccessToken(): String? = getTokens()?.accessToken
 
 suspend fun TokenStore.getRefreshToken(): String? = getTokens()?.refreshToken
+

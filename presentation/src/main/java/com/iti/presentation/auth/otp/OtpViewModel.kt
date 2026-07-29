@@ -6,6 +6,7 @@ import com.iti.domain.auth.usecase.ForgotPasswordUseCase
 import com.iti.domain.auth.usecase.VerifyOtpUseCase
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
+import com.iti.presentation.auth.toUiText
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
@@ -101,14 +102,8 @@ class OtpViewModel(
             is DomainError.ValidationError -> {
                 updateState { copy(isError = true) }
             }
-            is DomainError.ServerError -> {
-                sendEffect(OtpEffect.ShowError(error.message))
-            }
-            is DomainError.NetworkError -> {
-                sendEffect(OtpEffect.ShowError("Network error. Please try again."))
-            }
             else -> {
-                sendEffect(OtpEffect.ShowError("An unknown error occurred"))
+                sendEffect(OtpEffect.ShowError(error.toUiText()))
             }
         }
     }

@@ -31,13 +31,13 @@ fun AppBottomNavBar(
 private fun appBottomNavTabs(): List<BottomNavTab> = listOf(
     BottomNavTab(
         title = stringResource(R.string.bottom_nav_home),
-        icon = painterResource(R.drawable.ic_home_unselected_svg),
+        icon = painterResource(R.drawable.ic_home_unselected),
         selectedIcon = painterResource(R.drawable.ic_home_selected),
     ),
     BottomNavTab(
         title = stringResource(R.string.bottom_nav_mushaf),
-        icon = painterResource(R.drawable.ic_mushaf_unselected),
-        selectedIcon = painterResource(R.drawable.ic_mushaf_selected),
+        icon = painterResource(R.drawable.ic_book_unselected),
+        selectedIcon = painterResource(R.drawable.ic_book_selected),
     ),
     BottomNavTab(
         title = stringResource(R.string.bottom_nav_profile),

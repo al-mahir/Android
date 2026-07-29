@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -73,22 +74,22 @@ class MushafReducerTest {
 
     private class FakeMushafRepo : MushafRepository {
         val loadCounts = mutableMapOf<Int, Int>()
-        override fun getPage(pageNumber: Int): Flow<MushafPage> {
+        override fun getPage(pageNumber: Int): Flow<Result<MushafPage>> {
             loadCounts[pageNumber] = (loadCounts[pageNumber] ?: 0) + 1
-            return flowOf(MushafPage(pageNumber, emptyList()))
+            return flowOf(Result.Success(MushafPage(pageNumber, emptyList())))
         }
-        override suspend fun getPageCount(): Int = 604
-        override suspend fun searchSurah(query: String): List<com.example.mushaf.domain.model.Surah> = emptyList()
-        override suspend fun searchJuz(query: String): List<com.example.mushaf.domain.model.Juz> = emptyList()
-        override suspend fun searchHizb(query: String): List<com.example.mushaf.domain.model.Hizb> = emptyList()
-        override suspend fun searchPage(query: String): List<Int> = emptyList()
-        override suspend fun searchAyah(query: String, limit: Int, offset: Int): List<com.example.mushaf.domain.model.AyahSearchResult> = emptyList()
-        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): List<com.example.mushaf.domain.model.AyahSearchResult> = emptyList()
-        override suspend fun getSurahStartingPage(surahNumber: Int): Int? = null
-        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? = null
-        override suspend fun getJuzStartingPage(juzNumber: Int): Int? = null
-        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
-        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): List<com.example.mushaf.domain.model.TafsirResult> = emptyList()
+        override suspend fun getPageCount(): Result<Int> = Result.Success(604)
+        override suspend fun searchSurah(query: String): Result<List<com.example.mushaf.domain.model.Surah>> = Result.Success(emptyList())
+        override suspend fun searchJuz(query: String): Result<List<com.example.mushaf.domain.model.Juz>> = Result.Success(emptyList())
+        override suspend fun searchHizb(query: String): Result<List<com.example.mushaf.domain.model.Hizb>> = Result.Success(emptyList())
+        override suspend fun searchPage(query: String): Result<List<Int>> = Result.Success(emptyList())
+        override suspend fun searchAyah(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     private class FakePrefsRepo(initial: ReaderPreferences) : ReaderPreferencesRepository {
@@ -96,14 +97,17 @@ class MushafReducerTest {
         var savedTajweed: Boolean? = null
         var savedPage: Int? = null
         override val preferences: Flow<ReaderPreferences> = flow
-        override suspend fun setTajweedEnabled(enabled: Boolean) {
+        override suspend fun setTajweedEnabled(enabled: Boolean): Result<Unit> {
             savedTajweed = enabled
             flow.value = flow.value.copy(tajweedEnabled = enabled)
+            return Result.Success(Unit)
         }
-        override suspend fun setLastPage(page: Int) {
+        override suspend fun setLastPage(page: Int): Result<Unit> {
             savedPage = page
             flow.value = flow.value.copy(lastPage = page)
+            return Result.Success(Unit)
         }
+        override suspend fun setFirstMushafLaunchCompleted(): Result<Unit> = Result.Success(Unit)
     }
 
     private class FakeRecitationRepo : RecitationRepository {
@@ -156,7 +160,7 @@ class MushafReducerTest {
         override fun session(
             config: LiveRecitationConfig,
             controls: Flow<RecitationControl>,
-        ): Flow<LiveRecitationEvent> = channelFlow {
+        ): Flow<Result<LiveRecitationEvent>> = channelFlow<LiveRecitationEvent> {
             isRunning = true
             sessionCount++
             lastConfig = config
@@ -178,7 +182,7 @@ class MushafReducerTest {
             } finally {
                 isRunning = false
             }
-        }
+        }.map { Result.Success(it) }
     }
 
      
@@ -214,21 +218,33 @@ class MushafReducerTest {
      
     private class FakeSessionRepo : RecitationSessionRepository {
         val saved = mutableListOf<RecitationSessionSummary>()
-        override fun observeSessions(): Flow<List<RecitationSessionSummary>> = flowOf(saved)
-        override fun observeSession(id: String): Flow<RecitationSessionSummary?> =
-            flowOf(saved.firstOrNull { it.id == id })
-        override suspend fun save(summary: RecitationSessionSummary) { saved += summary }
-        override suspend fun delete(id: String) { saved.removeAll { it.id == id } }
-        override suspend fun deleteAll() { saved.clear() }
+        override fun observeSessions(): Flow<Result<List<RecitationSessionSummary>>> = flowOf(Result.Success(saved))
+        override fun observeSession(id: String): Flow<Result<RecitationSessionSummary?>> =
+            flowOf(Result.Success(saved.firstOrNull { it.id == id }))
+        override suspend fun save(summary: RecitationSessionSummary): Result<Unit> {
+            saved += summary
+            return Result.Success(Unit)
+        }
+        override suspend fun delete(id: String): Result<Unit> {
+            saved.removeAll { it.id == id }
+            return Result.Success(Unit)
+        }
+        override suspend fun deleteAll(): Result<Unit> {
+            saved.clear()
+            return Result.Success(Unit)
+        }
     }
 
-     
+
     private class FakeSettingsRepo(
         initial: RecitationSettings = RecitationSettings(),
     ) : RecitationSettingsRepository {
         private val state = MutableStateFlow(initial)
         override val settings: Flow<RecitationSettings> = state
-        override suspend fun update(settings: RecitationSettings) { state.value = settings }
+        override suspend fun update(settings: RecitationSettings): Result<Unit> {
+            state.value = settings
+            return Result.Success(Unit)
+        }
         val current: RecitationSettings get() = state.value
     }
 
@@ -249,10 +265,10 @@ class MushafReducerTest {
     private class FakeLocalWordCorpusRepository(
         private val entries: List<com.example.mushaf.domain.model.recite.local.LocalWordEntry> = emptyList(),
     ) : com.example.mushaf.domain.repository.LocalWordCorpusRepository {
-        override suspend fun wordsFrom(cursor: RecitationCursor, count: Int): List<com.example.mushaf.domain.model.recite.local.LocalWordEntry> {
+        override suspend fun wordsFrom(cursor: RecitationCursor, count: Int): Result<List<com.example.mushaf.domain.model.recite.local.LocalWordEntry>> {
             val startIndex = entries.indexOfFirst { it.wordId == cursor.wordId }
-            if (startIndex < 0) return emptyList()
-            return entries.drop(startIndex).take(count)
+            if (startIndex < 0) return Result.Success(emptyList())
+            return Result.Success(entries.drop(startIndex).take(count))
         }
     }
 
@@ -269,6 +285,7 @@ class MushafReducerTest {
             getPage = GetPageUseCase(mushafRepo),
             observeReaderPreferences = ObserveReaderPreferencesUseCase(prefs),
             setTajweedEnabled = SetTajweedEnabledUseCase(prefs),
+            setFirstMushafLaunchCompleted = com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(prefs),
             saveLastPage = SaveLastPageUseCase(prefs),
             getReciters = GetRecitersUseCase(FakeRecitationRepo()),
             getAyahTimings = GetAyahTimingsUseCase(FakeRecitationRepo()),
@@ -1076,42 +1093,44 @@ class MushafReducerTest {
 
      
     private class WordedMushafRepo : MushafRepository {
-        override fun getPage(pageNumber: Int): Flow<MushafPage> = flowOf(
-            MushafPage(
-                pageNumber = pageNumber,
-                lines = listOf(
-                    MushafLine(
-                        lineNumber = 1,
-                        type = LineType.AYAH,
-                        isCentered = false,
-                        surahNumber = null,
-                        words = (1..4).map { index ->
-                            MushafWord(
-                                id = "$pageNumber:1:$index",
-                                glyphs = "w",
-                                pageNumber = pageNumber,
-                                lineNumber = 1,
-                                positionInLine = index,
-                                isEndOfAyah = index == 4,
-                            )
-                        },
+        override fun getPage(pageNumber: Int): Flow<Result<MushafPage>> = flowOf(
+            Result.Success(
+                MushafPage(
+                    pageNumber = pageNumber,
+                    lines = listOf(
+                        MushafLine(
+                            lineNumber = 1,
+                            type = LineType.AYAH,
+                            isCentered = false,
+                            surahNumber = null,
+                            words = (1..4).map { index ->
+                                MushafWord(
+                                    id = "$pageNumber:1:$index",
+                                    glyphs = "w",
+                                    pageNumber = pageNumber,
+                                    lineNumber = 1,
+                                    positionInLine = index,
+                                    isEndOfAyah = index == 4,
+                                )
+                            },
+                        ),
                     ),
                 ),
             ),
         )
 
-        override suspend fun getPageCount(): Int = 604
-        override suspend fun searchSurah(query: String): List<com.example.mushaf.domain.model.Surah> = emptyList()
-        override suspend fun searchJuz(query: String): List<com.example.mushaf.domain.model.Juz> = emptyList()
-        override suspend fun searchHizb(query: String): List<com.example.mushaf.domain.model.Hizb> = emptyList()
-        override suspend fun searchPage(query: String): List<Int> = emptyList()
-        override suspend fun searchAyah(query: String, limit: Int, offset: Int): List<com.example.mushaf.domain.model.AyahSearchResult> = emptyList()
-        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): List<com.example.mushaf.domain.model.AyahSearchResult> = emptyList()
-        override suspend fun getSurahStartingPage(surahNumber: Int): Int? = null
-        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? = null
-        override suspend fun getJuzStartingPage(juzNumber: Int): Int? = null
-        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
-        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): List<com.example.mushaf.domain.model.TafsirResult> = emptyList()
+        override suspend fun getPageCount(): Result<Int> = Result.Success(604)
+        override suspend fun searchSurah(query: String): Result<List<com.example.mushaf.domain.model.Surah>> = Result.Success(emptyList())
+        override suspend fun searchJuz(query: String): Result<List<com.example.mushaf.domain.model.Juz>> = Result.Success(emptyList())
+        override suspend fun searchHizb(query: String): Result<List<com.example.mushaf.domain.model.Hizb>> = Result.Success(emptyList())
+        override suspend fun searchPage(query: String): Result<List<Int>> = Result.Success(emptyList())
+        override suspend fun searchAyah(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     @Test

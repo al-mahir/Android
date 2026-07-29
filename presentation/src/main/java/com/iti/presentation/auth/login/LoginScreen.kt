@@ -21,7 +21,7 @@ import com.example.designsystem.theme.Theme
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.stringResource
 import com.iti.presentation.R
-import com.iti.presentation.core.ui.asString
+import com.example.designsystem.text.asString
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff

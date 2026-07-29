@@ -21,3 +21,4 @@ object AuthValidators {
     fun isValidPhoneNumber(phoneNumber: String): Boolean =
         egyptPhonePattern.matcher(phoneNumber.filterNot { it.isWhitespace() || it == '-' }).matches()
 }
+

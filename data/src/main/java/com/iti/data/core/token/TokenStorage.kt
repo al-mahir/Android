@@ -10,26 +10,28 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.authTokenDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "auth_tokens",
+private val Context.tokenDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "auth_tokens_secure"
 )
-
 
 class TokenStorage(context: Context) : TokenStore {
 
-    private val dataStore = context.applicationContext.authTokenDataStore
+    private val dataStore = context.tokenDataStore
 
     override val tokens: Flow<TokenPair?> = dataStore.data.map { prefs ->
         val accessToken = prefs[KEY_ACCESS_TOKEN]
         val refreshToken = prefs[KEY_REFRESH_TOKEN]
-        if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) {
-            null
-        } else {
-            TokenPair(accessToken, refreshToken)
-        }
+        if (accessToken.isNullOrBlank() || refreshToken.isNullOrBlank()) null
+        else TokenPair(accessToken, refreshToken)
+    }
+
+    override val userId: Flow<String?> = dataStore.data.map { prefs ->
+        prefs[KEY_USER_ID]
     }
 
     override suspend fun getTokens(): TokenPair? = tokens.first()
+
+    override suspend fun getUserId(): String? = userId.first()
 
     override suspend fun save(tokens: TokenPair) {
         dataStore.edit { prefs ->
@@ -38,15 +40,23 @@ class TokenStorage(context: Context) : TokenStore {
         }
     }
 
+    override suspend fun saveUserId(userId: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_USER_ID] = userId
+        }
+    }
+
     override suspend fun clear() {
         dataStore.edit { prefs ->
             prefs.remove(KEY_ACCESS_TOKEN)
             prefs.remove(KEY_REFRESH_TOKEN)
+            prefs.remove(KEY_USER_ID)
         }
     }
 
     private companion object {
         val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
         val KEY_REFRESH_TOKEN = stringPreferencesKey("refresh_token")
+        val KEY_USER_ID = stringPreferencesKey("user_id")
     }
 }

@@ -1,10 +1,8 @@
 package com.iti.domain.repository
 
+import com.iti.domain.core.Result
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
-import com.iti.domain.model.ReadingProgress
-import com.iti.domain.model.Sheikh
-import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
 import com.iti.domain.model.User
 import kotlinx.coroutines.flow.Flow
@@ -12,24 +10,15 @@ import kotlinx.coroutines.flow.Flow
 
 interface AlmahirRepository {
 
-    fun observeCurrentUser(): Flow<User>
+    fun observeCurrentUser(): Flow<Result<User>>
 
-    fun observeReadingProgress(): Flow<ReadingProgress?>
+    fun observeSubscription(): Flow<Result<Subscription>>
 
-    fun observeSheikhs(): Flow<List<Sheikh>>
+    fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>>
 
-    fun observeStudyCircles(): Flow<List<StudyCircle>>
+    suspend fun restorePurchases(): Result<Boolean>
 
-    fun observeSubscription(): Flow<Subscription>
+    suspend fun logout(): Result<Unit>
 
-    fun observeLegalDocument(type: LegalDocumentType): Flow<LegalDocument>
-
-    suspend fun joinStudyCircle(circleId: String)
-
-
-    suspend fun restorePurchases(): Boolean
-
-    suspend fun logout()
-
-    suspend fun deleteAccount()
+    suspend fun deleteAccount(): Result<Unit>
 }

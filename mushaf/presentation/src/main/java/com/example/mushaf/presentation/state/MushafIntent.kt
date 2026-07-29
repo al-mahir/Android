@@ -53,8 +53,8 @@ sealed interface MushafIntent {
     data object PlayPauseAudio : MushafIntent
     data class SetAudioSpeed(val speed: Float) : MushafIntent
     data class SeekAudio(val positionMs: Long) : MushafIntent
-    data object NextAyahAudio : MushafIntent
-    data object PrevAyahAudio : MushafIntent
+    data object NextSurahAudio : MushafIntent
+    data object PrevSurahAudio : MushafIntent
 
     // Tafsir
     data class LoadTafsir(val surah: Int, val ayah: Int) : MushafIntent

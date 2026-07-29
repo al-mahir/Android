@@ -1,0 +1,20 @@
+package com.iti.domain.repository
+
+import com.iti.domain.core.Result
+import com.iti.domain.model.StudyCircle
+import kotlinx.coroutines.flow.Flow
+
+interface CircleRepository {
+
+    /** Observe the list of study circles (supports real-time updates from fake/local source). */
+    fun observeStudyCircles(): Flow<Result<List<StudyCircle>>>
+
+    /** Observe circles for a specific sheikh. */
+    fun observeSheikhCircles(sheikhId: String): Flow<Result<List<StudyCircle>>>
+
+    /** Join a study circle. */
+    suspend fun joinStudyCircle(circleId: String): Result<Unit>
+
+    /** Cancel a pending join request. */
+    suspend fun cancelJoinCircle(circleId: String): Result<Unit>
+}

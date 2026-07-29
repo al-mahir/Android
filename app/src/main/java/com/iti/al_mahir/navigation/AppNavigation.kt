@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -27,24 +28,41 @@ import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
 import com.iti.presentation.auth.session.SessionViewModel
+import com.iti.meeting.presentation.navigation.MeetingRoute
+import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
+import com.iti.meeting.presentation.navigation.meetingEntries
+import com.iti.presentation.circle.CircleListScreen
+import com.iti.presentation.circle.InSessionScreen
+import com.iti.presentation.circle.JoiningCircleScreen
 import com.iti.presentation.home.HomeScreen
+import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import com.iti.presentation.profile.ProfileScreen
 import com.iti.presentation.profile.navigation.ProfileRoute
 import com.iti.presentation.profile.navigation.profileEntries
 import com.iti.presentation.settings.SettingsScreen
 import com.iti.presentation.settings.navigation.SettingsRoute
+import com.iti.presentation.sheikh.SheikhDetailsScreen
+import com.iti.presentation.sheikh.SheikhListScreen
 import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
     data object Home : AppRoute
-    data class Mushaf(val startPage: Int? = null) : AppRoute
+    data class Mushaf(val startPage: Int? = null, val openInListenMode: Boolean = false) : AppRoute
     data object Profile : AppRoute
     data object Search : AppRoute
+    data object SheikhList : AppRoute
+    data class SheikhDetails(val sheikhId: String) : AppRoute
+    data object CircleList : AppRoute
+    data class JoiningCircle(val circleId: String) : AppRoute
+    data class InSession(val circleId: String) : AppRoute
 }
 
-
 @Composable
-fun AppNavHost(modifier: Modifier = Modifier) {
+fun AppNavHost(
+    modifier: Modifier = Modifier,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {}
+) {
     val sessionViewModel: SessionViewModel = koinViewModel()
     val session by sessionViewModel.state.collectAsStateWithLifecycle()
 
@@ -57,15 +75,30 @@ fun AppNavHost(modifier: Modifier = Modifier) {
             } else {
                 AuthRoute.Login
             },
+            pendingAction = pendingAction,
+            onActionHandled = onActionHandled,
             modifier = modifier,
         )
     }
 }
 
 @Composable
-private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) {
+private fun AppNavHost(
+    startDestination: NavKey,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
+
+    LaunchedEffect(pendingAction) {
+        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
+            backStack.removeAll { it is AppRoute.Mushaf }
+            backStack.add(AppRoute.Mushaf(openInListenMode = true))
+            onActionHandled()
+        }
+    }
 
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
@@ -77,8 +110,6 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
         backStack.add(root)
     }
 
-    // Box, not Column: the floating bar is overlaid on the content so the pill
-    // appears to hover above it.
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -89,13 +120,9 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
             modifier = Modifier.fillMaxSize(),
             onBack = {
                 when {
-                    // Mushaf hides the bottom nav, so back is a real exit from the
-                    // reader rather than a no-op on a root route.
                     backStack.lastOrNull() is AppRoute.Mushaf ->
                         selectTab(AppBottomNavDestination.Home)
 
-                    // Other tab roots are the sole stack entry; an unguarded pop
-                    // would leave NavDisplay with nothing to render.
                     backStack.size > 1 -> backStack.removeLastOrNull()
                 }
             },
@@ -103,8 +130,6 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 authEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onBack = { backStack.removeLastOrNull() },
-                    // Clearing the stack is what makes sign-in irreversible: back from Home
-                    // exits the app rather than returning to Login.
                     onAuthenticated = {
                         backStack.clear()
                         backStack.add(AppRoute.Home)
@@ -116,7 +141,7 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
 
                 entry<AppRoute.Home> {
                     HomeScreen(
-                        onOpenSearch = { 
+                        onOpenSearch = {
                             backStack.removeAll { it == AppRoute.Search }
                             backStack.add(AppRoute.Search)
                         },
@@ -125,14 +150,16 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                             backStack.clear()
                             backStack.add(AppRoute.Mushaf(startPage = page))
                         },
-                        onOpenSheikh = { },
-                        onOpenSheikhList = { },
-                        onOpenCircleList = { },
+                        onOpenSheikh = { sheikhId -> backStack.add(AppRoute.SheikhDetails(sheikhId)) },
+                        onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
+                        onOpenCircleList = { backStack.add(AppRoute.CircleList) },
                     )
                 }
+
                 entry<AppRoute.Mushaf> { route ->
                     MushafScreen(
                         startPage = route.startPage,
+                        openInListenMode = route.openInListenMode,
                         onBack = { selectTab(AppBottomNavDestination.Home) },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onSearchClick = {
@@ -141,24 +168,24 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                         },
                     )
                 }
+
                 entry<AppRoute.Search> {
                     com.example.mushaf.presentation.search.MushafSearchScreen(
-                        viewModel = org.koin.androidx.compose.koinViewModel(),
-                        onNavigateBack = { backStack.removeLast() },
+                        viewModel = koinViewModel(),
+                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                         onNavigateToMushaf = {
                             backStack.removeAll { it is AppRoute.Mushaf }
                             backStack.add(AppRoute.Mushaf())
                         }
                     )
                 }
+
                 entry<AppRoute.Profile> {
                     ProfileScreen(
                         onOpenPremium = { backStack.add(ProfileRoute.Premium) },
                         onOpenLegalDocument = { documentType ->
                             backStack.add(ProfileRoute.StaticContent(documentType))
                         },
-                        // Logout and account deletion both end the session: clearing the stack
-                        // is what makes sign-out irreversible, mirroring onAuthenticated above.
                         onSignedOut = {
                             backStack.clear()
                             backStack.add(AuthRoute.Login)
@@ -166,6 +193,56 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
                         onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
+                    )
+                }
+
+                entry<AppRoute.SheikhList> {
+                    SheikhListScreen(
+                        onBack = { backStack.removeLastOrNull() },
+                        onOpenSheikhDetails = { sheikhId ->
+                            backStack.add(AppRoute.SheikhDetails(sheikhId))
+                        },
+                    )
+                }
+
+                entry<AppRoute.SheikhDetails> { route ->
+                    SheikhDetailsScreen(
+                        sheikhId = route.sheikhId,
+                        onBack = { backStack.removeLastOrNull() },
+                        onNavigateToJoiningCircle = { circleId ->
+                            backStack.add(AppRoute.JoiningCircle(circleId))
+                        },
+                        onRequestMeeting = { sheikhId ->
+                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId))
+                        },
+                    )
+                }
+
+                entry<AppRoute.CircleList> {
+                    CircleListScreen(
+                        onBack = { backStack.removeLastOrNull() },
+                        onNavigateToJoiningCircle = { circleId ->
+                            backStack.add(AppRoute.JoiningCircle(circleId))
+                        },
+                    )
+                }
+
+                entry<AppRoute.JoiningCircle> { route ->
+                    JoiningCircleScreen(
+                        circleId = route.circleId,
+                        onBack = { backStack.removeLastOrNull() },
+                        onNavigateToSession = { circleId ->
+                            backStack.removeLastOrNull()
+                            backStack.add(AppRoute.InSession(circleId))
+                        },
+                    )
+                }
+
+                entry<AppRoute.InSession> { route ->
+                    InSessionScreen(
+                        circleId = route.circleId,
+                        onBack = { backStack.removeLastOrNull() },
+                        onOpenMushaf = { backStack.add(AppRoute.Mushaf()) },
                     )
                 }
 
@@ -193,6 +270,21 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
                 downloadsEntries(onBack = { backStack.removeLastOrNull() })
 
                 reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
+
+                meetingRequestEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onNavigateToCall = { circleId, token, channelName, uid -> 
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                    },
+                    onBack = { backStack.removeLastOrNull() },
+                    onShowMessage = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    },
+                )
+                meetingEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onBack = { backStack.removeLastOrNull() },
+                )
             },
         )
 
@@ -207,10 +299,11 @@ private fun AppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) 
     }
 }
 
-
 private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
     when (lastOrNull()) {
         AppRoute.Home -> AppBottomNavDestination.Home
         AppRoute.Profile -> AppBottomNavDestination.Profile
         else -> null
     }
+
+
