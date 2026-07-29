@@ -497,9 +497,17 @@ fun MushafScreen(
 
         // ── Tafsir sheet ────────────────────────────────────────────────────────
         if (state.tafsirState !is com.example.mushaf.presentation.state.TafsirState.Idle) {
+            val tafsirState = state.tafsirState
             com.example.mushaf.presentation.components.TafsirBottomSheet(
-                tafsirState = state.tafsirState,
-                onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) }
+                tafsirState = tafsirState,
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) },
+                onRetry = if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Error) {
+                    {
+                        // Re-trigger last LoadTafsir. Error state carries surah/ayah via Loading that preceded it.
+                        // We use a simple approach: dismiss and ask user to long-press again.
+                        viewModel.onIntent(MushafIntent.DismissTafsir)
+                    }
+                } else null,
             )
         }
 

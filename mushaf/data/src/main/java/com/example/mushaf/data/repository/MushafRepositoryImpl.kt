@@ -6,11 +6,14 @@ import com.example.mushaf.data.db.MushafAssetDataSource
 import com.example.mushaf.data.db.QuranMetadataDataSource
 import com.example.mushaf.data.db.QuranTextDataSource
 import com.example.mushaf.data.mapper.MushafMapper
+import com.example.mushaf.data.tafsir.remote.TafsirRemoteDataSource
 import com.example.mushaf.domain.model.AyahSearchResult
 import com.example.mushaf.domain.model.Hizb
 import com.example.mushaf.domain.model.Juz
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.Surah
+import com.example.mushaf.domain.model.TafsirBook
+import com.example.mushaf.domain.model.TafsirResult
 import com.example.mushaf.domain.repository.MushafRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -18,14 +21,14 @@ import kotlinx.coroutines.flow.flow
 import com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource
 
 import com.example.mushaf.data.db.TafsirDataSource
-import com.example.mushaf.domain.model.TafsirResult
 
 class MushafRepositoryImpl(
     private val dataSource: MushafAssetDataSource,
     private val metadataDataSource: QuranMetadataDataSource,
     private val textDataSource: QuranTextDataSource,
     private val tafsirDataSource: TafsirDataSource,
-    private val semanticSearchDataSource: SemanticSearchRemoteDataSource? = null
+    private val semanticSearchDataSource: SemanticSearchRemoteDataSource? = null,
+    private val tafsirRemoteDataSource: TafsirRemoteDataSource? = null,
 ) : MushafRepository {
 
     override fun getPage(pageNumber: Int): Flow<MushafPage> = flow {
@@ -124,6 +127,26 @@ class MushafRepositoryImpl(
                 surahNameEnglish = surahMeta?.nameEn ?: ""
             )
         }
+    }
+
+    override suspend fun getTafsirFromApi(
+        surah: Int,
+        ayah: Int,
+        lang: String,
+        tafsirKey: String,
+    ): TafsirResult? {
+        val remote = tafsirRemoteDataSource ?: return null
+        val result = remote.getTafsirForAyah(surah, ayah, lang, tafsirKey) ?: return null
+        // Enrich with local surah metadata (names) if available
+        val surahMeta = runCatching { metadataDataSource.getSurah(surah) }.getOrNull()
+        return result.copy(
+            surahNameArabic = surahMeta?.nameAr ?: "",
+            surahNameEnglish = surahMeta?.nameEn ?: "",
+        )
+    }
+
+    override suspend fun getAvailableTafsirBooks(): List<TafsirBook> {
+        return tafsirRemoteDataSource?.getAvailableTafsirBooks() ?: emptyList()
     }
 
     override suspend fun searchTafsir(query: String, limit: Int, offset: Int): List<TafsirResult> {

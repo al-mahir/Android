@@ -82,6 +82,7 @@ class MushafViewModel(
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val getAvailableTafsirBooks: com.example.mushaf.domain.usecase.GetAvailableTafsirBooksUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -249,6 +250,9 @@ class MushafViewModel(
                 }
             }
             .launchIn(viewModelScope)
+
+        // Eagerly load available Tafsir books from the backend
+        fetchAvailableTafsirBooks()
     }
 
     fun onIntent(intent: MushafIntent) {
@@ -305,6 +309,8 @@ class MushafViewModel(
             // Tafsir
             is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
             MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
+            is MushafIntent.ChangeTafsirSource -> _state.update { it.copy(selectedTafsirKey = intent.tafsirKey) }
+            MushafIntent.RefreshTafsirBooks -> fetchAvailableTafsirBooks()
             
             // User Guide
             MushafIntent.GuideNextStep -> {
@@ -343,10 +349,11 @@ class MushafViewModel(
     }
 
     private fun loadTafsir(surah: Int, ayah: Int) {
+        val tafsirKey = _state.value.selectedTafsirKey
         _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
         viewModelScope.launch {
             try {
-                val tafsir = getTafsirForAyah(surah, ayah)
+                val tafsir = getTafsirForAyah(surah, ayah, tafsirKey = tafsirKey)
                 if (tafsir != null) {
                     _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
                 } else {
@@ -356,6 +363,18 @@ class MushafViewModel(
                 Log.e(TAG, "Error loading tafsir", e)
                 _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(e.message ?: "Unknown error")) }
             }
+        }
+    }
+
+    private fun fetchAvailableTafsirBooks() {
+        viewModelScope.launch {
+            runCatching { getAvailableTafsirBooks() }
+                .onSuccess { books ->
+                    _state.update { it.copy(availableTafsirBooks = books) }
+                }
+                .onFailure { e ->
+                    Log.w(TAG, "Failed to load available tafsir books", e)
+                }
         }
     }
 

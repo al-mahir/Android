@@ -61,9 +61,11 @@ val mushafPresentationModule = module {
     factory { UpdateRecitationSettingsUseCase(get()) }
     factory { GetRecitationSchemaUseCase(get()) }
 
+    factory { com.example.mushaf.domain.usecase.GetAvailableTafsirBooksUseCase(get()) }
+
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 
