@@ -238,6 +238,7 @@
 
     <!-- ===== Sheikh Details ===== -->
     <string name="sheikh_details_title">Sheikh Profile</string>
+    <string name="sheikh_details_request_meeting">Request 1:1 Meeting</string>
     <string name="sheikh_stat_rating">Rating</string>
     <string name="sheikh_stat_reviews">Reviews</string>
     <string name="sheikh_stat_students">Students</string>
@@ -268,5 +269,24 @@
     <string name="session_mic_off">Muted</string>
     <string name="session_mushaf">Mushaf</string>
     <string name="session_raise_hand">Raise</string>
-    <string name="session_chat">Chat</string>
+    <string name="session_chat">Chat</string>    <!-- Meeting Request -->
+    <string name="meetingrequest_browse_title">Select a Sheikh</string>
+    <string name="meetingrequest_browse_empty">No available sheikhs right now.</string>
+    <string name="meetingrequest_request_back">Back</string>
+    <string name="meetingrequest_request_note_label">Note for the Sheikh (Optional)</string>
+    <string name="meetingrequest_request_note_hint">e.g. I\'d like to review Surah Al-Baqarah…</string>
+    <string name="meetingrequest_request_send">Request Meeting</string>
+    <string name="meetingrequest_request_idle_title">Request a 1:1 Meeting</string>
+    <string name="meetingrequest_request_idle_subtitle">Send a short note so the sheikh knows what you\'d like to discuss.</string>
+    <string name="meetingrequest_request_sending_title">Sending your request…</string>
+    <string name="meetingrequest_request_pending_title">Waiting for response...</string>
+    <string name="meetingrequest_request_pending_subtitle">The sheikh has been notified of your request.</string>
+    <string name="meetingrequest_request_pending_expires_in_seconds">Expires in %1$d s</string>
+    <string name="meetingrequest_request_cancel">Cancel Request</string>
+    <string name="meetingrequest_request_accepted_title">Request accepted!</string>
+    <string name="meetingrequest_request_accepted_subtitle">Connecting you to the call…</string>
+    <string name="meetingrequest_request_declined">Request Declined</string>
+    <string name="meetingrequest_request_declined_subtitle">The sheikh isn\'t able to meet right now.</string>
+    <string name="meetingrequest_request_expired">Request Expired</string>
+    <string name="meetingrequest_request_expired_subtitle">The sheikh didn\'t respond in time. Please try again.</string>
 </resources>

@@ -155,3 +155,4 @@ class HomeViewModelTest {
             if (fail) flow { throw IllegalStateException("boom") } else flowOf(page)
     }
 }
+

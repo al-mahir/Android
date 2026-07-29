@@ -20,3 +20,4 @@ object AuthValidationCode {
     const val INVALID_PHONE_NUMBER = "invalid_phone_number"
     const val INVALID_OTP = "invalid_otp"
 }
+

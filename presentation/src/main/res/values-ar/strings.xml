@@ -238,6 +238,7 @@
 
     <!-- ===== Sheikh Details ===== -->
     <string name="sheikh_details_title">ملف الشيخ</string>
+    <string name="sheikh_details_request_meeting">طلب جلسة فردية</string>
     <string name="sheikh_stat_rating">التقييم</string>
     <string name="sheikh_stat_reviews">التقييمات</string>
     <string name="sheikh_stat_students">الطلاب</string>
@@ -269,4 +270,25 @@
     <string name="session_mushaf">المصحف</string>
     <string name="session_raise_hand">رفع اليد</string>
     <string name="session_chat">المحادثة</string>
+
+    <!-- ===== Meeting Request ===== -->
+    <string name="meetingrequest_browse_title">اختر شيخاً</string>
+    <string name="meetingrequest_browse_empty">لا يوجد شيوخ متاحون حالياً.</string>
+    <string name="meetingrequest_request_back">رجوع</string>
+    <string name="meetingrequest_request_note_label">ملاحظة للشيخ (اختياري)</string>
+    <string name="meetingrequest_request_note_hint">مثال: أود مراجعة سورة البقرة…</string>
+    <string name="meetingrequest_request_send">طلب لقاء</string>
+    <string name="meetingrequest_request_idle_title">طلب لقاء فردي</string>
+    <string name="meetingrequest_request_idle_subtitle">أرسل ملاحظة موجزة ليعرف الشيخ ما ترغب في مناقشته.</string>
+    <string name="meetingrequest_request_sending_title">جارٍ إرسال طلبك…</string>
+    <string name="meetingrequest_request_pending_title">في انتظار الرد...</string>
+    <string name="meetingrequest_request_pending_subtitle">تم إشعار الشيخ بطلبك.</string>
+    <string name="meetingrequest_request_pending_expires_in_seconds">تنتهي خلال %1$d ث</string>
+    <string name="meetingrequest_request_cancel">إلغاء الطلب</string>
+    <string name="meetingrequest_request_accepted_title">تم قبول الطلب!</string>
+    <string name="meetingrequest_request_accepted_subtitle">جارٍ توصيلك باللقاء…</string>
+    <string name="meetingrequest_request_declined">تم رفض الطلب</string>
+    <string name="meetingrequest_request_declined_subtitle">الشيخ غير متاح للقاء الآن.</string>
+    <string name="meetingrequest_request_expired">انتهت صلاحية الطلب</string>
+    <string name="meetingrequest_request_expired_subtitle">لم يرد الشيخ في الوقت المحدد. يرجى المحاولة مرة أخرى.</string>
 </resources>

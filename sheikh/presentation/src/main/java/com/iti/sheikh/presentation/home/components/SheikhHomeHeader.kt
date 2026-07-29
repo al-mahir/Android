@@ -14,29 +14,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.example.designsystem.components.avatar.InitialsAvatar
-import com.example.designsystem.components.settings.SettingsSwitch
 import com.example.designsystem.theme.Theme
 import com.iti.sheikh.presentation.R
 
 /**
- * Sheikh-home equivalent of the student Home header (same brand-title/avatar shell) — the
- * search icon has no sheikh-side equivalent, so that slot carries the availability switch
- * instead.
+ * Sheikh-home equivalent of the student Home header (same brand-title/avatar shell). The
+ * availability toggle used to live here — it's now owned by `:meeting-kit`'s
+ * `SheikhAvailabilityPanel`, embedded lower on the screen (see `SheikhHomeContent`).
  */
 @Composable
 fun SheikhHomeHeader(
     initials: String?,
     avatarUrl: String?,
-    isAvailable: Boolean,
-    isAvailabilityToggleEnabled: Boolean,
-    onAvailabilityToggle: (Boolean) -> Unit,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -61,37 +56,16 @@ fun SheikhHomeHeader(
                 modifier = Modifier.weight(1f, fill = false),
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val toggleDescription = stringResource(
-                    if (isAvailable) {
-                        R.string.sheikh_home_availability_toggle_on_description
-                    } else {
-                        R.string.sheikh_home_availability_toggle_off_description
-                    },
-                )
-                SettingsSwitch(
-                    checked = isAvailable,
-                    onCheckedChange = onAvailabilityToggle,
-                    enabled = isAvailabilityToggleEnabled,
-                    modifier = Modifier.semantics {
-                        contentDescription = toggleDescription
-                    },
-                )
-
-                InitialsAvatar(
-                    initials = initials.orEmpty(),
-                    contentDescription = stringResource(R.string.sheikh_home_avatar_content_description),
-                    imageUrl = avatarUrl,
-                    modifier = Modifier
-                        .size(Theme.size.avatarSmall)
-                        .clip(CircleShape)
-                        .clickable(onClick = onProfileClick)
-                        .semantics { role = Role.Button },
-                )
-            }
+            InitialsAvatar(
+                initials = initials.orEmpty(),
+                contentDescription = stringResource(R.string.sheikh_home_avatar_content_description),
+                imageUrl = avatarUrl,
+                modifier = Modifier
+                    .size(Theme.size.avatarSmall)
+                    .clip(CircleShape)
+                    .clickable(onClick = onProfileClick)
+                    .semantics { role = Role.Button },
+            )
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall)) {

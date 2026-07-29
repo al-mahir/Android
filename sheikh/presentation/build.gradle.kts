@@ -27,6 +27,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":meeting:domain"))
     implementation(project(":designsystem"))
 
     implementation(platform(libs.androidx.compose.bom))

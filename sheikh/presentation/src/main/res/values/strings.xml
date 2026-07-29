@@ -4,23 +4,17 @@
     <string name="sheikh_home_greeting_subtitle">Manage your availability and circles.</string>
     <string name="sheikh_home_avatar_content_description">Open profile</string>
 
-    <string name="sheikh_home_availability_toggle_on_description">Available for 1:1 session requests. Tap to go offline.</string>
-    <string name="sheikh_home_availability_toggle_off_description">Offline for 1:1 session requests. Tap to become available.</string>
-
-    <string name="sheikh_home_status_available">Available</string>
-    <string name="sheikh_home_status_available_description">You\'re visible to students for 1:1 session requests.</string>
-    <string name="sheikh_home_status_in_session">In session</string>
-    <string name="sheikh_home_status_in_session_description">You\'re currently in a session — availability resumes automatically once it ends.</string>
-    <string name="sheikh_home_status_offline">Offline</string>
-    <string name="sheikh_home_status_offline_description">You won\'t receive new 1:1 session requests.</string>
-
     <string name="sheikh_home_error_generic">Something went wrong. Please try again.</string>
-    <string name="sheikh_home_availability_update_failed">Couldn\'t update your availability. Please try again.</string>
-
-    <string name="sheikh_home_illustration_available_title">You\'re available</string>
-    <string name="sheikh_home_illustration_available_description">Students can send you 1:1 session requests right now.</string>
-    <string name="sheikh_home_illustration_in_session_title">In a session</string>
-    <string name="sheikh_home_illustration_in_session_description">You\'ll be available again once this session ends.</string>
-    <string name="sheikh_home_illustration_offline_title">You\'re offline</string>
-    <string name="sheikh_home_illustration_offline_description">Turn on availability above to start receiving 1:1 session requests.</string>
+    <string name="meetingrequest_availability_incoming_request_title">Request from %1$s</string>
+    <string name="meetingrequest_availability_expires_in_seconds">Expires in %1$d seconds</string>
+    <string name="meetingrequest_availability_incoming_request_accept">Accept</string>
+    <string name="meetingrequest_availability_incoming_request_decline">Decline</string>
+    <string name="meetingrequest_availability_available_title">You are Available</string>
+    <string name="meetingrequest_availability_available_subtitle">Waiting for incoming requests...</string>
+    <string name="meetingrequest_availability_offline_title">You are Offline</string>
+    <string name="meetingrequest_availability_offline_subtitle">Go online to receive meeting requests.</string>
+    <string name="meetingrequest_availability_toggle_offline">Go Offline</string>
+    <string name="meetingrequest_availability_toggle_available">Go Available</string>
+    <string name="meetingrequest_availability_busy_title">You are Busy</string>
+    <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
 </resources>

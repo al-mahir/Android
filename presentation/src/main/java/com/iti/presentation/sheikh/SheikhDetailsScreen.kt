@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
@@ -48,6 +49,7 @@ fun SheikhDetailsScreen(
     sheikhId: String,
     onBack: () -> Unit,
     onNavigateToJoiningCircle: (String) -> Unit,
+    onRequestMeeting: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhDetailsViewModel = koinViewModel(parameters = { parametersOf(sheikhId) }),
 ) {
@@ -66,6 +68,7 @@ fun SheikhDetailsScreen(
         onBack = onBack,
         onJoinCircle = { viewModel.onIntent(SheikhDetailsIntent.JoinCircle(it)) },
         onRetry = { viewModel.onIntent(SheikhDetailsIntent.Retry) },
+        onRequestMeeting = onRequestMeeting,
         modifier = modifier,
     )
 }
@@ -76,6 +79,7 @@ private fun SheikhDetailsContent(
     onBack: () -> Unit,
     onJoinCircle: (String) -> Unit,
     onRetry: () -> Unit,
+    onRequestMeeting: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -98,6 +102,7 @@ private fun SheikhDetailsContent(
                 sheikh = state.sheikh,
                 circles = state.circles,
                 onJoinCircle = onJoinCircle,
+                onRequestMeeting = { onRequestMeeting(state.sheikh.id) },
             )
         }
     }
@@ -108,6 +113,7 @@ private fun SheikhDetailsBody(
     sheikh: Sheikh,
     circles: List<StudyCircle>,
     onJoinCircle: (String) -> Unit,
+    onRequestMeeting: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -140,6 +146,12 @@ private fun SheikhDetailsBody(
             )
             Spacer(modifier = Modifier.height(8.dp))
             SheikhStatusChip(availability = sheikh.availability)
+            Spacer(modifier = Modifier.height(16.dp))
+            PrimaryButton(
+                caption = stringResource(R.string.sheikh_details_request_meeting),
+                onClick = onRequestMeeting,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         Row(
