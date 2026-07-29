@@ -20,6 +20,8 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.components.bottomnav.BottomNavBar
 import com.example.designsystem.components.bottomnav.BottomNavTab
+import com.iti.sheikh.presentation.availability.SheikhAvailabilityPanel
+import com.iti.meeting.presentation.navigation.meetingEntries
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
@@ -31,6 +33,7 @@ import com.iti.presentation.profile.navigation.profileEntries
 import com.iti.presentation.settings.navigation.SettingsRoute
 import com.iti.presentation.settings.navigation.settingsEntries
 import com.iti.sheikh.presentation.home.SheikhHomeScreen
+import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -109,6 +112,13 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                 entry<SheikhAppRoute.Home> {
                     SheikhHomeScreen(
                         onOpenProfile = { selectTab(SheikhBottomNavDestination.Profile) },
+                        availabilityPanel = {
+                            SheikhAvailabilityPanel(
+                                onMeetingAccepted = { circleId, token, channelName, uid -> 
+                                    backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                                },
+                            )
+                        },
                     )
                 }
 
@@ -131,6 +141,21 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                 profileEntries(onBack = { backStack.removeLastOrNull() })
 
                 settingsEntries(onBack = { backStack.removeLastOrNull() })
+
+                meetingRequestEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onNavigateToCall = { circleId, token, channelName, uid -> 
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                    },
+                    onBack = { backStack.removeLastOrNull() },
+                    onShowMessage = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    },
+                )
+                meetingEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onBack = { backStack.removeLastOrNull() },
+                )
             },
         )
 
@@ -166,3 +191,5 @@ private fun List<NavKey>.selectedDestination(): SheikhBottomNavDestination? =
         SheikhAppRoute.Profile -> SheikhBottomNavDestination.Profile
         else -> null
     }
+
+

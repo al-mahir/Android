@@ -14,6 +14,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SheikhHomeScreen(
     onOpenProfile: () -> Unit,
+    availabilityPanel: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhHomeViewModel = koinViewModel(),
 ) {
@@ -31,10 +32,8 @@ fun SheikhHomeScreen(
     SheikhHomeContent(
         state = state,
         onProfileClick = { viewModel.onIntent(SheikhHomeIntent.ProfileClicked) },
-        onAvailabilityToggle = { isAvailable ->
-            viewModel.onIntent(SheikhHomeIntent.AvailabilityToggled(isAvailable))
-        },
         onRetryClick = { viewModel.onIntent(SheikhHomeIntent.Retry) },
+        availabilityPanel = availabilityPanel,
         modifier = modifier,
     )
 }
