@@ -110,3 +110,4 @@ val presentationModule = module {
 }
 
 const val APP_VERSION = "app_version"
+

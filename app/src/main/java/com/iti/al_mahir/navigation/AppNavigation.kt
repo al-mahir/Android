@@ -28,10 +28,14 @@ import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
 import com.iti.presentation.auth.session.SessionViewModel
+import com.iti.meeting.presentation.navigation.MeetingRoute
+import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
+import com.iti.meeting.presentation.navigation.meetingEntries
 import com.iti.presentation.circle.CircleListScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
 import com.iti.presentation.home.HomeScreen
+import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import com.iti.presentation.profile.ProfileScreen
 import com.iti.presentation.profile.navigation.ProfileRoute
 import com.iti.presentation.profile.navigation.profileEntries
@@ -208,6 +212,9 @@ private fun AppNavHost(
                         onNavigateToJoiningCircle = { circleId ->
                             backStack.add(AppRoute.JoiningCircle(circleId))
                         },
+                        onRequestMeeting = { sheikhId ->
+                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId))
+                        },
                     )
                 }
 
@@ -263,6 +270,21 @@ private fun AppNavHost(
                 downloadsEntries(onBack = { backStack.removeLastOrNull() })
 
                 reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
+
+                meetingRequestEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onNavigateToCall = { circleId, token, channelName, uid -> 
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                    },
+                    onBack = { backStack.removeLastOrNull() },
+                    onShowMessage = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    },
+                )
+                meetingEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onBack = { backStack.removeLastOrNull() },
+                )
             },
         )
 
@@ -283,3 +305,5 @@ private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
         AppRoute.Profile -> AppBottomNavDestination.Profile
         else -> null
     }
+
+
