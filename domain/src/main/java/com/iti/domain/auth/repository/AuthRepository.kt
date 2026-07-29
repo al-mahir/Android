@@ -35,3 +35,4 @@ interface AuthRepository {
     
     suspend fun verifyOtp(email: String, otp: String): Result<Unit>
 }
+

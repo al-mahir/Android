@@ -24,3 +24,4 @@ val authDomainModule = module {
     factory { VerifyOtpUseCase(get()) }
     factory { ResetPasswordUseCase(get()) }
 }
+
