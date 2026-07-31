@@ -83,7 +83,10 @@ class AvailabilityViewModel(
     private fun startCountdown(expiresAtString: String) {
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
-            val expiresAt = runCatching { java.time.Instant.parse(expiresAtString) }.getOrNull() ?: java.time.Instant.now()
+            val expiresAt = runCatching { 
+                val str = if (expiresAtString.endsWith("Z") || expiresAtString.contains("+")) expiresAtString else "${expiresAtString}Z"
+                java.time.Instant.parse(str) 
+            }.getOrNull() ?: java.time.Instant.now()
             while (isActive) {
                 if (expiresAt.isBefore(java.time.Instant.now()) || expiresAt == java.time.Instant.now()) {
                     updateState {
