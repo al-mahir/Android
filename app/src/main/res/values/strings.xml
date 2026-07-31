@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Al-Mahir</string>
+    <string name="exit_app_title">Exit App</string>
+    <string name="exit_app_message">Are you sure you want to exit?</string>
+    <string name="exit_app_confirm">Exit</string>
+    <string name="exit_app_cancel">Cancel</string>
 </resources>
