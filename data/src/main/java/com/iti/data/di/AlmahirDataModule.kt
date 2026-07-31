@@ -21,8 +21,12 @@ import com.iti.domain.settings.repository.RecordingsRepository
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
+import com.iti.data.connectivity.AndroidConnectivityObserver
+import com.iti.domain.connectivity.ConnectivityObserver
 
 val almahirDataModule = module {
+    // ── Connectivity ──────────────────────────────────────────────────────────
+    single<ConnectivityObserver> { AndroidConnectivityObserver(androidContext()) }
     // ── Network (shared HTTP client, token store, JSON) ──────────────────────
     includes(networkModule)
 
