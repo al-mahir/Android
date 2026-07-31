@@ -9,6 +9,7 @@ import com.iti.sheikh.presentation.core.mvi.EffectPublisher
 import com.iti.sheikh.presentation.core.mvi.StateHolder
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.IncomingRequestEvent
+import com.iti.meeting.domain.repository.MeetingRequestEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -25,7 +26,9 @@ class AvailabilityViewModel(
 
     private val heartbeat = AvailabilityHeartbeat(repository, viewModelScope)
     private var countdownJob: Job? = null
+    private var activeCallJob: Job? = null
     private var mySheikhId: String? = null
+    private var activeRequestId: String? = null
 
     fun onIntent(intent: AvailabilityIntent) {
         when (intent) {
@@ -39,8 +42,8 @@ class AvailabilityViewModel(
     private fun goAvailable() = viewModelScope.launch {
         val sheikhId = currentUserProvider.currentUserId() ?: return@launch
         mySheikhId = sheikhId
-        heartbeat.start(sheikhId)
-        
+        heartbeat.start()
+
         repository.observeIncomingRequests(sheikhId)
             .onEach { event ->
                 when (event) {
@@ -62,14 +65,18 @@ class AvailabilityViewModel(
                 }
             }
             .launchIn(viewModelScope)
-            
+
+        repository.reconnected
+            .onEach { repository.getSheikhAvailability(sheikhId) }
+            .launchIn(viewModelScope)
+
         updateState { AvailabilityUiState.Available }
     }
 
     private fun goOffline() {
-        val sheikhId = mySheikhId ?: return
-        heartbeat.stop(sheikhId)
+        heartbeat.stop()
         countdownJob?.cancel()
+        activeCallJob?.cancel()
         updateState { AvailabilityUiState.Offline }
     }
 
@@ -94,13 +101,15 @@ class AvailabilityViewModel(
         countdownJob?.cancel()
         repository.acceptMeetingRequest(requestState.requestId)
             .onSuccess { accepted ->
+                activeRequestId = accepted.requestId
                 updateState { AvailabilityUiState.Busy }
+                observeActiveCall(accepted.requestId)
                 sendEffect(
                     AvailabilityEffect.NavigateToCall(
-                        circleId = accepted.circleId,
-                        token = accepted.sheikhAgoraToken,
+                        requestId = accepted.requestId,
+                        token = accepted.agoraToken,
                         channelName = accepted.channelName,
-                        uid = accepted.uid,
+                        userAccount = accepted.userAccount,
                     ),
                 )
             }
@@ -109,23 +118,32 @@ class AvailabilityViewModel(
             }
     }
 
+    /** Watches the accepted request's topic so the panel resets to Available if the call ends remotely. */
+    private fun observeActiveCall(requestId: String) {
+        activeCallJob?.cancel()
+        activeCallJob = repository.observeMeetingRequestEvents(requestId)
+            .onEach { event ->
+                if (event is MeetingRequestEvent.MeetingEnded) {
+                    activeRequestId = null
+                    updateState { if (this is AvailabilityUiState.Busy) AvailabilityUiState.Available else this }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
     private fun decline() = viewModelScope.launch {
         val requestState = currentState as? AvailabilityUiState.IncomingRequest ?: return@launch
         countdownJob?.cancel()
-        repository.declineMeetingRequest(requestState.requestId, reason = null)
+        repository.declineMeetingRequest(requestState.requestId)
         updateState { AvailabilityUiState.Available }
     }
 
     override fun onCleared() {
         super.onCleared()
-        mySheikhId?.let { heartbeat.stop(it) }
+        if (mySheikhId != null) heartbeat.stop()
     }
 
     private companion object {
         const val COUNTDOWN_TICK_MS = 1_000L
     }
 }
-
-
-
-

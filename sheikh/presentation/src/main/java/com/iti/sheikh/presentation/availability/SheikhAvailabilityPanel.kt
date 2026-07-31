@@ -14,7 +14,7 @@ import org.koin.androidx.compose.koinViewModel
  */
 @Composable
 fun SheikhAvailabilityPanel(
-    onMeetingAccepted: (String, String, String, Int) -> Unit,
+    onMeetingAccepted: (String, String, String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AvailabilityViewModel = koinViewModel(),
 ) {
@@ -23,10 +23,10 @@ fun SheikhAvailabilityPanel(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is AvailabilityEffect.NavigateToCall -> onMeetingAccepted(
-                effect.circleId,
+                effect.requestId,
                 effect.token,
                 effect.channelName,
-                effect.uid,
+                effect.userAccount,
             )
 
             is AvailabilityEffect.ShowMessage -> Unit

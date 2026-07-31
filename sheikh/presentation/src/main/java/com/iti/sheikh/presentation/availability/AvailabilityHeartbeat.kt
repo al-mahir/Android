@@ -19,29 +19,23 @@ class AvailabilityHeartbeat(
 ) {
     private var job: Job? = null
 
-    fun start(sheikhId: String) {
+    fun start() {
         if (job?.isActive == true) return
         job = scope.launch {
             while (isActive) {
-                repository.setMyAvailability(sheikhId, SheikhAvailabilityStatus.AVAILABLE)
+                repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
                 delay(HEARTBEAT_INTERVAL_MS)
             }
         }
     }
 
-    fun stop(sheikhId: String) {
+    fun stop() {
         job?.cancel()
         job = null
-        scope.launch { repository.setMyAvailability(sheikhId, SheikhAvailabilityStatus.OFFLINE) }
+        scope.launch { repository.setMyAvailability(SheikhAvailabilityStatus.OFFLINE) }
     }
 
     private companion object {
         const val HEARTBEAT_INTERVAL_MS = 20_000L
     }
 }
-
-
-
-
-
-
