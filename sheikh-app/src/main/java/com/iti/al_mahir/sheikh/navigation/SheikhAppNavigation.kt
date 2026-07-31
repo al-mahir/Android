@@ -114,8 +114,8 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                         onOpenProfile = { selectTab(SheikhBottomNavDestination.Profile) },
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
-                                onMeetingAccepted = { circleId, token, channelName, uid -> 
-                                    backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                                onMeetingAccepted = { requestId, token, channelName, userAccount ->
+                                    backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
                                 },
                             )
                         },
@@ -144,8 +144,8 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
 
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
-                    onNavigateToCall = { circleId, token, channelName, uid -> 
-                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                    onNavigateToCall = { requestId, token, channelName, userAccount ->
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->
