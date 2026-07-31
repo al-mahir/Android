@@ -19,6 +19,7 @@ data class HomeUiState(
     val sheikhs: List<Sheikh> = emptyList(),
     val circles: List<StudyCircle> = emptyList(),
     val joiningCircleIds: Set<String> = emptySet(),
+    val isOffline: Boolean = false,
 ) {
     val hasError: Boolean get() = errorMessageRes != null
 }

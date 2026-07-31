@@ -90,19 +90,21 @@ fun ProfileContent(
                             modifier = gutter,
                         )
 
-                        AccountActionsBlock(
-                            isPremium = state.isPremium,
-                            isRestoringPurchases = state.isRestoringPurchases,
-                            onPremiumClick = onPremiumClick,
-                            onRestorePurchasesClick = onRestorePurchasesClick,
-                            onLogoutClick = onLogoutClick,
-                            modifier = gutter,
-                        )
+                        if (!state.isOffline) {
+                            AccountActionsBlock(
+                                isPremium = state.isPremium,
+                                isRestoringPurchases = state.isRestoringPurchases,
+                                onPremiumClick = onPremiumClick,
+                                onRestorePurchasesClick = onRestorePurchasesClick,
+                                onLogoutClick = onLogoutClick,
+                                modifier = gutter,
+                            )
 
-                        SocialMediaChannelsRow(
-                            onChannelClick = onSocialChannelClick,
-                            modifier = gutter,
-                        )
+                            SocialMediaChannelsRow(
+                                onChannelClick = onSocialChannelClick,
+                                modifier = gutter,
+                            )
+                        }
                     }
                 }
 
@@ -123,13 +125,15 @@ fun ProfileContent(
                     )
                 }
 
-                item(key = "delete-account") {
-                    ProfileMenuRow(
-                        title = stringResource(R.string.profile_delete_account),
-                        contentColor = Theme.colors.error,
-                        onClick = onDeleteAccountClick,
-                        modifier = gutter.padding(top = Theme.spacing.small),
-                    )
+                if (!state.isOffline) {
+                    item(key = "delete-account") {
+                        ProfileMenuRow(
+                            title = stringResource(R.string.profile_delete_account),
+                            contentColor = Theme.colors.error,
+                            onClick = onDeleteAccountClick,
+                            modifier = gutter.padding(top = Theme.spacing.small),
+                        )
+                    }
                 }
             }
         }
