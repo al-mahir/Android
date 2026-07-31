@@ -103,17 +103,19 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = !darkTheme
                 }
             }
-
+            
             AlMahirTheme(isDarkTheme = darkTheme, locale = locale) {
-                Box(
+                androidx.compose.foundation.layout.Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Theme.colors.backGround),
                 ) {
-                    AppNavHost(
-                        pendingAction = action,
-                        onActionHandled = { pendingAction.value = null }
-                    )
+                    Box(modifier = Modifier.weight(1f)) {
+                        AppNavHost(
+                            pendingAction = action,
+                            onActionHandled = { pendingAction.value = null }
+                        )
+                    }
                 }
             }
         }

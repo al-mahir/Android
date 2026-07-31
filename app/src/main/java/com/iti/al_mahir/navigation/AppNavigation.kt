@@ -115,10 +115,18 @@ private fun AppNavHost(
             .fillMaxSize()
             .statusBarsPadding(),
     ) {
-        NavDisplay(
-            backStack = backStack,
-            modifier = Modifier.fillMaxSize(),
-            onBack = {
+        val showBanner = backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
+        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+            if (showBanner) {
+                val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
+                val banner by mainViewModel.banner.collectAsStateWithLifecycle()
+                com.iti.presentation.core.components.OfflineBanner(banner = banner)
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                NavDisplay(
+                    backStack = backStack,
+                    modifier = Modifier.fillMaxSize(),
+                    onBack = {
                 when {
                     backStack.lastOrNull() is AppRoute.Mushaf ->
                         selectTab(AppBottomNavDestination.Home)
@@ -181,7 +189,18 @@ private fun AppNavHost(
                 }
 
                 entry<AppRoute.Profile> {
+                    val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
+                    val isOnline by mainViewModel.isOnline.collectAsStateWithLifecycle()
+                    
+                    val offlineMenus = setOf(
+                        com.iti.presentation.profile.model.ProfileMenuType.SETTINGS,
+                        com.iti.presentation.profile.model.ProfileMenuType.ABOUT,
+                        com.iti.presentation.profile.model.ProfileMenuType.ATTRIBUTIONS,
+                        com.iti.presentation.profile.model.ProfileMenuType.SHARE_APP
+                    )
+
                     ProfileScreen(
+                        visibleMenuItems = if (isOnline) com.iti.presentation.profile.model.ProfileMenuType.entries.toSet() else offlineMenus,
                         onOpenPremium = { backStack.add(ProfileRoute.Premium) },
                         onOpenLegalDocument = { documentType ->
                             backStack.add(ProfileRoute.StaticContent(documentType))
@@ -286,7 +305,9 @@ private fun AppNavHost(
                     onBack = { backStack.removeLastOrNull() },
                 )
             },
-        )
+                )
+            }
+        }
 
         val selectedTab = backStack.selectedDestination()
         if (selectedTab != null) {
