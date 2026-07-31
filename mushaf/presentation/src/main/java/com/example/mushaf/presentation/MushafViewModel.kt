@@ -86,6 +86,7 @@ class MushafViewModel(
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
+    private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -258,6 +259,12 @@ class MushafViewModel(
                     initialized = true
                     onIntent(MushafIntent.LoadPage(prefs.lastPage))
                 }
+            }
+            .launchIn(viewModelScope)
+
+        connectivityObserver.status
+            .onEach { status ->
+                _state.update { it.copy(isOffline = status == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) }
             }
             .launchIn(viewModelScope)
     }
@@ -528,6 +535,14 @@ class MushafViewModel(
 
     private fun setMode(mode: MushafMode) {
         val current = _state.value
+        
+        if (current.isOffline && (mode == MushafMode.MUALLEM || mode == MushafMode.RECITATION)) {
+            viewModelScope.launch {
+                _effects.send(MushafEffect.ShowMessage(R.string.mushaf_offline_mode_not_available))
+            }
+            return
+        }
+        
         if (current.isFollowAlongActive) stopFollowAlong()
         if (current.isRecordingActive) {
             
