@@ -189,18 +189,41 @@ class MushafRepositoryImpl(
     }
     
     override fun observeAvailableTafsirBooks(): Flow<List<TafsirBook>> = flow {
-        val remoteBooks = getAvailableTafsirBooks()
+        // The bundled "التفسير المختصر" is always available — it lives in SQLite assets
+        // and never needs downloading. We prepend it unconditionally.
+        val mukhtasarBook = TafsirBook(
+            tafsirKey = "mukhtasar",
+            displayName = "التفسير المختصر",
+            language = "ar",
+            languageName = "العربية",
+            downloadUrl = "",
+            fileSizeBytes = 0,
+            state = com.example.mushaf.domain.model.DownloadState.Downloaded,
+        )
+
+        // Fetch downloadable books from the remote catalogue (best-effort).
+        val remoteBooks: List<TafsirBook> = try {
+            tafsirRemoteDataSource?.getAvailableTafsirBooks() ?: emptyList()
+        } catch (e: Exception) {
+            Log.e(MushafLog.TAG, "Failed to fetch remote tafsir catalogue", e)
+            emptyList()
+        }
+
         if (tafsirDownloadManager != null) {
+            // Observe live download-state changes and reflect them in the list.
             tafsirDownloadManager.downloadStates.collect { states ->
-                val updated = remoteBooks.map { book ->
-                    val currentState = states[book.tafsirKey] 
-                        ?: if (tafsirDownloadManager.isDownloaded(book.tafsirKey)) com.example.mushaf.domain.model.DownloadState.Downloaded else com.example.mushaf.domain.model.DownloadState.NotDownloaded
-                    book.copy(state = currentState)
+                val updatedRemote = remoteBooks.map { book ->
+                    val liveState = states[book.tafsirKey]
+                        ?: if (tafsirDownloadManager.isDownloaded(book.tafsirKey))
+                            com.example.mushaf.domain.model.DownloadState.Downloaded
+                        else
+                            com.example.mushaf.domain.model.DownloadState.NotDownloaded
+                    book.copy(state = liveState)
                 }
-                emit(updated)
+                emit(listOf(mukhtasarBook) + updatedRemote)
             }
         } else {
-            emit(remoteBooks)
+            emit(listOf(mukhtasarBook) + remoteBooks)
         }
     }
 

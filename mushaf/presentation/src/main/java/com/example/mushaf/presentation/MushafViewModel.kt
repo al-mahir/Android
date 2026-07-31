@@ -414,7 +414,7 @@ class MushafViewModel(
                         _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
                     } else {
                         _state.update {
-                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(UiText.DynamicString("Tafsir not found")))
+                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(com.example.designsystem.text.UiText.Dynamic("Tafsir not found")))
                         }
                     }
                 }
@@ -423,7 +423,6 @@ class MushafViewModel(
                     _state.update {
                         it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(result.error.toUiText()))
                     }
-                }
                 }
             }
         }
