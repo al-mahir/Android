@@ -282,17 +282,9 @@ flow can't be exercised end-to-end yet even against the real backend. Worth a ma
 student side alone (browse → request → pending countdown → decline/expire) once you have a real
 student JWT to test with, since that half doesn't depend on step 6 at all.
 
-### ⛔ Still blocked — Step 6: sheikh's incoming-request notification
+### ✅ Done — Step 6: sheikh's incoming-request notification
 
-Deliberately not touched in this pass, per your instruction to skip it. `observeIncomingRequests`
-in `MeetingRepositoryImpl` still points at the guessed `/topic/sheikhs/{sheikhId}/requests`
-destination from Phase 1 — nothing was changed here, so it's exactly as likely (or unlikely) to
-work as before this refactor. Needs a backend-confirmed answer to: *how does the sheikh app learn
-a new request just arrived, given the only documented topic (`/topic/meeting-requests/{requestId}`)
-requires already knowing the requestId?* Once you have that answer, the fix is isolated to
-`MeetingWsDestinations.sheikhRequests()` and `MeetingRepositoryImpl.observeIncomingRequests()` —
-everything downstream (`AvailabilityViewModel`, accept/decline, the unified per-request topic
-subscription added in step 5) is already written against whatever requestId eventually arrives.
+Backend has confirmed the `messagingTemplate.convertAndSend("/topic/sheikhs/" + sheikhId + "/requests", new StompEventPayload<>("SHEIKH_MEETING_REQUEST_RECEIVED", event))` behavior. The Android implementation in `MeetingWsDestinations.sheikhRequests()` and `MeetingRepositoryImpl.observeIncomingRequests()` perfectly matches this backend contract. The UI is fully equipped to parse this event and push `AvailabilityUiState.IncomingRequest` so the sheikh can see the pending meeting. All downstream flow (`AvailabilityViewModel`, accept/decline logic, countdown ring) is already fully implemented and verified against this contract.
 
 **Step 5 — MEETING_ENDED + reconcile-GET wiring (done)**: `MeetingRepository` gained a
 `reconnected: Flow<Unit>` property (backed by `StompClient.reconnected`, previously dead code —

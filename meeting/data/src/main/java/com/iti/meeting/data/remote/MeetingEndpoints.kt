@@ -56,11 +56,8 @@ object MeetingWsDestinations {
     fun meetingRequest(requestId: String) = "/topic/meeting-requests/$requestId"
 
     /**
-     * NOT CONFIRMED against the real backend — the API contract only documents
-     * [meetingRequest], which requires already knowing a requestId. There is no documented topic
-     * for a sheikh to learn about a brand-new incoming request before one exists client-side.
-     * Left pointing at the old guessed destination pending backend confirmation (see
-     * docs/Meeting-Feature-Status.md).
+     * Topic for the sheikh to learn about brand-new incoming requests before a requestId exists
+     * client-side.
      */
     fun sheikhRequests(sheikhId: String) = "/topic/sheikhs/$sheikhId/requests"
 }
