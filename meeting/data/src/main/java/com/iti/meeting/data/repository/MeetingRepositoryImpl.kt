@@ -106,9 +106,14 @@ class MeetingRepositoryImpl(
         return stompClient.subscribe(MeetingWsDestinations.sheikhRequests(sheikhId))
             .onStart { stompClient.connect() }
             .mapNotNull { frame ->
+                android.util.Log.d("MeetingKit", "observeIncomingRequests RAW FRAME: ${frame.body}")
                 val envelope = runCatching {
                     MeetingKitJson.decodeFromString(SocketEventEnvelope.serializer(), frame.body)
+                }.onFailure { e ->
+                    android.util.Log.e("MeetingKit", "Failed to parse SocketEventEnvelope: ${e.message}")
                 }.getOrNull() ?: return@mapNotNull null
+
+                android.util.Log.d("MeetingKit", "observeIncomingRequests ENVELOPE: $envelope")
 
                 when (envelope.eventType) {
                     "SHEIKH_MEETING_REQUEST_RECEIVED" -> {
@@ -117,7 +122,11 @@ class MeetingRepositoryImpl(
                                 com.iti.meeting.data.remote.dto.SheikhMeetingRequestReceivedDto.serializer(),
                                 envelope.payload,
                             )
+                        }.onFailure { e ->
+                            android.util.Log.e("MeetingKit", "Failed to parse SheikhMeetingRequestReceivedDto: ${e.message}")
                         }.getOrNull() ?: return@mapNotNull null
+                        
+                        android.util.Log.d("MeetingKit", "observeIncomingRequests PAYLOAD: $payload")
                         IncomingRequestEvent.Received(
                             requestId = payload.requestId,
                             studentName = payload.studentName.orEmpty(),
@@ -125,8 +134,11 @@ class MeetingRepositoryImpl(
                             expiresAt = payload.expiresAt,
                         )
                     }
-                    "REQUEST_CANCELLED" -> IncomingRequestEvent.Cancelled("")
-                    else -> null
+                    "REQUEST_CANCELLED", "SHEIKH_MEETING_REQUEST_REMOVED" -> IncomingRequestEvent.Cancelled("")
+                    else -> {
+                        android.util.Log.w("MeetingKit", "Unrecognized eventType: ${envelope.eventType}")
+                        null
+                    }
                 }
             }
     }
