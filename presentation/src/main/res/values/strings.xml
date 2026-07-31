@@ -289,4 +289,6 @@
     <string name="meetingrequest_request_declined_subtitle">The sheikh isn\'t able to meet right now.</string>
     <string name="meetingrequest_request_expired">Request Expired</string>
     <string name="meetingrequest_request_expired_subtitle">The sheikh didn\'t respond in time. Please try again.</string>
+    <string name="meetingrequest_request_ended">Call Ended</string>
+    <string name="meetingrequest_request_ended_subtitle">The meeting has ended.</string>
 </resources>

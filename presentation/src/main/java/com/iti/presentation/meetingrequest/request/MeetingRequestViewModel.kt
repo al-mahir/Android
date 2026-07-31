@@ -2,7 +2,6 @@ package com.iti.presentation.meetingrequest.request
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.iti.domain.auth.MeetingCurrentUserProvider
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
@@ -22,12 +21,12 @@ import kotlinx.coroutines.launch
 
 class MeetingRequestViewModel(
     private val repository: MeetingRepository,
-    private val currentUserProvider: MeetingCurrentUserProvider,
 ) : ViewModel(),
     StateHolder<RequestUiState> by DefaultStateHolder(RequestUiState.Idle),
     EffectPublisher<RequestEffect> by DefaultEffectPublisher() {
 
     private var countdownJob: Job? = null
+    private var eventsJob: Job? = null
 
     fun onIntent(intent: RequestIntent) {
         when (intent) {
@@ -62,17 +61,17 @@ class MeetingRequestViewModel(
         }
     }
 
-    private fun subscribeToRequest(requestId: String) = viewModelScope.launch {
-        val studentId = currentUserProvider.currentUserId() ?: return@launch
-        repository.observeMeetingRequestEvents(studentId, requestId)
+    private fun subscribeToRequest(requestId: String) {
+        eventsJob?.cancel()
+        eventsJob = repository.observeMeetingRequestEvents(requestId)
             .onEach { event ->
                 when (event) {
                     is MeetingRequestEvent.Accepted -> {
                         countdownJob?.cancel()
                         updateState {
-                            RequestUiState.Accepted(event.circleId, event.agoraToken, event.channelName, event.uid)
+                            RequestUiState.Accepted(requestId, event.agoraToken, event.channelName, event.userAccount)
                         }
-                        sendEffect(RequestEffect.MeetingAccepted(event.circleId, event.agoraToken, event.channelName, event.uid))
+                        sendEffect(RequestEffect.MeetingAccepted(requestId, event.agoraToken, event.channelName, event.userAccount))
                     }
                     is MeetingRequestEvent.Declined -> {
                         countdownJob?.cancel()
@@ -82,6 +81,10 @@ class MeetingRequestViewModel(
                         countdownJob?.cancel()
                         updateState { RequestUiState.Expired }
                     }
+                    MeetingRequestEvent.Cancelled -> Unit // this student already left Pending locally via the Cancel intent
+                    MeetingRequestEvent.MeetingEnded -> {
+                        updateState { if (this is RequestUiState.Accepted) RequestUiState.Ended else this }
+                    }
                 }
             }
             .launchIn(viewModelScope)
@@ -90,7 +93,10 @@ class MeetingRequestViewModel(
     private fun startCountdown(expiresAtString: String) {
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
-            val expiresAt = runCatching { java.time.Instant.parse(expiresAtString) }.getOrNull() ?: java.time.Instant.now()
+            val fixedString = if (!expiresAtString.endsWith("Z")) "${expiresAtString}Z" else expiresAtString
+            val expiresAt = runCatching { java.time.Instant.parse(fixedString) }.getOrNull() 
+                ?: java.time.Instant.now().plusSeconds(60) // Safe fallback to avoid immediate expiry
+
             while (isActive) {
                 if (expiresAt.isBefore(java.time.Instant.now()) || expiresAt == java.time.Instant.now()) {
                     updateState { if (this is RequestUiState.Pending) RequestUiState.Expired else this }
@@ -108,10 +114,3 @@ class MeetingRequestViewModel(
         updateState { RequestUiState.Idle }
     }
 }
-
-
-
-
-
-
-

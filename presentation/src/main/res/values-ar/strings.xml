@@ -291,4 +291,6 @@
     <string name="meetingrequest_request_declined_subtitle">الشيخ غير متاح للقاء الآن.</string>
     <string name="meetingrequest_request_expired">انتهت صلاحية الطلب</string>
     <string name="meetingrequest_request_expired_subtitle">لم يرد الشيخ في الوقت المحدد. يرجى المحاولة مرة أخرى.</string>
+    <string name="meetingrequest_request_ended">انتهت المكالمة</string>
+    <string name="meetingrequest_request_ended_subtitle">انتهى اللقاء.</string>
 </resources>

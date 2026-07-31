@@ -90,6 +90,7 @@ fun MeetingRequestContent(
                 is RequestUiState.Accepted -> AcceptedContent()
                 is RequestUiState.Declined -> DeclinedContent(state = targetState, onBack = onBack)
                 RequestUiState.Expired -> ExpiredContent(onBack = onBack)
+                RequestUiState.Ended -> EndedContent(onBack = onBack)
             }
         }
     }
@@ -273,6 +274,33 @@ private fun ExpiredContent(onBack: () -> Unit) {
         VerticalSpace(Theme.spacing.small)
         BasicText(
             text = stringResource(R.string.meetingrequest_request_expired_subtitle),
+            style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.large)
+        SecondaryButton(
+            caption = stringResource(R.string.meetingrequest_request_back),
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun EndedContent(onBack: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HeroCircle(
+            iconRes = com.example.designsystem.R.drawable.ic_check,
+            containerColor = Theme.colors.primaryContainer,
+            iconTint = Theme.colors.primary,
+        )
+        VerticalSpace(Theme.spacing.medium)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_request_ended),
+            style = Theme.typography.title.copy(color = Theme.colors.primaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.small)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_request_ended_subtitle),
             style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
         )
         VerticalSpace(Theme.spacing.large)

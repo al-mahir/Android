@@ -12,7 +12,7 @@ import org.koin.androidx.compose.koinViewModel
 fun MeetingRequestScreen(
     sheikhId: String,
     onBack: () -> Unit,
-    onMeetingAccepted: (String, String, String, Int) -> Unit,
+    onMeetingAccepted: (String, String, String, String) -> Unit,
     onShowMessage: (String) -> Unit,
     viewModel: MeetingRequestViewModel = koinViewModel(),
 ) {
@@ -20,7 +20,7 @@ fun MeetingRequestScreen(
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
-            is RequestEffect.MeetingAccepted -> onMeetingAccepted(effect.circleId, effect.agoraToken, effect.channelName, effect.uid)
+            is RequestEffect.MeetingAccepted -> onMeetingAccepted(effect.requestId, effect.agoraToken, effect.channelName, effect.userAccount)
             is RequestEffect.ShowMessage -> onShowMessage(effect.message)
         }
     }
