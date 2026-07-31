@@ -2,9 +2,8 @@ package com.iti.meeting.domain.model
 
 data class MeetingRequestAccepted(
     val status: String,
-    val circleId: String,
+    val requestId: String,
     val channelName: String,
-    val sheikhAgoraToken: String,
-    val uid: Int,
+    val agoraToken: String,
+    val userAccount: String,
 )
-

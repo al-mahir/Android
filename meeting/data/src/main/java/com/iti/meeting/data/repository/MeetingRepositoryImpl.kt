@@ -3,10 +3,14 @@ package com.iti.meeting.data.repository
 import com.iti.domain.model.MeetingSheikhSummary
 import com.iti.domain.model.SheikhAvailabilityStatus
 import com.iti.meeting.domain.model.MeetingRequestAccepted
+import com.iti.meeting.domain.model.SheikhAvailability
+import com.iti.meeting.domain.model.TokenRefresh
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.SendMeetingRequestResult
 import com.iti.meeting.data.remote.dto.MeetingRequestAcceptedDto
 import com.iti.meeting.data.remote.dto.MeetingSheikhSummaryDto
+import com.iti.meeting.data.remote.dto.SheikhAvailabilityDto
+import com.iti.meeting.data.remote.dto.TokenRefreshDto
 import com.iti.meeting.data.remote.MeetingApi
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
@@ -29,16 +33,21 @@ class MeetingRepositoryImpl(
     private val stompClient: StompClient,
 ) : MeetingRepository {
 
+    override val reconnected: Flow<Unit> = stompClient.reconnected
+
     override suspend fun getAvailableSheikhs(): Result<List<MeetingSheikhSummary>> = runCatching {
         api.getAvailableSheikhs().map { it.toDomain() }
     }
 
-    override suspend fun setMyAvailability(sheikhId: String, status: SheikhAvailabilityStatus): Result<Unit> =
-        runCatching { api.setAvailability(sheikhId, status.name) }.map { }
+    override suspend fun setMyAvailability(status: SheikhAvailabilityStatus): Result<Unit> =
+        runCatching { api.setAvailability(status.name) }.map { }
+
+    override suspend fun getSheikhAvailability(sheikhId: String): Result<SheikhAvailability> =
+        runCatching { api.getSheikhAvailability(sheikhId).toDomain() }
 
     override suspend fun sendMeetingRequest(sheikhId: String, note: String?): SendMeetingRequestResult = try {
         val created = api.sendMeetingRequest(sheikhId, note)
-        SendMeetingRequestResult.Pending(created.requestId, created.expiresAt)
+        SendMeetingRequestResult.Pending(created.requestId, created.channelName, created.expiresAt)
     } catch (e: ClientRequestException) {
         when (e.response.status) {
             HttpStatusCode.Conflict -> SendMeetingRequestResult.SheikhUnavailable
@@ -55,11 +64,17 @@ class MeetingRepositoryImpl(
     override suspend fun acceptMeetingRequest(requestId: String): Result<MeetingRequestAccepted> =
         runCatching { api.acceptMeetingRequest(requestId).toDomain() }
 
-    override suspend fun declineMeetingRequest(requestId: String, reason: String?): Result<Unit> =
-        runCatching { api.declineMeetingRequest(requestId, reason) }
+    override suspend fun declineMeetingRequest(requestId: String): Result<Unit> =
+        runCatching { api.declineMeetingRequest(requestId) }
 
-    override fun observeMeetingRequestEvents(studentId: String, requestId: String): Flow<MeetingRequestEvent> {
-        return stompClient.subscribe(MeetingWsDestinations.studentMeetingRequest(studentId, requestId))
+    override suspend fun endMeeting(requestId: String): Result<Unit> =
+        runCatching { api.endMeeting(requestId) }
+
+    override suspend fun refreshToken(requestId: String): Result<TokenRefresh> =
+        runCatching { api.refreshToken(requestId).toDomain() }
+
+    override fun observeMeetingRequestEvents(requestId: String): Flow<MeetingRequestEvent> {
+        return stompClient.subscribe(MeetingWsDestinations.meetingRequest(requestId))
             .onStart { stompClient.connect() }
             .mapNotNull { frame ->
                 val envelope = runCatching {
@@ -71,7 +86,7 @@ class MeetingRepositoryImpl(
                         val payload = runCatching {
                             MeetingKitJson.decodeFromJsonElement(RequestAcceptedEventDto.serializer(), envelope.payload)
                         }.getOrNull() ?: return@mapNotNull null
-                        MeetingRequestEvent.Accepted(payload.circleId, payload.agoraToken, payload.channelName, payload.uid)
+                        MeetingRequestEvent.Accepted(payload.agoraToken, payload.channelName, payload.userAccount)
                     }
                     "REQUEST_DECLINED" -> {
                         val payload = runCatching {
@@ -79,13 +94,15 @@ class MeetingRepositoryImpl(
                         }.getOrNull()
                         MeetingRequestEvent.Declined(payload?.reason)
                     }
+                    "REQUEST_CANCELLED" -> MeetingRequestEvent.Cancelled
                     "REQUEST_EXPIRED" -> MeetingRequestEvent.Expired
+                    "MEETING_ENDED" -> MeetingRequestEvent.MeetingEnded
                     else -> null
                 }
             }
     }
 
-    override fun observeIncomingRequests(sheikhId: String): Flow<com.iti.meeting.domain.repository.IncomingRequestEvent> {
+    override fun observeIncomingRequests(sheikhId: String): Flow<IncomingRequestEvent> {
         return stompClient.subscribe(MeetingWsDestinations.sheikhRequests(sheikhId))
             .onStart { stompClient.connect() }
             .mapNotNull { frame ->
@@ -101,16 +118,14 @@ class MeetingRepositoryImpl(
                                 envelope.payload,
                             )
                         }.getOrNull() ?: return@mapNotNull null
-                        com.iti.meeting.domain.repository.IncomingRequestEvent.Received(
+                        IncomingRequestEvent.Received(
                             requestId = payload.requestId,
                             studentName = payload.studentName.orEmpty(),
                             note = payload.note.orEmpty(),
                             expiresAt = payload.expiresAt,
                         )
                     }
-                    "REQUEST_CANCELLED" -> {
-                        IncomingRequestEvent.Cancelled("")
-                    }
+                    "REQUEST_CANCELLED" -> IncomingRequestEvent.Cancelled("")
                     else -> null
                 }
             }
@@ -133,13 +148,20 @@ private fun MeetingSheikhSummaryDto.toDomain(): MeetingSheikhSummary {
 
 private fun MeetingRequestAcceptedDto.toDomain(): MeetingRequestAccepted = MeetingRequestAccepted(
     status = status,
-    circleId = circleId,
+    requestId = requestId,
     channelName = channelName,
-    sheikhAgoraToken = sheikhAgoraToken,
-    uid = uid
+    agoraToken = agoraToken,
+    userAccount = userAccount,
 )
 
+private fun TokenRefreshDto.toDomain(): TokenRefresh = TokenRefresh(
+    token = token,
+    channelName = channelName,
+    userAccount = userAccount,
+)
 
-
-
-
+private fun SheikhAvailabilityDto.toDomain(): SheikhAvailability = SheikhAvailability(
+    sheikhId = sheikhId,
+    status = runCatching { SheikhAvailabilityStatus.valueOf(status) }.getOrDefault(SheikhAvailabilityStatus.OFFLINE),
+    updatedAt = updatedAt,
+)

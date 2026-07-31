@@ -16,14 +16,27 @@ object MeetingEndpoints {
 
     object Sheikh {
         const val ALL = "api/sheikh"
-        fun availability(sheikhId: String) = "api/sheikh/$sheikhId/availability"
-        fun meetingRequests(sheikhId: String) = "api/sheikh/$sheikhId/meeting-requests"
     }
 
-    object MeetingRequests {
-        fun byId(requestId: String) = "api/meeting-requests/$requestId"
+    /** `POST/PUT/GET api/instant-meetings/...` — the Sheikh 1:1 instant meeting request flow. */
+    object InstantMeetings {
+        const val BASE = "api/instant-meetings"
+
+        /** Student only. */
+        fun request(sheikhId: String) = "$BASE/sheikh/$sheikhId/request"
+
+        /** Sheikh only — status derived from the caller's JWT, no sheikhId in the path. */
+        const val SET_AVAILABILITY = "$BASE/sheikh/availability"
+
+        /** Public/student use. */
+        fun getAvailability(sheikhId: String) = "$BASE/sheikh/$sheikhId/availability"
+
+        fun byId(requestId: String) = "$BASE/$requestId"
         fun accept(requestId: String) = "${byId(requestId)}/accept"
         fun decline(requestId: String) = "${byId(requestId)}/decline"
+        fun cancel(requestId: String) = "${byId(requestId)}/cancel"
+        fun end(requestId: String) = "${byId(requestId)}/end"
+        fun token(requestId: String) = "${byId(requestId)}/token"
     }
 }
 
@@ -33,14 +46,21 @@ object MeetingWsDestinations {
 
     fun circleHost(circleId: String) = "/topic/circles/$circleId/host"
     fun circleGuest(circleId: String, guestId: String) = "/topic/circles/$circleId/guest/$guestId"
+
+    /**
+     * The single unified topic for an instant-meeting request's lifecycle
+     * (REQUEST_ACCEPTED/DECLINED/CANCELLED/EXPIRED, MEETING_ENDED once accepted). Both the
+     * requesting student and the responding sheikh subscribe to the same destination once a
+     * requestId exists.
+     */
+    fun meetingRequest(requestId: String) = "/topic/meeting-requests/$requestId"
+
+    /**
+     * NOT CONFIRMED against the real backend — the API contract only documents
+     * [meetingRequest], which requires already knowing a requestId. There is no documented topic
+     * for a sheikh to learn about a brand-new incoming request before one exists client-side.
+     * Left pointing at the old guessed destination pending backend confirmation (see
+     * docs/Meeting-Feature-Status.md).
+     */
     fun sheikhRequests(sheikhId: String) = "/topic/sheikhs/$sheikhId/requests"
-    fun sheikhStatus(sheikhId: String) = "/topic/sheikhs/$sheikhId/status"
-    fun studentMeetingRequest(studentId: String, requestId: String) =
-        "/topic/students/$studentId/meeting-requests/$requestId"
 }
-
-
-
-
-
-
