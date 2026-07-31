@@ -6,36 +6,46 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
 import com.iti.meeting.domain.config.MeetingKitConfig
+import com.iti.meeting.domain.repository.MeetingRepository
+import com.iti.meeting.domain.repository.MeetingRequestEvent
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
 import com.iti.meeting.presentation.core.mvi.StateHolder
 import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 private const val TAG = "MeetingCall"
 
 class CallViewModel(
     private val config: MeetingKitConfig,
+    private val repository: MeetingRepository,
 ) : ViewModel(), StateHolder<CallUiState> by DefaultStateHolder(CallUiState.Connecting) {
 
     var engine: AgoraEngineWrapper? = null
         private set
 
     private var durationJob: Job? = null
+    private var eventsJob: Job? = null
+    private var requestId: String? = null
 
     fun joinChannel(
         context: Context,
+        requestId: String,
         token: String,
         channelName: String,
-        uid: Int,
+        userAccount: String,
         micEnabled: Boolean,
         cameraEnabled: Boolean,
     ) {
         if (engine != null) return
+        this.requestId = requestId
+        observeMeetingEnded(requestId)
 
-        Log.i(TAG, "joinChannel: channel=$channelName uid=$uid appIdLen=${config.agoraAppId.length} tokenLen=${token.length} mic=$micEnabled cam=$cameraEnabled")
+        Log.i(TAG, "joinChannel: channel=$channelName userAccount=$userAccount appIdLen=${config.agoraAppId.length} tokenLen=${token.length} mic=$micEnabled cam=$cameraEnabled")
 
         val eventHandler = object : IRtcEngineEventHandler() {
             override fun onJoinChannelSuccess(channel: String?, joinedUid: Int, elapsed: Int) {
@@ -92,10 +102,12 @@ class CallViewModel(
 
             override fun onTokenPrivilegeWillExpire(token: String?) {
                 Log.w(TAG, "onTokenPrivilegeWillExpire")
+                renewToken()
             }
 
             override fun onRequestToken() {
                 Log.w(TAG, "onRequestToken: engine is requesting a fresh token, current one was rejected/expired")
+                renewToken()
             }
 
             override fun onConnectionLost() {
@@ -109,8 +121,34 @@ class CallViewModel(
 
         val wrapper = AgoraEngineWrapper(context.applicationContext, config.agoraAppId, eventHandler)
         engine = wrapper
-        wrapper.joinChannel(token, channelName, uid, publishAudio = micEnabled, publishVideo = cameraEnabled)
+        wrapper.joinChannel(token, channelName, userAccount, publishAudio = micEnabled, publishVideo = cameraEnabled)
         updateState { CallUiState.InCall(remoteUid = null, isMicEnabled = micEnabled, isCameraEnabled = cameraEnabled) }
+    }
+
+    private fun observeMeetingEnded(requestId: String) {
+        eventsJob?.cancel()
+        eventsJob = repository.observeMeetingRequestEvents(requestId)
+            .onEach { event ->
+                if (event is MeetingRequestEvent.MeetingEnded) {
+                    updateState { CallUiState.Ended }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun renewToken() {
+        val id = requestId ?: return
+        viewModelScope.launch {
+            repository.refreshToken(id).onSuccess { refreshed ->
+                engine?.renewToken(refreshed.token)
+            }
+        }
+    }
+
+    /** Called when the local user explicitly leaves — tells the backend so it can reset the sheikh to AVAILABLE. */
+    fun endCall() {
+        val id = requestId
+        if (id != null) viewModelScope.launch { repository.endMeeting(id) }
     }
 
     private fun startDurationTimer() {
@@ -157,6 +195,7 @@ class CallViewModel(
     override fun onCleared() {
         super.onCleared()
         durationJob?.cancel()
+        eventsJob?.cancel()
         engine?.leaveChannel()
         engine?.destroy()
         engine = null

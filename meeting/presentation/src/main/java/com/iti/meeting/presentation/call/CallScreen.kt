@@ -61,14 +61,19 @@ private val DangerRed = Color(0xFFE94235)
 
 @Composable
 fun CallScreen(
+    requestId: String,
     token: String,
     channelName: String,
-    uid: Int,
+    userAccount: String,
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val handleLeave: () -> Unit = {
+        viewModel.endCall()
+        onLeave()
+    }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.toggleMic()
@@ -81,9 +86,10 @@ fun CallScreen(
     ) { results ->
         viewModel.joinChannel(
             context = context,
+            requestId = requestId,
             token = token,
             channelName = channelName,
-            uid = uid,
+            userAccount = userAccount,
             micEnabled = results[Manifest.permission.RECORD_AUDIO] == true,
             cameraEnabled = results[Manifest.permission.CAMERA] == true,
         )
@@ -91,6 +97,10 @@ fun CallScreen(
 
     LaunchedEffect(Unit) {
         joinPermissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA))
+    }
+
+    if (state is CallUiState.Ended) {
+        LaunchedEffect(Unit) { onLeave() }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(CallBackground)) {
@@ -116,8 +126,10 @@ fun CallScreen(
                 },
                 onToggleSpeaker = viewModel::toggleSpeaker,
                 onSwitchCamera = viewModel::switchCamera,
-                onLeave = onLeave,
+                onLeave = handleLeave,
             )
+
+            CallUiState.Ended -> ConnectingContent()
 
             is CallUiState.Error -> ErrorContent(message = current.message, onLeave = onLeave)
         }

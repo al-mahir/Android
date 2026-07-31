@@ -22,7 +22,7 @@ class AgoraEngineWrapper(context: Context, appId: String, listener: IRtcEngineEv
         setEnableSpeakerphone(true)
     }
 
-    fun joinChannel(token: String, channelName: String, uid: Int, publishAudio: Boolean, publishVideo: Boolean) {
+    fun joinChannel(token: String, channelName: String, userAccount: String, publishAudio: Boolean, publishVideo: Boolean) {
         setLocalAudioEnabled(publishAudio)
         setLocalVideoEnabled(publishVideo)
 
@@ -33,8 +33,12 @@ class AgoraEngineWrapper(context: Context, appId: String, listener: IRtcEngineEv
             autoSubscribeAudio = true
             autoSubscribeVideo = true
         }
-        val result = engine.joinChannel(token, channelName, uid, options)
-        Log.i(TAG, "engine.joinChannel(channel=$channelName, uid=$uid) returned $result (0 = accepted)")
+        val result = engine.joinChannelWithUserAccount(token, channelName, userAccount, options)
+        Log.i(TAG, "engine.joinChannelWithUserAccount(channel=$channelName, userAccount=$userAccount) returned $result (0 = accepted)")
+    }
+
+    fun renewToken(token: String) {
+        engine.renewToken(token)
     }
 
     fun setLocalAudioEnabled(enabled: Boolean) {
