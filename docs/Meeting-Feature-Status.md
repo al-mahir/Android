@@ -239,6 +239,106 @@ Deliberately out of scope through Phase 2 — the app has **no Firebase Messagin
 
 ---
 
+## 🚧 In progress — Phase 1.5: Real backend cutover (instant meetings)
+
+The real backend's Swagger contract for `/api/instant-meetings/...` differs from the guessed
+dummy-backend contract Phase 1 was built against. Cutting over module-by-module; this section is
+appended to after each step (see commit history / this doc's edit timeline for order).
+
+**Step 1 — config (done)**: `local.properties`' `meetingRestBaseUrl`/`meetingWsBaseUrl` are now
+blank by default; `app/build.gradle.kts` and `sheikh-app/build.gradle.kts` derive them from
+`baseUrl` (`https→wss`, `http→ws`) instead of defaulting to `localhost:8080`. Override either
+property explicitly if the meeting feature ever needs a different host than the main API.
+**Unverified**: `MeetingWsDestinations.CONNECT_PATH = "/ws"` — the real backend's STOMP endpoint
+path was never confirmed; if the WS connection fails after this cutover, check this first.
+
+**Step 7/8 — Agora `userAccount` switch + call lifecycle + nav plumbing (done)**:
+`AgoraEngineWrapper.joinChannel` now calls `RtcEngine.joinChannelWithUserAccount(...)` instead of
+`joinChannel(..., uid: Int, ...)`, matching the real accept/token response shape. Added
+`renewToken(token)` to the wrapper. `CallViewModel` now takes a `MeetingRepository` too, keeps the
+`requestId` it was joined with, subscribes the unified `/topic/meeting-requests/{requestId}` topic
+for `MEETING_ENDED` (new terminal `CallUiState.Ended`, `CallScreen` pops via `onLeave` when it
+fires), and actually implements `onTokenPrivilegeWillExpire`/`onRequestToken` by calling `GET
+.../token` and `engine.renewToken(...)` — previously these Agora callbacks were logged and
+ignored, so a token expiring mid-call would have silently dropped the connection. Added
+`CallViewModel.endCall()`, wired to the in-call "leave" button, which calls `POST .../end` so the
+backend resets the sheikh to AVAILABLE — previously leaving the call never told the backend
+anything, so the sheikh would stay stuck BUSY server-side (until whatever TTL/timeout the backend
+enforces) even though the client-side heartbeat isn't involved in that field.
+
+`MeetingRoute.Call` dropped `circleId: String`/`uid: Int` in favor of `requestId: String`/
+`userAccount: String` (there is no "circle" in this flow — that field was a Phase-1 modeling
+mistake, inherited from copying the Circles shape). Updated all call sites: `MeetingNavigation.kt`,
+`MeetingRequestNavigation.kt`, `MeetingRequestScreen.kt`, `SheikhAvailabilityPanel.kt`,
+`AppNavigation.kt`, `SheikhAppNavigation.kt`. `MeetingModule.kt`'s `meetingCallModule` now injects
+`MeetingRepository` into `CallViewModel`.
+
+**Verified**: `:meeting:domain`, `:meeting:data`, `:meeting:presentation`, `:sheikh:presentation`,
+`:presentation`, `:app`, `:sheikh-app` all `compileDebugKotlin` clean (forced, not cache-only).
+**Not yet verified**: on-device run against the real backend — steps 1–5 and 7–10 close every gap
+that was resolvable purely from the Swagger contract you pasted, but the sheikh's "new incoming
+request" notification channel (step 6, see below) is still unresolved, so the sheikh-side accept
+flow can't be exercised end-to-end yet even against the real backend. Worth a manual pass on the
+student side alone (browse → request → pending countdown → decline/expire) once you have a real
+student JWT to test with, since that half doesn't depend on step 6 at all.
+
+### ⛔ Still blocked — Step 6: sheikh's incoming-request notification
+
+Deliberately not touched in this pass, per your instruction to skip it. `observeIncomingRequests`
+in `MeetingRepositoryImpl` still points at the guessed `/topic/sheikhs/{sheikhId}/requests`
+destination from Phase 1 — nothing was changed here, so it's exactly as likely (or unlikely) to
+work as before this refactor. Needs a backend-confirmed answer to: *how does the sheikh app learn
+a new request just arrived, given the only documented topic (`/topic/meeting-requests/{requestId}`)
+requires already knowing the requestId?* Once you have that answer, the fix is isolated to
+`MeetingWsDestinations.sheikhRequests()` and `MeetingRepositoryImpl.observeIncomingRequests()` —
+everything downstream (`AvailabilityViewModel`, accept/decline, the unified per-request topic
+subscription added in step 5) is already written against whatever requestId eventually arrives.
+
+**Step 5 — MEETING_ENDED + reconcile-GET wiring (done)**: `MeetingRepository` gained a
+`reconnected: Flow<Unit>` property (backed by `StompClient.reconnected`, previously dead code —
+nothing consumed it). `AvailabilityViewModel` now reconciles via `getSheikhAvailability(sheikhId)`
+on every reconnect while Available, and after accepting a request it subscribes the unified
+`/topic/meeting-requests/{requestId}` topic so a `MEETING_ENDED` push (either side hanging up, or
+a server-side timeout) resets `Busy → Available` automatically — previously nothing did this, so
+the panel would stay stuck on "Busy" until the sheikh manually left the call screen and came back.
+`AvailabilityHeartbeat.start()/stop()` dropped their `sheikhId` param (no longer needed for the
+REST call). Student-side `MeetingRequestViewModel` dropped its `MeetingCurrentUserProvider`
+dependency entirely (was only used to build the old per-student topic name) and its DI binding was
+updated to match. Added a new terminal `RequestUiState.Ended` (+ EN/AR strings
+`meetingrequest_request_ended*`) for when `MEETING_ENDED` arrives while the student is on the
+Accepted screen.
+
+**Step 4 — `MeetingRepository` domain contract + impl (done)**: added
+`getSheikhAvailability(sheikhId)`, `endMeeting(requestId)`, `refreshToken(requestId)`; new domain
+models `SheikhAvailability`, `TokenRefresh`; `MeetingRequestAccepted` dropped `circleId`, renamed
+`sheikhAgoraToken`→`agoraToken`, `uid`→`userAccount: String`. `setMyAvailability` dropped its
+`sheikhId` param (server derives it from the JWT now). `observeMeetingRequestEvents` collapsed
+from `(studentId, requestId)` to `(requestId)` — single unified topic, used by both sides.
+`MeetingRequestEvent` gained `Cancelled` and `MeetingEnded` variants. `observeIncomingRequests`
+(the sheikh's new-request inbox) is **unchanged/still on the guessed topic** — same open gap as
+step 2.
+
+**Step 3 — DTOs + `MeetingApi.kt` (done)**: every response now unwraps `ApiEnvelope<T>.data`
+(previously only `getAvailableSheikhs()` did). `MeetingRequestAcceptedDto` dropped `circleId`
+entirely and renamed `sheikhAgoraToken`→`agoraToken`, `uid: Int`→`userAccount: String` to match
+the real accept-response schema. Added `TokenRefreshDto` (`GET .../token`) and `endMeeting()`
+(`POST .../end`, empty `data: {}`, response body ignored). `declineMeetingRequest` no longer sends
+a `reason` body — the contract shows no request body for `/decline`, and the one call site
+(`AvailabilityViewModel.decline()`) always passed `null` anyway, so this was dead capability, not
+a feature removal. **Assumption kept from Phase 1, still unverified**: `sendMeetingRequest` still
+sends `{"note": ...}` as a JSON body even though the Swagger "Try it out" for `POST .../request`
+shows no request body section — kept to preserve the existing optional-note UI rather than
+silently drop it; if the backend 4xxs on an unexpected body, this is the first thing to check.
+
+**Step 2 — `MeetingEndpoints.kt` (done)**: rewritten to `api/instant-meetings/...` per the
+Swagger contract. `PUT`/availability-status no longer takes `sheikhId` in the path (server derives
+the sheikh from the JWT). Cancel is now `POST .../cancel` (was `DELETE`). Added `GET
+.../availability`, `GET .../token`, `POST .../end`. WS destinations collapsed to a single
+`/topic/meeting-requests/{requestId}` per the contract, used by both sides once a requestId
+exists. **`sheikhRequests(sheikhId)` topic is UNCHANGED/still guessed** — the contract has no
+documented way for a sheikh to learn about a new incoming request before a requestId exists
+client-side; this is a real gap, not implemented in this pass (see "Open questions" below).
+
 ## Testing checklist (not yet written)
 
 No automated tests exist yet for this feature. Before considering it production-ready:
