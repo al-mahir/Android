@@ -214,4 +214,14 @@
     <string name="guide_mode_muallem">Use Mu\'allem mode to repeat after the Sheikh</string>
     <string name="guide_next">Next →</string>
     <string name="guide_got_it">Got it!</string>
+
+    <!-- Tafsir names -->
+    <string name="tafsir_ibn_kathir">Tafsir Ibn Kathir</string>
+    <string name="tafsir_mukhtasar">Tafsir Al-Mukhtasar</string>
+    <string name="tafsir_jalalayn">Tafsir Al-Jalalayn</string>
+    <string name="tafsir_tabari">Tafsir Al-Tabari</string>
+    <string name="tafsir_baghawy">Tafsir Al-Baghawi</string>
+    <string name="tafsir_qurtubi">Tafsir Al-Qurtubi</string>
+    <string name="tafsir_saadi">Tafsir As-Sa\'di</string>
+    <string name="tafsir_muyassar">Al-Tafsir Al-Muyassar</string>
 </resources>

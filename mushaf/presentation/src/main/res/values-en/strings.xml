@@ -32,4 +32,14 @@
     <string name="last_read_surah_name">%1$s (%2$s)</string>
     <string name="ayah_and_page_format">Ayah %1$d · Page %2$d</string>
     <string name="ayah_title_format">%1$s (%2$s) - Ayah %3$d</string>
+
+    <!-- Tafsir names -->
+    <string name="tafsir_ibn_kathir">Tafsir Ibn Kathir</string>
+    <string name="tafsir_mukhtasar">Tafsir Al-Mukhtasar</string>
+    <string name="tafsir_jalalayn">Tafsir Al-Jalalayn</string>
+    <string name="tafsir_tabari">Tafsir Al-Tabari</string>
+    <string name="tafsir_baghawy">Tafsir Al-Baghawi</string>
+    <string name="tafsir_qurtubi">Tafsir Al-Qurtubi</string>
+    <string name="tafsir_saadi">Tafsir As-Sa\'di</string>
+    <string name="tafsir_muyassar">Al-Tafsir Al-Muyassar</string>
 </resources>

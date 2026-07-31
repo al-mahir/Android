@@ -25,7 +25,7 @@ android {
         if (localPropertiesFile.exists()) {
             localProperties.load(FileInputStream(localPropertiesFile))
         }
-        val baseUrl = localProperties.getProperty("baseUrl", "")
+        val baseUrl = localProperties.getProperty("baseUrl", "http://10.0.2.2:8080")
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
     compileOptions {

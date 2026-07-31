@@ -1,17 +1,23 @@
 package com.iti.al_mahir.navigation
 
+import android.app.Activity
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
+import com.example.designsystem.components.dialog.ConfirmationDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -43,6 +49,8 @@ import com.iti.presentation.settings.SettingsScreen
 import com.iti.presentation.settings.navigation.SettingsRoute
 import com.iti.presentation.sheikh.SheikhDetailsScreen
 import com.iti.presentation.sheikh.SheikhListScreen
+import com.example.designsystem.theme.Theme
+import com.iti.al_mahir.R
 import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
@@ -92,14 +100,6 @@ private fun AppNavHost(
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
 
-    LaunchedEffect(pendingAction) {
-        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
-            backStack.removeAll { it is AppRoute.Mushaf }
-            backStack.add(AppRoute.Mushaf(openInListenMode = true))
-            onActionHandled()
-        }
-    }
-
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
             AppBottomNavDestination.Home -> AppRoute.Home
@@ -109,6 +109,39 @@ private fun AppNavHost(
         backStack.clear()
         backStack.add(root)
     }
+
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = backStack.size == 1) {
+        if (backStack.lastOrNull() == AppRoute.Home) {
+            showExitDialog = true
+        } else {
+            selectTab(AppBottomNavDestination.Home)
+        }
+    }
+
+    if (showExitDialog) {
+        ConfirmationDialog(
+            title = stringResource(R.string.exit_app_title),
+            message = stringResource(R.string.exit_app_message),
+            confirmLabel = stringResource(R.string.exit_app_confirm),
+            dismissLabel = stringResource(R.string.exit_app_cancel),
+            onConfirm = { (context as? Activity)?.finish() },
+            onDismiss = { showExitDialog = false },
+            confirmColor = Theme.colors.error,
+            confirmContentColor = Theme.colors.onError
+        )
+    }
+
+    LaunchedEffect(pendingAction) {
+        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
+            backStack.removeAll { it is AppRoute.Mushaf }
+            backStack.add(AppRoute.Mushaf(openInListenMode = true))
+            onActionHandled()
+        }
+    }
+
+
 
     Box(
         modifier = modifier

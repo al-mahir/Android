@@ -59,6 +59,10 @@ sealed interface MushafIntent {
     // Tafsir
     data class LoadTafsir(val surah: Int, val ayah: Int) : MushafIntent
     data object DismissTafsir : MushafIntent
+    data class ChangeTafsirSource(val tafsirKey: String) : MushafIntent
+    data object RefreshTafsirBooks : MushafIntent
+    data class DownloadTafsir(val tafsirKey: String, val downloadUrl: String) : MushafIntent
+    data class DeleteTafsir(val tafsirKey: String) : MushafIntent
 
     // User Guide
     data object GuideNextStep : MushafIntent
