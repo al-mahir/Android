@@ -32,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -41,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -62,6 +65,7 @@ import com.example.designsystem.components.mushaf.TajweedLegendSheet
 import com.example.designsystem.components.mushaf.CorrectionsSheet
 import com.example.designsystem.components.session.SessionSummarySheet
 import com.example.designsystem.theme.Theme
+import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.SurahCatalog
 import com.example.mushaf.domain.model.SurahOrigin
@@ -70,6 +74,7 @@ import com.example.mushaf.presentation.components.GradingModeToggle
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
 import com.example.mushaf.presentation.components.MushafLoading
+import com.example.mushaf.presentation.components.MushafPageOverlay
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
 import com.example.mushaf.presentation.recite.LiveSessionStatusRow
@@ -119,6 +124,7 @@ fun MushafScreen(
     )
 
     var showReciterPicker by remember { mutableStateOf(false) }
+    var topBarHeightPx by remember { mutableIntStateOf(0) }
 
     val context = LocalContext.current
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
@@ -257,6 +263,13 @@ fun MushafScreen(
                                 },
                                 wordMarks = if (isCurrent) wordMarks else emptyMap(),
                             )
+
+                            MushafPageOverlay(
+                                pageNumber = pageNumber,
+                                juzNumber = MushafConstants.juzForPage(pageNumber),
+                                hizbQuarterInHizb = ((MushafConstants.hizbQuarterForPage(pageNumber) - 1) % 4) + 1,
+                                isRightPage = pageNumber % 2 == 1,
+                            )
                         }
 
                         PageLoadState.Failed ->
@@ -271,15 +284,15 @@ fun MushafScreen(
         MushafTopBar(
             visible = state.areBarsVisible,
             surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
-            juzNumber = state.currentJuzNumber,
-            hizbNumber = 1,
             isBookmarked = false,
             onBack = onBack,
             onBookmark = {},
             onSettings = onOpenSettings,
             onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
             onSearchClick = onSearchClick,
-            modifier = Modifier.align(Alignment.TopCenter),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onGloballyPositioned { topBarHeightPx = it.size.height },
         )
 
         Column(
