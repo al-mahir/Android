@@ -77,7 +77,7 @@ fun MushafPageView(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(start = 12.dp, end = 12.dp, top = 40.dp, bottom = 12.dp),
     ) {
         val availableWidthPx = constraints.maxWidth
         val availableHeightPx = constraints.maxHeight

@@ -85,6 +85,8 @@ class MushafViewModel(
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
+    private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
 ) : ViewModel() {
 
@@ -260,6 +262,9 @@ class MushafViewModel(
                 }
             }
             .launchIn(viewModelScope)
+
+        // Eagerly load available Tafsir books from the backend
+        fetchAvailableTafsirBooks()
     }
 
     fun onIntent(intent: MushafIntent) {
@@ -326,6 +331,22 @@ class MushafViewModel(
             // Tafsir
             is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
             MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
+            is MushafIntent.ChangeTafsirSource -> {
+                _state.update { it.copy(selectedTafsirKey = intent.tafsirKey) }
+                val currentTafsirState = _state.value.tafsirState
+                if (currentTafsirState is com.example.mushaf.presentation.state.TafsirState.Success) {
+                    loadTafsir(currentTafsirState.tafsir.surahNumber, currentTafsirState.tafsir.ayahNumber)
+                } else if (currentTafsirState is com.example.mushaf.presentation.state.TafsirState.Loading) {
+                    loadTafsir(currentTafsirState.surah, currentTafsirState.ayah)
+                }
+            }
+            MushafIntent.RefreshTafsirBooks -> Unit // No-op, it's observed
+            is MushafIntent.DownloadTafsir -> {
+                viewModelScope.launch {
+                    manageTafsirDownload.download(intent.tafsirKey, intent.downloadUrl)
+                }
+            }
+            is MushafIntent.DeleteTafsir -> manageTafsirDownload.delete(intent.tafsirKey)
             
             // User Guide
             MushafIntent.GuideNextStep -> {
@@ -382,9 +403,10 @@ class MushafViewModel(
     }
 
     private fun loadTafsir(surah: Int, ayah: Int) {
+        val tafsirKey = _state.value.selectedTafsirKey
         _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
         viewModelScope.launch {
-            val result = getTafsirForAyah(surah, ayah)
+            val result = getTafsirForAyah(surah, ayah, tafsirKey = tafsirKey)
             when (result) {
                 is Result.Success -> {
                     val tafsir = result.data
@@ -392,7 +414,7 @@ class MushafViewModel(
                         _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
                     } else {
                         _state.update {
-                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(UiText.Resource(R.string.error_not_found)))
+                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(com.example.designsystem.text.UiText.Dynamic("Tafsir not found")))
                         }
                     }
                 }
@@ -404,6 +426,14 @@ class MushafViewModel(
                 }
             }
         }
+    }
+
+    private fun fetchAvailableTafsirBooks() {
+        observeAvailableTafsirBooks().onEach { books ->
+            _state.update { it.copy(availableTafsirBooks = books) }
+        }.catch { e ->
+            Log.w(TAG, "Failed to observe available tafsir books", e)
+        }.launchIn(viewModelScope)
     }
 
     private fun loadReciters() {

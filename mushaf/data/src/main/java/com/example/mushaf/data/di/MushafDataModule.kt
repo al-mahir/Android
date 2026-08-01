@@ -46,10 +46,15 @@ val mushafDataModule = module {
     single { com.example.mushaf.data.db.TafsirDataSource(androidContext()) }
     single { ReaderPreferencesDataStore(androidContext()) }
 
+    // Remote Tafsir data source — uses the main authenticated Almahir HTTP client
+    single { com.example.mushaf.data.tafsir.remote.TafsirRemoteDataSource(get(named("almahir-http-client"))) }
+    single { com.example.mushaf.data.tafsir.local.TafsirDownloadManager(androidContext()) }
+    single { com.example.mushaf.data.tafsir.local.TafsirLocalJsonDataSource(get()) }
+
     single { com.example.mushaf.data.search.remote.SearchApi(get(named(SEARCH_CLIENT))) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
-    single { MushafRepositoryImpl(get(), get(), get(), get(), get()) }
+    single { MushafRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
     single<MushafRepository> { get<MushafRepositoryImpl>() }
     single<LocalWordCorpusRepository> { get<MushafRepositoryImpl>() }
     single<LocalSpeechRecognizer> { AndroidOnDeviceSpeechRecognizer(androidContext()) }

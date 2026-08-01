@@ -35,8 +35,6 @@ import com.example.mushaf.presentation.R
 fun MushafTopBar(
     visible: Boolean,
     surahName: String,
-    juzNumber: Int,
-    hizbNumber: Int,
     isBookmarked: Boolean,
     onBack: () -> Unit,
     onBookmark: () -> Unit,
@@ -73,15 +71,14 @@ fun MushafTopBar(
                 )
             }
 
-            // Clickable surah name pill
+            // Clickable surah name pill (center)
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp), // reduced horizontal space
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                // Tappable surah name pill
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -99,16 +96,6 @@ fun MushafTopBar(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(
-                    text = "  |  ",
-                    style = Theme.typography.body.medium,
-                    color = Theme.colors.secondaryFont,
-                )
-                Text(
-                    text = stringResource(R.string.mushaf_juz_label, juzNumber),
-                    style = Theme.typography.body.medium,
-                    color = Theme.colors.secondaryFont,
-                )
             }
 
             Row(
