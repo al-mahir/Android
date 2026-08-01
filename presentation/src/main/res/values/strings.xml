@@ -54,6 +54,10 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">No connection. Please check your network and try again.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+    
+    <!-- ===== Offline Banner ===== -->
+    <string name="offline_banner_offline">No internet connection</string>
+    <string name="offline_banner_online">Back online</string>
 
     <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
@@ -70,6 +74,12 @@
     <string name="home_last_read">LAST READ</string>
     <!-- %1$d = ayah number, %2$d = page number -->
     <string name="home_ayah_page">Ayah %1$d • Page %2$d</string>
+    <!-- %1$d = ayah number, %2$d = juz number -->
+    <string name="home_ayah_juz">Ayah %1$d • Juz %2$d</string>
+    <!-- %1$d = completion percentage (0-100) -->
+    <string name="home_surah_progress_percent">%1$d%% completed</string>
+    <string name="home_resume_reading">Resume reading</string>
+    <string name="home_search_content_description">Search</string>
     <string name="home_continue_reading_content_description">Continue reading</string>
 
     <!-- %1$s = sheikh name -->
@@ -84,6 +94,12 @@
 
     <string name="home_error_generic">We couldn\'t load your home content. Please try again.</string>
     <string name="home_join_failed">Couldn\'t join the circle. Please try again.</string>
+
+    <!-- Ayah of the Day -->
+    <string name="home_section_ayah_of_the_day">Ayah of the Day</string>
+    <string name="home_ayah_of_the_day_label">AYAH OF THE DAY</string>
+    <!-- %1$s = surah name, %2$d = ayah number -->
+    <string name="home_ayah_surah_label">%1$s • Ayah %2$d</string>
 
     <!-- ===== Profile ===== -->
     <string name="profile_avatar_content_description">Profile picture</string>
@@ -212,4 +228,82 @@
     <string name="attribution_mushaf_body">The Mushaf glyphs and page layout are © King Fahd Glorious Qur\'an Printing Complex.</string>
     <string name="attribution_models_title">Recitation analysis</string>
     <string name="attribution_models_body">Live recitation feedback uses the Muaalem and recitation-segmenter models by obadx.</string>
+    <!-- ===== Sheikh List ===== -->
+    <string name="sheikh_list_title">Teachers</string>
+    <string name="sheikh_search_hint">Search here…</string>
+    <string name="sheikh_filter_all">All Teachers</string>
+    <string name="sheikh_filter_available">Available Only</string>
+    <string name="sheikh_filter_busy">In Session</string>
+    <string name="sheikh_list_count">%1$d available teachers</string>
+    <string name="sheikh_cd_favourite">Favourite</string>
+    <string name="sheikh_status_available">Available</string>
+    <string name="sheikh_status_in_session">In session</string>
+    <string name="sheikh_status_offline">Offline</string>
+
+    <!-- ===== Sheikh Details ===== -->
+    <string name="sheikh_details_title">Sheikh Profile</string>
+    <string name="sheikh_details_request_meeting">Request 1:1 Meeting</string>
+    <string name="sheikh_stat_rating">Rating</string>
+    <string name="sheikh_stat_reviews">Reviews</string>
+    <string name="sheikh_stat_students">Students</string>
+    <string name="sheikh_stat_circles">Circles</string>
+    <string name="sheikh_section_bio">About</string>
+    <string name="sheikh_section_active_circles">Active Circles</string>
+
+    <!-- ===== Circle List ===== -->
+    <string name="circle_list_title">Active Circles</string>
+    <string name="circle_search_hint">Search by Surah or Sheikh…</string>
+    <string name="circle_join">Join</string>
+    <string name="circle_waiting">Waiting</string>
+    <string name="circle_participants_label">%1$d/%2$d · %3$s</string>
+    <string name="circle_difficulty_beginner">Beginner</string>
+    <string name="circle_difficulty_intermediate">Intermediate</string>
+    <string name="circle_difficulty_advanced">Advanced</string>
+
+    <!-- ===== Joining Circle ===== -->
+    <string name="joining_circle_title">Joining Circle</string>
+    <string name="joining_circle_waiting_title">Waiting for Approval…</string>
+    <string name="joining_circle_waiting_body">The host is verifying your request to join the %1$s circle.</string>
+    <string name="joining_circle_cancel">Cancel Request</string>
+
+    <!-- ===== In Session ===== -->
+    <string name="session_leave">Leave</string>
+    <string name="session_host_speaking">Host · Speaking</string>
+    <string name="session_mic_on">Mic</string>
+    <string name="session_mic_off">Muted</string>
+    <string name="session_mushaf">Mushaf</string>
+    <string name="session_raise_hand">Raise</string>
+    <string name="session_chat">Chat</string>    <!-- Meeting Request -->
+    <string name="meetingrequest_browse_title">Select a Sheikh</string>
+    <string name="meetingrequest_browse_empty">No available sheikhs right now.</string>
+    <string name="meetingrequest_request_back">Back</string>
+    <string name="meetingrequest_request_note_label">Note for the Sheikh (Optional)</string>
+    <string name="meetingrequest_request_note_hint">e.g. I\'d like to review Surah Al-Baqarah…</string>
+    <string name="meetingrequest_request_send">Request Meeting</string>
+    <string name="meetingrequest_request_idle_title">Request a 1:1 Meeting</string>
+    <string name="meetingrequest_request_idle_subtitle">Send a short note so the sheikh knows what you\'d like to discuss.</string>
+    <string name="meetingrequest_request_sending_title">Sending your request…</string>
+    <string name="meetingrequest_request_pending_title">Waiting for response...</string>
+    <string name="meetingrequest_request_pending_subtitle">The sheikh has been notified of your request.</string>
+    <string name="meetingrequest_request_pending_expires_in_seconds">Expires in %1$d s</string>
+    <string name="meetingrequest_request_cancel">Cancel Request</string>
+    <string name="meetingrequest_request_accepted_title">Request accepted!</string>
+    <string name="meetingrequest_request_accepted_subtitle">Connecting you to the call…</string>
+    <string name="meetingrequest_request_declined">Request Declined</string>
+    <string name="meetingrequest_request_declined_subtitle">The sheikh isn\'t able to meet right now.</string>
+    <string name="meetingrequest_request_expired">Request Expired</string>
+    <string name="meetingrequest_request_expired_subtitle">The sheikh didn\'t respond in time. Please try again.</string>
+    <string name="meetingrequest_request_ended">Call Ended</string>
+    <string name="meetingrequest_request_ended_subtitle">The meeting has ended.</string>
+    <string name="meetingrequest_request_already_pending_title">Request Already Pending</string>
+    <string name="meetingrequest_request_already_pending_subtitle">You already have a pending request with this sheikh.</string>
+    <string name="meetingrequest_request_already_pending_cancel">Cancel That Request</string>
+
+    <!-- Home — Pending Meeting Request -->
+    <string name="home_pending_meeting_title">Meeting request sent</string>
+    <string name="home_pending_meeting_subtitle">Waiting for %1$s to respond</string>
+    <string name="home_pending_meeting_subtitle_generic">Waiting for the sheikh to respond</string>
+    <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
+    <string name="home_pending_meeting_view">View</string>
+    <string name="home_pending_meeting_cancel">Cancel</string>
 </resources>

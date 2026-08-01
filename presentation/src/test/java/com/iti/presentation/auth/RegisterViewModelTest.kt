@@ -9,7 +9,7 @@ import com.iti.presentation.R
 import com.iti.presentation.auth.register.RegisterEffect
 import com.iti.presentation.auth.register.RegisterIntent
 import com.iti.presentation.auth.register.RegisterViewModel
-import com.iti.presentation.core.ui.UiText
+import com.example.designsystem.text.UiText
 import com.iti.presentation.testing.FakeAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

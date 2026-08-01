@@ -22,3 +22,4 @@ data class AuthData(
     val user: User,
     val isNewUser: Boolean = false
 )
+

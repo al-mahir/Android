@@ -42,6 +42,7 @@ fun ProfileContent(
     onSocialChannelClick: (SocialChannel) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
+    visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
 ) {
     val rootModifier = modifier
         .fillMaxSize()
@@ -58,54 +59,57 @@ fun ProfileContent(
 
         state.isLoading && state.user == null -> ProfileSkeleton(modifier = rootModifier)
 
-        state.user != null -> Column(modifier = rootModifier) {
+        state.user != null -> {
             val user = state.user
 
-            // Account block is pinned: it is the screen's identity, and the menu below is the
-            // only part long enough to need scrolling.
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Theme.spacing.large),
-                modifier = Modifier.padding(
-                    top = Theme.spacing.large,
-                    bottom = Theme.spacing.large,
-                ),
-            ) {
-                ProfileHeader(
-                    displayName = user.displayName,
-                    email = user.email,
-                    initials = user.initials,
-                    avatarUrl = user.avatarUrl,
-                    modifier = gutter,
-                )
-
-                SubscriptionStatusRow(
-                    isPremium = state.isPremium,
-                    joinedAtEpochMillis = user.joinedAtEpochMillis,
-                    modifier = gutter,
-                )
-
-                AccountActionsBlock(
-                    isPremium = state.isPremium,
-                    isRestoringPurchases = state.isRestoringPurchases,
-                    onPremiumClick = onPremiumClick,
-                    onRestorePurchasesClick = onRestorePurchasesClick,
-                    onLogoutClick = onLogoutClick,
-                    modifier = gutter,
-                )
-
-                SocialMediaChannelsRow(
-                    onChannelClick = onSocialChannelClick,
-                    modifier = gutter,
-                )
-            }
-
             LazyColumn(
-                modifier = Modifier.weight(1f),
+                modifier = rootModifier,
                 contentPadding = PaddingValues(
                     bottom = Theme.spacing.large + bottomNavBarHeight(),
                 ),
             ) {
-                items(items = MenuEntries, key = { entry -> entry.type.name }) { entry ->
+                item(key = "profile-header") {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Theme.spacing.large),
+                        modifier = Modifier.padding(
+                            top = Theme.spacing.large,
+                            bottom = Theme.spacing.large,
+                        ),
+                    ) {
+                        ProfileHeader(
+                            displayName = user.displayName,
+                            email = user.email,
+                            initials = user.initials,
+                            avatarUrl = user.avatarUrl,
+                            modifier = gutter,
+                        )
+
+                        SubscriptionStatusRow(
+                            isPremium = state.isPremium,
+                            joinedAtEpochMillis = user.joinedAtEpochMillis,
+                            modifier = gutter,
+                        )
+
+                        if (!state.isOffline) {
+                            AccountActionsBlock(
+                                isPremium = state.isPremium,
+                                isRestoringPurchases = state.isRestoringPurchases,
+                                onPremiumClick = onPremiumClick,
+                                onRestorePurchasesClick = onRestorePurchasesClick,
+                                onLogoutClick = onLogoutClick,
+                                modifier = gutter,
+                            )
+
+                            SocialMediaChannelsRow(
+                                onChannelClick = onSocialChannelClick,
+                                modifier = gutter,
+                            )
+                        }
+                    }
+                }
+
+                val visibleEntries = MenuEntries.filter { it.type in visibleMenuItems }
+                items(items = visibleEntries, key = { entry -> entry.type.name }) { entry ->
                     ProfileMenuRow(
                         title = stringResource(entry.titleRes),
                         iconRes = entry.iconRes,
@@ -121,13 +125,15 @@ fun ProfileContent(
                     )
                 }
 
-                item(key = "delete-account") {
-                    ProfileMenuRow(
-                        title = stringResource(R.string.profile_delete_account),
-                        contentColor = Theme.colors.error,
-                        onClick = onDeleteAccountClick,
-                        modifier = gutter.padding(top = Theme.spacing.small),
-                    )
+                if (!state.isOffline) {
+                    item(key = "delete-account") {
+                        ProfileMenuRow(
+                            title = stringResource(R.string.profile_delete_account),
+                            contentColor = Theme.colors.error,
+                            onClick = onDeleteAccountClick,
+                            modifier = gutter.padding(top = Theme.spacing.small),
+                        )
+                    }
                 }
             }
         }
@@ -152,8 +158,8 @@ private val MenuEntries = listOf(
     MenuEntry(
         type = ProfileMenuType.SETTINGS,
         titleRes = R.string.settings_title,
-        iconRes = DesignSystemR.drawable.ic_theme_mode,
-        showChevron = false,
+        iconRes = DesignSystemR.drawable.ic_settings,
+        showChevron = true,
     ),
     MenuEntry(
         type = ProfileMenuType.ABOUT,

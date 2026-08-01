@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.Theme.AlMahir" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Light *content* (white icons), legible against the dark app background. -->
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

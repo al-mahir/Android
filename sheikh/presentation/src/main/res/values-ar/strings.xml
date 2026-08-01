@@ -1,0 +1,22 @@
+<resources>
+    <string name="sheikh_home_brand_title">المَاهِر</string>
+    <string name="sheikh_home_greeting">أهلاً بعودتك</string>
+    <string name="sheikh_home_greeting_subtitle">إدارة حالة التواجد والحلقات الخاصة بك.</string>
+    <string name="sheikh_home_avatar_content_description">فتح الملف الشخصي</string>
+
+    <string name="sheikh_home_error_generic">حدث خطأ ما. حاول مرة أخرى.</string>
+
+    <string name="meetingrequest_availability_incoming_request_title">طلب من %1$s</string>
+    <string name="meetingrequest_availability_expires_in_seconds">تنتهي خلال %1$d ثانية</string>
+    <string name="meetingrequest_availability_incoming_request_accept">قبول</string>
+    <string name="meetingrequest_availability_incoming_request_decline">رفض</string>
+    <string name="meetingrequest_availability_available_title">أنت متاح</string>
+    <string name="meetingrequest_availability_available_subtitle">في انتظار الطلبات الواردة...</string>
+    <string name="meetingrequest_availability_offline_title">أنت غير متصل</string>
+    <string name="meetingrequest_availability_offline_subtitle">فعّل التواجد لاستقبال طلبات اللقاءات.</string>
+    <string name="meetingrequest_availability_toggle_offline">إنهاء التواجد</string>
+    <string name="meetingrequest_availability_toggle_available">تفعيل التواجد</string>
+    <string name="meetingrequest_availability_busy_title">أنت مشغول</string>
+    <string name="meetingrequest_availability_busy_subtitle">في لقاء حالياً.</string>
+    <string name="meetingrequest_availability_busy_rejoin">الانضمام مجدداً</string>
+</resources>

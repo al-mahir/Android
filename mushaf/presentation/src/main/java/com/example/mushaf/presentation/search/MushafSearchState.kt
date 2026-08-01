@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation.search
 
+import com.example.designsystem.text.UiText
 import com.example.mushaf.domain.model.AyahSearchResult
 import com.example.mushaf.domain.model.Hizb
 import com.example.mushaf.domain.model.Juz
@@ -16,10 +17,11 @@ data class MushafSearchState(
     val hizbs: List<Hizb> = emptyList(),
     val pages: List<Int> = emptyList(),
     val ayahs: List<AyahSearchResult> = emptyList(),
+    val tafsirs: List<com.example.mushaf.domain.model.TafsirResult> = emptyList(),
     val isPaginatingAyahs: Boolean = false,
     val hasReachedEndAyahs: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
     val lastReadSession: LastReadSession? = null,
     val shouldNavigateToMushaf: Boolean = false
 )

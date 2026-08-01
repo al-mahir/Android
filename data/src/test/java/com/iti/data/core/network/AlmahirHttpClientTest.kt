@@ -108,14 +108,21 @@ class AlmahirHttpClientTest {
 
     private class FakeTokenStore(initial: TokenPair?) : TokenStore {
         private val state = MutableStateFlow(initial)
+        private val userState = MutableStateFlow<String?>(null)
         override val tokens: Flow<TokenPair?> = state
+        override val userId: Flow<String?> = userState
         override suspend fun getTokens(): TokenPair? = state.value
+        override suspend fun getUserId(): String? = userState.value
         override suspend fun save(tokens: TokenPair) {
             state.value = tokens
+        }
+        override suspend fun saveUserId(userId: String) {
+            userState.value = userId
         }
 
         override suspend fun clear() {
             state.value = null
+            userState.value = null
         }
     }
 

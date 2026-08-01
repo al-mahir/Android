@@ -8,6 +8,7 @@
     <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
     <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
     <string name="mushaf_retry">إعادة المحاولة</string>
+    <string name="mushaf_offline_mode_not_available">هذا الوضع يحتاج إلى اتصال بالإنترنت.</string>
 
     <!-- Tajweed toggle -->
     <string name="mushaf_tajweed_label">التجويد</string>
@@ -19,6 +20,8 @@
     <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
 
     <!-- Top bar -->
+    <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="search_meaning_offline">البحث بالمعنى يحتاج إلى اتصال بالإنترنت.</string>
     <string name="mushaf_juz_label">الجزء %1$d</string>
     <string name="mushaf_hizb_label">الحزب %1$d</string>
 
@@ -109,6 +112,12 @@
     <!-- Errors -->
     <string name="downloads_error_generic">لم نتمكن من تحميل هذه القائمة. يرجى المحاولة مرة أخرى.</string>
 
+    <!-- ===== Shared domain error messages ===== -->
+    <string name="error_network">خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.</string>
+    <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+    <string name="error_unauthorized">انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.</string>
+    <string name="error_not_found">تعذّر العثور على ما كنت تبحث عنه.</string>
+
     <!-- ===== Mushaf preferences (settings section) ===== -->
     <string name="settings_section_mushaf">تفضيلات المصحف</string>
     <string name="settings_tajweed_description">تلوين النص وفق أحكام التجويد</string>
@@ -193,4 +202,25 @@
     <string name="recite_settings_moshaf_advanced">خيارات متقدمة</string>
     <string name="recite_settings_moshaf_reset">إعادة ضبط رواية التلاوة</string>
     <string name="recite_settings_moshaf_reset_hint">تُعيد كل حكم إلى الوضع الافتراضي في الخادم.</string>
+
+    <!-- User Guide -->
+    <string name="guide_step_counter">الخطوة %1$d من %2$d</string>
+    <string name="guide_surah_name">اضغط هنا لاستعراض السور الـ 114</string>
+    <string name="guide_ayah_long_press">اضغط مطولاً على أي آية لعرض تفسيرها</string>
+    <string name="guide_mode_reading">استخدم وضع القراءة لعرض المصحف التقليدي</string>
+    <string name="guide_mode_listen">استخدم وضع الاستماع لسماع التلاوات</string>
+    <string name="guide_mode_recitation">استخدم وضع التلاوة للحصول على تصحيح مباشر لتلاوتك باستخدام الذكاء الاصطناعي</string>
+    <string name="guide_mode_muallem">استخدم وضع المُعلِّم للتكرار بعد الشيخ</string>
+    <string name="guide_next">→ التالي</string>
+    <string name="guide_got_it">فهمت!</string>
+
+    <!-- Tafsir names -->
+    <string name="tafsir_ibn_kathir">تفسير ابن كثير</string>
+    <string name="tafsir_mukhtasar">تفسير المختصر</string>
+    <string name="tafsir_jalalayn">تفسير الجلالين</string>
+    <string name="tafsir_tabari">تفسير الطبري</string>
+    <string name="tafsir_baghawy">تفسير البغوي</string>
+    <string name="tafsir_qurtubi">تفسير القرطبي</string>
+    <string name="tafsir_saadi">تفسير السعدي</string>
+    <string name="tafsir_muyassar">التفسير الميسر</string>
 </resources>

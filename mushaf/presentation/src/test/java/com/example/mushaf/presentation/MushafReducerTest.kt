@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -73,11 +74,22 @@ class MushafReducerTest {
 
     private class FakeMushafRepo : MushafRepository {
         val loadCounts = mutableMapOf<Int, Int>()
-        override fun getPage(pageNumber: Int): Flow<MushafPage> {
+        override fun getPage(pageNumber: Int): Flow<Result<MushafPage>> {
             loadCounts[pageNumber] = (loadCounts[pageNumber] ?: 0) + 1
-            return flowOf(MushafPage(pageNumber, emptyList()))
+            return flowOf(Result.Success(MushafPage(pageNumber, emptyList())))
         }
-        override suspend fun getPageCount(): Int = 604
+        override suspend fun getPageCount(): Result<Int> = Result.Success(604)
+        override suspend fun searchSurah(query: String): Result<List<com.example.mushaf.domain.model.Surah>> = Result.Success(emptyList())
+        override suspend fun searchJuz(query: String): Result<List<com.example.mushaf.domain.model.Juz>> = Result.Success(emptyList())
+        override suspend fun searchHizb(query: String): Result<List<com.example.mushaf.domain.model.Hizb>> = Result.Success(emptyList())
+        override suspend fun searchPage(query: String): Result<List<Int>> = Result.Success(emptyList())
+        override suspend fun searchAyah(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     private class FakePrefsRepo(initial: ReaderPreferences) : ReaderPreferencesRepository {
@@ -85,14 +97,17 @@ class MushafReducerTest {
         var savedTajweed: Boolean? = null
         var savedPage: Int? = null
         override val preferences: Flow<ReaderPreferences> = flow
-        override suspend fun setTajweedEnabled(enabled: Boolean) {
+        override suspend fun setTajweedEnabled(enabled: Boolean): Result<Unit> {
             savedTajweed = enabled
             flow.value = flow.value.copy(tajweedEnabled = enabled)
+            return Result.Success(Unit)
         }
-        override suspend fun setLastPage(page: Int) {
+        override suspend fun setLastPage(page: Int): Result<Unit> {
             savedPage = page
             flow.value = flow.value.copy(lastPage = page)
+            return Result.Success(Unit)
         }
+        override suspend fun setFirstMushafLaunchCompleted(): Result<Unit> = Result.Success(Unit)
     }
 
     private class FakeRecitationRepo : RecitationRepository {
@@ -145,7 +160,7 @@ class MushafReducerTest {
         override fun session(
             config: LiveRecitationConfig,
             controls: Flow<RecitationControl>,
-        ): Flow<LiveRecitationEvent> = channelFlow {
+        ): Flow<Result<LiveRecitationEvent>> = channelFlow<LiveRecitationEvent> {
             isRunning = true
             sessionCount++
             lastConfig = config
@@ -167,7 +182,7 @@ class MushafReducerTest {
             } finally {
                 isRunning = false
             }
-        }
+        }.map { Result.Success(it) }
     }
 
      
@@ -203,22 +218,58 @@ class MushafReducerTest {
      
     private class FakeSessionRepo : RecitationSessionRepository {
         val saved = mutableListOf<RecitationSessionSummary>()
-        override fun observeSessions(): Flow<List<RecitationSessionSummary>> = flowOf(saved)
-        override fun observeSession(id: String): Flow<RecitationSessionSummary?> =
-            flowOf(saved.firstOrNull { it.id == id })
-        override suspend fun save(summary: RecitationSessionSummary) { saved += summary }
-        override suspend fun delete(id: String) { saved.removeAll { it.id == id } }
-        override suspend fun deleteAll() { saved.clear() }
+        override fun observeSessions(): Flow<Result<List<RecitationSessionSummary>>> = flowOf(Result.Success(saved))
+        override fun observeSession(id: String): Flow<Result<RecitationSessionSummary?>> =
+            flowOf(Result.Success(saved.firstOrNull { it.id == id }))
+        override suspend fun save(summary: RecitationSessionSummary): Result<Unit> {
+            saved += summary
+            return Result.Success(Unit)
+        }
+        override suspend fun delete(id: String): Result<Unit> {
+            saved.removeAll { it.id == id }
+            return Result.Success(Unit)
+        }
+        override suspend fun deleteAll(): Result<Unit> {
+            saved.clear()
+            return Result.Success(Unit)
+        }
     }
 
-     
+
     private class FakeSettingsRepo(
         initial: RecitationSettings = RecitationSettings(),
     ) : RecitationSettingsRepository {
         private val state = MutableStateFlow(initial)
         override val settings: Flow<RecitationSettings> = state
-        override suspend fun update(settings: RecitationSettings) { state.value = settings }
+        override suspend fun update(settings: RecitationSettings): Result<Unit> {
+            state.value = settings
+            return Result.Success(Unit)
+        }
         val current: RecitationSettings get() = state.value
+    }
+
+    private class FakeLocalSpeechRecognizer(
+        private val availabilityValue: com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability =
+            com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.UNAVAILABLE,
+        private val scriptedWords: List<String> = emptyList(),
+    ) : com.example.mushaf.domain.repository.LocalSpeechRecognizer {
+        override fun availability() = availabilityValue
+        override fun listen(): Flow<String> = kotlinx.coroutines.flow.flow {
+            scriptedWords.forEach { emit(it) }
+            // Real recognizers never complete on their own; a script that runs out without a
+            // lock should time out like a real "nothing matched" session, not end the flow.
+            kotlinx.coroutines.awaitCancellation()
+        }
+    }
+
+    private class FakeLocalWordCorpusRepository(
+        private val entries: List<com.example.mushaf.domain.model.recite.local.LocalWordEntry> = emptyList(),
+    ) : com.example.mushaf.domain.repository.LocalWordCorpusRepository {
+        override suspend fun wordsFrom(cursor: RecitationCursor, count: Int): Result<List<com.example.mushaf.domain.model.recite.local.LocalWordEntry>> {
+            val startIndex = entries.indexOfFirst { it.wordId == cursor.wordId }
+            if (startIndex < 0) return Result.Success(emptyList())
+            return Result.Success(entries.drop(startIndex).take(count))
+        }
     }
 
     private fun buildViewModel(
@@ -227,19 +278,25 @@ class MushafReducerTest {
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
+        localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
+        localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
             observeReaderPreferences = ObserveReaderPreferencesUseCase(prefs),
             setTajweedEnabled = SetTajweedEnabledUseCase(prefs),
+            setFirstMushafLaunchCompleted = com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(prefs),
             saveLastPage = SaveLastPageUseCase(prefs),
             getReciters = GetRecitersUseCase(FakeRecitationRepo()),
             getAyahTimings = GetAyahTimingsUseCase(FakeRecitationRepo()),
+            getTafsirForAyah = com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(mushafRepo),
             playbackManager = FakeAudioPlayer(),
             startLiveRecitation = StartLiveRecitationUseCase(liveRepo),
             saveRecitationSession = SaveRecitationSessionUseCase(sessionRepo),
             observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
+            localSpeechRecognizer = localSpeechRecognizer,
+            localWordCorpusRepository = localWordCorpusRepository,
         )
     }
 
@@ -659,6 +716,123 @@ class MushafReducerTest {
         assertEquals(mapOf("madd_monfasel_len" to MoshafValue.Number(4)), config?.moshaf)
     }
 
+
+    @Test
+    fun `the session starts immediately at the top of the page, never delayed by detection`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = live,
+            localSpeechRecognizer = FakeLocalSpeechRecognizer(
+                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
+                scriptedWords = listOf("الله", "الرحمن"),
+            ),
+            localWordCorpusRepository = FakeLocalWordCorpusRepository(
+                listOf(
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
+                ),
+            ),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(
+            "grading must start at the top of the page immediately - nothing the reciter says " +
+                "before detection locks may go ungraded",
+            RecitationCursor.fromWordId("5:1:1"),
+            live.lastConfig?.start,
+        )
+    }
+
+    @Test
+    fun `local detection re-points the already-running session via seek, no tap required`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = live,
+            localSpeechRecognizer = FakeLocalSpeechRecognizer(
+                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
+                scriptedWords = listOf("الله", "الرحمن"),
+            ),
+            localWordCorpusRepository = FakeLocalWordCorpusRepository(
+                listOf(
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
+                ),
+            ),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertTrue(
+            "detection should have re-pointed the running session at the word it locked onto",
+            live.received.contains(RecitationControl.Seek(RecitationCursor.fromWordId("5:1:2")!!)),
+        )
+        assertEquals(
+            "the highlight should jump to the detected word as soon as it locks, without " +
+                "waiting for the server to confirm it",
+            "5:1:2",
+            vm.state.value.highlightedWordId,
+        )
+    }
+
+    @Test
+    fun `if local detection times out without a lock, the running session is left alone`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = live,
+            localSpeechRecognizer = FakeLocalSpeechRecognizer(
+                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
+                scriptedWords = listOf("شجرة"),
+            ),
+            localWordCorpusRepository = FakeLocalWordCorpusRepository(
+                listOf(
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
+                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
+                ),
+            ),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(RecitationCursor.fromWordId("5:1:1"), live.lastConfig?.start)
+        assertTrue("no lock should mean no seek", live.received.none { it is RecitationControl.Seek })
+    }
+
+    @Test
+    fun `when no local recognizer is available, the session starts at the top of the page immediately`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = live,
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(RecitationCursor.fromWordId("5:1:1"), live.lastConfig?.start)
+    }
+
     @Test
     fun `hifz-only grading sends an empty rule list, not a null one`() = runTest(dispatcher) {
         val live = startedSession()
@@ -919,31 +1093,44 @@ class MushafReducerTest {
 
      
     private class WordedMushafRepo : MushafRepository {
-        override fun getPage(pageNumber: Int): Flow<MushafPage> = flowOf(
-            MushafPage(
-                pageNumber = pageNumber,
-                lines = listOf(
-                    MushafLine(
-                        lineNumber = 1,
-                        type = LineType.AYAH,
-                        isCentered = false,
-                        surahNumber = null,
-                        words = (1..4).map { index ->
-                            MushafWord(
-                                id = "$pageNumber:1:$index",
-                                glyphs = "w",
-                                pageNumber = pageNumber,
-                                lineNumber = 1,
-                                positionInLine = index,
-                                isEndOfAyah = index == 4,
-                            )
-                        },
+        override fun getPage(pageNumber: Int): Flow<Result<MushafPage>> = flowOf(
+            Result.Success(
+                MushafPage(
+                    pageNumber = pageNumber,
+                    lines = listOf(
+                        MushafLine(
+                            lineNumber = 1,
+                            type = LineType.AYAH,
+                            isCentered = false,
+                            surahNumber = null,
+                            words = (1..4).map { index ->
+                                MushafWord(
+                                    id = "$pageNumber:1:$index",
+                                    glyphs = "w",
+                                    pageNumber = pageNumber,
+                                    lineNumber = 1,
+                                    positionInLine = index,
+                                    isEndOfAyah = index == 4,
+                                )
+                            },
+                        ),
                     ),
                 ),
             ),
         )
 
-        override suspend fun getPageCount(): Int = 604
+        override suspend fun getPageCount(): Result<Int> = Result.Success(604)
+        override suspend fun searchSurah(query: String): Result<List<com.example.mushaf.domain.model.Surah>> = Result.Success(emptyList())
+        override suspend fun searchJuz(query: String): Result<List<com.example.mushaf.domain.model.Juz>> = Result.Success(emptyList())
+        override suspend fun searchHizb(query: String): Result<List<com.example.mushaf.domain.model.Hizb>> = Result.Success(emptyList())
+        override suspend fun searchPage(query: String): Result<List<Int>> = Result.Success(emptyList())
+        override suspend fun searchAyah(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun searchAyahByMeaning(query: String, mode: String, hyde: Boolean, limit: Int): Result<List<com.example.mushaf.domain.model.AyahSearchResult>> = Result.Success(emptyList())
+        override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     @Test

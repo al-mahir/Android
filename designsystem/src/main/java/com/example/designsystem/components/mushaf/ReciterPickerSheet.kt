@@ -80,19 +80,21 @@ fun ReciterPickerSheet(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (isSelected) {
                                 Icon(
-                                    imageVector = Icons.Default.Check,
+                                    painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_check),
                                     contentDescription = "Selected",
                                     tint = Theme.colors.primary,
                                     modifier = Modifier.padding(end = Theme.spacing.small)
                                 )
                             }
                             
-                            IconButton(onClick = { onDownloadClick?.invoke(reciter) }) {
-                                Icon(
-                                    painter = androidx.compose.ui.res.painterResource(id = android.R.drawable.stat_sys_download),
-                                    contentDescription = "Download options",
-                                    tint = Theme.colors.primary
-                                )
+                            if (onDownloadClick != null) {
+                                IconButton(onClick = { onDownloadClick.invoke(reciter) }) {
+                                    Icon(
+                                        painter = androidx.compose.ui.res.painterResource(id = android.R.drawable.stat_sys_download),
+                                        contentDescription = "Download options",
+                                        tint = Theme.colors.primary
+                                    )
+                                }
                             }
                         }
                     }

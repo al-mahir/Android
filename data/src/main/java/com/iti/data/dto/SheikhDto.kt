@@ -9,6 +9,10 @@ data class SheikhDto(
     @SerialName("name") val name: String,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("rating") val rating: Double,
-    /** Raw backend token: `available`, `in_session`, `offline`. Unknown values map to offline. */
+    @SerialName("review_count") val reviewCount: Int = 0,
     @SerialName("availability") val availability: String,
+    @SerialName("specialization") val specialization: String = "",
+    @SerialName("bio") val bio: String = "",
+    @SerialName("active_circle_count") val activeCircleCount: Int = 0,
+    @SerialName("total_students") val totalStudents: Int = 0,
 )

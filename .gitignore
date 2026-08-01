@@ -34,24 +34,8 @@ keystore.properties
 
 # ──────────────────────────────────────────────────────────
 # IntelliJ IDEA / Android Studio — machine-specific files
-# (Keep: gradle.xml, misc.xml, vcs.xml, AndroidProjectSystem.xml, .name)
 # ──────────────────────────────────────────────────────────
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/shelf/
-.idea/caches/
-.idea/libraries/
-.idea/modules.xml
-.idea/assetWizardSettings.xml
-.idea/navEditor.xml
-.idea/deploymentTargetSelector.xml
-.idea/deviceManager.xml
-.idea/compiler.xml
-.idea/runConfigurations.xml
-.idea/inspectionProfiles/
-.idea/sonarlint/
-.idea/uiDesigner.xml
-.idea/dictionaries/
+.idea/
 
 # ──────────────────────────────────────────────────────────
 # External native build

@@ -16,6 +16,7 @@ import com.iti.presentation.core.platform.findActivity
 import com.iti.presentation.profile.components.ProfileConfirmationDialogs
 import com.iti.presentation.profile.model.ProfileWebTarget
 import com.iti.presentation.profile.model.SocialChannel
+import com.iti.presentation.profile.model.ProfileMenuType
 import com.iti.presentation.profile.state.ProfileEffect
 import com.iti.presentation.profile.state.ProfileIntent
 import org.koin.androidx.compose.koinViewModel
@@ -31,6 +32,7 @@ fun ProfileScreen(
     onOpenSessions: () -> Unit = {},
     onOpenAttributions: () -> Unit = {},
     modifier: Modifier = Modifier,
+    visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
     viewModel: ProfileViewModel = koinViewModel(),
     reviewLauncher: AppReviewLauncher = koinInject(),
 ) {
@@ -99,6 +101,7 @@ fun ProfileScreen(
         onSocialChannelClick = { channel -> viewModel.onIntent(ProfileIntent.SocialChannelClicked(channel)) },
         onRetryClick = { viewModel.onIntent(ProfileIntent.Retry) },
         modifier = modifier,
+        visibleMenuItems = visibleMenuItems,
     )
 
     ProfileConfirmationDialogs(

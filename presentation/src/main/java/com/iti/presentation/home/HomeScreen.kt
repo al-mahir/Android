@@ -20,6 +20,7 @@ fun HomeScreen(
     onOpenSheikh: (String) -> Unit,
     onOpenSheikhList: () -> Unit,
     onOpenCircleList: () -> Unit,
+    onOpenMeetingRequest: (String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -34,6 +35,7 @@ fun HomeScreen(
             HomeEffect.OpenCircleList -> onOpenCircleList()
             is HomeEffect.OpenMushafAtPage -> onOpenMushafAtPage(effect.page)
             is HomeEffect.OpenSheikh -> onOpenSheikh(effect.sheikhId)
+            is HomeEffect.OpenMeetingRequest -> onOpenMeetingRequest(effect.sheikhId, effect.sheikhName)
             is HomeEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
@@ -49,6 +51,8 @@ fun HomeScreen(
         onSheikhClick = { sheikhId -> viewModel.onIntent(HomeIntent.SheikhClicked(sheikhId)) },
         onJoinCircleClick = { circleId -> viewModel.onIntent(HomeIntent.JoinCircleClicked(circleId)) },
         onRetryClick = { viewModel.onIntent(HomeIntent.Retry) },
+        onViewPendingMeetingClick = { viewModel.onIntent(HomeIntent.ViewPendingMeetingClicked) },
+        onCancelPendingMeetingClick = { viewModel.onIntent(HomeIntent.CancelPendingMeetingClicked) },
         modifier = modifier,
     )
 }

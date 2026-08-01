@@ -27,6 +27,10 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationPacer
 import com.example.mushaf.domain.model.recite.RecitationSessionRecorder
 import com.example.mushaf.domain.model.recite.mergedWith
+import com.example.mushaf.domain.model.recite.local.RecitationStartDetector
+import com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability
+import com.example.mushaf.domain.repository.LocalSpeechRecognizer
+import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.presentation.state.ChunkOutcome
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 import com.example.mushaf.presentation.state.CaptureError
@@ -39,6 +43,9 @@ import com.example.mushaf.presentation.highlight.HighlightDriver
 import com.example.mushaf.presentation.highlight.SimulatedHighlightDriver
 import com.example.mushaf.presentation.state.MushafEffect
 import com.iti.domain.core.Result
+import com.iti.domain.core.getOrNull
+import com.example.designsystem.text.UiText
+import com.example.mushaf.presentation.core.error.toUiText
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.MushafUiState
 import kotlinx.coroutines.CancellationException
@@ -56,22 +63,33 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 class MushafViewModel(
     private val getPage: GetPageUseCase,
     private val observeReaderPreferences: ObserveReaderPreferencesUseCase,
     private val setTajweedEnabled: SetTajweedEnabledUseCase,
+    private val setFirstMushafLaunchCompleted: com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase,
     private val saveLastPage: SaveLastPageUseCase,
     private val getReciters: GetRecitersUseCase,
     private val getAyahTimings: GetAyahTimingsUseCase,
+    private val getTafsirForAyah: com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase,
     private val playbackManager: AudioPlayer,
     private val startLiveRecitation: StartLiveRecitationUseCase,
     private val saveRecitationSession: SaveRecitationSessionUseCase,
     private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val downloadRecitation: com.example.mushaf.domain.usecase.DownloadRecitationUseCase,
+    private val localSpeechRecognizer: LocalSpeechRecognizer,
+    private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
+    private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
+    private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
+    private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -89,6 +107,8 @@ class MushafViewModel(
     private var initialized = false
     private val loadJobs = mutableMapOf<Int, Job>()
     private var sessionJob: Job? = null
+    private var pendingStartDetection = false
+    private var detectionJob: Job? = null
     private var controlChannel: Channel<RecitationControl>? = null
 
      
@@ -135,6 +155,11 @@ class MushafViewModel(
 
         const val CLIPPING_THRESHOLD = 0.99f
 
+        // Generous on purpose: a careful reciter plus network-recognizer round-trip latency
+        // per word can easily need several seconds just to produce the 2 consecutive words
+        // RecitationStartDetector requires to disambiguate a common word like "الله".
+        const val START_DETECTION_TIMEOUT_MS = 15_000L
+
         
 
 
@@ -162,9 +187,7 @@ class MushafViewModel(
                     if (nextPage <= MushafConstants.LAST_PAGE) {
                         viewModelScope.launch {
                             if (!_state.value.pages.containsKey(nextPage)) {
-                                kotlin.runCatching {
-                                    getPage(nextPage).first()
-                                }.getOrNull()?.let { loaded ->
+                                getPage(nextPage).first().getOrNull()?.let { loaded ->
                                     _state.update { it.copy(pages = it.pages + (nextPage to loaded)) }
                                 }
                             }
@@ -191,6 +214,15 @@ class MushafViewModel(
 
         playbackManager.playbackSpeed
             .onEach { speed -> _state.update { it.copy(playbackSpeed = speed) } }
+            .launchIn(viewModelScope)
+
+        playbackManager.externalCommands
+            .onEach { command ->
+                when (command) {
+                    "ACTION_NEXT_SURAH" -> onIntent(MushafIntent.NextSurahAudio)
+                    "ACTION_PREV_SURAH" -> onIntent(MushafIntent.PrevSurahAudio)
+                }
+            }
             .launchIn(viewModelScope)
 
         loadReciters()
@@ -220,11 +252,25 @@ class MushafViewModel(
             }
             .onEach { prefs ->
                 Log.d(TAG, "Preferences: tajweed=${prefs.tajweedEnabled}, lastPage=${prefs.lastPage}")
-                _state.update { it.copy(isTajweedEnabled = prefs.tajweedEnabled) }
+                _state.update { 
+                    it.copy(
+                        isTajweedEnabled = prefs.tajweedEnabled,
+                        showUserGuide = prefs.isFirstMushafLaunch
+                    ) 
+                }
                 if (!initialized) {
                     initialized = true
                     onIntent(MushafIntent.LoadPage(prefs.lastPage))
                 }
+            }
+            .launchIn(viewModelScope)
+
+        // Eagerly load available Tafsir books from the backend
+        fetchAvailableTafsirBooks()
+
+        connectivityObserver.status
+            .onEach { status ->
+                _state.update { it.copy(isOffline = status == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) }
             }
             .launchIn(viewModelScope)
     }
@@ -268,12 +314,66 @@ class MushafViewModel(
             MushafIntent.PlayPauseAudio -> playPauseAudio()
             is MushafIntent.SetAudioSpeed -> playbackManager.setSpeed(intent.speed)
             is MushafIntent.SeekAudio -> playbackManager.seekTo(intent.positionMs)
-            MushafIntent.NextAyahAudio -> Unit 
-            MushafIntent.PrevAyahAudio -> Unit 
+            MushafIntent.NextSurahAudio -> {
+                val next = (_state.value.currentSurahNumber + 1).coerceAtMost(114)
+                if (next != _state.value.currentSurahNumber) {
+                    navigateToSurah(next)
+                }
+            }
+            MushafIntent.PrevSurahAudio -> {
+                val prev = (_state.value.currentSurahNumber - 1).coerceAtLeast(1)
+                if (prev != _state.value.currentSurahNumber) {
+                    navigateToSurah(prev)
+                }
+            }
+
+            // Offline Downloads
             is MushafIntent.DownloadRecitation -> {
                 viewModelScope.launch {
                     downloadRecitation(intent.reciterId, intent.surahNumber)
                 }
+            }
+
+            // Surah Picker
+            MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
+            MushafIntent.HideSurahPicker -> _state.update { it.copy(showSurahPicker = false) }
+            is MushafIntent.NavigateToSurah -> navigateToSurah(intent.surahNumber)
+
+            // Tajweed Legend
+            MushafIntent.ShowTajweedLegend -> _state.update { it.copy(showTajweedLegend = true) }
+            MushafIntent.HideTajweedLegend -> _state.update { it.copy(showTajweedLegend = false) }
+
+            // Tafsir
+            is MushafIntent.LoadTafsir -> loadTafsir(intent.surah, intent.ayah)
+            MushafIntent.DismissTafsir -> _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Idle) }
+            is MushafIntent.ChangeTafsirSource -> {
+                _state.update { it.copy(selectedTafsirKey = intent.tafsirKey) }
+                val currentTafsirState = _state.value.tafsirState
+                if (currentTafsirState is com.example.mushaf.presentation.state.TafsirState.Success) {
+                    loadTafsir(currentTafsirState.tafsir.surahNumber, currentTafsirState.tafsir.ayahNumber)
+                } else if (currentTafsirState is com.example.mushaf.presentation.state.TafsirState.Loading) {
+                    loadTafsir(currentTafsirState.surah, currentTafsirState.ayah)
+                }
+            }
+            MushafIntent.RefreshTafsirBooks -> Unit // No-op, it's observed
+            is MushafIntent.DownloadTafsir -> {
+                viewModelScope.launch {
+                    manageTafsirDownload.download(intent.tafsirKey, intent.downloadUrl)
+                }
+            }
+            is MushafIntent.DeleteTafsir -> manageTafsirDownload.delete(intent.tafsirKey)
+
+            // User Guide
+            MushafIntent.GuideNextStep -> {
+                val currentStep = _state.value.guideStep
+                if (currentStep < 6) {
+                    _state.update { it.copy(guideStep = currentStep + 1) }
+                } else {
+                    viewModelScope.launch { setFirstMushafLaunchCompleted() }
+                }
+            }
+            MushafIntent.DismissGuide -> {
+                viewModelScope.launch { setFirstMushafLaunchCompleted() }
             }
         }
     }
@@ -291,6 +391,66 @@ class MushafViewModel(
         }
     }
 
+    private fun navigateToSurah(surahNumber: Int) {
+        val wasPlaying = _state.value.audioState == com.example.mushaf.presentation.audio.AudioState.PLAYING
+        if (wasPlaying) {
+            playbackManager.pause()
+        }
+
+        val idx = surahNumber - 1
+        val startPage = com.example.mushaf.domain.model.MushafConstants.SURAH_START_PAGES
+            .getOrElse(idx) { com.example.mushaf.domain.model.MushafConstants.FIRST_PAGE }
+        _state.update { it.copy(showSurahPicker = false) }
+        loadPage(startPage)
+
+        if (wasPlaying) {
+            viewModelScope.launch {
+                var attempts = 0
+                while (_state.value.pages[startPage] == null && attempts < 50) {
+                    kotlinx.coroutines.delay(100)
+                    attempts++
+                }
+                if (_state.value.pages[startPage] != null) {
+                    startFollowAlong(startPage, targetSurahNumber = surahNumber)
+                }
+            }
+        }
+    }
+
+    private fun loadTafsir(surah: Int, ayah: Int) {
+        val tafsirKey = _state.value.selectedTafsirKey
+        _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Loading(surah, ayah)) }
+        viewModelScope.launch {
+            val result = getTafsirForAyah(surah, ayah, tafsirKey = tafsirKey)
+            when (result) {
+                is Result.Success -> {
+                    val tafsir = result.data
+                    if (tafsir != null) {
+                        _state.update { it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Success(tafsir)) }
+                    } else {
+                        _state.update {
+                            it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(com.example.designsystem.text.UiText.Dynamic("Tafsir not found")))
+                        }
+                    }
+                }
+                is Result.Error -> {
+                    Log.e(TAG, "Error loading tafsir: ${result.error}")
+                    _state.update {
+                        it.copy(tafsirState = com.example.mushaf.presentation.state.TafsirState.Error(result.error.toUiText()))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun fetchAvailableTafsirBooks() {
+        observeAvailableTafsirBooks().onEach { books ->
+            _state.update { it.copy(availableTafsirBooks = books) }
+        }.catch { e ->
+            Log.w(TAG, "Failed to observe available tafsir books", e)
+        }.launchIn(viewModelScope)
+    }
+
     private fun loadReciters() {
         getReciters().onEach { result ->
             if (result is Result.Success) {
@@ -305,10 +465,11 @@ class MushafViewModel(
     }
 
     private fun selectReciter(reciter: Reciter) {
+        val wasPlaying = _state.value.audioState == AudioState.PLAYING
+        val currentTrack = playbackManager.currentTrackIndex.value
         _state.update { it.copy(currentReciter = reciter) }
         if (_state.value.mushafMode == MushafMode.LISTEN && _state.value.isFollowAlongActive) {
-            
-            startFollowAlong()
+            startFollowAlong(targetTrackIndex = currentTrack, autoPlay = wasPlaying)
         }
     }
 
@@ -372,7 +533,13 @@ class MushafViewModel(
                 Log.e(TAG, "Failed to load page $page", throwable)
                 _state.update { it.copy(failedPages = it.failedPages + page) }
             }
-            .onEach { loaded ->
+            .onEach { result ->
+                val loaded = result.getOrNull()
+                if (loaded == null) {
+                    Log.e(TAG, "Failed to load page $page: $result")
+                    _state.update { it.copy(failedPages = it.failedPages + page) }
+                    return@onEach
+                }
                 Log.d(TAG, "Page $page loaded with ${loaded.lines.size} lines")
                 _state.update {
                     it.copy(
@@ -406,6 +573,14 @@ class MushafViewModel(
 
     private fun setMode(mode: MushafMode) {
         val current = _state.value
+
+        if (current.isOffline && (mode == MushafMode.MUALLEM || mode == MushafMode.RECITATION)) {
+            viewModelScope.launch {
+                _effects.send(MushafEffect.ShowMessage(R.string.mushaf_offline_mode_not_available))
+            }
+            return
+        }
+
         if (current.isFollowAlongActive) stopFollowAlong()
         if (current.isRecordingActive) {
             
@@ -424,7 +599,9 @@ class MushafViewModel(
         }
 
         when (mode) {
-            MushafMode.LISTEN -> startFollowAlong()
+            MushafMode.LISTEN -> {
+                // Audio will start when the user explicitly taps play.
+            }
             else -> Unit
         }
     }
@@ -501,20 +678,23 @@ class MushafViewModel(
         }
     }
 
-    
-
-    
-
-
-
-
-
- 
     private fun startLiveCorrection(resumeAt: RecitationCursor? = null) {
         sessionJob?.cancel()
-        lastCursor = resumeAt ?: startCursorForCurrentPage()
+        detectionJob?.cancel()
         isFinishing = false
         reconnectAttempts = 0
+
+        // Real capture starts immediately, unconditionally - anything said before local
+        // detection (if it even runs) locks still reaches the server and gets graded against
+        // this cursor, exactly as if detection didn't exist. A known resume point (settings
+        // restart, reconnect) already knows exactly where the reciter is, so there is nothing
+        // to detect there; only a genuinely fresh start needs it.
+        pendingStartDetection = resumeAt == null
+        beginServerSession(resumeAt ?: startCursorForCurrentPage())
+    }
+
+    private fun beginServerSession(startCursor: RecitationCursor?) {
+        lastCursor = startCursor
         pacer.reset()
         chunkSpeechFrames = 0
         sessionStartedAtEpochMs = System.currentTimeMillis()
@@ -532,6 +712,63 @@ class MushafViewModel(
         sessionJob = viewModelScope.launch { runSession(controls) }
     }
 
+    /**
+     * Runs alongside the already-live session, never before it or in place of it - see
+     * docs/features/06-taahud-local-recitation-tracking-plan.md. Triggered once the server has
+     * actually acknowledged the session (from [onLiveEvent]'s `Started` case), so the real
+     * capture path claims the microphone first: if this device can't run both a raw capture and
+     * the OS speech recognizer at once, it's this best-effort enhancement that should lose that
+     * race, not the grading pipeline. If it locks onto a word other than [startCursor], it
+     * re-points the running session at it via the same Seek path the ambiguous-candidate picker
+     * already uses.
+     */
+    private fun beginBackgroundStartDetection(startCursor: RecitationCursor) {
+        val pageWordCount = _state.value.wordsForCurrentPage().count { !it.isEndOfAyah }
+        val availability = localSpeechRecognizer.availability()
+        Log.i(
+            TAG,
+            "Start detection: page=${_state.value.currentPage} pageStart=${startCursor.wordId} " +
+                "pageWordCount=$pageWordCount availability=$availability",
+        )
+
+        if (pageWordCount == 0 || availability == SpeechRecognitionAvailability.UNAVAILABLE) {
+            Log.i(TAG, "Start detection: skipped")
+            return
+        }
+
+        detectionJob = viewModelScope.launch {
+            val detected = runCatching { detectStartCursor(startCursor, pageWordCount) }
+                .onFailure { Log.w(TAG, "Local start detection failed", it) }
+                .getOrNull()
+            Log.i(TAG, "Start detection: result=${detected?.wordId ?: "none"}")
+            if (detected != null) {
+                pacer.confirm(detected.wordId)
+                _state.update { it.copy(highlightedWordId = pacer.currentWordId ?: detected.wordId) }
+                seekLiveCorrection(detected)
+            }
+        }
+    }
+
+    /** Null means "gave up" (unavailable, no corpus coverage for this page, or the timeout
+     * elapsed with nothing usable) - never thrown; the already-running session just keeps
+     * grading from [pageStart] as though detection never ran. */
+    private suspend fun detectStartCursor(pageStart: RecitationCursor, pageWordCount: Int): RecitationCursor? {
+        val window = localWordCorpusRepository.wordsFrom(pageStart, pageWordCount).getOrNull() ?: emptyList()
+        Log.i(TAG, "Start detection: corpus window size=${window.size} (requested $pageWordCount from ${pageStart.wordId})")
+        if (window.isEmpty()) return null
+
+        val detector = RecitationStartDetector(window)
+        val detected = withTimeoutOrNull(START_DETECTION_TIMEOUT_MS) {
+            localSpeechRecognizer.listen()
+                .onEach { word -> Log.i(TAG, "Start detection: heard '$word'") }
+                .map { word -> detector.offer(word) }
+                .filterNotNull()
+                .first()
+        }
+        if (detected == null) Log.i(TAG, "Start detection: timed out after ${START_DETECTION_TIMEOUT_MS}ms with no lock")
+        return detected?.wordId?.let(RecitationCursor::fromWordId)
+    }
+
     
 
 
@@ -546,7 +783,17 @@ class MushafViewModel(
                 startLiveRecitation(
                     config = recitationSettings.toConfig(lastCursor),
                     controls = controls.receiveAsFlow(),
-                ).collect { event -> onLiveEvent(event) }
+                ).collect { result ->
+                    when (result) {
+                        is Result.Success -> onLiveEvent(result.data)
+                        // The repository already caught whatever failed; re-throw the original
+                        // exception (when carried) so the catch clauses below keep dispatching on
+                        // its real type (e.g. SecurityException for a lost mic permission).
+                        is Result.Error -> throw (result.error as? com.iti.domain.core.DomainError.Unknown)?.exception
+                            ?: (result.error as? com.iti.domain.core.DomainError.NetworkError)?.exception
+                            ?: IllegalStateException("Live recitation failed: ${result.error}")
+                    }
+                }
                 return
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -589,6 +836,10 @@ class MushafViewModel(
                             engineSubstituted = event.engineSubstituted,
                         ),
                     )
+                }
+                if (pendingStartDetection) {
+                    pendingStartDetection = false
+                    lastCursor?.let(::beginBackgroundStartDetection)
                 }
             }
 
@@ -825,6 +1076,9 @@ class MushafViewModel(
         isFinishing = true
         sessionJob?.cancel()
         sessionJob = null
+        detectionJob?.cancel()
+        detectionJob = null
+        pendingStartDetection = false
         controlChannel?.close()
         controlChannel = null
         smoothedMicLevel = 0f
@@ -869,7 +1123,7 @@ class MushafViewModel(
         }
     }
 
-    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage) {
+    private fun startFollowAlong(targetPageNumber: Int = _state.value.currentPage, targetSurahNumber: Int? = null, targetTrackIndex: Int? = null, autoPlay: Boolean = true) {
         val page = _state.value.pages[targetPageNumber] ?: return
         val reciter = _state.value.currentReciter
         
@@ -885,16 +1139,22 @@ class MushafViewModel(
                 val timings = fetchTimingsForPage(page.pageNumber, reciter.id)
                 if (timings.isNotEmpty()) {
                     audioHighlightDriver.loadTimings(timings)
-                    val urls = buildAudioUrls(timings, reciter)
+                    val urls = buildAudioTracks(timings, reciter)
                     
                     if (urls.isNotEmpty() && timings.isNotEmpty()) {
                         val firstSurah = timings.first().surahNumber
                         Log.d(TAG, "First surah on page: $firstSurah")
-                        Log.d(TAG, "requested link is : ${urls.first()}")
+                        Log.d(TAG, "requested link is : ${urls.first().url}")
                     }
                     
-                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page")
-                    playbackManager.playUrls(urls)
+                    val startIndex = when {
+                        targetTrackIndex != null -> targetTrackIndex.coerceIn(0, timings.lastIndex)
+                        targetSurahNumber != null -> timings.indexOfFirst { it.surahNumber == targetSurahNumber }.coerceAtLeast(0)
+                        else -> 0
+                    }
+                    
+                    Log.d(TAG, "Playing ${urls.size} audio URLs for this page, startIndex=$startIndex")
+                    playbackManager.playTracks(urls, startIndex, autoPlay)
                     audioHighlightDriver.start(page)
                 } else {
                     Log.w(TAG, "No timings were loaded. Cannot play audio.")
@@ -922,17 +1182,30 @@ class MushafViewModel(
         }
     }
 
-    private fun buildAudioUrls(timings: List<AyahTiming>, reciter: Reciter): List<String> {
+    private suspend fun buildAudioTracks(timings: List<AyahTiming>, reciter: Reciter): List<AudioPlayer.AudioTrackInfo> {
+        val isArabic = observeAppPreferences().first().language == com.iti.domain.settings.model.AppLanguage.ARABIC
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
-            if (audioUrl != null) {
+            val finalUrl = if (audioUrl != null) {
                 if (audioUrl.startsWith("http")) audioUrl
+                else if (audioUrl.startsWith("//")) "https:$audioUrl"
                 else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
             } else {
                 val paddedS = timing.surahNumber.toString().padStart(3, '0')
                 val paddedA = timing.ayahNumber.toString().padStart(3, '0')
                 "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
             }
+            
+            val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)
+            val surahName = if (isArabic) surah?.nameArabic ?: "Surah ${timing.surahNumber}" else surah?.nameEnglish ?: "Surah ${timing.surahNumber}"
+            val ayahLabel = if (isArabic) "آية" else "Ayah"
+            val reciterName = if (isArabic) reciter.nameArabic else reciter.name
+            
+            AudioPlayer.AudioTrackInfo(
+                title = "$surahName - $ayahLabel ${timing.ayahNumber}",
+                artist = reciterName,
+                url = finalUrl
+            )
         }
     }
 

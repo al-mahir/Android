@@ -1,5 +1,6 @@
 package com.iti.domain.usecase
 
+import com.iti.domain.core.Result
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.repository.RecitationSessionRepository
 import kotlinx.coroutines.flow.Flow
@@ -8,14 +9,14 @@ import kotlinx.coroutines.flow.Flow
 class ObserveRecitationSessionsUseCase(
     private val repository: RecitationSessionRepository,
 ) {
-    operator fun invoke(): Flow<List<RecitationSessionSummary>> = repository.observeSessions()
+    operator fun invoke(): Flow<Result<List<RecitationSessionSummary>>> = repository.observeSessions()
 }
 
 /** One session's detail, for review long after it was recited. */
 class GetRecitationSessionUseCase(
     private val repository: RecitationSessionRepository,
 ) {
-    operator fun invoke(id: String): Flow<RecitationSessionSummary?> = repository.observeSession(id)
+    operator fun invoke(id: String): Flow<Result<RecitationSessionSummary?>> = repository.observeSession(id)
 }
 
 /** Records a finished session so the reciter can come back to it. */

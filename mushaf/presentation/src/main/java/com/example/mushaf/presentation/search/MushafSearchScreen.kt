@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.search.SearchBar
+import com.example.designsystem.text.asString
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.Surah
@@ -61,6 +62,7 @@ fun MushafSearchScreen(
 
     MushafSearchContent(
         state = state,
+        onNavigateBack = onNavigateBack,
         onIntent = viewModel::onIntent
     )
 }
@@ -68,26 +70,20 @@ fun MushafSearchScreen(
 @Composable
 internal fun MushafSearchContent(
     state: MushafSearchState,
+    onNavigateBack: () -> Unit,
     onIntent: (MushafSearchIntent) -> Unit
 ) {
     Scaffold(
         containerColor = Theme.colors.backGround,
-        contentWindowInsets = WindowInsets(0.dp),
-        bottomBar = { 
-            MushafBottomBar(
-                selected = MushafDestination.MUSHAF, // Mock selected tab
-                onSelect = { onIntent(MushafSearchIntent.NavigateBottomTab(it.ordinal)) }
-            ) 
-        }
+        contentWindowInsets = WindowInsets(0.dp)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = padding.calculateBottomPadding(), top = 12.dp)
+                .padding(bottom = padding.calculateBottomPadding())
                 .padding(horizontal = 18.dp)
         ) {
-            TopHeaderSection(userInitials = "ق") // As requested by user: 'ق'
-            Spacer(Modifier.height(8.dp))
+            TopHeaderSection(userInitials = "ق", onBack = onNavigateBack) // As requested by user: 'ق'
             
             SearchBar(
                 query = state.query,
@@ -140,6 +136,23 @@ internal fun MushafSearchContent(
                         style = Theme.typography.body.medium
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (state.searchType == SearchType.TAFSIR) Theme.colors.primary else Color.Transparent
+                        )
+                        .clickable { onIntent(MushafSearchIntent.SelectSearchType(SearchType.TAFSIR)) }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "التفسير (Tafsir)",
+                        color = if (state.searchType == SearchType.TAFSIR) Color.White else Theme.colors.primaryFont,
+                        style = Theme.typography.body.medium
+                    )
+                }
             }
 
             if (state.searchType == SearchType.MEANING && state.hydeUsed) {
@@ -155,7 +168,7 @@ internal fun MushafSearchContent(
             if (state.errorMessage != null) {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = state.errorMessage,
+                    text = state.errorMessage.asString(),
                     style = Theme.typography.body.small,
                     color = Color.Red,
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -169,8 +182,12 @@ internal fun MushafSearchContent(
             LaunchedEffect(listState) {
                 snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
                     .collect { lastIndex ->
-                        if (state.query.isNotBlank() && state.searchType == SearchType.TEXT && lastIndex != null && lastIndex >= state.surahs.size + state.ayahs.size - 5) {
-                            onIntent(MushafSearchIntent.LoadNextAyahsPage)
+                        if (state.query.isNotBlank() && lastIndex != null) {
+                            if (state.searchType == SearchType.TEXT && lastIndex >= state.surahs.size + state.ayahs.size - 5) {
+                                onIntent(MushafSearchIntent.LoadNextAyahsPage)
+                            } else if (state.searchType == SearchType.TAFSIR && lastIndex >= state.tafsirs.size - 5) {
+                                onIntent(MushafSearchIntent.LoadNextAyahsPage)
+                            }
                         }
                     }
             }
@@ -193,15 +210,27 @@ internal fun MushafSearchContent(
                         items(state.surahs, key = { it.number }) { surah ->
                             SurahListItem(
                                 surah = surah,
+                                query = state.query,
                                 onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
                             )
                         }
                     }
-                    items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
-                        AyahListItem(
-                            ayah = ayah,
-                            onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
-                        )
+                    if (state.searchType == SearchType.TAFSIR) {
+                        items(state.tafsirs, key = { "tafsir-${it.surahNumber}-${it.ayahNumber}" }) { tafsir ->
+                            com.example.mushaf.presentation.search.components.TafsirListItem(
+                                tafsir = tafsir,
+                                query = state.query,
+                                onClick = { onIntent(MushafSearchIntent.TafsirClicked(tafsir)) }
+                            )
+                        }
+                    } else {
+                        items(state.ayahs, key = { "${it.surahNumber}-${it.ayahNumber}" }) { ayah ->
+                            AyahListItem(
+                                ayah = ayah,
+                                query = state.query,
+                                onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
+                            )
+                        }
                     }
                     if (state.isPaginatingAyahs) {
                         item {

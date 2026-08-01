@@ -17,6 +17,7 @@ data class ColorScheme(
     val secondaryFont: Color,
     val surface: Color,
     val surfaceVariant: Color,
+    val surfaceContainer: Color,
     val onSurface: Color,
     val field: Color,
     val border: Color,
@@ -33,3 +34,4 @@ data class ColorScheme(
     val disable: Color,
     val onDisable: Color,
 )
+

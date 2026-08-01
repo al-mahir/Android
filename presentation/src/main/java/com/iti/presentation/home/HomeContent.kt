@@ -15,14 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
-import com.example.designsystem.components.search.ClickableSearchBar
 import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
 import com.iti.presentation.home.components.ActiveCircleRow
+import com.iti.presentation.home.components.AyahOfTheDayCard
 import com.iti.presentation.home.components.ContinueReadingCard
 import com.iti.presentation.home.components.HomeHeader
 import com.iti.presentation.home.components.HomeSkeleton
+import com.iti.presentation.home.components.PendingMeetingRequestCard
 import com.iti.presentation.home.components.SheikhProfileCard
 import com.iti.presentation.home.state.HomeUiState
 
@@ -38,6 +39,8 @@ fun HomeContent(
     onSheikhClick: (String) -> Unit,
     onJoinCircleClick: (String) -> Unit,
     onRetryClick: () -> Unit,
+    onViewPendingMeetingClick: () -> Unit = {},
+    onCancelPendingMeetingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val rootModifier = modifier
@@ -60,6 +63,7 @@ fun HomeContent(
                 initials = state.user?.initials,
                 avatarUrl = state.user?.avatarUrl,
                 onProfileClick = onProfileClick,
+                onSearchClick = onSearchClick,
                 modifier = Modifier
                     .then(gutter)
                     .padding(top = Theme.spacing.medium, bottom = Theme.spacing.medium),
@@ -72,33 +76,31 @@ fun HomeContent(
                 ),
                 verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
             ) {
-                item(key = "search") {
-                    ClickableSearchBar(
-                        hint = stringResource(R.string.home_search_hint),
-                        onClick = onSearchClick,
-                        modifier = gutter,
-                    )
-                }
-
-                state.readingProgress?.let { progress ->
-                    item(key = "continue-reading-header") {
-                        SectionHeader(
-                            title = stringResource(R.string.home_section_continue_reading),
+                // ── Pending meeting request ──────────────────────────────────
+                state.pendingMeetingRequest?.let { pending ->
+                    item(key = "pending-meeting-request") {
+                        PendingMeetingRequestCard(
+                            request = pending,
+                            onView = onViewPendingMeetingClick,
+                            onCancel = onCancelPendingMeetingClick,
                             modifier = gutter,
                         )
                     }
+                }
+
+                // ── Continue reading ─────────────────────────────────────────
+                state.readingProgress?.let { progress ->
                     item(key = "continue-reading") {
                         ContinueReadingCard(
-                            surahName = progress.surahName,
-                            ayahNumber = progress.ayahNumber,
-                            pageNumber = progress.pageNumber,
+                            progress = progress,
                             onClick = onContinueReadingClick,
                             modifier = gutter,
                         )
                     }
                 }
 
-                if (state.sheikhs.isNotEmpty()) {
+                // ── Sheikhs ─────────────────────────────────────────────────
+                if (state.sheikhs.isNotEmpty() && !state.isOffline) {
                     item(key = "sheikhs-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_sheikhs),
@@ -110,7 +112,6 @@ fun HomeContent(
                     item(key = "sheikhs-row") {
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
-                            // Gutter lives here, not on the parent, so cards bleed to the edges.
                             contentPadding = PaddingValues(horizontal = Theme.spacing.medium),
                             horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
                         ) {
@@ -124,7 +125,8 @@ fun HomeContent(
                     }
                 }
 
-                if (state.circles.isNotEmpty()) {
+                // ── Active circles ───────────────────────────────────────────
+                if (state.circles.isNotEmpty() && !state.isOffline) {
                     item(key = "circles-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_circles),
@@ -138,6 +140,16 @@ fun HomeContent(
                             circle = circle,
                             isJoining = circle.id in state.joiningCircleIds,
                             onJoinClick = { onJoinCircleClick(circle.id) },
+                            modifier = gutter,
+                        )
+                    }
+                }
+
+                // ── Ayah of the Day ──────────────────────────────────────────
+                state.ayahOfTheDay?.let { ayah ->
+                    item(key = "ayah-of-the-day") {
+                        AyahOfTheDayCard(
+                            ayah = ayah,
                             modifier = gutter,
                         )
                     }

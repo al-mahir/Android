@@ -15,7 +15,7 @@ import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
-import com.iti.presentation.core.ui.UiText
+import com.example.designsystem.text.UiText
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(

@@ -228,3 +228,4 @@ class ProfileViewModelTest {
         deleteAccount = DeleteAccountUseCase(repository),
     )
 }
+

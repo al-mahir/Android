@@ -15,6 +15,7 @@ import com.example.mushaf.presentation.core.mvi.StateHolder
 import com.example.mushaf.presentation.download.state.DownloadsEffect
 import com.example.mushaf.presentation.download.state.DownloadsIntent
 import com.example.mushaf.presentation.download.state.DownloadsUiState
+import com.iti.domain.core.fold
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -88,8 +89,18 @@ class DownloadsViewModel(
         updateState { copy(isLoading = true, errorMessageRes = null) }
 
         resourcesJob = observeResources(kind)
-            .onEach { resources ->
-                updateState { copy(isLoading = false, resources = resources) }
+            .onEach { result ->
+                result.fold(
+                    onSuccess = { resources ->
+                        updateState { copy(isLoading = false, resources = resources) }
+                    },
+                    onError = {
+                        updateState {
+                            copy(isLoading = false, errorMessageRes = R.string.downloads_error_generic)
+                        }
+                        sendEffect(DownloadsEffect.ShowMessage(R.string.downloads_error_generic))
+                    },
+                )
             }
             .catch {
                 updateState {

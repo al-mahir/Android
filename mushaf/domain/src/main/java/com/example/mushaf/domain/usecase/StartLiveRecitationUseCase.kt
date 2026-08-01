@@ -5,6 +5,7 @@ import com.example.mushaf.domain.model.recite.LiveRecitationEvent
 import com.example.mushaf.domain.model.recite.RecitationControl
 import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.repository.LiveRecitationRepository
+import com.iti.domain.core.Result
 import kotlinx.coroutines.flow.Flow
 
 
@@ -21,11 +22,11 @@ class StartLiveRecitationUseCase(
     operator fun invoke(
         config: LiveRecitationConfig,
         controls: Flow<RecitationControl>,
-    ): Flow<LiveRecitationEvent> = repository.session(config, controls)
+    ): Flow<Result<LiveRecitationEvent>> = repository.session(config, controls)
 
-     
+
     operator fun invoke(
         from: RecitationCursor,
         controls: Flow<RecitationControl>,
-    ): Flow<LiveRecitationEvent> = repository.session(LiveRecitationConfig(start = from), controls)
+    ): Flow<Result<LiveRecitationEvent>> = repository.session(LiveRecitationConfig(start = from), controls)
 }

@@ -27,18 +27,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardDoubleArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
+import com.example.designsystem.R as DesignsystemR
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -67,6 +61,7 @@ fun MushafBottomBar(
     onToggleRecording: () -> Unit,
     modifier: Modifier = Modifier,
     micLevel: Float = 0f,
+    onModeTabPositioned: ((MushafMode, androidx.compose.ui.layout.LayoutCoordinates) -> Unit)? = null,
     
 
 
@@ -122,6 +117,7 @@ fun MushafBottomBar(
                 MushafModeSelector(
                     selectedMode = mushafMode,
                     onModeSelected = onModeSelected,
+                    onTabPositioned = onModeTabPositioned,
                 )
 
                 MicSection(
@@ -144,10 +140,16 @@ private fun EyeSection(
     onRevealNextWord: () -> Unit,
     onRevealNextAyah: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onToggleAyahVisibility) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        IconButton(
+            onClick = onToggleAyahVisibility,
+            modifier = Modifier.size(36.dp)
+        ) {
             Icon(
-                imageVector = if (areAyahsVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                painter = painterResource(if (areAyahsVisible) DesignsystemR.drawable.ic_eye else DesignsystemR.drawable.ic_eye_closed),
                 contentDescription = stringResource(
                     if (areAyahsVisible) R.string.mushaf_cd_hide_ayahs else R.string.mushaf_cd_show_ayahs,
                 ),
@@ -161,18 +163,24 @@ private fun EyeSection(
             enter = slideInHorizontally { -it } + fadeIn(),
             exit = slideOutHorizontally { -it } + fadeOut(),
         ) {
-            Row {
-                IconButton(onClick = onRevealNextWord) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                IconButton(
+                    onClick = onRevealNextWord,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        painter = painterResource(DesignsystemR.drawable.ic_step_word),
                         contentDescription = stringResource(R.string.mushaf_cd_next_word),
                         tint = Theme.colors.primary,
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                 }
-                IconButton(onClick = onRevealNextAyah) {
+                IconButton(
+                    onClick = onRevealNextAyah,
+                    modifier = Modifier.size(36.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Filled.KeyboardDoubleArrowLeft,
+                        painter = painterResource(DesignsystemR.drawable.ic_step_ayah),
                         contentDescription = stringResource(R.string.mushaf_cd_next_ayah),
                         tint = Theme.colors.primary,
                         modifier = Modifier.size(Theme.size.iconMedium),
@@ -226,7 +234,7 @@ private fun MicSection(
         ) {
             IconButton(onClick = onFinishSession) {
                 Icon(
-                    imageVector = Icons.Outlined.Flag,
+                    painter = painterResource(DesignsystemR.drawable.ic_flag),
                     contentDescription = stringResource(R.string.mushaf_cd_finish_session),
                     tint = Theme.colors.primary,
                     modifier = Modifier.size(Theme.size.iconMedium),
@@ -275,7 +283,7 @@ private fun MicButton(
                 ),
             ) {
                 Icon(
-                    imageVector = if (isRecordingActive) Icons.Filled.MicOff else Icons.Filled.Mic,
+                    painter = painterResource(if (isRecordingActive) DesignsystemR.drawable.ic_mic_off else DesignsystemR.drawable.ic_mic),
                     contentDescription = stringResource(
                         if (isRecordingActive) R.string.mushaf_cd_stop_recording else R.string.mushaf_cd_start_recording,
                     ),

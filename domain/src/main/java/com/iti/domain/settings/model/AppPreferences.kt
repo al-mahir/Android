@@ -1,5 +1,7 @@
 package com.iti.domain.settings.model
 
+import com.iti.domain.model.User
+
 
 enum class ThemeMode {
     LIGHT,
@@ -26,4 +28,5 @@ data class AppPreferences(
     val remindersEnabled: Boolean = true,
     val errorSoundsEnabled: Boolean = true,
     val dataSaverEnabled: Boolean = false,
+    val user: User? = null,
 )

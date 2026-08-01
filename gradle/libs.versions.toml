@@ -47,6 +47,8 @@ archCoreTesting = "2.2.0"
 mockk = "1.14.11"
 turbine = "1.2.1"
 navigation3Runtime = "1.1.4"
+agoraRtc = "4.3.0"
+kotlinxDatetime = "0.6.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -154,6 +156,10 @@ navigation3-runtime = { group = "androidx.navigation3", name = "navigation3-runt
 # Media3 (Audio playback)
 media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
 media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
+
+# meeting-kit (Agora RTC + kotlinx-datetime for expiresAt handling)
+agora-rtc-sdk = { module = "io.agora.rtc:full-sdk", version.ref = "agoraRtc" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

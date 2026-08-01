@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
@@ -16,6 +19,14 @@ android {
         minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+        val baseUrl = localProperties.getProperty("baseUrl", "http://10.0.2.2:8080")
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -29,6 +40,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":meeting:domain"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
@@ -45,6 +57,8 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.logging)
     implementation(libs.ktor.client.auth)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.websockets)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

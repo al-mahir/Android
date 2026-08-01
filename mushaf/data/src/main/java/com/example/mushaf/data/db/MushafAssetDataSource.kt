@@ -115,7 +115,8 @@ class MushafAssetDataSource(
                 }
             }
         } catch (t: Throwable) {
-            Log.e(MushafLog.TAG, "Failed to read page count; falling back to $DEFAULT_PAGE_COUNT", t)
+            Log.e(MushafLog.TAG, "Failed to read page count", t)
+            throw t
         }
         DEFAULT_PAGE_COUNT
     }
@@ -134,6 +135,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Page search failed for query: $query", t)
+            throw t
         }
         results
     }
@@ -148,8 +150,26 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Failed to find starting page for Surah $surahNumber", t)
+            throw t
         }
         null
+    }
+
+
+
+
+
+    suspend fun wordCountForAyah(surahNumber: Int, ayahNumber: Int): Int = withContext(Dispatchers.IO) {
+        try {
+            val wordKeyPrefix = "$surahNumber:$ayahNumber:%"
+            database().rawQuery(QUERY_WORD_COUNT_FOR_AYAH, arrayOf(wordKeyPrefix)).use { c ->
+                if (c.moveToFirst()) return@withContext c.getInt(0)
+            }
+        } catch (t: Throwable) {
+            Log.e(MushafLog.TAG, "Word count query failed for ayah $surahNumber:$ayahNumber", t)
+            throw t
+        }
+        0
     }
 
     suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Int? = withContext(Dispatchers.IO) {
@@ -163,6 +183,7 @@ class MushafAssetDataSource(
             }
         } catch (t: Throwable) {
             Log.e(MushafLog.TAG, "Failed to find page for Ayah $surahNumber:$ayahNumber", t)
+            throw t
         }
         null
     }
@@ -214,5 +235,7 @@ class MushafAssetDataSource(
             "SELECT page_number, line_number, position, word_key, char_type, glyph_text " +
                 "FROM words WHERE page_number = ? ORDER BY line_number ASC, position ASC"
         const val QUERY_PAGE_COUNT = "SELECT number_of_pages FROM info LIMIT 1"
+        const val QUERY_WORD_COUNT_FOR_AYAH =
+            "SELECT COUNT(*) FROM words WHERE word_key LIKE ? AND char_type != 'end'"
     }
 }

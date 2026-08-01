@@ -19,7 +19,7 @@ import com.example.mushaf.presentation.MushafViewModel
 import com.example.mushaf.presentation.download.DownloadsViewModel
 import com.example.mushaf.presentation.settings.MushafSettingsViewModel
 import com.example.mushaf.presentation.settings.recite.ReciteSettingsViewModel
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
 
@@ -27,6 +27,7 @@ val mushafPresentationModule = module {
     factory { GetPageUseCase(get()) }
     factory { ObserveReaderPreferencesUseCase(get()) }
     factory { SetTajweedEnabledUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(get()) }
     factory { SaveLastPageUseCase(get()) }
 
     factory { com.example.mushaf.domain.usecase.GetLastReadUseCase() }
@@ -37,6 +38,10 @@ val mushafPresentationModule = module {
     factory { SearchAyahUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.search.SearchTafsirUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -60,9 +65,12 @@ val mushafPresentationModule = module {
     factory { UpdateRecitationSettingsUseCase(get()) }
     factory { GetRecitationSchemaUseCase(get()) }
 
+    factory { com.example.mushaf.domain.usecase.GetAvailableTafsirBooksUseCase(get()) }
+
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
         )
     }
 
@@ -73,8 +81,10 @@ val mushafPresentationModule = module {
             searchJuzUseCase = get(),
             searchAyahUseCase = get(),
             searchAyahByMeaningUseCase = get(),
+            searchTafsirUseCase = get(),
             getTargetPageUseCase = get(),
-            saveLastPageUseCase = get()
+            saveLastPageUseCase = get(),
+            connectivityObserver = get()
         )
     }
 

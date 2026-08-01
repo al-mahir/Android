@@ -1,3 +1,9 @@
+import java.util.Properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.inputStream())
+}
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -13,6 +19,15 @@ android {
     }
 
     defaultConfig {
+        val meetingBaseUrl = localProperties.getProperty("baseUrl", "").trimEnd('/')
+        val restUrl = localProperties.getProperty("meetingRestBaseUrl", "")
+            .ifBlank { meetingBaseUrl }
+        val wsUrl = localProperties.getProperty("meetingWsBaseUrl", "")
+            .ifBlank { meetingBaseUrl.replaceFirst("https://", "wss://").replaceFirst("http://", "ws://") }
+        val agoraAppId = localProperties.getProperty("meetingAgoraAppId", "")
+        buildConfigField("String", "REST_BASE_URL", "\"$restUrl\"")
+        buildConfigField("String", "WS_BASE_URL", "\"$wsUrl\"")
+        buildConfigField("String", "AGORA_APP_ID", "\"$agoraAppId\"")
         applicationId = "com.iti.al_mahir"
         minSdk = 24
         targetSdk = 36
@@ -34,6 +49,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -46,6 +62,9 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(project(":presentation"))
+    implementation(project(":meeting:domain"))
+    implementation(project(":meeting:data"))
+    implementation(project(":meeting:presentation"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -87,3 +106,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+
+

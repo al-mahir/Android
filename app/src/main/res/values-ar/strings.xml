@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="exit_app_title">الخروج من التطبيق</string>
+    <string name="exit_app_message">هل أنت متأكد أنك تريد الخروج؟</string>
+    <string name="exit_app_confirm">خروج</string>
+    <string name="exit_app_cancel">إلغاء</string>
+</resources>

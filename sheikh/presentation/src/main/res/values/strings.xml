@@ -1,0 +1,21 @@
+<resources>
+    <string name="sheikh_home_brand_title">Al-Māhir</string>
+    <string name="sheikh_home_greeting">welcome back</string>
+    <string name="sheikh_home_greeting_subtitle">Manage your availability and circles.</string>
+    <string name="sheikh_home_avatar_content_description">Open profile</string>
+
+    <string name="sheikh_home_error_generic">Something went wrong. Please try again.</string>
+    <string name="meetingrequest_availability_incoming_request_title">Request from %1$s</string>
+    <string name="meetingrequest_availability_expires_in_seconds">Expires in %1$d seconds</string>
+    <string name="meetingrequest_availability_incoming_request_accept">Accept</string>
+    <string name="meetingrequest_availability_incoming_request_decline">Decline</string>
+    <string name="meetingrequest_availability_available_title">You are Available</string>
+    <string name="meetingrequest_availability_available_subtitle">Waiting for incoming requests...</string>
+    <string name="meetingrequest_availability_offline_title">You are Offline</string>
+    <string name="meetingrequest_availability_offline_subtitle">Go online to receive meeting requests.</string>
+    <string name="meetingrequest_availability_toggle_offline">Go Offline</string>
+    <string name="meetingrequest_availability_toggle_available">Go Available</string>
+    <string name="meetingrequest_availability_busy_title">You are Busy</string>
+    <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
+    <string name="meetingrequest_availability_busy_rejoin">Rejoin</string>
+</resources>

@@ -1,5 +1,6 @@
 package com.example.mushaf.presentation.state
 
+import com.example.designsystem.text.UiText
 import com.example.mushaf.domain.model.MushafConstants
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.example.mushaf.domain.model.MushafMode
@@ -43,10 +44,35 @@ data class MushafUiState(
     val playingPage: Int? = null,
     val playbackSpeed: Float = 1.0f,
     val availableReciters: List<Reciter> = emptyList(),
+
+    // Surah Picker
+    val showSurahPicker: Boolean = false,
+
+    // Tajweed Legend
+    val showTajweedLegend: Boolean = false,
+
+    // Tafsir
+    val tafsirState: TafsirState = TafsirState.Idle,
+    val selectedTafsirKey: String = "mukhtasar",
+    val availableTafsirBooks: List<com.example.mushaf.domain.model.TafsirBook> = emptyList(),
+
+    // User Guide
+    val showUserGuide: Boolean = false,
+    val guideStep: Int = 1,
+
+    val isOffline: Boolean = false,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
+    val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)
+    val currentJuzNumber: Int get() = MushafConstants.juzForPage(currentPage)
+    /** True when currentPage is odd → right-hand face in a printed Mushaf. */
+    val isRightPage: Boolean get() = currentPage % 2 == 1
+    /** 1-based hizb-quarter index (1..240) for the current page. */
+    val currentHizbQuarter: Int get() = MushafConstants.hizbQuarterForPage(currentPage)
+    /** Quarter position within the current hizb: 1, 2, 3, or 4. */
+    val hizbQuarterInHizb: Int get() = ((currentHizbQuarter - 1) % 4) + 1
 
     fun pageState(pageNumber: Int): PageLoadState = when {
         pages.containsKey(pageNumber) -> PageLoadState.Loaded(pages.getValue(pageNumber))
@@ -64,6 +90,12 @@ sealed interface PageLoadState {
     data object Failed : PageLoadState
 }
 
+sealed interface TafsirState {
+    data object Idle : TafsirState
+    data class Loading(val surah: Int, val ayah: Int) : TafsirState
+    data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
+    data class Error(val message: UiText) : TafsirState
+}
 
 enum class CaptureError {
     PERMISSION_DENIED,
