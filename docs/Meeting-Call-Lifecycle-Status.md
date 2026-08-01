@@ -312,6 +312,102 @@ brand-new request right after, confirm the new call actually connects instead of
 
 ---
 
+### 🩹 Follow-up: student stuck on infinite "Connecting…" after leaving a call
+
+Immediate fallout from the fix above, student-app-only (`:app`). Root cause is a *pre-existing*,
+separate bug that the previous fix's `Ended → Idle` state change merely changed the visible
+symptom of (from an infinite pop/push flicker to a genuine hung join attempt):
+
+On the student side, `MeetingRoute.Call` is pushed from `MeetingRequestScreen`
+(`MeetingRequestRoute.SendMeetingRequest`) once `RequestUiState.Accepted` fires — it sits directly
+underneath `Call` on the backstack. Leaving the call only popped the single `Call` entry
+(`meetingEntries(onBack = { backStack.removeLastOrNull() })` in `AppNavigation.kt`), which
+re-reveals `MeetingRequestScreen`. Since Nav3's `NavDisplay` only composes the top backstack entry,
+this is a **fresh composition** — and `MeetingRequestScreen`'s state is still parked on
+`RequestUiState.Accepted` for the call that just ended (its self-heal `LaunchedEffect(sheikhId)`
+only resets on `Ended`/`Declined`/`Expired`, never `Accepted` — see
+`presentation/.../meetingrequest/request/MeetingRequestScreen.kt`). Its
+`LaunchedEffect(acceptedRequestId) { onMeetingAccepted(...) }` fires again on that fresh
+composition (a repeated key doesn't suppress it — there's no prior composition to compare against)
+and immediately re-pushes `MeetingRoute.Call` for the *same, already-ended* `requestId`. Before the
+fix above, this landed on a controller state still coincidentally equal to the old `requestId`, so
+`prepareForRequest` treated it as *not* stale, state stayed `Ended`, and `CallScreen`'s own
+`state is Ended → onLeave()` immediately popped it again — a fast, silent pop/push flicker loop.
+After the fix above, `endCall()` resets the controller's `requestId` to `null`, so this same phantom
+re-push now looks like a legitimate fresh join: `CallScreen` proceeds through the permission flow
+and `joinChannel()`, which calls `refreshToken` on a `requestId` the backend has already closed —
+that fails, falls back to the stale original token, and Agora either errors or the whole thing just
+sits on the `Connecting…` spinner. Same underlying navigation bug either way; only the visible
+failure mode changed.
+
+Fixed in `AppNavigation.kt`'s `meetingEntries(onBack = ...)`: popping `Call` now also pops any
+`MeetingRequestRoute` (`SendMeetingRequest`/`SheikhBrowseList`) it reveals, so leaving a call can
+never land back on a screen that auto-navigates into it. `sheikh-app` was checked and does **not**
+have this bug — the sheikh's `Call` is pushed straight from the `Home`-embedded
+`SheikhAvailabilityPanel`, so leaving it always reveals `Home`, never an intermediate
+auto-navigating screen.
+
+**Verified**: `:app:compileDebugKotlin` clean. Still needs an on-device pass: send a request,
+get accepted, join, leave (both the in-call button and backgrounding + notification End Call),
+confirm landing back on `SheikhDetails`/wherever and *not* an immediate silent rejoin attempt.
+
+---
+
+### 🩹 Follow-up: same "infinite Connecting…" bug, sheikh side — `AvailabilityUiState.Busy` never resets locally
+
+Same failure mode as the `:app` fix above, reproduced on `:sheikh-app` right after that fix landed
+— same underlying bug *class*, different trigger, because the sheikh side's "resume into an
+accepted call" mechanism is independent state, not nav-structure:
+
+`SheikhAvailabilityPanel` (embedded directly in `SheikhHomeScreen`, not a separate nav route) drives
+navigation into `Call` off `AvailabilityUiState.Busy` via
+`LaunchedEffect(busyRequestId) { onMeetingAccepted(...) }` — same "state-driven nav so it's always
+reachable" pattern as the student's `RequestUiState.Accepted`. `AvailabilityViewModel.Busy` only
+resets to `Available` when the *remote* `MEETING_ENDED` echo arrives via its own
+`observeActiveCall(requestId)` subscription (`AvailabilityViewModel.kt`) — there is no local/
+synchronous reset when the sheikh explicitly taps Leave. Leaving `Call` pops back to `Home`, which
+is a fresh composition of `SheikhAvailabilityPanel` (Nav3 only composes the top backstack entry) —
+its `LaunchedEffect` re-fires against the still-`Busy(oldRequestId)` state (the async echo hasn't
+arrived yet) and immediately re-pushes `Call` for the same already-ended `requestId`, which then
+hangs trying to rejoin a meeting the backend already closed. Unlike the student side, `Home` is the
+*correct* destination to land on after leaving, so the "skip the triggering intermediate screen"
+fix used for `:app` doesn't apply here — `AvailabilityViewModel`'s `Busy` state itself is stale, not
+the nav structure.
+
+Can't fix this by having `AvailabilityViewModel` ask `CallSessionController` directly —
+`sheikh:presentation` only depends on `:meeting:domain`, not `:meeting:presentation`, and adding
+that dependency is a bigger module-boundary change than this bug warrants. Fixed instead at the
+same host-app-nav layer as the `:app` fix (which already depends on both): added
+`isPhantomReplayOfEndedCall(requestId)` in both `SheikhAppNavigation.kt` and (belt-and-suspenders,
+symmetric) `AppNavigation.kt` — true when `CallSessionController.state.value.requestId == requestId
+&& !isLive`. Guarded the `onMeetingAccepted` push site (covers both the auto-navigate
+`LaunchedEffect` and the manual "Rejoin" button on `BusyIndicator`, since both call the same
+lambda) and, on the student side, the `meetingRequestEntries` `onNavigateToCall` site.
+
+This guard depends on `CallSessionController.endCall()` still exposing `requestId`/`Ended` after a
+local hangup (not wiping to a blank `Idle`) — so `endCall()` was changed back to mirror
+`observeMeetingEnded`'s remote-hangup handling exactly: release the engine, but keep `requestId`/
+`channelName`/`userAccount` in `state` and surface `Ended` rather than resetting to `Idle`. This
+does **not** reopen the earlier "rejoin card, can't rejoin" bug (`Meeting-Call-Lifecycle-Status.md`,
+the first 🩹 entry above): that fix lives in `teardown()` (used by `prepareForRequest`/
+`joinChannel` whenever a *genuinely different* next call starts) resetting fully to `Idle` — this
+`Ended`-with-identity state only lingers until either a different call starts (fully reset) or the
+async echo arrives (also resets it via the same `observeMeetingEnded` path), whichever's first.
+
+One accepted cosmetic gap: `AvailabilityViewModel`'s own `Busy`/`BusyIndicator` UI still visually
+lags for that same short window — it doesn't flip to `Available` until the echo arrives, so a
+tapped "Rejoin" in that window is now silently swallowed by the nav guard rather than doing
+anything, instead of still showing "Busy" indefinitely with a broken control. Full fix would give
+`AvailabilityViewModel` its own local signal too, deferred — no way to do it cleanly without either
+the cross-module dependency above or plumbing a new callback through `SheikhAvailabilityPanel`'s
+already-wide parameter surface for what's now a narrow timing window, not a hang.
+
+**Verified**: `:meeting:presentation`, `:app`, `:sheikh-app` `compileDebugKotlin` clean. Still
+needs an on-device pass on both apps: leave a call, watch for a moment whether the `Busy`/Rejoin
+indicator lingers (expected, cosmetic), confirm no phantom re-navigation/hang either way.
+
+---
+
 ## Open questions / risks carried into this work
 
 - No on-device/emulator in this environment (same constraint noted throughout

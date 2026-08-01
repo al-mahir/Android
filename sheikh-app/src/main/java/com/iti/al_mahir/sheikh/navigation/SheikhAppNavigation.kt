@@ -95,9 +95,12 @@ private fun SheikhAppNavHost(
     val context = LocalContext.current
     val callController: CallSessionController = koinInject()
 
-    /** See the identical helper in `:app`'s `AppNavigation.kt` — same reopen decision tree, cases
-     * 1 and 2 from docs/Meeting-Call-Lifecycle-Plan.md. */
-    fun openActiveCallIfLive() {
+        fun isPhantomReplayOfEndedCall(requestId: String): Boolean {
+        val session = callController.state.value
+        return session.requestId == requestId && !session.isLive
+    }
+
+       fun openActiveCallIfLive() {
         val callSession = callController.state.value
         val requestId = callSession.requestId
         val channelName = callSession.channelName
@@ -167,16 +170,17 @@ private fun SheikhAppNavHost(
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
                                 onMeetingAccepted = { requestId, token, channelName, userAccount, remoteDisplayName ->
-                                    // Guards against stacking duplicate Call entries — e.g. the
-                                    // Busy-state "Rejoin" fallback or the auto-navigate effect
-                                    // both firing for the same accepted call in quick succession.
                                     val top = backStack.lastOrNull()
                                     android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: onMeetingAccepted requestId=$requestId, backstack top=$top, size=${backStack.size}")
-                                    if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
-                                        android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: pushing Call($requestId)")
-                                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
-                                    } else {
-                                        android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, already on Call($requestId)")
+                                    when {
+                                        isPhantomReplayOfEndedCall(requestId) ->
+                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, $requestId already ended locally (stale Busy state)")
+                                        top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId -> {
+                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: pushing Call($requestId)")
+                                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
+                                        }
+                                        else ->
+                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, already on Call($requestId)")
                                     }
                                 },
                             )
