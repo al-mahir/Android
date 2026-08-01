@@ -2,6 +2,7 @@ package com.iti.meeting.presentation.call
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,6 +68,7 @@ fun CallScreen(
     token: String,
     channelName: String,
     userAccount: String,
+    remoteDisplayName: String? = null,
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
@@ -100,13 +102,21 @@ fun CallScreen(
             token = token,
             channelName = channelName,
             userAccount = userAccount,
+            remoteDisplayName = remoteDisplayName,
             micEnabled = results[Manifest.permission.RECORD_AUDIO] == true,
             cameraEnabled = results[Manifest.permission.CAMERA] == true,
         )
     }
 
     LaunchedEffect(Unit) {
-        joinPermissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA))
+        val permissions = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            add(Manifest.permission.CAMERA)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        joinPermissionsLauncher.launch(permissions.toTypedArray())
     }
 
     if (state is CallUiState.Ended) {
@@ -115,7 +125,7 @@ fun CallScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(CallBackground)) {
         when (val current = state) {
-            is CallUiState.Connecting -> ConnectingContent()
+            is CallUiState.Idle, is CallUiState.Connecting -> ConnectingContent()
 
             is CallUiState.InCall -> InCallContent(
                 state = current,

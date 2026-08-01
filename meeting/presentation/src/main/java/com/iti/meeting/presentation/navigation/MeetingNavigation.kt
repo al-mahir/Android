@@ -22,6 +22,7 @@ fun EntryProviderScope<NavKey>.meetingEntries(
             token = route.token,
             channelName = route.channelName,
             userAccount = route.userAccount,
+            remoteDisplayName = route.remoteDisplayName,
             onLeave = onBack,
         )
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="meeting_call_notification_channel_name">مكالمة جارية</string>
+    <string name="meeting_call_notification_title_named">مكالمة مع %1$s</string>
+    <string name="meeting_call_notification_title_generic">مكالمة جارية</string>
+    <string name="meeting_call_notification_connecting">جارٍ الاتصال…</string>
+    <string name="meeting_call_notification_mute">كتم الصوت</string>
+    <string name="meeting_call_notification_unmute">إلغاء الكتم</string>
+    <string name="meeting_call_notification_end">إنهاء المكالمة</string>
+</resources>
