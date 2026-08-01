@@ -67,7 +67,7 @@ val mushafPresentationModule = module {
 
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),get()
         )
     }
 
