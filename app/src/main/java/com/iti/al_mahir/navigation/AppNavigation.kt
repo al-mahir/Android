@@ -34,9 +34,12 @@ import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
 import com.iti.presentation.auth.session.SessionViewModel
+import com.iti.meeting.presentation.call.session.CallForegroundService
+import com.iti.meeting.presentation.call.session.CallSessionController
 import com.iti.meeting.presentation.navigation.MeetingRoute
 import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
 import com.iti.meeting.presentation.navigation.meetingEntries
+import org.koin.compose.koinInject
 import com.iti.presentation.circle.CircleListScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
@@ -57,6 +60,7 @@ sealed interface AppRoute : NavKey {
     data object Home : AppRoute
     data class Mushaf(val startPage: Int? = null, val openInListenMode: Boolean = false) : AppRoute
     data object Profile : AppRoute
+    data object Bookmarks : AppRoute
     data object Search : AppRoute
     data object SheikhList : AppRoute
     data class SheikhDetails(val sheikhId: String) : AppRoute
@@ -99,11 +103,37 @@ private fun AppNavHost(
 ) {
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
+    val callController: CallSessionController = koinInject()
+
+    fun isPhantomReplayOfEndedCall(requestId: String): Boolean {
+        val session = callController.state.value
+        return session.requestId == requestId && !session.isLive
+    }
+
+    fun openActiveCallIfLive() {
+        val session = callController.state.value
+        val requestId = session.requestId
+        val channelName = session.channelName
+        val userAccount = session.userAccount
+        if (!session.isLive || requestId == null || channelName == null || userAccount == null) return
+        val top = backStack.lastOrNull()
+        if (top is MeetingRoute.Call && top.requestId == requestId) return
+        backStack.add(
+            MeetingRoute.Call(
+                requestId = requestId,
+                token = "",
+                channelName = channelName,
+                userAccount = userAccount,
+                remoteDisplayName = session.remoteDisplayName,
+            ),
+        )
+    }
 
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
             AppBottomNavDestination.Home -> AppRoute.Home
             AppBottomNavDestination.Mushaf -> AppRoute.Mushaf()
+            AppBottomNavDestination.Bookmark -> AppRoute.Bookmarks
             AppBottomNavDestination.Profile -> AppRoute.Profile
         }
         backStack.clear()
@@ -133,11 +163,22 @@ private fun AppNavHost(
         )
     }
 
+    LaunchedEffect(Unit) {
+        openActiveCallIfLive()
+    }
+
     LaunchedEffect(pendingAction) {
-        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
-            backStack.removeAll { it is AppRoute.Mushaf }
-            backStack.add(AppRoute.Mushaf(openInListenMode = true))
-            onActionHandled()
+        when (pendingAction) {
+            "ACTION_OPEN_MUSHAF_LISTEN" -> {
+                backStack.removeAll { it is AppRoute.Mushaf }
+                backStack.add(AppRoute.Mushaf(openInListenMode = true))
+                onActionHandled()
+            }
+
+            CallForegroundService.ACTION_OPEN_ACTIVE_CALL -> {
+                openActiveCallIfLive()
+                onActionHandled()
+            }
         }
     }
 
@@ -148,7 +189,8 @@ private fun AppNavHost(
             .fillMaxSize()
             .statusBarsPadding(),
     ) {
-        val showBanner = backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
+        val showBanner =
+            backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
         androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
             if (showBanner) {
                 val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
@@ -160,190 +202,245 @@ private fun AppNavHost(
                     backStack = backStack,
                     modifier = Modifier.fillMaxSize(),
                     onBack = {
-                when {
-                    backStack.lastOrNull() is AppRoute.Mushaf ->
-                        selectTab(AppBottomNavDestination.Home)
+                        when {
+                            backStack.lastOrNull() is AppRoute.Mushaf ->
+                                selectTab(AppBottomNavDestination.Home)
 
-                    backStack.size > 1 -> backStack.removeLastOrNull()
-                }
-            },
-            entryProvider = entryProvider {
-                authEntries(
-                    onNavigate = { route -> backStack.add(route) },
-                    onBack = { backStack.removeLastOrNull() },
-                    onAuthenticated = {
-                        backStack.clear()
-                        backStack.add(AppRoute.Home)
-                    },
-                    onShowMessage = { message ->
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    },
-                )
-
-                entry<AppRoute.Home> {
-                    HomeScreen(
-                        onOpenSearch = {
-                            backStack.removeAll { it == AppRoute.Search }
-                            backStack.add(AppRoute.Search)
-                        },
-                        onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
-                        onOpenMushafAtPage = { page ->
-                            backStack.clear()
-                            backStack.add(AppRoute.Mushaf(startPage = page))
-                        },
-                        onOpenSheikh = { sheikhId -> backStack.add(AppRoute.SheikhDetails(sheikhId)) },
-                        onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
-                        onOpenCircleList = { backStack.add(AppRoute.CircleList) },
-                        onOpenMeetingRequest = { sheikhId, sheikhName ->
-                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId, sheikhName))
-                        },
-                    )
-                }
-
-                entry<AppRoute.Mushaf> { route ->
-                    MushafScreen(
-                        startPage = route.startPage,
-                        openInListenMode = route.openInListenMode,
-                        onBack = { selectTab(AppBottomNavDestination.Home) },
-                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
-                        onSearchClick = {
-                            backStack.removeAll { it == AppRoute.Search }
-                            backStack.add(AppRoute.Search)
-                        },
-                    )
-                }
-
-                entry<AppRoute.Search> {
-                    com.example.mushaf.presentation.search.MushafSearchScreen(
-                        viewModel = koinViewModel(),
-                        onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
-                        onNavigateToMushaf = {
-                            backStack.removeAll { it is AppRoute.Mushaf }
-                            backStack.add(AppRoute.Mushaf())
+                            backStack.size > 1 -> backStack.removeLastOrNull()
                         }
-                    )
-                }
+                    },
+                    entryProvider = entryProvider {
+                        authEntries(
+                            onNavigate = { route -> backStack.add(route) },
+                            onBack = { backStack.removeLastOrNull() },
+                            onAuthenticated = {
+                                backStack.clear()
+                                backStack.add(AppRoute.Home)
+                            },
+                            onShowMessage = { message ->
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            },
+                        )
 
-                entry<AppRoute.Profile> {
-                    val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
-                    val isOnline by mainViewModel.isOnline.collectAsStateWithLifecycle()
-                    
-                    val offlineMenus = setOf(
-                        com.iti.presentation.profile.model.ProfileMenuType.SETTINGS,
-                        com.iti.presentation.profile.model.ProfileMenuType.ABOUT,
-                        com.iti.presentation.profile.model.ProfileMenuType.ATTRIBUTIONS,
-                        com.iti.presentation.profile.model.ProfileMenuType.SHARE_APP
-                    )
-
-                    ProfileScreen(
-                        visibleMenuItems = if (isOnline) com.iti.presentation.profile.model.ProfileMenuType.entries.toSet() else offlineMenus,
-                        onOpenPremium = { backStack.add(ProfileRoute.Premium) },
-                        onOpenLegalDocument = { documentType ->
-                            backStack.add(ProfileRoute.StaticContent(documentType))
-                        },
-                        onSignedOut = {
-                            backStack.clear()
-                            backStack.add(AuthRoute.Login)
-                        },
-                        onOpenSettings = { backStack.add(SettingsRoute.Settings) },
-                        onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
-                        onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
-                    )
-                }
-
-                entry<AppRoute.SheikhList> {
-                    SheikhListScreen(
-                        onBack = { backStack.removeLastOrNull() },
-                        onOpenSheikhDetails = { sheikhId ->
-                            backStack.add(AppRoute.SheikhDetails(sheikhId))
-                        },
-                    )
-                }
-
-                entry<AppRoute.SheikhDetails> { route ->
-                    SheikhDetailsScreen(
-                        sheikhId = route.sheikhId,
-                        onBack = { backStack.removeLastOrNull() },
-                        onNavigateToJoiningCircle = { circleId ->
-                            backStack.add(AppRoute.JoiningCircle(circleId))
-                        },
-                        onRequestMeeting = { sheikhId, sheikhName ->
-                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId, sheikhName))
-                        },
-                    )
-                }
-
-                entry<AppRoute.CircleList> {
-                    CircleListScreen(
-                        onBack = { backStack.removeLastOrNull() },
-                        onNavigateToJoiningCircle = { circleId ->
-                            backStack.add(AppRoute.JoiningCircle(circleId))
-                        },
-                    )
-                }
-
-                entry<AppRoute.JoiningCircle> { route ->
-                    JoiningCircleScreen(
-                        circleId = route.circleId,
-                        onBack = { backStack.removeLastOrNull() },
-                        onNavigateToSession = { circleId ->
-                            backStack.removeLastOrNull()
-                            backStack.add(AppRoute.InSession(circleId))
-                        },
-                    )
-                }
-
-                entry<AppRoute.InSession> { route ->
-                    InSessionScreen(
-                        circleId = route.circleId,
-                        onBack = { backStack.removeLastOrNull() },
-                        onOpenMushaf = { backStack.add(AppRoute.Mushaf()) },
-                    )
-                }
-
-                profileEntries(onBack = { backStack.removeLastOrNull() })
-
-                entry<SettingsRoute.Settings> {
-                    SettingsScreen(
-                        onBack = { backStack.removeLastOrNull() },
-                        onShowMessage = { messageRes ->
-                            Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
-                        },
-                        mushafSection = {
-                            MushafSettingsSection(
-                                onOpenDownloads = { kind ->
-                                    backStack.add(DownloadsRoute.Downloads(kind))
+                        entry<AppRoute.Home> {
+                            HomeScreen(
+                                onOpenSearch = {
+                                    backStack.removeAll { it == AppRoute.Search }
+                                    backStack.add(AppRoute.Search)
                                 },
-                                onOpenReciteSettings = {
-                                    backStack.add(ReciteSettingsRoute.ReciteSettings)
+                                onOpenProfile = { selectTab(AppBottomNavDestination.Profile) },
+                                onOpenMushafAtPage = { page ->
+                                    backStack.clear()
+                                    backStack.add(AppRoute.Mushaf(startPage = page))
+                                },
+                                onOpenSheikh = { sheikhId ->
+                                    backStack.add(
+                                        AppRoute.SheikhDetails(
+                                            sheikhId
+                                        )
+                                    )
+                                },
+                                onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
+                                onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                                onOpenMeetingRequest = { sheikhId, sheikhName ->
+                                    backStack.add(
+                                        MeetingRequestRoute.SendMeetingRequest(
+                                            sheikhId,
+                                            sheikhName
+                                        )
+                                    )
+                                },
+                                onOpenActiveCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
+                                    backStack.add(
+                                        MeetingRoute.Call(
+                                            requestId = requestId,
+                                            token = token,
+                                            channelName = channelName,
+                                            userAccount = userAccount,
+                                            remoteDisplayName = remoteDisplayName
+                                        )
+                                    )
                                 },
                             )
-                        },
-                    )
-                }
-
-                downloadsEntries(onBack = { backStack.removeLastOrNull() })
-
-                reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
-
-                meetingRequestEntries(
-                    onNavigate = { route -> backStack.add(route) },
-                    onNavigateToCall = { requestId, token, channelName, userAccount ->
-                        val top = backStack.lastOrNull()
-                        if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
-                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
                         }
+
+                        entry<AppRoute.Mushaf> { route ->
+                            MushafScreen(
+                                startPage = route.startPage,
+                                openInListenMode = route.openInListenMode,
+                                onBack = { selectTab(AppBottomNavDestination.Home) },
+                                onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                                onSearchClick = {
+                                    backStack.removeAll { it == AppRoute.Search }
+                                    backStack.add(AppRoute.Search)
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.Search> {
+                            com.example.mushaf.presentation.search.MushafSearchScreen(
+                                viewModel = koinViewModel(),
+                                onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                                onNavigateToMushaf = {
+                                    backStack.removeAll { it is AppRoute.Mushaf }
+                                    backStack.add(AppRoute.Mushaf())
+                                }
+                            )
+                        }
+
+                        entry<AppRoute.Bookmarks> {
+                            com.iti.presentation.bookmark.BookmarkScreen(
+                                onOpenMushafAtPage = { page ->
+                                    backStack.clear()
+                                    backStack.add(AppRoute.Mushaf(startPage = page))
+                                },
+                                onOpenSheikhDetails = { sheikhId ->
+                                    backStack.add(AppRoute.SheikhDetails(sheikhId))
+                                }
+                            )
+                        }
+
+                        entry<AppRoute.Profile> {
+                            val mainViewModel: com.iti.presentation.core.MainViewModel =
+                                koinViewModel()
+                            val isOnline by mainViewModel.isOnline.collectAsStateWithLifecycle()
+
+                            val offlineMenus = setOf(
+                                com.iti.presentation.profile.model.ProfileMenuType.SETTINGS,
+                                com.iti.presentation.profile.model.ProfileMenuType.ABOUT,
+                                com.iti.presentation.profile.model.ProfileMenuType.ATTRIBUTIONS,
+                                com.iti.presentation.profile.model.ProfileMenuType.SHARE_APP
+                            )
+
+                            ProfileScreen(
+                                visibleMenuItems = if (isOnline) com.iti.presentation.profile.model.ProfileMenuType.entries.toSet() else offlineMenus,
+                                onOpenPremium = { backStack.add(ProfileRoute.Premium) },
+                                onOpenLegalDocument = { documentType ->
+                                    backStack.add(ProfileRoute.StaticContent(documentType))
+                                },
+                                onSignedOut = {
+                                    backStack.clear()
+                                    backStack.add(AuthRoute.Login)
+                                },
+                                onOpenSettings = { backStack.add(SettingsRoute.Settings) },
+                                onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
+                                onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
+                            )
+                        }
+
+                        entry<AppRoute.SheikhList> {
+                            SheikhListScreen(
+                                onBack = { backStack.removeLastOrNull() },
+                                onOpenSheikhDetails = { sheikhId ->
+                                    backStack.add(AppRoute.SheikhDetails(sheikhId))
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.SheikhDetails> { route ->
+                            SheikhDetailsScreen(
+                                sheikhId = route.sheikhId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onNavigateToJoiningCircle = { circleId ->
+                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                },
+                                onRequestMeeting = { sheikhId, sheikhName ->
+                                    backStack.add(
+                                        MeetingRequestRoute.SendMeetingRequest(
+                                            sheikhId,
+                                            sheikhName
+                                        )
+                                    )
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.CircleList> {
+                            CircleListScreen(
+                                onBack = { backStack.removeLastOrNull() },
+                                onNavigateToJoiningCircle = { circleId ->
+                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.JoiningCircle> { route ->
+                            JoiningCircleScreen(
+                                circleId = route.circleId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onNavigateToSession = { circleId ->
+                                    backStack.removeLastOrNull()
+                                    backStack.add(AppRoute.InSession(circleId))
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.InSession> { route ->
+                            InSessionScreen(
+                                circleId = route.circleId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onOpenMushaf = { backStack.add(AppRoute.Mushaf()) },
+                            )
+                        }
+
+                        profileEntries(onBack = { backStack.removeLastOrNull() })
+
+                        entry<SettingsRoute.Settings> {
+                            SettingsScreen(
+                                onBack = { backStack.removeLastOrNull() },
+                                onShowMessage = { messageRes ->
+                                    Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
+                                },
+                                mushafSection = {
+                                    MushafSettingsSection(
+                                        onOpenDownloads = { kind ->
+                                            backStack.add(DownloadsRoute.Downloads(kind))
+                                        },
+                                        onOpenReciteSettings = {
+                                            backStack.add(ReciteSettingsRoute.ReciteSettings)
+                                        },
+                                    )
+                                },
+                            )
+                        }
+
+                        downloadsEntries(onBack = { backStack.removeLastOrNull() })
+
+                        reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
+
+                        meetingRequestEntries(
+                            onNavigate = { route -> backStack.add(route) },
+                            onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
+                                val top = backStack.lastOrNull()
+                                val isCallAlreadyTop =
+                                    top is com.iti.meeting.presentation.navigation.MeetingRoute.Call && top.requestId == requestId
+                                if (!isCallAlreadyTop && !isPhantomReplayOfEndedCall(requestId)) {
+                                    backStack.add(
+                                        com.iti.meeting.presentation.navigation.MeetingRoute.Call(
+                                            requestId,
+                                            token,
+                                            channelName,
+                                            userAccount,
+                                            remoteDisplayName
+                                        )
+                                    )
+                                }
+                            },
+                            onBack = { backStack.removeLastOrNull() },
+                            onShowMessage = { message ->
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                        meetingEntries(
+                            onNavigate = { route -> backStack.add(route) },
+                            onBack = {
+                                backStack.removeLastOrNull()
+                                while (backStack.lastOrNull() is MeetingRequestRoute) {
+                                    backStack.removeLastOrNull()
+                                }
+                            },
+                        )
                     },
-                    onBack = { backStack.removeLastOrNull() },
-                    onShowMessage = { message ->
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    },
-                )
-                meetingEntries(
-                    onNavigate = { route -> backStack.add(route) },
-                    onBack = { backStack.removeLastOrNull() },
-                )
-            },
                 )
             }
         }
@@ -362,6 +459,7 @@ private fun AppNavHost(
 private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
     when (lastOrNull()) {
         AppRoute.Home -> AppBottomNavDestination.Home
+        AppRoute.Bookmarks -> AppBottomNavDestination.Bookmark
         AppRoute.Profile -> AppBottomNavDestination.Profile
         else -> null
     }

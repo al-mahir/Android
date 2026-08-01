@@ -49,6 +49,7 @@ class HomeViewModel(
     init {
         observeContent()
         observePendingMeetingRequest()
+        observeActiveCall()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -63,6 +64,8 @@ class HomeViewModel(
             is HomeIntent.JoinCircleClicked -> join(intent.circleId)
             HomeIntent.ViewPendingMeetingClicked -> viewPendingMeeting()
             HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
+            HomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
+            HomeIntent.DismissActiveCallClicked -> dismissActiveCall()
         }
     }
 
@@ -81,6 +84,46 @@ class HomeViewModel(
         val pending = currentState.pendingMeetingRequest ?: return
         viewModelScope.launch {
             meetingRepository.cancelMeetingRequest(pending.requestId)
+        }
+    }
+
+    private fun observeActiveCall() {
+        meetingRepository.observeActiveCall()
+            .onEach { active -> updateState { copy(activeCall = active) } }
+            .launchIn(viewModelScope)
+    }
+
+    /** Never auto-rejoins silently — [MeetingRepository.refreshToken] doubles as a liveness probe
+     * here: a fresh token means the call is still active server-side, a failure means it ended
+     * while this app process was dead (or never actually started this session at all). See case 3
+     * in docs/Meeting-Call-Lifecycle-Plan.md. */
+    private fun rejoinActiveCall() {
+        val active = currentState.activeCall ?: return
+        viewModelScope.launch {
+            meetingRepository.refreshToken(active.requestId)
+                .onSuccess { refreshed ->
+                    sendEffect(
+                        HomeEffect.OpenActiveCall(
+                            requestId = active.requestId,
+                            token = refreshed.token,
+                            channelName = refreshed.channelName,
+                            userAccount = refreshed.userAccount,
+                            remoteDisplayName = active.remoteDisplayName,
+                        ),
+                    )
+                }
+                .onFailure {
+                    meetingRepository.clearActiveCall()
+                    sendEffect(HomeEffect.ShowMessage(R.string.home_active_call_ended))
+                }
+        }
+    }
+
+    private fun dismissActiveCall() {
+        val active = currentState.activeCall ?: return
+        viewModelScope.launch {
+            meetingRepository.endMeeting(active.requestId)
+            meetingRepository.clearActiveCall()
         }
     }
 

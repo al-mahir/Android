@@ -211,7 +211,9 @@ internal fun MushafSearchContent(
                             SurahListItem(
                                 surah = surah,
                                 query = state.query,
-                                onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) }
+                                onClick = { onIntent(MushafSearchIntent.SurahClicked(it)) },
+                                isBookmarked = surah.number in state.bookmarkedSurahs,
+                                onBookmark = { onIntent(MushafSearchIntent.ToggleSurahBookmark(surah)) }
                             )
                         }
                     }
@@ -228,7 +230,9 @@ internal fun MushafSearchContent(
                             AyahListItem(
                                 ayah = ayah,
                                 query = state.query,
-                                onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) }
+                                onClick = { onIntent(MushafSearchIntent.AyahClicked(it)) },
+                                isBookmarked = (ayah.surahNumber to ayah.ayahNumber) in state.bookmarkedAyahs,
+                                onBookmark = { onIntent(MushafSearchIntent.ToggleAyahBookmark(ayah.surahNumber, ayah.ayahNumber)) }
                             )
                         }
                     }

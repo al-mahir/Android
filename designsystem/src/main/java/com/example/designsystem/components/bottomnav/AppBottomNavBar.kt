@@ -9,6 +9,7 @@ import com.example.designsystem.R
 enum class AppBottomNavDestination {
     Home,
     Mushaf,
+    Bookmark,
     Profile,
 }
 
@@ -38,6 +39,11 @@ private fun appBottomNavTabs(): List<BottomNavTab> = listOf(
         title = stringResource(R.string.bottom_nav_mushaf),
         icon = painterResource(R.drawable.ic_book_unselected),
         selectedIcon = painterResource(R.drawable.ic_book_selected),
+    ),
+    BottomNavTab(
+        title = stringResource(R.string.bottom_nav_bookmark),
+        icon = painterResource(R.drawable.ic_bookmark),
+        selectedIcon = painterResource(R.drawable.ic_bookmark_filled),
     ),
     BottomNavTab(
         title = stringResource(R.string.bottom_nav_profile),

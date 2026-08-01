@@ -23,5 +23,7 @@ data class MushafSearchState(
     val isLoading: Boolean = false,
     val errorMessage: UiText? = null,
     val lastReadSession: LastReadSession? = null,
-    val shouldNavigateToMushaf: Boolean = false
+    val shouldNavigateToMushaf: Boolean = false,
+    val bookmarkedSurahs: Set<Int> = emptySet(),
+    val bookmarkedAyahs: Set<Pair<Int, Int>> = emptySet(),
 )

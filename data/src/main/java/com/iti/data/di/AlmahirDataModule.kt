@@ -4,6 +4,8 @@ import com.iti.data.core.di.AlmahirClient
 import com.iti.data.core.di.networkModule
 import com.iti.data.datasource.AlmahirDataSource
 import com.iti.data.datasource.AlmahirFakeDataSource
+import com.iti.data.datasource.AlmahirLocalDataSource
+import com.iti.data.datasource.AlmahirLocalDataSourceImpl
 import com.iti.data.datasource.circle.CircleDataSource
 import com.iti.data.datasource.circle.FakeCircleDataSource
 import com.iti.data.datasource.sheikh.SheikhDataSource
@@ -39,7 +41,9 @@ val almahirDataModule = module {
     //    and saved recitation sessions all live on one merged repository ──────
     single { AlmahirDatabase.create(androidContext()) }
     single { get<AlmahirDatabase>().recitationSessionDao() }
-    single { AlmahirRepositoryImpl(get(), get(), get(), get(), get()) }
+    single { get<AlmahirDatabase>().bookmarkDao() }
+    single<AlmahirLocalDataSource> { AlmahirLocalDataSourceImpl(get()) }
+    single { AlmahirRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<AlmahirRepository> { get<AlmahirRepositoryImpl>() }
     single<SheikhRepository> { get<AlmahirRepositoryImpl>() }
     single<CircleRepository> { get<AlmahirRepositoryImpl>() }

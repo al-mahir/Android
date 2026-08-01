@@ -2,6 +2,8 @@ package com.iti.presentation.testing
 
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
+import com.iti.domain.model.Bookmark
+import com.iti.domain.model.BookmarkType
 import com.iti.domain.model.CircleDifficulty
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
@@ -51,6 +53,7 @@ class FakeAlmahirRepository(
         private set
 
     private val circles = MutableStateFlow(initialCircles)
+    private val bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
 
     // ── AlmahirRepository ────────────────────────────────────────────────
 
@@ -85,6 +88,28 @@ class FakeAlmahirRepository(
     override suspend fun deleteAccount(): Result<Unit> {
         if (failDeleteAccount) return Result.Error(BOOM)
         deletedAccount = true
+        return Result.Success(Unit)
+    }
+
+    override fun observeBookmarks(type: BookmarkType): Flow<Result<List<Bookmark>>> =
+        bookmarks.map { list -> Result.Success(list.filter { it.type == type }) }
+
+    override fun observeAllBookmarks(): Flow<Result<List<Bookmark>>> =
+        bookmarks.map { Result.Success(it) }
+
+    override suspend fun getBookmarks(type: BookmarkType): Result<List<Bookmark>> =
+        Result.Success(bookmarks.value.filter { it.type == type })
+
+    override suspend fun getBookmark(id: String): Result<Bookmark?> =
+        Result.Success(bookmarks.value.firstOrNull { it.id == id })
+
+    override suspend fun addBookmark(bookmark: Bookmark): Result<Unit> {
+        bookmarks.value = bookmarks.value.filterNot { it.id == bookmark.id } + bookmark
+        return Result.Success(Unit)
+    }
+
+    override suspend fun removeBookmark(id: String): Result<Unit> {
+        bookmarks.value = bookmarks.value.filterNot { it.id == id }
         return Result.Success(Unit)
     }
 

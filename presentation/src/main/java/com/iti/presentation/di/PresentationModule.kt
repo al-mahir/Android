@@ -74,6 +74,13 @@ val presentationModule = module {
     factory { GetRecitationSessionUseCase(get()) }
     factory { DeleteRecitationSessionUseCase(get()) }
 
+    // ── Bookmark use cases ────────────────────────────────────────────────────
+    factory { com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.ObserveAllBookmarksUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.AddBookmarkUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.RemoveBookmarkUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase(get()) }
+
     // ── Platform ──────────────────────────────────────────────────────────────
     single<AppReviewLauncher> { StoreListingAppReviewLauncher(androidContext().packageName) }
 
@@ -106,11 +113,12 @@ val presentationModule = module {
             deleteAllRecordings = get(),
         )
     }
-    viewModel { SheikhListViewModel(get()) }
+    viewModel { SheikhListViewModel(get(), get(), get()) }
     viewModel { (sheikhId: String) -> SheikhDetailsViewModel(sheikhId, get(), get(), get()) }
     viewModel { CircleListViewModel(get(), get()) }
     viewModel { (circleId: String) -> JoiningCircleViewModel(circleId, get(), get()) }
     viewModel { (circleId: String) -> InSessionViewModel(circleId, get()) }
+    viewModel { com.iti.presentation.bookmark.BookmarkViewModel(get(), get(), get(), get(), get()) }
 }
 
 const val APP_VERSION = "app_version"

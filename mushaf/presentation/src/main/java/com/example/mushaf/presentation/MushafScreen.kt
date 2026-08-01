@@ -293,9 +293,9 @@ fun MushafScreen(
         MushafTopBar(
             visible = state.areBarsVisible,
             surahName = SurahNameResolver.nameFor(state.currentSurahNumber),
-            isBookmarked = false,
+            isBookmarked = state.isCurrentPageBookmarked,
             onBack = onBack,
-            onBookmark = {},
+            onBookmark = { viewModel.onIntent(MushafIntent.TogglePageBookmark) },
             onSettings = onOpenSettings,
             onSurahNameClick = { viewModel.onIntent(MushafIntent.ShowSurahPicker) },
             onSearchClick = onSearchClick,
@@ -532,10 +532,15 @@ fun MushafScreen(
         // ── Tafsir sheet ────────────────────────────────────────────────────────
         if (state.tafsirState !is com.example.mushaf.presentation.state.TafsirState.Idle) {
             val tafsirState = state.tafsirState
+            val isAyahBookmarked = (tafsirState as? com.example.mushaf.presentation.state.TafsirState.Success)
+                ?.let { it.tafsir.surahNumber to it.tafsir.ayahNumber }
+                ?.let { it in state.bookmarkedAyahs }
+                ?: false
             com.example.mushaf.presentation.components.TafsirBottomSheet(
                 tafsirState = tafsirState,
                 availableBooks = state.availableTafsirBooks,
                 selectedKey = state.selectedTafsirKey,
+                isAyahBookmarked = isAyahBookmarked,
                 onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) },
                 onRetry = if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Error) {
                     {
@@ -546,7 +551,15 @@ fun MushafScreen(
                 } else null,
                 onChangeTafsir = { viewModel.onIntent(MushafIntent.ChangeTafsirSource(it)) },
                 onDownloadTafsir = { key, url -> viewModel.onIntent(MushafIntent.DownloadTafsir(key, url)) },
-                onDeleteTafsir = { viewModel.onIntent(MushafIntent.DeleteTafsir(it)) }
+                onDeleteTafsir = { viewModel.onIntent(MushafIntent.DeleteTafsir(it)) },
+                onBookmarkAyah = {
+                    if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Success) {
+                        viewModel.onIntent(MushafIntent.ToggleAyahBookmark(
+                            surah = tafsirState.tafsir.surahNumber,
+                            ayah = tafsirState.tafsir.ayahNumber
+                        ))
+                    }
+                }
             )
         }
 

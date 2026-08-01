@@ -21,6 +21,7 @@ fun HomeScreen(
     onOpenSheikhList: () -> Unit,
     onOpenCircleList: () -> Unit,
     onOpenMeetingRequest: (String, String?) -> Unit,
+    onOpenActiveCall: (String, String, String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -36,6 +37,8 @@ fun HomeScreen(
             is HomeEffect.OpenMushafAtPage -> onOpenMushafAtPage(effect.page)
             is HomeEffect.OpenSheikh -> onOpenSheikh(effect.sheikhId)
             is HomeEffect.OpenMeetingRequest -> onOpenMeetingRequest(effect.sheikhId, effect.sheikhName)
+            is HomeEffect.OpenActiveCall ->
+                onOpenActiveCall(effect.requestId, effect.token, effect.channelName, effect.userAccount, effect.remoteDisplayName)
             is HomeEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
@@ -53,6 +56,8 @@ fun HomeScreen(
         onRetryClick = { viewModel.onIntent(HomeIntent.Retry) },
         onViewPendingMeetingClick = { viewModel.onIntent(HomeIntent.ViewPendingMeetingClicked) },
         onCancelPendingMeetingClick = { viewModel.onIntent(HomeIntent.CancelPendingMeetingClicked) },
+        onRejoinActiveCallClick = { viewModel.onIntent(HomeIntent.RejoinActiveCallClicked) },
+        onDismissActiveCallClick = { viewModel.onIntent(HomeIntent.DismissActiveCallClicked) },
         modifier = modifier,
     )
 }
