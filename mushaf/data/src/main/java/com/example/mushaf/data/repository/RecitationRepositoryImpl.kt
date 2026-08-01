@@ -16,7 +16,8 @@ class RecitationRepositoryImpl(
     private val dataSource: RecitationDataSource,
     private val dao: com.example.mushaf.data.recitation.local.RecitationDao,
     private val mushafRepository: com.example.mushaf.domain.repository.MushafRepository,
-    private val context: android.content.Context
+    private val context: android.content.Context,
+    private val readerPreferencesRepository: com.example.mushaf.domain.repository.ReaderPreferencesRepository? = null,
 ) : RecitationRepository {
 
     override fun getReciters(): Flow<Result<List<Reciter>>> {
@@ -98,9 +99,19 @@ class RecitationRepositoryImpl(
             .putInt(com.example.mushaf.data.recitation.download.AudioDownloadWorker.KEY_RECITER_ID, reciterId)
             .putInt(com.example.mushaf.data.recitation.download.AudioDownloadWorker.KEY_SURAH_ID, surahNumber ?: -1)
             .build()
+
+        val isWifiOnly = kotlinx.coroutines.withTimeoutOrNull(500) {
+            readerPreferencesRepository?.preferences?.firstOrNull()?.downloadOverWifiOnly
+        } ?: false
+
+        val networkType = if (isWifiOnly) {
+            androidx.work.NetworkType.UNMETERED
+        } else {
+            androidx.work.NetworkType.CONNECTED
+        }
             
         val constraints = androidx.work.Constraints.Builder()
-            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            .setRequiredNetworkType(networkType)
             .build()
             
         val workRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.mushaf.data.recitation.download.AudioDownloadWorker>()

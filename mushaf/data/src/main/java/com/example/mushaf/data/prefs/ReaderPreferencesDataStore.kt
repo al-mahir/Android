@@ -26,6 +26,7 @@ class ReaderPreferencesDataStore(context: Context) {
             tajweedEnabled = prefs[KEY_TAJWEED] ?: true,
             lastPage = prefs[KEY_LAST_PAGE] ?: MushafConstants.FIRST_PAGE,
             isFirstMushafLaunch = prefs[KEY_FIRST_MUSHAF_LAUNCH] ?: true,
+            downloadOverWifiOnly = prefs[KEY_DOWNLOAD_OVER_WIFI_ONLY] ?: false,
         )
     }
 
@@ -41,9 +42,14 @@ class ReaderPreferencesDataStore(context: Context) {
         dataStore.edit { it[KEY_FIRST_MUSHAF_LAUNCH] = false }
     }
 
+    suspend fun setDownloadOverWifiOnly(enabled: Boolean) {
+        dataStore.edit { it[KEY_DOWNLOAD_OVER_WIFI_ONLY] = enabled }
+    }
+
     private companion object {
         val KEY_TAJWEED = booleanPreferencesKey("tajweed_enabled")
         val KEY_LAST_PAGE = intPreferencesKey("last_page")
         val KEY_FIRST_MUSHAF_LAUNCH = booleanPreferencesKey("first_mushaf_launch")
+        val KEY_DOWNLOAD_OVER_WIFI_ONLY = booleanPreferencesKey("download_over_wifi_only")
     }
 }

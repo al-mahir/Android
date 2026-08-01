@@ -90,6 +90,12 @@ class MushafReducerTest {
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
+        override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): com.example.mushaf.domain.model.TafsirResult? = null
+        override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
+        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
+        override fun deleteTafsirBook(tafsirKey: String) = Unit
+        override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
     }
 
     private class FakePrefsRepo(initial: ReaderPreferences) : ReaderPreferencesRepository {
@@ -108,12 +114,16 @@ class MushafReducerTest {
             return Result.Success(Unit)
         }
         override suspend fun setFirstMushafLaunchCompleted(): Result<Unit> = Result.Success(Unit)
+        override suspend fun setDownloadOverWifiOnly(enabled: Boolean): Result<Unit> = Result.Success(Unit)
     }
 
     private class FakeRecitationRepo : RecitationRepository {
         override fun getReciters(): Flow<Result<List<Reciter>>> = flowOf(Result.Success(emptyList()))
         override fun getTimingsForPage(reciterId: Int, pageNumber: Int): Flow<Result<List<AyahTiming>>> =
             flowOf(Result.Success(emptyList()))
+        override suspend fun downloadRecitation(reciterId: Int, surahNumber: Int?) = Unit
+        override fun cancelDownloadRecitation(reciterId: Int, surahNumber: Int?) = Unit
+        override fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>> = flowOf(emptyList())
     }
 
     private class FakeAudioPlayer : AudioPlayer {
@@ -121,7 +131,8 @@ class MushafReducerTest {
         override val currentPosition = MutableStateFlow(0L)
         override val currentTrackIndex = MutableStateFlow(0)
         override val playbackSpeed = MutableStateFlow(1f)
-        override fun playUrls(urls: List<String>) = Unit
+        override val externalCommands = kotlinx.coroutines.flow.MutableSharedFlow<String>()
+        override fun playTracks(tracks: List<AudioPlayer.AudioTrackInfo>, startIndex: Int, autoPlay: Boolean) = Unit
         override fun play() = Unit
         override fun pause() = Unit
         override fun stop() = Unit
@@ -272,14 +283,34 @@ class MushafReducerTest {
         }
     }
 
+    private class FakeAppPrefsRepo : com.iti.domain.settings.repository.AppPreferencesRepository {
+        val flow = MutableStateFlow(com.iti.domain.settings.model.AppPreferences())
+        override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = flow
+        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): Result<Unit> = Result.Success(Unit)
+        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): Result<Unit> = Result.Success(Unit)
+        override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun saveUser(user: com.iti.domain.model.User): Result<Unit> = Result.Success(Unit)
+        override suspend fun clearUser(): Result<Unit> = Result.Success(Unit)
+    }
+
+    private class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
+        override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> = flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+        override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus = com.iti.domain.connectivity.ConnectivityStatus.Available
+    }
+
     private fun buildViewModel(
         prefs: FakePrefsRepo,
         mushafRepo: MushafRepository = FakeMushafRepo(),
+        recitationRepo: RecitationRepository = FakeRecitationRepo(),
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
         localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
         localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
+        appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPrefsRepo(),
+        connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
@@ -287,16 +318,21 @@ class MushafReducerTest {
             setTajweedEnabled = SetTajweedEnabledUseCase(prefs),
             setFirstMushafLaunchCompleted = com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(prefs),
             saveLastPage = SaveLastPageUseCase(prefs),
-            getReciters = GetRecitersUseCase(FakeRecitationRepo()),
-            getAyahTimings = GetAyahTimingsUseCase(FakeRecitationRepo()),
+            getReciters = GetRecitersUseCase(recitationRepo),
+            getAyahTimings = GetAyahTimingsUseCase(recitationRepo),
             getTafsirForAyah = com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(mushafRepo),
             playbackManager = FakeAudioPlayer(),
             startLiveRecitation = StartLiveRecitationUseCase(liveRepo),
             saveRecitationSession = SaveRecitationSessionUseCase(sessionRepo),
             observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
+            downloadRecitation = com.example.mushaf.domain.usecase.DownloadRecitationUseCase(recitationRepo),
             localSpeechRecognizer = localSpeechRecognizer,
             localWordCorpusRepository = localWordCorpusRepository,
+            observeAvailableTafsirBooks = com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(mushafRepo),
+            manageTafsirDownload = com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(mushafRepo),
+            observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(appPrefsRepo),
+            connectivityObserver = connectivityObserver,
         )
     }
 
@@ -1131,6 +1167,12 @@ class MushafReducerTest {
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
+        override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): com.example.mushaf.domain.model.TafsirResult? = null
+        override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
+        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
+        override fun deleteTafsirBook(tafsirKey: String) = Unit
+        override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
     }
 
     @Test

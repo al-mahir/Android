@@ -100,6 +100,6 @@ val mushafDataModule = module {
     // RecitationRepositoryImpl — offline-capable, provides RecitationRepository
     // Uses Room DAO for offline fallback + download scheduling via WorkManager
     single<RecitationRepository> {
-        RecitationRepositoryImpl(get(), get(), get(), androidContext())
+        RecitationRepositoryImpl(get(), get(), get(), androidContext(), get())
     }
 }
