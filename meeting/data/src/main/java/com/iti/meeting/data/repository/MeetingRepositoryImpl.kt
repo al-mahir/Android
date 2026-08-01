@@ -3,16 +3,20 @@ package com.iti.meeting.data.repository
 import com.iti.domain.model.MeetingSheikhSummary
 import com.iti.domain.model.SheikhAvailabilityStatus
 import com.iti.meeting.domain.model.MeetingRequestAccepted
+import com.iti.meeting.domain.model.PendingMeetingRequest
 import com.iti.meeting.domain.model.SheikhAvailability
 import com.iti.meeting.domain.model.TokenRefresh
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.SendMeetingRequestResult
+import com.iti.meeting.data.local.PendingMeetingRequestStore
+import com.iti.meeting.data.remote.dto.MeetingErrorResponseDto
 import com.iti.meeting.data.remote.dto.MeetingRequestAcceptedDto
 import com.iti.meeting.data.remote.dto.MeetingSheikhSummaryDto
 import com.iti.meeting.data.remote.dto.SheikhAvailabilityDto
 import com.iti.meeting.data.remote.dto.TokenRefreshDto
 import com.iti.meeting.data.remote.MeetingApi
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpStatusCode
 
 import com.iti.meeting.domain.repository.MeetingRequestEvent
@@ -25,12 +29,14 @@ import com.iti.meeting.data.remote.dto.RequestAcceptedEventDto
 import com.iti.meeting.data.remote.dto.RequestDeclinedEventDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.json.decodeFromJsonElement
 
 class MeetingRepositoryImpl(
     private val api: MeetingApi,
     private val stompClient: StompClient,
+    private val pendingRequestStore: PendingMeetingRequestStore,
 ) : MeetingRepository {
 
     override val reconnected: Flow<Unit> = stompClient.reconnected
@@ -45,12 +51,29 @@ class MeetingRepositoryImpl(
     override suspend fun getSheikhAvailability(sheikhId: String): Result<SheikhAvailability> =
         runCatching { api.getSheikhAvailability(sheikhId).toDomain() }
 
-    override suspend fun sendMeetingRequest(sheikhId: String, note: String?): SendMeetingRequestResult = try {
+    override suspend fun sendMeetingRequest(sheikhId: String, sheikhName: String?, note: String?): SendMeetingRequestResult = try {
         val created = api.sendMeetingRequest(sheikhId, note)
+        pendingRequestStore.save(
+            PendingMeetingRequest(
+                requestId = created.requestId,
+                sheikhId = sheikhId,
+                sheikhName = sheikhName,
+                expiresAt = created.expiresAt,
+            ),
+        )
         SendMeetingRequestResult.Pending(created.requestId, created.channelName, created.expiresAt)
     } catch (e: ClientRequestException) {
         when (e.response.status) {
-            HttpStatusCode.Conflict -> SendMeetingRequestResult.SheikhUnavailable
+            HttpStatusCode.Conflict -> {
+                val message = runCatching {
+                    MeetingKitJson.decodeFromString(MeetingErrorResponseDto.serializer(), e.response.bodyAsText()).message
+                }.getOrNull()
+                if (message != null && message.contains("pending", ignoreCase = true)) {
+                    SendMeetingRequestResult.AlreadyPending(message)
+                } else {
+                    SendMeetingRequestResult.SheikhUnavailable
+                }
+            }
             HttpStatusCode.NotFound -> SendMeetingRequestResult.SheikhNotFound
             else -> SendMeetingRequestResult.Error(e.message)
         }
@@ -60,6 +83,13 @@ class MeetingRepositoryImpl(
 
     override suspend fun cancelMeetingRequest(requestId: String): Result<Unit> =
         runCatching { api.cancelMeetingRequest(requestId) }
+            .onSuccess { pendingRequestStore.clearIfMatches(requestId) }
+
+    override fun observePendingRequest(): Flow<PendingMeetingRequest?> = pendingRequestStore.pendingRequest
+
+    override suspend fun getPendingRequest(): PendingMeetingRequest? = pendingRequestStore.get()
+
+    override suspend fun clearPendingRequest() = pendingRequestStore.clear()
 
     override suspend fun acceptMeetingRequest(requestId: String): Result<MeetingRequestAccepted> =
         runCatching { api.acceptMeetingRequest(requestId).toDomain() }
@@ -98,6 +128,18 @@ class MeetingRepositoryImpl(
                     "REQUEST_EXPIRED" -> MeetingRequestEvent.Expired
                     "MEETING_ENDED" -> MeetingRequestEvent.MeetingEnded
                     else -> null
+                }
+            }
+            .onEach { event ->
+                // The request is no longer "pending" once it's been decided one way or another —
+                // clear the locally-cached record so a stale entry doesn't outlive its request.
+                when (event) {
+                    is MeetingRequestEvent.Accepted,
+                    is MeetingRequestEvent.Declined,
+                    MeetingRequestEvent.Cancelled,
+                    MeetingRequestEvent.Expired,
+                    MeetingRequestEvent.MeetingEnded,
+                        -> pendingRequestStore.clearIfMatches(requestId)
                 }
             }
     }

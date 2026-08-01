@@ -5,6 +5,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SendMeetingRequestDto(val note: String? = null)
 
+/** Decodes the `{"success":false,"message":"...","timestamp":"..."}` body of a 4xx error
+ * response so callers can distinguish error reasons (e.g. "sheikh unavailable" vs "already have
+ * a pending request") that otherwise share the same HTTP status code. */
+@Serializable
+data class MeetingErrorResponseDto(val message: String? = null)
+
 @Serializable
 data class MeetingRequestCreatedDto(
     val requestId: String,
