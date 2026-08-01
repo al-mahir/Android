@@ -325,7 +325,12 @@ private fun AppNavHost(
                     )
                 }
 
-                downloadsEntries(onBack = { backStack.removeLastOrNull() })
+                downloadsEntries(
+                    onBack = { backStack.removeLastOrNull() },
+                    onNavigateToSurahList = { reciterId ->
+                        backStack.add(DownloadsRoute.SurahDownload(reciterId))
+                    },
+                )
 
                 reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
 

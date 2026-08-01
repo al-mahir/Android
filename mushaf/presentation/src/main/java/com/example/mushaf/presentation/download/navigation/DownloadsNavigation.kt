@@ -20,11 +20,28 @@ sealed interface DownloadsRoute : NavKey {
 
 fun EntryProviderScope<NavKey>.downloadsEntries(
     onBack: () -> Unit,
+    onNavigateToSurahList: (Int) -> Unit = {},
 ) {
     entry<DownloadsRoute.Downloads> { route ->
         DownloadsScreen(
             kind = route.kind,
             onBack = onBack,
+            onNavigateToSurahList = { rawId ->
+                val reciterId = rawId.toIntOrNull()
+                    ?: when (rawId.removePrefix("reciter_").lowercase()) {
+                        "husary" -> 6
+                        "minshawi" -> 9
+                        "abdulbasit" -> 1
+                        "sudais" -> 3
+                        "shatri" -> 4
+                        "afasy", "alafasy" -> 7
+                        "rifai" -> 5
+                        "tablawi" -> 11
+                        "shuraym" -> 10
+                        else -> 7
+                    }
+                onNavigateToSurahList(reciterId)
+            },
             modifier = Modifier.fillMaxSize(),
         )
     }
