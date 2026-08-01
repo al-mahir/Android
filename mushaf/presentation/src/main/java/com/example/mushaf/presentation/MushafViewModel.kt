@@ -1186,14 +1186,24 @@ class MushafViewModel(
         val isArabic = observeAppPreferences().first().language == com.iti.domain.settings.model.AppLanguage.ARABIC
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
-            val finalUrl = if (audioUrl != null) {
-                if (audioUrl.startsWith("http")) audioUrl
-                else if (audioUrl.startsWith("//")) "https:$audioUrl"
-                else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
-            } else {
-                val paddedS = timing.surahNumber.toString().padStart(3, '0')
-                val paddedA = timing.ayahNumber.toString().padStart(3, '0')
-                "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            val finalUrl = when {
+                audioUrl.isNullOrBlank() -> {
+                    val paddedS = timing.surahNumber.toString().padStart(3, '0')
+                    val paddedA = timing.ayahNumber.toString().padStart(3, '0')
+                    "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+                }
+                java.io.File(audioUrl).exists() -> {
+                    java.io.File(audioUrl).toURI().toString()
+                }
+                audioUrl.startsWith("http://") || audioUrl.startsWith("https://") || audioUrl.startsWith("file://") || audioUrl.startsWith("content://") -> {
+                    audioUrl
+                }
+                audioUrl.startsWith("//") -> {
+                    "https:$audioUrl"
+                }
+                else -> {
+                    "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
+                }
             }
             
             val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)
