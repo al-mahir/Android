@@ -72,15 +72,14 @@ fun CallScreen(
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
-    remember(requestId) { viewModel.prepareForRequest(requestId) }
+    LaunchedEffect(requestId) { viewModel.prepareForRequest(requestId) }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     android.util.Log.d("MeetingLifecycle", "CallScreen: composed requestId=$requestId state=$state")
-    val handleLeave: () -> Unit = {
+        val handleLeave: () -> Unit = {
         android.util.Log.d("MeetingLifecycle", "CallScreen: handleLeave requestId=$requestId")
         viewModel.endCall()
-        onLeave()
     }
 
        BackHandler(enabled = state !is CallUiState.Ended) {
@@ -95,7 +94,10 @@ fun CallScreen(
     }
     val joinPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    ) { _ ->
+        // Permissions are requested so the in-call mic/camera buttons won't need to prompt later,
+        // but a grant must never be treated as consent to publish — join muted/camera-off for
+        // privacy and let the user opt in per-call via the in-call toggles.
         viewModel.joinChannel(
             context = context,
             requestId = requestId,
@@ -103,8 +105,8 @@ fun CallScreen(
             channelName = channelName,
             userAccount = userAccount,
             remoteDisplayName = remoteDisplayName,
-            micEnabled = results[Manifest.permission.RECORD_AUDIO] == true,
-            cameraEnabled = results[Manifest.permission.CAMERA] == true,
+            micEnabled = false,
+            cameraEnabled = false,
         )
     }
 

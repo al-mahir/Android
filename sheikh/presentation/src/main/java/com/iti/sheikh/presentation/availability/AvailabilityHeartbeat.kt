@@ -3,6 +3,9 @@ package com.iti.sheikh.presentation.availability
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.domain.model.SheikhAvailabilityStatus
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -16,20 +19,24 @@ class AvailabilityHeartbeat(
 ) {
     private var job: Job? = null
 
-    fun start() {
-        if (job?.isActive == true) return
+
+    suspend fun start(): Result<Unit> {
+        if (job?.isActive == true) return Result.success(Unit)
+        val firstPing = repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
         job = scope.launch {
             while (isActive) {
-                repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
                 delay(HEARTBEAT_INTERVAL_MS.milliseconds)
+                repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
             }
         }
+        return firstPing
     }
 
+        @OptIn(DelicateCoroutinesApi::class)
     fun stop() {
         job?.cancel()
         job = null
-        scope.launch { repository.setMyAvailability(SheikhAvailabilityStatus.OFFLINE) }
+        GlobalScope.launch(Dispatchers.IO) { repository.setMyAvailability(SheikhAvailabilityStatus.OFFLINE) }
     }
 
     fun pause() {

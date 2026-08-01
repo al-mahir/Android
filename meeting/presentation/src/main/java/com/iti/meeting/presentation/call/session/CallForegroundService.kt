@@ -1,5 +1,7 @@
 package com.iti.meeting.presentation.call.session
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,8 +9,11 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
@@ -24,17 +29,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
 
-/**
- * Keeps the call controllable — and, by virtue of just existing as a started foreground service,
- * keeps the process itself alive — while the host app is backgrounded or swiped from Recents. See
- * `docs/Meeting-Call-Lifecycle-Plan.md`.
- *
- * Owns nothing call-related itself: it only mirrors [CallSessionController]'s state into an
- * ongoing-call notification and forwards the notification's actions back to the controller. One
- * shared class, declared by both host apps' manifests (same pattern as
- * `com.example.mushaf.presentation.audio.AudioPlaybackService` in `app`'s manifest). Started by
- * [CallSessionController] on a successful join; stops itself once the session goes terminal.
- */
+
+@Suppress("InlinedApi")
 class CallForegroundService : Service() {
 
     private val controller: CallSessionController by inject()
@@ -50,12 +46,25 @@ class CallForegroundService : Service() {
         observeJob = controller.state
             .onEach { session ->
                 if (session.isLive) {
-                    NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, buildNotification(session))
+                    notifySafely(buildNotification(session))
                 } else {
                     stopSelfGracefully()
                 }
             }
             .launchIn(scope)
+    }
+
+       @SuppressLint("MissingPermission")
+    private fun notifySafely(notification: Notification) {
+              if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            try {
+                NotificationManagerCompat.from(this).notify(NOTIFICATION_ID, notification)
+            } catch (e: SecurityException) {
+                Log.w(TAG, "notifySafely: notify() rejected by the system", e)
+            }
+        } else {
+            Log.w(TAG, "notifySafely: POST_NOTIFICATIONS not granted, skipping notification update")
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -83,12 +92,14 @@ class CallForegroundService : Service() {
     }
 
     private fun ensureChannel() {
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = getSystemService(NotificationManager::class.java) ?: return
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.meeting_call_notification_channel_name),
-            NotificationManager.IMPORTANCE_HIGH,
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply { setSound(null, null) }
         manager.createNotificationChannel(channel)
     }
@@ -146,9 +157,10 @@ class CallForegroundService : Service() {
     companion object {
         const val ACTION_OPEN_ACTIVE_CALL = "ACTION_OPEN_ACTIVE_CALL"
 
+        private const val TAG = "CallForegroundService"
         private const val ACTION_TOGGLE_MIC = "com.iti.meeting.presentation.call.session.ACTION_TOGGLE_MIC"
         private const val ACTION_END_CALL = "com.iti.meeting.presentation.call.session.ACTION_END_CALL"
-        private const val CHANNEL_ID = "active_call"
+        private const val CHANNEL_ID = "active_call_v2"
         private const val NOTIFICATION_ID = 4201
 
         fun start(context: Context) {
