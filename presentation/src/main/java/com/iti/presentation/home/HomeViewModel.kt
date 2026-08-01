@@ -10,6 +10,7 @@ import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.presentation.R
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
@@ -34,6 +35,7 @@ class HomeViewModel(
     private val getSheikhs: GetSheikhsUseCase,
     private val getStudyCircles: GetStudyCirclesUseCase,
     private val joinStudyCircle: JoinStudyCircleUseCase,
+    private val meetingRepository: MeetingRepository,
 ) : ViewModel(),
     StateHolder<HomeUiState> by DefaultStateHolder(HomeUiState()),
     EffectPublisher<HomeEffect> by DefaultEffectPublisher() {
@@ -42,6 +44,7 @@ class HomeViewModel(
 
     init {
         observeContent()
+        observePendingMeetingRequest()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -54,6 +57,26 @@ class HomeViewModel(
             HomeIntent.ContinueReadingClicked -> openReadingProgress()
             is HomeIntent.SheikhClicked -> sendEffect(HomeEffect.OpenSheikh(intent.sheikhId))
             is HomeIntent.JoinCircleClicked -> join(intent.circleId)
+            HomeIntent.ViewPendingMeetingClicked -> viewPendingMeeting()
+            HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
+        }
+    }
+
+    private fun observePendingMeetingRequest() {
+        meetingRepository.observePendingRequest()
+            .onEach { pending -> updateState { copy(pendingMeetingRequest = pending) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun viewPendingMeeting() {
+        val pending = currentState.pendingMeetingRequest ?: return
+        sendEffect(HomeEffect.OpenMeetingRequest(pending.sheikhId, pending.sheikhName))
+    }
+
+    private fun cancelPendingMeeting() {
+        val pending = currentState.pendingMeetingRequest ?: return
+        viewModelScope.launch {
+            meetingRepository.cancelMeetingRequest(pending.requestId)
         }
     }
 

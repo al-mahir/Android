@@ -49,7 +49,7 @@ fun SheikhDetailsScreen(
     sheikhId: String,
     onBack: () -> Unit,
     onNavigateToJoiningCircle: (String) -> Unit,
-    onRequestMeeting: (String) -> Unit,
+    onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhDetailsViewModel = koinViewModel(parameters = { parametersOf(sheikhId) }),
 ) {
@@ -79,7 +79,7 @@ private fun SheikhDetailsContent(
     onBack: () -> Unit,
     onJoinCircle: (String) -> Unit,
     onRetry: () -> Unit,
-    onRequestMeeting: (String) -> Unit,
+    onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -102,7 +102,7 @@ private fun SheikhDetailsContent(
                 sheikh = state.sheikh,
                 circles = state.circles,
                 onJoinCircle = onJoinCircle,
-                onRequestMeeting = { onRequestMeeting(state.sheikh.id) },
+                onRequestMeeting = { onRequestMeeting(state.sheikh.id, state.sheikh.name) },
             )
         }
     }
