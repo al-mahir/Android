@@ -153,6 +153,9 @@ private fun AppNavHost(
                         onOpenSheikh = { sheikhId -> backStack.add(AppRoute.SheikhDetails(sheikhId)) },
                         onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                         onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                        onOpenMeetingRequest = { sheikhId, sheikhName ->
+                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId, sheikhName))
+                        },
                     )
                 }
 
@@ -212,8 +215,8 @@ private fun AppNavHost(
                         onNavigateToJoiningCircle = { circleId ->
                             backStack.add(AppRoute.JoiningCircle(circleId))
                         },
-                        onRequestMeeting = { sheikhId ->
-                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId))
+                        onRequestMeeting = { sheikhId, sheikhName ->
+                            backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId, sheikhName))
                         },
                     )
                 }
@@ -274,7 +277,10 @@ private fun AppNavHost(
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onNavigateToCall = { requestId, token, channelName, userAccount ->
-                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                        val top = backStack.lastOrNull()
+                        if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
+                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                        }
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->
