@@ -7,6 +7,7 @@ import com.iti.domain.model.ReadingProgress
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.User
+import com.iti.meeting.domain.model.PendingMeetingRequest
 
 
 @Immutable
