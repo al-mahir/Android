@@ -2,12 +2,14 @@ package com.iti.meeting.data.repository
 
 import com.iti.domain.model.MeetingSheikhSummary
 import com.iti.domain.model.SheikhAvailabilityStatus
+import com.iti.meeting.domain.model.ActiveCallRecord
 import com.iti.meeting.domain.model.MeetingRequestAccepted
 import com.iti.meeting.domain.model.PendingMeetingRequest
 import com.iti.meeting.domain.model.SheikhAvailability
 import com.iti.meeting.domain.model.TokenRefresh
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.SendMeetingRequestResult
+import com.iti.meeting.data.local.ActiveCallStore
 import com.iti.meeting.data.local.PendingMeetingRequestStore
 import com.iti.meeting.data.remote.dto.MeetingErrorResponseDto
 import com.iti.meeting.data.remote.dto.MeetingRequestAcceptedDto
@@ -37,6 +39,7 @@ class MeetingRepositoryImpl(
     private val api: MeetingApi,
     private val stompClient: StompClient,
     private val pendingRequestStore: PendingMeetingRequestStore,
+    private val activeCallStore: ActiveCallStore,
 ) : MeetingRepository {
 
     override val reconnected: Flow<Unit> = stompClient.reconnected
@@ -91,6 +94,14 @@ class MeetingRepositoryImpl(
 
     override suspend fun clearPendingRequest() = pendingRequestStore.clear()
 
+    override fun observeActiveCall(): Flow<ActiveCallRecord?> = activeCallStore.activeCall
+
+    override suspend fun getActiveCall(): ActiveCallRecord? = activeCallStore.get()
+
+    override suspend fun saveActiveCall(record: ActiveCallRecord) = activeCallStore.save(record)
+
+    override suspend fun clearActiveCall() = activeCallStore.clear()
+
     override suspend fun acceptMeetingRequest(requestId: String): Result<MeetingRequestAccepted> =
         runCatching { api.acceptMeetingRequest(requestId).toDomain() }
 
@@ -140,6 +151,11 @@ class MeetingRepositoryImpl(
                     MeetingRequestEvent.Expired,
                     MeetingRequestEvent.MeetingEnded,
                         -> pendingRequestStore.clearIfMatches(requestId)
+                }
+                // The call itself (as opposed to the request that led to it) is only over once
+                // MEETING_ENDED fires — everything else above is about the pre-call request flow.
+                if (event is MeetingRequestEvent.MeetingEnded) {
+                    activeCallStore.clearIfMatches(requestId)
                 }
             }
     }
