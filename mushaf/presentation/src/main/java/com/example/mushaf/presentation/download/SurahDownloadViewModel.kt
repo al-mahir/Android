@@ -2,6 +2,7 @@ package com.example.mushaf.presentation.download
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mushaf.domain.usecase.CancelDownloadRecitationUseCase
 import com.example.mushaf.domain.usecase.DownloadRecitationUseCase
 import com.example.mushaf.domain.usecase.GetDownloadProgressUseCase
 import com.example.mushaf.presentation.core.mvi.DefaultEffectPublisher
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 class SurahDownloadViewModel(
     private val reciterId: Int,
     private val downloadRecitation: DownloadRecitationUseCase,
+    private val cancelDownloadRecitation: CancelDownloadRecitationUseCase,
     private val getDownloadProgress: GetDownloadProgressUseCase
 ) : ViewModel(),
     StateHolder<SurahDownloadUiState> by DefaultStateHolder(SurahDownloadUiState(reciterId = reciterId)),
@@ -60,7 +62,9 @@ class SurahDownloadViewModel(
                 }
             }
             is SurahDownloadIntent.CancelDownload -> {
-                // To-Do: Add cancel download use case if needed.
+                viewModelScope.launch {
+                    cancelDownloadRecitation(reciterId, intent.surahNumber)
+                }
             }
         }
     }

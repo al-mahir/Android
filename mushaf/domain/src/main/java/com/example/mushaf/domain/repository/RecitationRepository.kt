@@ -30,4 +30,9 @@ interface RecitationRepository {
      * Observes the download progress for a specific reciter.
      */
     fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>>
+
+    /**
+     * Cancels an ongoing recitation download.
+     */
+    fun cancelDownloadRecitation(reciterId: Int, surahNumber: Int?)
 }

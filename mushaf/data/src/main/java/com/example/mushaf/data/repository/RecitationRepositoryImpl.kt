@@ -33,7 +33,8 @@ class RecitationRepositoryImpl(
     override fun getTimingsForPage(reciterId: Int, pageNumber: Int): Flow<Result<List<AyahTiming>>> {
         return kotlinx.coroutines.flow.flow {
             // Get verse keys for this page from the local layout DB
-            val mushafPage = mushafRepository.getPage(pageNumber).firstOrNull()
+            val pageResult = mushafRepository.getPage(pageNumber).firstOrNull()
+            val mushafPage = (pageResult as? Result.Success)?.data
             val verseKeys = mushafPage?.lines?.flatMap { it.words }
                 ?.map { word -> word.id.substringBeforeLast(":") } // 1:1:1 -> 1:1
                 ?.distinct()
@@ -105,9 +106,15 @@ class RecitationRepositoryImpl(
         val workRequest = androidx.work.OneTimeWorkRequestBuilder<com.example.mushaf.data.recitation.download.AudioDownloadWorker>()
             .setConstraints(constraints)
             .setInputData(data)
+            .addTag("download_reciter_${reciterId}_surah_${surahNumber ?: -1}")
             .build()
             
         androidx.work.WorkManager.getInstance(context).enqueue(workRequest)
+    }
+
+    override fun cancelDownloadRecitation(reciterId: Int, surahNumber: Int?) {
+        val tag = "download_reciter_${reciterId}_surah_${surahNumber ?: -1}"
+        androidx.work.WorkManager.getInstance(context).cancelAllWorkByTag(tag)
     }
 
     override fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>> {

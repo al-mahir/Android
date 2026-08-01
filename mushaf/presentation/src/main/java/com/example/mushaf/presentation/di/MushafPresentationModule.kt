@@ -53,6 +53,7 @@ val mushafPresentationModule = module {
     factory { CaptureRecitationAudioUseCase(get()) }
     factory { StartLiveRecitationUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.DownloadRecitationUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.CancelDownloadRecitationUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetDownloadProgressUseCase(get()) }
     
     factory<com.example.mushaf.presentation.audio.AudioPlayer> { 
@@ -97,6 +98,6 @@ val mushafPresentationModule = module {
     }
 
     viewModel { (reciterId: Int) ->
-        com.example.mushaf.presentation.download.SurahDownloadViewModel(reciterId, get(), get())
+        com.example.mushaf.presentation.download.SurahDownloadViewModel(reciterId, get(), get(), get())
     }
 }
