@@ -7,12 +7,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
-/**
- * Drives the sheikh's AVAILABLE status as a repeating heartbeat rather than a single API call —
- * the backend TTLs the status (~45s) so a killed app auto-reverts to OFFLINE without needing an
- * explicit call. See docs/Android-Agora-Implementation.md §10.1.
- */
+
 class AvailabilityHeartbeat(
     private val repository: MeetingRepository,
     private val scope: CoroutineScope,
@@ -24,7 +21,7 @@ class AvailabilityHeartbeat(
         job = scope.launch {
             while (isActive) {
                 repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
-                delay(HEARTBEAT_INTERVAL_MS)
+                delay(HEARTBEAT_INTERVAL_MS.milliseconds)
             }
         }
     }
@@ -33,6 +30,11 @@ class AvailabilityHeartbeat(
         job?.cancel()
         job = null
         scope.launch { repository.setMyAvailability(SheikhAvailabilityStatus.OFFLINE) }
+    }
+
+    fun pause() {
+        job?.cancel()
+        job = null
     }
 
     private companion object {

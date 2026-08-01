@@ -17,4 +17,5 @@
     <string name="meetingrequest_availability_toggle_available">Go Available</string>
     <string name="meetingrequest_availability_busy_title">You are Busy</string>
     <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
+    <string name="meetingrequest_availability_busy_rejoin">Rejoin</string>
 </resources>

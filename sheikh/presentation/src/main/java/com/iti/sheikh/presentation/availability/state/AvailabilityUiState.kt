@@ -9,6 +9,11 @@ sealed interface AvailabilityUiState {
         val note: String,
         val expiresAt: String,
     ) : AvailabilityUiState
-    data object Busy : AvailabilityUiState
+       data class Busy(
+        val requestId: String,
+        val token: String,
+        val channelName: String,
+        val userAccount: String,
+    ) : AvailabilityUiState
 }
 

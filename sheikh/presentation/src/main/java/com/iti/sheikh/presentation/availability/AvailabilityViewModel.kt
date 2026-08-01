@@ -10,6 +10,7 @@ import com.iti.sheikh.presentation.core.mvi.StateHolder
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.IncomingRequestEvent
 import com.iti.meeting.domain.repository.MeetingRequestEvent
+import com.iti.sheikh.presentation.availability.state.AvailabilityEffect
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -102,33 +103,40 @@ class AvailabilityViewModel(
     private fun accept() = viewModelScope.launch {
         val requestState = currentState as? AvailabilityUiState.IncomingRequest ?: return@launch
         countdownJob?.cancel()
+        android.util.Log.d(TAG, "accept: calling acceptMeetingRequest(${requestState.requestId})")
         repository.acceptMeetingRequest(requestState.requestId)
             .onSuccess { accepted ->
+                android.util.Log.d(TAG, "accept: SUCCESS requestId=${accepted.requestId} channel=${accepted.channelName} tokenLen=${accepted.agoraToken.length}")
                 activeRequestId = accepted.requestId
-                updateState { AvailabilityUiState.Busy }
-                observeActiveCall(accepted.requestId)
-                sendEffect(
-                    AvailabilityEffect.NavigateToCall(
+                updateState {
+                    AvailabilityUiState.Busy(
                         requestId = accepted.requestId,
                         token = accepted.agoraToken,
                         channelName = accepted.channelName,
                         userAccount = accepted.userAccount,
-                    ),
-                )
+                    )
+                }
+                heartbeat.pause()
+                observeActiveCall(accepted.requestId)
             }
             .onFailure { error ->
+                android.util.Log.e(TAG, "accept: FAILED", error)
                 sendEffect(AvailabilityEffect.ShowMessage(error.message ?: "Failed to accept"))
             }
     }
 
     /** Watches the accepted request's topic so the panel resets to Available if the call ends remotely. */
     private fun observeActiveCall(requestId: String) {
+        android.util.Log.d(TAG, "observeActiveCall: subscribing requestId=$requestId")
         activeCallJob?.cancel()
         activeCallJob = repository.observeMeetingRequestEvents(requestId)
             .onEach { event ->
+                android.util.Log.d(TAG, "observeActiveCall: event=$event for requestId=$requestId")
                 if (event is MeetingRequestEvent.MeetingEnded) {
                     activeRequestId = null
+                    heartbeat.start()
                     updateState { if (this is AvailabilityUiState.Busy) AvailabilityUiState.Available else this }
+                    android.util.Log.d(TAG, "observeActiveCall: MeetingEnded -> reset to Available, currentState=$currentState")
                 }
             }
             .launchIn(viewModelScope)
@@ -148,5 +156,6 @@ class AvailabilityViewModel(
 
     private companion object {
         const val COUNTDOWN_TICK_MS = 1_000L
+        const val TAG = "MeetingLifecycle"
     }
 }

@@ -1,11 +1,5 @@
-package com.iti.sheikh.presentation.availability
+package com.iti.sheikh.presentation.availability.state
 
 sealed interface AvailabilityEffect {
-    data class NavigateToCall(
-        val requestId: String,
-        val token: String,
-        val channelName: String,
-        val userAccount: String,
-    ) : AvailabilityEffect
     data class ShowMessage(val message: String) : AvailabilityEffect
 }
