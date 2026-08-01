@@ -95,7 +95,7 @@ val mushafDataModule = module {
         com.example.mushaf.data.recitation.remote.RecitationRemoteDataSourceImpl(get())
     }
     // RecitationApiRepositoryImpl — provides RecitationSchemaRepository
-    single { RecitationApiRepositoryImpl(get(), get()) }
+    single { RecitationApiRepositoryImpl(get()) }
     single<RecitationSchemaRepository> { get<RecitationApiRepositoryImpl>() }
     // RecitationRepositoryImpl — offline-capable, provides RecitationRepository
     // Uses Room DAO for offline fallback + download scheduling via WorkManager
