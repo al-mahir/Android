@@ -64,6 +64,10 @@ sealed interface MushafIntent {
     data class DownloadTafsir(val tafsirKey: String, val downloadUrl: String) : MushafIntent
     data class DeleteTafsir(val tafsirKey: String) : MushafIntent
 
+    // Bookmarks
+    data object TogglePageBookmark : MushafIntent
+    data class ToggleAyahBookmark(val surah: Int, val ayah: Int) : MushafIntent
+
     // User Guide
     data object GuideNextStep : MushafIntent
     data object DismissGuide : MushafIntent

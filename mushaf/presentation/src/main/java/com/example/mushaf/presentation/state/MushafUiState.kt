@@ -61,8 +61,13 @@ data class MushafUiState(
     val guideStep: Int = 1,
 
     val isOffline: Boolean = false,
+
+    // Bookmarks
+    val bookmarkedPages: Set<Int> = emptySet(),
+    val bookmarkedAyahs: Set<Pair<Int, Int>> = emptySet(),
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
+    val isCurrentPageBookmarked: Boolean get() = currentPage in bookmarkedPages
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
     val currentSurahNumber: Int get() = MushafConstants.surahForPage(currentPage)

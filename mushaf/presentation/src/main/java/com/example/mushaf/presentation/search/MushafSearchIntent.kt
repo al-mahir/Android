@@ -16,4 +16,8 @@ sealed interface MushafSearchIntent {
     data class ToggleHyDe(val enabled: Boolean) : MushafSearchIntent
     data class NavigateBottomTab(val tabIndex: Int) : MushafSearchIntent
     data object ClearNavigationEffect : MushafSearchIntent
+    
+    // Bookmarks
+    data class ToggleSurahBookmark(val surah: Surah) : MushafSearchIntent
+    data class ToggleAyahBookmark(val surahNumber: Int, val ayahNumber: Int) : MushafSearchIntent
 }

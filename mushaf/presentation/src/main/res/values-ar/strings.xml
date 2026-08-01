@@ -28,6 +28,7 @@
     <!-- Top bar content descriptions -->
     <string name="mushaf_cd_back">رجوع</string>
     <string name="mushaf_cd_bookmark">إشارة مرجعية</string>
+    <string name="mushaf_cd_bookmark_ayah">إضافة هذه الآية إلى المفضلة</string>
     <string name="mushaf_cd_settings">الإعدادات</string>
 
     <!-- Bottom bar — modes -->
