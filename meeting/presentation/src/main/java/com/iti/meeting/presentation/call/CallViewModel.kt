@@ -32,6 +32,17 @@ class CallViewModel(
     private var eventsJob: Job? = null
     private var requestId: String? = null
 
+    private var joinTimeoutJob: Job? = null
+
+       fun prepareForRequest(newRequestId: String) {
+        Log.d(TAG, "prepareForRequest: newRequestId=$newRequestId, this.requestId=$requestId, currentState=$currentState")
+        if (requestId != null && requestId != newRequestId) {
+            Log.w(TAG, "prepareForRequest: stale state from previous call $requestId, resetting for $newRequestId")
+            teardownForRejoin()
+            updateState { CallUiState.Connecting }
+        }
+    }
+
     fun joinChannel(
         context: Context,
         requestId: String,
@@ -41,15 +52,73 @@ class CallViewModel(
         micEnabled: Boolean,
         cameraEnabled: Boolean,
     ) {
-        if (engine != null) return
+        Log.d(TAG, "joinChannel: called requestId=$requestId, this.requestId=${this.requestId}, engine=$engine, joinTimeoutJob=$joinTimeoutJob")
+        if (this.requestId != null && this.requestId != requestId) {
+                      Log.w(TAG, "joinChannel: stale state from previous call ${this.requestId}, tearing down before joining $requestId")
+            teardownForRejoin()
+        }
+        if (engine != null || joinTimeoutJob != null) {
+            Log.d(TAG, "joinChannel: already joined/joining requestId=$requestId, skipping")
+            return
+        }
         this.requestId = requestId
+        updateState { CallUiState.Connecting }
         observeMeetingEnded(requestId)
 
+              viewModelScope.launch {
+            repository.refreshToken(requestId)
+                .onSuccess { refreshed ->
+                    Log.d(TAG, "refreshToken: SUCCESS requestId=$requestId channel=${refreshed.channelName} tokenLen=${refreshed.token.length}")
+                    startAgoraJoin(context, requestId, refreshed.token, refreshed.channelName, refreshed.userAccount, micEnabled, cameraEnabled)
+                }
+                .onFailure {
+                    Log.w(TAG, "refreshToken failed before join, falling back to the passed-in token", it)
+                    startAgoraJoin(context, requestId, token, channelName, userAccount, micEnabled, cameraEnabled)
+                }
+        }
+    }
+
+       private fun teardownForRejoin() {
+        durationJob?.cancel()
+        durationJob = null
+        eventsJob?.cancel()
+        eventsJob = null
+        joinTimeoutJob?.cancel()
+        joinTimeoutJob = null
+        engine?.leaveChannel()
+        engine?.destroy()
+        engine = null
+    }
+
+    private fun startAgoraJoin(
+        context: Context,
+        requestId: String,
+        token: String,
+        channelName: String,
+        userAccount: String,
+        micEnabled: Boolean,
+        cameraEnabled: Boolean,
+    ) {
+        if (engine != null) return
+
         Log.i(TAG, "joinChannel: channel=$channelName userAccount=$userAccount appIdLen=${config.agoraAppId.length} tokenLen=${token.length} mic=$micEnabled cam=$cameraEnabled")
+
+        joinTimeoutJob = viewModelScope.launch {
+            delay(JOIN_TIMEOUT_MS)
+            if (currentState is CallUiState.Connecting) {
+                updateState { CallUiState.Error("Couldn't connect to the call. Please try again.") }
+            }
+        }
 
         val eventHandler = object : IRtcEngineEventHandler() {
             override fun onJoinChannelSuccess(channel: String?, joinedUid: Int, elapsed: Int) {
                 Log.i(TAG, "onJoinChannelSuccess: channel=$channel uid=$joinedUid elapsed=${elapsed}ms")
+                joinTimeoutJob?.cancel()
+                joinTimeoutJob = null
+                updateState {
+                    if (this is CallUiState.InCall) this
+                    else CallUiState.InCall(remoteUid = null, isMicEnabled = micEnabled, isCameraEnabled = cameraEnabled)
+                }
                 startDurationTimer()
             }
 
@@ -90,13 +159,18 @@ class CallViewModel(
                         updateState { if (this is CallUiState.InCall) copy(isReconnecting = true) else this }
                     Constants.CONNECTION_STATE_CONNECTED ->
                         updateState { if (this is CallUiState.InCall) copy(isReconnecting = false) else this }
-                    Constants.CONNECTION_STATE_FAILED ->
+                    Constants.CONNECTION_STATE_FAILED -> {
+                        joinTimeoutJob?.cancel()
+                        joinTimeoutJob = null
                         updateState { CallUiState.Error("Connection lost. Please try again.") }
+                    }
                 }
             }
 
             override fun onError(err: Int) {
                 Log.e(TAG, "onError: code=$err")
+                joinTimeoutJob?.cancel()
+                joinTimeoutJob = null
                 updateState { CallUiState.Error("Call error ($err)") }
             }
 
@@ -122,7 +196,6 @@ class CallViewModel(
         val wrapper = AgoraEngineWrapper(context.applicationContext, config.agoraAppId, eventHandler)
         engine = wrapper
         wrapper.joinChannel(token, channelName, userAccount, publishAudio = micEnabled, publishVideo = cameraEnabled)
-        updateState { CallUiState.InCall(remoteUid = null, isMicEnabled = micEnabled, isCameraEnabled = cameraEnabled) }
     }
 
     private fun observeMeetingEnded(requestId: String) {
@@ -196,8 +269,13 @@ class CallViewModel(
         super.onCleared()
         durationJob?.cancel()
         eventsJob?.cancel()
+        joinTimeoutJob?.cancel()
         engine?.leaveChannel()
         engine?.destroy()
         engine = null
+    }
+
+    private companion object {
+        const val JOIN_TIMEOUT_MS = 15_000L
     }
 }

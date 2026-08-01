@@ -2,6 +2,7 @@ package com.iti.meeting.presentation.call
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -38,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,11 +70,19 @@ fun CallScreen(
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
+    remember(requestId) { viewModel.prepareForRequest(requestId) }
+
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    android.util.Log.d("MeetingLifecycle", "CallScreen: composed requestId=$requestId state=$state")
     val handleLeave: () -> Unit = {
+        android.util.Log.d("MeetingLifecycle", "CallScreen: handleLeave requestId=$requestId")
         viewModel.endCall()
         onLeave()
+    }
+
+       BackHandler(enabled = state !is CallUiState.Ended) {
+        handleLeave()
     }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -131,7 +141,7 @@ fun CallScreen(
 
             CallUiState.Ended -> ConnectingContent()
 
-            is CallUiState.Error -> ErrorContent(message = current.message, onLeave = onLeave)
+            is CallUiState.Error -> ErrorContent(message = current.message, onLeave = handleLeave)
         }
     }
 }
