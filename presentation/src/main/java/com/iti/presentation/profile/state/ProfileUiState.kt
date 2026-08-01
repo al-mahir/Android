@@ -17,6 +17,7 @@ data class ProfileUiState(
     val isRestoringPurchases: Boolean = false,
     val dialog: ProfileDialog? = null,
     val isProcessingDialogAction: Boolean = false,
+    val isOffline: Boolean = false,
 ) {
     val hasError: Boolean get() = errorMessageRes != null && user == null
 

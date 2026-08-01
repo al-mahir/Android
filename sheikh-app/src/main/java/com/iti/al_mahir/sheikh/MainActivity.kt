@@ -64,14 +64,16 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = !darkTheme
                 }
             }
-
+            
             AlMahirTheme(isDarkTheme = darkTheme, locale = locale) {
-                Box(
+                androidx.compose.foundation.layout.Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Theme.colors.backGround),
                 ) {
-                    SheikhAppNavHost()
+                    Box(modifier = Modifier.weight(1f)) {
+                        SheikhAppNavHost()
+                    }
                 }
             }
         }

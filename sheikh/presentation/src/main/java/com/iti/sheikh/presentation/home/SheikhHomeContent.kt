@@ -29,7 +29,13 @@ fun SheikhHomeContent(
     val gutter = Modifier.padding(horizontal = Theme.spacing.medium)
 
     when {
-        state.hasError -> NetworkErrorScreen(
+        state.isOffline -> NetworkErrorScreen(
+            modifier = rootModifier,
+            description = stringResource(R.string.sheikh_home_error_generic),
+            onRetry = onRetryClick,
+        )
+
+        state.hasError && state.initials == null -> NetworkErrorScreen(
             modifier = rootModifier,
             description = stringResource(state.errorMessageRes ?: R.string.sheikh_home_error_generic),
             onRetry = onRetryClick,

@@ -88,6 +88,7 @@ class MushafViewModel(
     private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
     private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
+    private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -265,6 +266,12 @@ class MushafViewModel(
 
         // Eagerly load available Tafsir books from the backend
         fetchAvailableTafsirBooks()
+
+        connectivityObserver.status
+            .onEach { status ->
+                _state.update { it.copy(isOffline = status == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onIntent(intent: MushafIntent) {
@@ -347,7 +354,7 @@ class MushafViewModel(
                 }
             }
             is MushafIntent.DeleteTafsir -> manageTafsirDownload.delete(intent.tafsirKey)
-            
+
             // User Guide
             MushafIntent.GuideNextStep -> {
                 val currentStep = _state.value.guideStep
@@ -558,6 +565,14 @@ class MushafViewModel(
 
     private fun setMode(mode: MushafMode) {
         val current = _state.value
+
+        if (current.isOffline && (mode == MushafMode.MUALLEM || mode == MushafMode.RECITATION)) {
+            viewModelScope.launch {
+                _effects.send(MushafEffect.ShowMessage(R.string.mushaf_offline_mode_not_available))
+            }
+            return
+        }
+
         if (current.isFollowAlongActive) stopFollowAlong()
         if (current.isRecordingActive) {
             

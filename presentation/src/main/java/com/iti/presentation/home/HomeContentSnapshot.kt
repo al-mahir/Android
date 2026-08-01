@@ -13,5 +13,6 @@ internal data class HomeContentSnapshot(
     val ayahOfTheDay: AyahOfTheDay?,
     val sheikhs: List<Sheikh>,
     val circles: List<StudyCircle>,
+    val isOffline: Boolean,
 )
 

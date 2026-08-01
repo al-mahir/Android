@@ -67,7 +67,7 @@ val mushafPresentationModule = module {
 
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),get()
         )
     }
 
@@ -80,7 +80,8 @@ val mushafPresentationModule = module {
             searchAyahByMeaningUseCase = get(),
             searchTafsirUseCase = get(),
             getTargetPageUseCase = get(),
-            saveLastPageUseCase = get()
+            saveLastPageUseCase = get(),
+            connectivityObserver = get()
         )
     }
 
