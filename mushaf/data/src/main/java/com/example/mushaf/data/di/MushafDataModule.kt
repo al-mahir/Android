@@ -6,6 +6,7 @@ import com.example.mushaf.data.core.di.mushafNetworkModule
 import com.example.mushaf.data.db.MushafAssetDataSource
 import com.example.mushaf.data.db.QuranMetadataDataSource
 import com.example.mushaf.data.db.QuranTextDataSource
+import com.example.mushaf.data.download.DownloadableResourceRepositoryImpl
 import com.example.mushaf.data.download.FakeDownloadableResourceRepository
 import com.example.mushaf.data.prefs.ReaderPreferencesDataStore
 import com.example.mushaf.data.prefs.RecitationSettingsDataStore
@@ -78,7 +79,7 @@ val mushafDataModule = module {
     single<ReaderPreferencesRepository> { get<MushafPreferencesRepositoryImpl>() }
     single<RecitationSettingsRepository> { get<MushafPreferencesRepositoryImpl>() }
 
-    single<DownloadableResourceRepository> { FakeDownloadableResourceRepository() }
+    single<DownloadableResourceRepository> { DownloadableResourceRepositoryImpl(get(), get(), get()) }
 
     single<PcmRecorder> { AudioRecordPcmRecorder() }
     single { WavDebugSink(androidContext()) }
