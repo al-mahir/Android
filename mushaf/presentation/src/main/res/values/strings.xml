@@ -27,6 +27,7 @@
     <string name="verses_count_format">%1$d آية</string>
     <string name="hizb_format">الحزب %1$d</string>
     <string name="page_format">صفحة %1$d</string>
+    <string name="surah_number_name_format">%1$d. %2$s</string>
     <string name="nav_home">الرئيسية</string>
     <string name="nav_mushaf">المصحف</string>
     <string name="nav_profile">حسابي</string>
@@ -127,6 +128,17 @@
 
     <!-- Errors -->
     <string name="downloads_error_generic">We could not load this list. Please try again.</string>
+
+    <!-- Reciter picker -->
+    <string name="reciter_picker_title">Select Reciter</string>
+    <string name="reciter_picker_cd_selected">Selected</string>
+    <string name="reciter_picker_cd_download">Download options</string>
+
+    <!-- Download options dialog -->
+    <string name="download_dialog_title">Download Recitation</string>
+    <string name="download_dialog_message">Do you want to download the entire Quran (~1.2 GB) or select specific Surahs?</string>
+    <string name="download_dialog_entire_quran">Entire Quran</string>
+    <string name="download_dialog_select_surahs">Select Surahs</string>
 
     <!-- ===== Shared domain error messages ===== -->
     <string name="error_network">Network error. Please check your connection and try again.</string>

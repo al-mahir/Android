@@ -30,6 +30,7 @@ import com.example.mushaf.presentation.download.components.DownloadableItemCard
 import com.example.mushaf.presentation.download.components.resolve
 import com.example.mushaf.presentation.download.state.DownloadsIntent
 import com.example.mushaf.presentation.download.state.DownloadsUiState
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -52,10 +53,15 @@ fun DownloadsScreen(
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    val snackbarHostState = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is com.example.mushaf.presentation.download.state.DownloadsEffect.ShowMessage -> {
-                // To-Do: show snackbar
+                val message = context.getString(effect.messageRes)
+                scope.launch { snackbarHostState.showSnackbar(message) }
             }
             is com.example.mushaf.presentation.download.state.DownloadsEffect.NavigateToSurahList -> {
                 onNavigateToSurahList(effect.reciterId)
@@ -63,12 +69,18 @@ fun DownloadsScreen(
         }
     }
 
-    DownloadsContent(
-        state = state,
-        onIntent = viewModel::onIntent,
-        onBack = onBack,
-        modifier = modifier,
-    )
+    androidx.compose.material3.Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        containerColor = Theme.colors.backGround,
+        modifier = modifier
+    ) { padding ->
+        DownloadsContent(
+            state = state,
+            onIntent = viewModel::onIntent,
+            onBack = onBack,
+            modifier = Modifier.padding(padding),
+        )
+    }
 }
 
 @Composable
@@ -126,8 +138,8 @@ fun DownloadsContent(
 
     state.pendingFullDownload?.let { target ->
         ConfirmationDialog(
-            title = stringResource(R.string.downloads_full_quran_title), // Need to create this string resource
-            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve()), // Need to create this
+            title = stringResource(R.string.downloads_full_quran_title),
+            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve()),
             confirmLabel = stringResource(R.string.downloads_action_download),
             dismissLabel = stringResource(R.string.downloads_delete_cancel),
             onConfirm = { onIntent(DownloadsIntent.DownloadFullConfirmed) },

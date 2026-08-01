@@ -36,6 +36,7 @@ import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.download.state.SurahDownloadIntent
 import com.example.mushaf.presentation.download.state.SurahDownloadItem
 import com.example.mushaf.presentation.download.state.SurahDownloadUiState
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.example.designsystem.R as DesignSystemR
@@ -50,13 +51,31 @@ fun SurahDownloadScreen(
         parameters = { parametersOf(reciterId) }
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    SurahDownloadContent(
-        state = state,
-        onIntent = viewModel::onIntent,
-        onBack = onBack,
+    com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effect) { effect ->
+        when (effect) {
+            is com.example.mushaf.presentation.download.state.SurahDownloadEffect.ShowError -> {
+                val message = context.getString(effect.messageRes)
+                scope.launch { snackbarHostState.showSnackbar(message) }
+            }
+        }
+    }
+
+    androidx.compose.material3.Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        containerColor = Theme.colors.backGround,
         modifier = modifier
-    )
+    ) { padding ->
+        SurahDownloadContent(
+            state = state,
+            onIntent = viewModel::onIntent,
+            onBack = onBack,
+            modifier = Modifier.padding(padding)
+        )
+    }
 }
 
 @Composable
@@ -109,15 +128,14 @@ fun SurahDownloadCard(
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small)
     ) {
         Text(
-            text = "${item.surahNumber}. ${item.name}",
+            text = stringResource(R.string.surah_number_name_format, item.surahNumber, item.name),
             style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
             color = Theme.colors.primaryFont,
             modifier = Modifier.weight(1f)
         )
 
-        val stateName = item.status?.state
         when {
-            stateName == "DOWNLOADED" -> {
+            item.status?.isCompleted == true -> {
                 Icon(
                     painter = painterResource(DesignSystemR.drawable.ic_check),
                     contentDescription = null,

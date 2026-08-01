@@ -502,7 +502,10 @@ fun MushafScreen(
                 onDownloadClick = { selectedItem ->
                     showDownloadOptionsForReciter = selectedItem
                 },
-                onDismiss = { showReciterPicker = false }
+                onDismiss = { showReciterPicker = false },
+                title = stringResource(R.string.reciter_picker_title),
+                selectedContentDescription = stringResource(R.string.reciter_picker_cd_selected),
+                downloadContentDescription = stringResource(R.string.reciter_picker_cd_download),
             )
         }
 
@@ -510,14 +513,14 @@ fun MushafScreen(
         showDownloadOptionsForReciter?.let { reciter ->
             AlertDialog(
                 onDismissRequest = { showDownloadOptionsForReciter = null },
-                title = { Text(text = "Download Recitation") },
-                text = { Text(text = "Do you want to download the entire Quran (~1.2 GB) or select specific Surahs?") },
+                title = { Text(text = stringResource(R.string.download_dialog_title)) },
+                text = { Text(text = stringResource(R.string.download_dialog_message)) },
                 confirmButton = {
                     TextButton(onClick = {
                         viewModel.onIntent(MushafIntent.DownloadRecitation(reciter.id))
                         showDownloadOptionsForReciter = null
                     }) {
-                        Text("Entire Quran")
+                        Text(stringResource(R.string.download_dialog_entire_quran))
                     }
                 },
                 dismissButton = {
@@ -526,7 +529,7 @@ fun MushafScreen(
                         showReciterPicker = false
                         onNavigateToSurahDownload(reciter.id)
                     }) {
-                        Text("Select Surahs")
+                        Text(stringResource(R.string.download_dialog_select_surahs))
                     }
                 },
                 containerColor = Theme.colors.surface,

@@ -83,7 +83,7 @@ fun AudioPlayerBar(
 
             // ── Reciter name (tappable, truncated) ────────────────────────
             Text(
-                text = reciterName.ifEmpty { "اختر القارئ" },
+                text = reciterName.ifEmpty { androidx.compose.ui.res.stringResource(R.string.audio_player_select_reciter) },
                 style = Theme.typography.body.small.copy(fontSize = 11.sp),
                 color = primaryColor,
                 maxLines = 1,
@@ -108,7 +108,7 @@ fun AudioPlayerBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_skip_previous),
-                    contentDescription = "السابق",
+                    contentDescription = androidx.compose.ui.res.stringResource(R.string.audio_player_prev),
                     tint = Theme.colors.secondaryFont,
                     modifier = Modifier.size(20.dp),
                 )
@@ -129,7 +129,11 @@ fun AudioPlayerBar(
             ) {
                 Icon(
                     painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
-                    contentDescription = if (isPlaying) "إيقاف" else "تشغيل",
+                    contentDescription = if (isPlaying) {
+                        androidx.compose.ui.res.stringResource(R.string.audio_player_pause)
+                    } else {
+                        androidx.compose.ui.res.stringResource(R.string.audio_player_play)
+                    },
                     tint = playIconColor,
                     modifier = Modifier.size(22.dp),
                 )
@@ -142,7 +146,7 @@ fun AudioPlayerBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_skip_next),
-                    contentDescription = "التالي",
+                    contentDescription = androidx.compose.ui.res.stringResource(R.string.audio_player_next),
                     tint = Theme.colors.secondaryFont,
                     modifier = Modifier.size(20.dp),
                 )

@@ -73,7 +73,7 @@ class AudioPlaybackManager(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            android.util.Log.e("AudioPlaybackManager", "Player error occurred: \${error.message}", error)
+            android.util.Log.e("AudioPlaybackManager", "Player error occurred: ${error.message}", error)
             _audioState.value = AudioState.ERROR
         }
     }
