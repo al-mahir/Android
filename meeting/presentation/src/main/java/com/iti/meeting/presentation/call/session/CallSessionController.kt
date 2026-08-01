@@ -23,16 +23,6 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "MeetingCall"
 
-/**
- * App-process-scoped owner of the live Agora call — a Koin `single`, not a `ViewModel`. Its
- * lifetime is the process, not any Activity/Nav entry, which is the fix for the whole class of
- * "reused-ViewModel stale state" bugs chased down in `docs/Meeting-Feature-Status.md`: there is
- * now exactly one call session in the app, ever, so there is nothing to confuse it with.
- *
- * `CallViewModel` is a thin per-screen adapter over this. `CallForegroundService` starts when a
- * call is joined and observes [state] to keep the notification in sync and know when to stop.
- * See `docs/Meeting-Call-Lifecycle-Plan.md`.
- */
 class CallSessionController(
     private val appContext: Context,
     private val config: MeetingKitConfig,
@@ -108,11 +98,7 @@ class CallSessionController(
         }
     }
 
-    /** Releases the Agora engine and cancels all session jobs, without touching [state] — used by
-     * the remote `MEETING_ENDED` path (below), which needs the engine gone but must keep
-     * surfacing [CallUiState.Ended] so a composed [CallScreen][com.iti.meeting.presentation.call.CallScreen]
-     * can detect it and navigate itself away. */
-    private fun releaseEngine() {
+       private fun releaseEngine() {
         durationJob?.cancel()
         durationJob = null
         joinTimeoutJob?.cancel()
@@ -122,12 +108,7 @@ class CallSessionController(
         engine = null
     }
 
-    /** Full teardown: releases the engine and resets [state] back to a clean slate. Must be used
-     * any time a call is actually over (stale-call detection, explicit hangup) so the next call —
-     * whether it's a brand-new `joinChannel` or a freshly-composed `CallScreen` reading [state]
-     * synchronously via `prepareForRequest` — never observes a leftover terminal state from the
-     * previous one. */
-    private fun teardown() {
+       private fun teardown() {
         releaseEngine()
         eventsJob?.cancel()
         eventsJob = null
@@ -268,27 +249,19 @@ class CallSessionController(
         }
     }
 
-    /** Called when the local user explicitly leaves — tells the backend so it can reset the
-     * sheikh to AVAILABLE, releases the Agora engine and resets session state back to [Idle]
-     * immediately (rather than waiting on the `MEETING_ENDED` echo, and rather than leaving the
-     * engine attached to the now-dead channel) so the foreground service stops promptly and the
-     * *next* call — whether a fresh join or a rejoin via a newly-composed `CallScreen` — never
-     * has to fight a leftover engine or a stale terminal [state] left over from this one. Any
-     * `CallScreen` still composed for *this* call navigates away via its own direct `onLeave()`
-     * call, not by observing [state], so resetting straight to [CallUiState.Idle] here (instead of
-     * routing through `Ended`) is safe. */
-    fun endCall() {
+       fun endCall() {
         val id = currentState.requestId
         if (id != null) scope.launch {
             repository.endMeeting(id)
             repository.clearActiveCall()
         }
-        teardown()
+        releaseEngine()
+        eventsJob?.cancel()
+        eventsJob = null
+        updateCallState { if (this is CallUiState.Ended) this else CallUiState.Ended }
     }
 
-    /** Persists the just-joined call so it can be offered as a "rejoin" prompt if the process
-     * dies before an explicit [endCall] or a `MEETING_ENDED` push clears it. */
-    private fun persistActiveCall() {
+      private fun persistActiveCall() {
         val session = currentState
         val requestId = session.requestId ?: return
         val channelName = session.channelName ?: return
