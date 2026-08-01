@@ -30,12 +30,16 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 
+import com.iti.domain.connectivity.ConnectivityObserver
+import com.iti.domain.connectivity.ConnectivityStatus
+
 class ProfileViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getSubscription: GetSubscriptionUseCase,
     private val restorePurchases: RestorePurchasesUseCase,
     private val logout: LogoutUseCase,
     private val deleteAccount: DeleteAccountUseCase,
+    private val connectivityObserver: ConnectivityObserver,
 ) : ViewModel(),
     StateHolder<ProfileUiState> by DefaultStateHolder(ProfileUiState()),
     EffectPublisher<ProfileEffect> by DefaultEffectPublisher() {
@@ -68,10 +72,12 @@ class ProfileViewModel(
         accountJob = combine(
             getCurrentUser(),
             getSubscription(),
-        ) { userResult, subscriptionResult ->
+            connectivityObserver.status
+        ) { userResult, subscriptionResult, connectivity ->
             val user = userResult.getOrNull() ?: error("Failed to load current user")
             val subscription = subscriptionResult.getOrNull() ?: error("Failed to load subscription")
-            ProfileAccountSnapshot(user, subscription)
+            val isOffline = connectivity == ConnectivityStatus.Unavailable
+            ProfileAccountSnapshot(user, subscription, isOffline)
         }
             .catch {
                 updateState {
@@ -85,6 +91,7 @@ class ProfileViewModel(
                         errorMessageRes = null,
                         user = snapshot.user,
                         subscription = snapshot.subscription,
+                        isOffline = snapshot.isOffline,
                     )
                 }
             }

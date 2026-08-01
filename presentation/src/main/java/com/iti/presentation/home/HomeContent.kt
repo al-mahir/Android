@@ -100,7 +100,7 @@ fun HomeContent(
                 }
 
                 // ── Sheikhs ─────────────────────────────────────────────────
-                if (state.sheikhs.isNotEmpty()) {
+                if (state.sheikhs.isNotEmpty() && !state.isOffline) {
                     item(key = "sheikhs-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_sheikhs),
@@ -126,7 +126,7 @@ fun HomeContent(
                 }
 
                 // ── Active circles ───────────────────────────────────────────
-                if (state.circles.isNotEmpty()) {
+                if (state.circles.isNotEmpty() && !state.isOffline) {
                     item(key = "circles-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_circles),

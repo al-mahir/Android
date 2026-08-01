@@ -28,6 +28,9 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
+import com.iti.domain.connectivity.ConnectivityObserver
+import com.iti.domain.connectivity.ConnectivityStatus
+
 class HomeViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getReadingProgress: GetReadingProgressUseCase,
@@ -35,6 +38,7 @@ class HomeViewModel(
     private val getSheikhs: GetSheikhsUseCase,
     private val getStudyCircles: GetStudyCirclesUseCase,
     private val joinStudyCircle: JoinStudyCircleUseCase,
+    private val connectivityObserver: ConnectivityObserver,
     private val meetingRepository: MeetingRepository,
 ) : ViewModel(),
     StateHolder<HomeUiState> by DefaultStateHolder(HomeUiState()),
@@ -93,30 +97,41 @@ class HomeViewModel(
             )
         }
 
-        // Observe user, reading progress, ayah of the day, and circles as continuous streams.
+        // Observe user, reading progress, ayah of the day, circles, and connectivity.
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
             getAyahOfTheDay(),
             getStudyCircles(),
-        ) { userResult, readingProgress, ayahOfTheDay, circlesResult ->
-            val user = userResult.getOrNull() ?: error("Failed to load current user")
-            val circles = circlesResult.getOrNull() ?: error("Failed to load study circles")
-            HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles)
+            connectivityObserver.status
+        ) { userResult, readingProgress, ayahOfTheDay, circlesResult, connectivity ->
+            val user = userResult.getOrNull()
+            val circles = circlesResult.getOrNull()
+            if (user == null || circles == null) {
+                null
+            } else {
+                val isOffline = connectivity == ConnectivityStatus.Unavailable
+                HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles, isOffline)
+            }
         }
-            .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }
             .onEach { snapshot ->
-                updateState {
-                    copy(
-                        isLoading = false,
-                        errorMessageRes = null,
-                        user = snapshot.user,
-                        readingProgress = snapshot.readingProgress,
-                        ayahOfTheDay = snapshot.ayahOfTheDay,
-                        circles = snapshot.circles.take(2),
-                    )
+                if (snapshot == null) {
+                    updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) }
+                } else {
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            errorMessageRes = null,
+                            user = snapshot.user,
+                            readingProgress = snapshot.readingProgress,
+                            ayahOfTheDay = snapshot.ayahOfTheDay,
+                            circles = snapshot.circles.take(2),
+                            isOffline = snapshot.isOffline,
+                        )
+                    }
                 }
             }
+            .catch { updateState { copy(isLoading = false, errorMessageRes = R.string.home_error_generic) } }
             .launchIn(viewModelScope)
     }
 

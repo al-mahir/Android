@@ -36,7 +36,8 @@ class MushafSearchViewModel(
     private val searchTafsirUseCase: com.example.mushaf.domain.usecase.search.SearchTafsirUseCase,
     private val getLastReadUseCase: GetLastReadUseCase,
     private val getTargetPageUseCase: GetTargetPageUseCase,
-    private val saveLastPageUseCase: SaveLastPageUseCase
+    private val saveLastPageUseCase: SaveLastPageUseCase,
+    private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -53,9 +54,14 @@ class MushafSearchViewModel(
     private var currentAyahOffset = 0
     private val AYAH_PAGE_SIZE = 50
 
-    private val searchResultsFlow = combine(_query.debounce(500L), _searchType, _useHyDe) { query, searchType, useHyDe ->
-        Triple(query, searchType, useHyDe)
-    }.flatMapLatest { (query, searchType, useHyDe) ->
+    private val searchResultsFlow = combine(
+        _query.debounce(500L), 
+        _searchType, 
+        _useHyDe, 
+        connectivityObserver.status
+    ) { query, searchType, useHyDe, connectionStatus ->
+        Quadruple(query, searchType, useHyDe, connectionStatus)
+    }.flatMapLatest { (query, searchType, useHyDe, connectionStatus) ->
         flow {
             _errorMessage.value = null
             _hydeUsed.value = false
@@ -96,6 +102,13 @@ class MushafSearchViewModel(
                 _ayahs.value = emptyList()
                 _tafsirs.value = emptyList()
                 _isPaginatingAyahs.value = true
+                
+                if (connectionStatus == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) {
+                    _errorMessage.value = UiText.Resource(com.example.mushaf.presentation.R.string.search_meaning_offline)
+                    _isPaginatingAyahs.value = false
+                    emit(MushafSearchStateUpdate(surahs = emptyList()))
+                    return@flow
+                }
 
                 val result = searchAyahByMeaningUseCase(
                     query = query,
@@ -239,6 +252,8 @@ class MushafSearchViewModel(
             _isPaginatingAyahs.value = false
         }
     }
+
+    private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     private data class MushafSearchStateUpdate(
         val surahs: List<com.example.mushaf.domain.model.Surah> = emptyList(),

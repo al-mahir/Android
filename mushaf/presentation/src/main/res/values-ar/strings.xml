@@ -8,6 +8,7 @@
     <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
     <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
     <string name="mushaf_retry">إعادة المحاولة</string>
+    <string name="mushaf_offline_mode_not_available">هذا الوضع يحتاج إلى اتصال بالإنترنت.</string>
 
     <!-- Tajweed toggle -->
     <string name="mushaf_tajweed_label">التجويد</string>
@@ -19,6 +20,8 @@
     <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
 
     <!-- Top bar -->
+    <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="search_meaning_offline">البحث بالمعنى يحتاج إلى اتصال بالإنترنت.</string>
     <string name="mushaf_juz_label">الجزء %1$d</string>
     <string name="mushaf_hizb_label">الحزب %1$d</string>
 

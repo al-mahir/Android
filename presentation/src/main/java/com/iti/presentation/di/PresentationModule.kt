@@ -84,6 +84,9 @@ val presentationModule = module {
     }
 
     // ── ViewModels ────────────────────────────────────────────────────────────
+    viewModel { com.iti.presentation.core.MainViewModel(get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }

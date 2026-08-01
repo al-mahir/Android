@@ -54,6 +54,10 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>
     <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+    
+    <!-- ===== Offline Banner ===== -->
+    <string name="offline_banner_offline">لا يوجد اتصال بالإنترنت</string>
+    <string name="offline_banner_online">تمت استعادة الاتصال</string>
 
     <!-- ===== Home ===== -->
     <string name="home_brand_title">المَاهِر</string>

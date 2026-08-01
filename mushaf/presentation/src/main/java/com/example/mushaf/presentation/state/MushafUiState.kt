@@ -59,6 +59,8 @@ data class MushafUiState(
     // User Guide
     val showUserGuide: Boolean = false,
     val guideStep: Int = 1,
+
+    val isOffline: Boolean = false,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val page: MushafPage? get() = pages[currentPage]

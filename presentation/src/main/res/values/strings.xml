@@ -54,6 +54,10 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">No connection. Please check your network and try again.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+    
+    <!-- ===== Offline Banner ===== -->
+    <string name="offline_banner_offline">No internet connection</string>
+    <string name="offline_banner_online">Back online</string>
 
     <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
