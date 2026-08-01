@@ -49,17 +49,20 @@ fun IncomingRequestCard(
     modifier: Modifier = Modifier,
 ) {
     val totalSeconds = remember(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { java.time.Instant.parse(str) }.getOrNull() ?: java.time.Instant.now()
         (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(1)
     }
     var remainingSeconds by remember(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { java.time.Instant.parse(str) }.getOrNull() ?: java.time.Instant.now()
         val remaining = parsed.epochSecond - java.time.Instant.now().epochSecond
         mutableLongStateOf(remaining.coerceAtLeast(0))
     }
 
     LaunchedEffect(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { java.time.Instant.parse(str) }.getOrNull() ?: java.time.Instant.now()
         while (remainingSeconds > 0) {
             delay(1_000L)
             remainingSeconds = (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(0)

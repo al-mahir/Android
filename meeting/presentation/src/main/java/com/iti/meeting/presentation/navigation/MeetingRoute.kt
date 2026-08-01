@@ -12,10 +12,10 @@ sealed interface MeetingRoute : NavKey {
     data class CircleLobby(val circleId: String) : MeetingRoute
     data class CircleHost(val circleId: String) : MeetingRoute
     data class Call(
-        val circleId: String,
+        val requestId: String,
         val token: String,
         val channelName: String,
-        val uid: Int,
+        val userAccount: String,
     ) : MeetingRoute
 }
 

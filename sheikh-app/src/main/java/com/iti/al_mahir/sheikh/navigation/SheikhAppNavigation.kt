@@ -114,8 +114,18 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                         onOpenProfile = { selectTab(SheikhBottomNavDestination.Profile) },
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
-                                onMeetingAccepted = { circleId, token, channelName, uid -> 
-                                    backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                                onMeetingAccepted = { requestId, token, channelName, userAccount ->
+                                    // Guards against stacking duplicate Call entries — e.g. the
+                                    // Busy-state "Rejoin" fallback or the auto-navigate effect
+                                    // both firing for the same accepted call in quick succession.
+                                    val top = backStack.lastOrNull()
+                                    android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: onMeetingAccepted requestId=$requestId, backstack top=$top, size=${backStack.size}")
+                                    if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
+                                        android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: pushing Call($requestId)")
+                                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                                    } else {
+                                        android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, already on Call($requestId)")
+                                    }
                                 },
                             )
                         },
@@ -144,8 +154,8 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
 
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
-                    onNavigateToCall = { circleId, token, channelName, uid -> 
-                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(circleId, token, channelName, uid)) 
+                    onNavigateToCall = { requestId, token, channelName, userAccount ->
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->

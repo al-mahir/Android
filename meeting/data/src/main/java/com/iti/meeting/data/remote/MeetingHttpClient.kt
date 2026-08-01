@@ -6,9 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
+import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -64,12 +62,15 @@ fun createMeetingHttpClient(
         }
     }
 
-    install(Auth) {
-        bearer {
-            loadTokens { tokenProvider.currentToken()?.let { BearerTokens(it, it) } }
-            sendWithoutRequest { true }
+    install(createClientPlugin("MeetingAuthPlugin") {
+        onRequest { request, _ ->
+            tokenProvider.currentToken()?.let { token ->
+                if (!request.headers.contains(HttpHeaders.Authorization)) {
+                    request.headers.append(HttpHeaders.Authorization, "Bearer $token")
+                }
+            }
         }
-    }
+    })
 
     defaultRequest {
         url(restBaseUrl)

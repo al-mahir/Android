@@ -14,5 +14,6 @@ sealed interface CallUiState {
         val callDurationSeconds: Long = 0L,
         val isReconnecting: Boolean = false,
     ) : CallUiState
+    data object Ended : CallUiState
     data class Error(val message: String) : CallUiState
 }

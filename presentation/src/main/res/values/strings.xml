@@ -293,4 +293,17 @@
     <string name="meetingrequest_request_declined_subtitle">The sheikh isn\'t able to meet right now.</string>
     <string name="meetingrequest_request_expired">Request Expired</string>
     <string name="meetingrequest_request_expired_subtitle">The sheikh didn\'t respond in time. Please try again.</string>
+    <string name="meetingrequest_request_ended">Call Ended</string>
+    <string name="meetingrequest_request_ended_subtitle">The meeting has ended.</string>
+    <string name="meetingrequest_request_already_pending_title">Request Already Pending</string>
+    <string name="meetingrequest_request_already_pending_subtitle">You already have a pending request with this sheikh.</string>
+    <string name="meetingrequest_request_already_pending_cancel">Cancel That Request</string>
+
+    <!-- Home — Pending Meeting Request -->
+    <string name="home_pending_meeting_title">Meeting request sent</string>
+    <string name="home_pending_meeting_subtitle">Waiting for %1$s to respond</string>
+    <string name="home_pending_meeting_subtitle_generic">Waiting for the sheikh to respond</string>
+    <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
+    <string name="home_pending_meeting_view">View</string>
+    <string name="home_pending_meeting_cancel">Cancel</string>
 </resources>

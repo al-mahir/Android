@@ -295,4 +295,17 @@
     <string name="meetingrequest_request_declined_subtitle">الشيخ غير متاح للقاء الآن.</string>
     <string name="meetingrequest_request_expired">انتهت صلاحية الطلب</string>
     <string name="meetingrequest_request_expired_subtitle">لم يرد الشيخ في الوقت المحدد. يرجى المحاولة مرة أخرى.</string>
+    <string name="meetingrequest_request_ended">انتهت المكالمة</string>
+    <string name="meetingrequest_request_ended_subtitle">انتهى اللقاء.</string>
+    <string name="meetingrequest_request_already_pending_title">يوجد طلب معلق بالفعل</string>
+    <string name="meetingrequest_request_already_pending_subtitle">لديك بالفعل طلب معلق مع هذا الشيخ.</string>
+    <string name="meetingrequest_request_already_pending_cancel">إلغاء هذا الطلب</string>
+
+    <!-- Home — Pending Meeting Request -->
+    <string name="home_pending_meeting_title">تم إرسال طلب اللقاء</string>
+    <string name="home_pending_meeting_subtitle">في انتظار رد %1$s</string>
+    <string name="home_pending_meeting_subtitle_generic">في انتظار رد الشيخ</string>
+    <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
+    <string name="home_pending_meeting_view">عرض</string>
+    <string name="home_pending_meeting_cancel">إلغاء</string>
 </resources>

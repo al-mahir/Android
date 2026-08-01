@@ -7,13 +7,13 @@ sealed interface RequestUiState {
     data object Sending : RequestUiState
     data class Pending(val requestId: String, val expiresAt: String) : RequestUiState
     data class Accepted(
-        val circleId: String,
+        val requestId: String,
         val token: String,
         val channelName: String,
-        val uid: Int,
+        val userAccount: String,
     ) : RequestUiState
     data class Declined(val reason: String?) : RequestUiState
     data object Expired : RequestUiState
+    data object Ended : RequestUiState
+    data class AlreadyPending(val message: String) : RequestUiState
 }
-
-

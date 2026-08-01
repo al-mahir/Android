@@ -18,4 +18,5 @@
     <string name="meetingrequest_availability_toggle_available">تفعيل التواجد</string>
     <string name="meetingrequest_availability_busy_title">أنت مشغول</string>
     <string name="meetingrequest_availability_busy_subtitle">في لقاء حالياً.</string>
+    <string name="meetingrequest_availability_busy_rejoin">الانضمام مجدداً</string>
 </resources>

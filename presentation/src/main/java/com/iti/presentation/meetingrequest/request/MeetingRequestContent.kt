@@ -68,6 +68,7 @@ fun MeetingRequestContent(
     onSend: (String?) -> Unit,
     onCancel: () -> Unit,
     onBack: () -> Unit,
+    onCancelExisting: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -90,6 +91,12 @@ fun MeetingRequestContent(
                 is RequestUiState.Accepted -> AcceptedContent()
                 is RequestUiState.Declined -> DeclinedContent(state = targetState, onBack = onBack)
                 RequestUiState.Expired -> ExpiredContent(onBack = onBack)
+                RequestUiState.Ended -> EndedContent(onBack = onBack)
+                is RequestUiState.AlreadyPending -> AlreadyPendingContent(
+                    state = targetState,
+                    onCancelExisting = onCancelExisting,
+                    onBack = onBack,
+                )
             }
         }
     }
@@ -276,6 +283,70 @@ private fun ExpiredContent(onBack: () -> Unit) {
             style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
         )
         VerticalSpace(Theme.spacing.large)
+        SecondaryButton(
+            caption = stringResource(R.string.meetingrequest_request_back),
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun EndedContent(onBack: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HeroCircle(
+            iconRes = com.example.designsystem.R.drawable.ic_check,
+            containerColor = Theme.colors.primaryContainer,
+            iconTint = Theme.colors.primary,
+        )
+        VerticalSpace(Theme.spacing.medium)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_request_ended),
+            style = Theme.typography.title.copy(color = Theme.colors.primaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.small)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_request_ended_subtitle),
+            style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.large)
+        SecondaryButton(
+            caption = stringResource(R.string.meetingrequest_request_back),
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun AlreadyPendingContent(
+    state: RequestUiState.AlreadyPending,
+    onCancelExisting: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HeroCircle(
+            iconRes = com.example.designsystem.R.drawable.clock_icon,
+            containerColor = Theme.colors.amber.copy(alpha = 0.14f),
+            iconTint = Theme.colors.amber,
+        )
+        VerticalSpace(Theme.spacing.medium)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_request_already_pending_title),
+            style = Theme.typography.title.copy(color = Theme.colors.primaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.small)
+        BasicText(
+            text = state.message.ifBlank { stringResource(R.string.meetingrequest_request_already_pending_subtitle) },
+            style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.large)
+        PrimaryButton(
+            caption = stringResource(R.string.meetingrequest_request_already_pending_cancel),
+            onClick = onCancelExisting,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        VerticalSpace(Theme.spacing.small)
         SecondaryButton(
             caption = stringResource(R.string.meetingrequest_request_back),
             onClick = onBack,

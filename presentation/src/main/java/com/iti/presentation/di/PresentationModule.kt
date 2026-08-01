@@ -27,6 +27,7 @@ import com.iti.domain.usecase.settings.SetThemeModeUseCase
 import com.iti.presentation.circle.CircleListViewModel
 import com.iti.presentation.circle.InSessionViewModel
 import com.iti.presentation.circle.JoiningCircleViewModel
+import com.iti.presentation.core.MainViewModel
 import com.iti.presentation.core.platform.AppReviewLauncher
 import com.iti.presentation.core.platform.StoreListingAppReviewLauncher
 import com.iti.presentation.home.HomeViewModel
@@ -84,9 +85,11 @@ val presentationModule = module {
     }
 
     // ── ViewModels ────────────────────────────────────────────────────────────
-    viewModel { com.iti.presentation.core.MainViewModel(get()) }
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(),get() )}
     viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(),get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(),get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
     viewModel { (documentType: LegalDocumentType) ->
         StaticContentViewModel(documentType, get())

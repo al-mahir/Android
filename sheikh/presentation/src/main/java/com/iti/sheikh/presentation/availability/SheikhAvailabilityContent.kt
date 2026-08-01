@@ -20,6 +20,7 @@ import com.iti.sheikh.presentation.availability.IncomingRequestCard
 fun SheikhAvailabilityContent(
     state: AvailabilityUiState,
     onIntent: (AvailabilityIntent) -> Unit,
+    onRejoinCall: (AvailabilityUiState.Busy) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -52,7 +53,7 @@ fun SheikhAvailabilityContent(
                     onDecline = { onIntent(AvailabilityIntent.Decline) },
                 )
 
-                AvailabilityUiState.Busy -> BusyIndicator()
+                is AvailabilityUiState.Busy -> BusyIndicator(onRejoinCall = { onRejoinCall(targetState) })
             }
         }
     }
