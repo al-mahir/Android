@@ -34,9 +34,12 @@ import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
 import com.iti.presentation.auth.session.SessionState
 import com.iti.presentation.auth.session.SessionViewModel
+import com.iti.meeting.presentation.call.session.CallForegroundService
+import com.iti.meeting.presentation.call.session.CallSessionController
 import com.iti.meeting.presentation.navigation.MeetingRoute
 import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
 import com.iti.meeting.presentation.navigation.meetingEntries
+import org.koin.compose.koinInject
 import com.iti.presentation.circle.CircleListScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
@@ -99,6 +102,31 @@ private fun AppNavHost(
 ) {
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
+    val callController: CallSessionController = koinInject()
+
+    /** Reopens straight into the call if [CallSessionController] still holds a live session —
+     * i.e. the process (and its foreground service) survived, so there's a real call to return
+     * to. See "reopen decision tree" in docs/Meeting-Call-Lifecycle-Plan.md, cases 1 and 2. Does
+     * nothing after a real process death — [CallSessionController] would be a fresh empty
+     * instance then, which is what the Home `OngoingCallCard` (persisted-record path) is for. */
+    fun openActiveCallIfLive() {
+        val session = callController.state.value
+        val requestId = session.requestId
+        val channelName = session.channelName
+        val userAccount = session.userAccount
+        if (!session.isLive || requestId == null || channelName == null || userAccount == null) return
+        val top = backStack.lastOrNull()
+        if (top is MeetingRoute.Call && top.requestId == requestId) return
+        backStack.add(
+            MeetingRoute.Call(
+                requestId = requestId,
+                token = "",
+                channelName = channelName,
+                userAccount = userAccount,
+                remoteDisplayName = session.remoteDisplayName,
+            ),
+        )
+    }
 
     fun selectTab(destination: AppBottomNavDestination) {
         val root: NavKey = when (destination) {
@@ -133,11 +161,21 @@ private fun AppNavHost(
         )
     }
 
+    LaunchedEffect(Unit) {
+        openActiveCallIfLive()
+    }
+
     LaunchedEffect(pendingAction) {
-        if (pendingAction == "ACTION_OPEN_MUSHAF_LISTEN") {
-            backStack.removeAll { it is AppRoute.Mushaf }
-            backStack.add(AppRoute.Mushaf(openInListenMode = true))
-            onActionHandled()
+        when (pendingAction) {
+            "ACTION_OPEN_MUSHAF_LISTEN" -> {
+                backStack.removeAll { it is AppRoute.Mushaf }
+                backStack.add(AppRoute.Mushaf(openInListenMode = true))
+                onActionHandled()
+            }
+            CallForegroundService.ACTION_OPEN_ACTIVE_CALL -> {
+                openActiveCallIfLive()
+                onActionHandled()
+            }
         }
     }
 
@@ -196,6 +234,9 @@ private fun AppNavHost(
                         onOpenCircleList = { backStack.add(AppRoute.CircleList) },
                         onOpenMeetingRequest = { sheikhId, sheikhName ->
                             backStack.add(MeetingRequestRoute.SendMeetingRequest(sheikhId, sheikhName))
+                        },
+                        onOpenActiveCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
+                            backStack.add(MeetingRoute.Call(requestId = requestId, token = token, channelName = channelName, userAccount = userAccount, remoteDisplayName = remoteDisplayName))
                         },
                     )
                 }
@@ -328,10 +369,10 @@ private fun AppNavHost(
 
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
-                    onNavigateToCall = { requestId, token, channelName, userAccount ->
+                    onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
                         val top = backStack.lastOrNull()
                         if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
-                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
                         }
                     },
                     onBack = { backStack.removeLastOrNull() },

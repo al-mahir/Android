@@ -11,5 +11,12 @@ sealed interface HomeEffect {
     data class OpenMushafAtPage(val page: Int) : HomeEffect
     data class OpenSheikh(val sheikhId: String) : HomeEffect
     data class OpenMeetingRequest(val sheikhId: String, val sheikhName: String?) : HomeEffect
+    data class OpenActiveCall(
+        val requestId: String,
+        val token: String,
+        val channelName: String,
+        val userAccount: String,
+        val remoteDisplayName: String?,
+    ) : HomeEffect
     data class ShowMessage(@StringRes val messageRes: Int) : HomeEffect
 }

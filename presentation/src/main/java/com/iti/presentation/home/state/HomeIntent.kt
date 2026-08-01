@@ -11,4 +11,6 @@ sealed interface HomeIntent {
     data class JoinCircleClicked(val circleId: String) : HomeIntent
     data object ViewPendingMeetingClicked : HomeIntent
     data object CancelPendingMeetingClicked : HomeIntent
+    data object RejoinActiveCallClicked : HomeIntent
+    data object DismissActiveCallClicked : HomeIntent
 }

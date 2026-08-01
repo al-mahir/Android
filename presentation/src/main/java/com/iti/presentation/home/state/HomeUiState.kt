@@ -7,6 +7,7 @@ import com.iti.domain.model.ReadingProgress
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.User
+import com.iti.meeting.domain.model.ActiveCallRecord
 import com.iti.meeting.domain.model.PendingMeetingRequest
 
 
@@ -21,6 +22,7 @@ data class HomeUiState(
     val circles: List<StudyCircle> = emptyList(),
     val joiningCircleIds: Set<String> = emptySet(),
     val pendingMeetingRequest: PendingMeetingRequest? = null,
+    val activeCall: ActiveCallRecord? = null,
     val isOffline: Boolean = false,
 ) {
     val hasError: Boolean get() = errorMessageRes != null

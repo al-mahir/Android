@@ -306,4 +306,12 @@
     <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
     <string name="home_pending_meeting_view">View</string>
     <string name="home_pending_meeting_cancel">Cancel</string>
+
+    <!-- Home — Ongoing Call rejoin card (call survived on the notification/service, but the app process restarted) -->
+    <string name="home_active_call_title">You were in a call</string>
+    <string name="home_active_call_subtitle">With %1$s</string>
+    <string name="home_active_call_subtitle_generic">Tap to check if it\'s still active</string>
+    <string name="home_active_call_rejoin">Rejoin</string>
+    <string name="home_active_call_dismiss">Not in this call anymore</string>
+    <string name="home_active_call_ended">That call has already ended</string>
 </resources>
