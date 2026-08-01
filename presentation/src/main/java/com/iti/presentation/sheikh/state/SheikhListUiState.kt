@@ -10,6 +10,7 @@ data class SheikhListUiState(
     val selectedFilter: SheikhFilter = SheikhFilter.ALL,
     val isLoading: Boolean = true,
     val isError: Boolean = false,
+    val bookmarkedSheikhIds: Set<String> = emptySet(),
 )
 
 enum class SheikhFilter { ALL, AVAILABLE, BUSY }
