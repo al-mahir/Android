@@ -39,7 +39,7 @@ class AlmahirRepositoryImpl(
     private val sheikhDataSource: SheikhDataSource,
     private val circleDataSource: CircleDataSource,
     private val dao: RecitationSessionDao,
-    private val appPreferencesDataStore: AppPreferencesDataStore,
+    private val appPreferencesDataStore: AppPreferencesDataStore? = null,
     private val json: Json = SessionJson,
 ) : AlmahirRepository, SheikhRepository, CircleRepository, RecitationSessionRepository {
 
@@ -59,12 +59,12 @@ class AlmahirRepositoryImpl(
 
     override suspend fun logout(): Result<Unit> = resultOf {
         dataSource.logout()
-        appPreferencesDataStore.clearUser()
+        appPreferencesDataStore?.clearUser()
     }
 
     override suspend fun deleteAccount(): Result<Unit> = resultOf {
         dataSource.deleteAccount()
-        appPreferencesDataStore.clearUser()
+        appPreferencesDataStore?.clearUser()
     }
 
     // ── SheikhRepository ──────────────────────────────────────────────────

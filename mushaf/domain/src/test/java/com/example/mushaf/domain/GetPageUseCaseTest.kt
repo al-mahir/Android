@@ -36,6 +36,12 @@ class GetPageUseCaseTest {
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<TafsirResult>> = Result.Success(emptyList())
+        override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): TafsirResult? = null
+        override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
+        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
+        override fun deleteTafsirBook(tafsirKey: String) = Unit
+        override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): TafsirResult? = null
     }
 
     @Test

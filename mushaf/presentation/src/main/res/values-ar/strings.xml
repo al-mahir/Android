@@ -87,6 +87,8 @@
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">التنزيلات</string>
+    <string name="settings_download_wifi_only">التنزيل عبر شبكة Wi-Fi فقط</string>
+    <string name="settings_download_wifi_only_description">منع استخدام بيانات الهاتف المحمول أثناء التنزيل</string>
 
     <string name="downloads_title_reciters">القراء</string>
     <string name="downloads_title_tafseers">تفسير</string>

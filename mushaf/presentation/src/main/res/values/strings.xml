@@ -101,6 +101,8 @@
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">Downloads</string>
+    <string name="settings_download_wifi_only">Download over Wi-Fi only</string>
+    <string name="settings_download_wifi_only_description">Prevent downloads from using mobile data</string>
 
     <string name="downloads_title_reciters">Reciters</string>
     <string name="downloads_title_tafseers">Tafsir</string>

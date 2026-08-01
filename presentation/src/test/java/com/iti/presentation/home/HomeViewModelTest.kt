@@ -136,8 +136,11 @@ class HomeViewModelTest {
         repository: FakeAlmahirRepository,
         lastPage: Int = 298,
         failReadingProgress: Boolean = false,
+        appPreferencesRepository: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepository(),
+        connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
+        meetingRepository: com.iti.meeting.domain.repository.MeetingRepository = FakeMeetingRepository(),
     ) = HomeViewModel(
-        getCurrentUser = GetCurrentUserUseCase(repository),
+        getCurrentUser = GetCurrentUserUseCase(appPreferencesRepository),
         getReadingProgress = GetReadingProgressUseCase(
             FakeReadingProgressRepository(lastPage, failReadingProgress),
         ),
@@ -145,7 +148,47 @@ class HomeViewModelTest {
         getSheikhs = GetSheikhsUseCase(repository),
         getStudyCircles = GetStudyCirclesUseCase(repository),
         joinStudyCircle = JoinStudyCircleUseCase(repository),
+        connectivityObserver = connectivityObserver,
+        meetingRepository = meetingRepository,
     )
+
+    private class FakeAppPreferencesRepository(
+        user: com.iti.domain.model.User = FakeAlmahirRepository.USER
+    ) : com.iti.domain.settings.repository.AppPreferencesRepository {
+        val state = kotlinx.coroutines.flow.MutableStateFlow(com.iti.domain.settings.model.AppPreferences(user = user))
+        override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = state
+        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setRemindersEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setErrorSoundsEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setDataSaverEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun saveUser(user: com.iti.domain.model.User): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun clearUser(): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    }
+
+    private class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
+        override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> = flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+        override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus = com.iti.domain.connectivity.ConnectivityStatus.Available
+    }
+
+    private class FakeMeetingRepository : com.iti.meeting.domain.repository.MeetingRepository {
+        override val reconnected: Flow<Unit> = flowOf()
+        override suspend fun getAvailableSheikhs(): kotlin.Result<List<com.iti.domain.model.MeetingSheikhSummary>> = kotlin.Result.success(emptyList())
+        override suspend fun setMyAvailability(status: com.iti.domain.model.SheikhAvailabilityStatus): kotlin.Result<Unit> = kotlin.Result.success(Unit)
+        override suspend fun getSheikhAvailability(sheikhId: String): kotlin.Result<com.iti.meeting.domain.model.SheikhAvailability> =
+            kotlin.Result.success(com.iti.meeting.domain.model.SheikhAvailability(sheikhId, com.iti.domain.model.SheikhAvailabilityStatus.AVAILABLE, null))
+        override suspend fun sendMeetingRequest(sheikhId: String, sheikhName: String?, note: String?): com.iti.meeting.domain.repository.SendMeetingRequestResult = com.iti.meeting.domain.repository.SendMeetingRequestResult.SheikhNotFound
+        override suspend fun cancelMeetingRequest(requestId: String): kotlin.Result<Unit> = kotlin.Result.success(Unit)
+        override suspend fun acceptMeetingRequest(requestId: String): kotlin.Result<com.iti.meeting.domain.model.MeetingRequestAccepted> = kotlin.Result.failure(Exception())
+        override suspend fun declineMeetingRequest(requestId: String): kotlin.Result<Unit> = kotlin.Result.success(Unit)
+        override suspend fun endMeeting(requestId: String): kotlin.Result<Unit> = kotlin.Result.success(Unit)
+        override suspend fun refreshToken(requestId: String): kotlin.Result<com.iti.meeting.domain.model.TokenRefresh> = kotlin.Result.failure(Exception())
+        override fun observePendingRequest(): Flow<com.iti.meeting.domain.model.PendingMeetingRequest?> = flowOf(null)
+        override suspend fun getPendingRequest(): com.iti.meeting.domain.model.PendingMeetingRequest? = null
+        override suspend fun clearPendingRequest() = Unit
+        override fun observeMeetingRequestEvents(requestId: String): Flow<com.iti.meeting.domain.repository.MeetingRequestEvent> = flowOf()
+        override fun observeIncomingRequests(sheikhId: String): Flow<com.iti.meeting.domain.repository.IncomingRequestEvent> = flowOf()
+    }
 
     private class FakeReadingProgressRepository(
         private val page: Int,
