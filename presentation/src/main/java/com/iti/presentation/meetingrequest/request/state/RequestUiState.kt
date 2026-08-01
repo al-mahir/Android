@@ -15,4 +15,5 @@ sealed interface RequestUiState {
     data class Declined(val reason: String?) : RequestUiState
     data object Expired : RequestUiState
     data object Ended : RequestUiState
+    data class AlreadyPending(val message: String) : RequestUiState
 }

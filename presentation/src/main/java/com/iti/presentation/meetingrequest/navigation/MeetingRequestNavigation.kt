@@ -21,6 +21,7 @@ fun EntryProviderScope<NavKey>.meetingRequestEntries(
     entry<MeetingRequestRoute.SendMeetingRequest> { route ->
         MeetingRequestScreen(
             sheikhId = route.sheikhId,
+            sheikhName = route.sheikhName,
             onBack = onBack,
             onMeetingAccepted = onNavigateToCall,
             onShowMessage = onShowMessage,

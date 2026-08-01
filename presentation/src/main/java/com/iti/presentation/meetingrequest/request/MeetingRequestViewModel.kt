@@ -28,16 +28,25 @@ class MeetingRequestViewModel(
     private var countdownJob: Job? = null
     private var eventsJob: Job? = null
 
+    /** The locally-cached pending request, if any, scoped to [sheikhId] — used by
+     * [MeetingRequestScreen] to decide whether to rehydrate into [RequestUiState.Pending] on
+     * first composition instead of showing the blank Send form. */
+    suspend fun currentPendingRequestFor(sheikhId: String) =
+        repository.getPendingRequest()?.takeIf { it.sheikhId == sheikhId }
+
     fun onIntent(intent: RequestIntent) {
         when (intent) {
-            is RequestIntent.Send -> send(intent.sheikhId, intent.note)
+            is RequestIntent.Send -> send(intent.sheikhId, intent.sheikhName, intent.note)
             RequestIntent.Cancel -> cancel()
+            RequestIntent.CancelExisting -> cancelExisting()
+            RequestIntent.Reset -> reset()
+            is RequestIntent.Resume -> resume(intent.requestId, intent.expiresAt)
         }
     }
 
-    private fun send(sheikhId: String, note: String?) = viewModelScope.launch {
+    private fun send(sheikhId: String, sheikhName: String?, note: String?) = viewModelScope.launch {
         updateState { RequestUiState.Sending }
-        when (val result = repository.sendMeetingRequest(sheikhId, note)) {
+        when (val result = repository.sendMeetingRequest(sheikhId, sheikhName, note)) {
             is SendMeetingRequestResult.Pending -> {
                 updateState { RequestUiState.Pending(result.requestId, result.expiresAt) }
                 subscribeToRequest(result.requestId)
@@ -54,11 +63,39 @@ class MeetingRequestViewModel(
                 sendEffect(RequestEffect.ShowMessage("Sheikh not found."))
             }
 
+            is SendMeetingRequestResult.AlreadyPending -> {
+                updateState { RequestUiState.AlreadyPending(result.message) }
+            }
+
             is SendMeetingRequestResult.Error -> {
                 updateState { RequestUiState.Idle }
                 sendEffect(RequestEffect.ShowMessage(result.message))
             }
         }
+    }
+
+    /** Cancels the pre-existing request that blocked [send] (surfaced via
+     * [RequestUiState.AlreadyPending]), then returns to Idle so the student can retry. */
+    private fun cancelExisting() = viewModelScope.launch {
+        val existing = repository.getPendingRequest()
+        if (existing != null) {
+            repository.cancelMeetingRequest(existing.requestId)
+        }
+        updateState { RequestUiState.Idle }
+    }
+
+    private fun reset() {
+        eventsJob?.cancel()
+        countdownJob?.cancel()
+        updateState { RequestUiState.Idle }
+    }
+
+    /** Rehydrates an in-flight request without re-POSTing — used when the student navigates in
+     * from the Home pending-request banner rather than the initial Send action. */
+    private fun resume(requestId: String, expiresAt: String) {
+        updateState { RequestUiState.Pending(requestId, expiresAt) }
+        subscribeToRequest(requestId)
+        startCountdown(expiresAt)
     }
 
     private fun subscribeToRequest(requestId: String) {
@@ -68,10 +105,15 @@ class MeetingRequestViewModel(
                 when (event) {
                     is MeetingRequestEvent.Accepted -> {
                         countdownJob?.cancel()
+                        // No navigation effect here — MeetingRequestScreen drives navigation off
+                        // this Accepted state (LaunchedEffect keyed on requestId), not a one-shot
+                        // effect Channel, since a StateFlow reliably replays to any (re)started
+                        // collector where a Channel would not — see the sheikh-side
+                        // AvailabilityViewModel.accept() for the same fix, applied first there
+                        // after the exact same symptom (stuck on Home for a second accept).
                         updateState {
                             RequestUiState.Accepted(requestId, event.agoraToken, event.channelName, event.userAccount)
                         }
-                        sendEffect(RequestEffect.MeetingAccepted(requestId, event.agoraToken, event.channelName, event.userAccount))
                     }
                     is MeetingRequestEvent.Declined -> {
                         countdownJob?.cancel()
