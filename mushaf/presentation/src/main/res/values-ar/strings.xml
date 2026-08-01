@@ -209,4 +209,14 @@
     <string name="guide_mode_muallem">استخدم وضع المُعلِّم للتكرار بعد الشيخ</string>
     <string name="guide_next">→ التالي</string>
     <string name="guide_got_it">فهمت!</string>
+
+    <!-- Tafsir names -->
+    <string name="tafsir_ibn_kathir">تفسير ابن كثير</string>
+    <string name="tafsir_mukhtasar">تفسير المختصر</string>
+    <string name="tafsir_jalalayn">تفسير الجلالين</string>
+    <string name="tafsir_tabari">تفسير الطبري</string>
+    <string name="tafsir_baghawy">تفسير البغوي</string>
+    <string name="tafsir_qurtubi">تفسير القرطبي</string>
+    <string name="tafsir_saadi">تفسير السعدي</string>
+    <string name="tafsir_muyassar">التفسير الميسر</string>
 </resources>

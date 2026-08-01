@@ -5,5 +5,6 @@ data class TafsirResult(
     val ayahNumber: Int,
     val tafsirText: String,
     val surahNameArabic: String = "",
-    val surahNameEnglish: String = ""
+    val surahNameEnglish: String = "",
+    val tafsirKey: String = "mukhtasar",
 )
