@@ -114,6 +114,7 @@ class AvailabilityViewModel(
                         token = accepted.agoraToken,
                         channelName = accepted.channelName,
                         userAccount = accepted.userAccount,
+                        remoteDisplayName = requestState.studentName,
                     )
                 }
                 heartbeat.pause()

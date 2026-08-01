@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.theme.Theme
 import com.iti.sheikh.presentation.R
+import com.iti.sheikh.presentation.home.components.OngoingCallCard
 import com.iti.sheikh.presentation.home.components.SheikhHomeHeader
 import com.iti.sheikh.presentation.home.state.SheikhHomeUiState
 
@@ -19,6 +20,8 @@ fun SheikhHomeContent(
     state: SheikhHomeUiState,
     onProfileClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onRejoinActiveCallClick: () -> Unit = {},
+    onDismissActiveCallClick: () -> Unit = {},
     availabilityPanel: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -51,6 +54,15 @@ fun SheikhHomeContent(
                 onProfileClick = onProfileClick,
                 modifier = gutter.padding(top = Theme.spacing.medium, bottom = Theme.spacing.medium),
             )
+
+            state.activeCall?.let { active ->
+                OngoingCallCard(
+                    call = active,
+                    onRejoin = onRejoinActiveCallClick,
+                    onDismiss = onDismissActiveCallClick,
+                    modifier = gutter,
+                )
+            }
 
             Column(modifier = gutter) {
                 availabilityPanel()

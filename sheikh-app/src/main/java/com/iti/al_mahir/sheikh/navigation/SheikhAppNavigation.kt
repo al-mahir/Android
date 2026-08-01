@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -21,6 +22,9 @@ import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.components.bottomnav.BottomNavBar
 import com.example.designsystem.components.bottomnav.BottomNavTab
 import com.iti.sheikh.presentation.availability.SheikhAvailabilityPanel
+import com.iti.meeting.presentation.call.session.CallForegroundService
+import com.iti.meeting.presentation.call.session.CallSessionController
+import com.iti.meeting.presentation.navigation.MeetingRoute
 import com.iti.meeting.presentation.navigation.meetingEntries
 import com.iti.presentation.auth.navigation.AuthRoute
 import com.iti.presentation.auth.navigation.authEntries
@@ -35,6 +39,7 @@ import com.iti.presentation.settings.navigation.settingsEntries
 import com.iti.sheikh.presentation.home.SheikhHomeScreen
 import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 /**
  * Sheikh-app-exclusive routes. Reused screens (auth, profile, settings) keep their own
@@ -55,7 +60,11 @@ private enum class SheikhBottomNavDestination {
 }
 
 @Composable
-fun SheikhAppNavHost(modifier: Modifier = Modifier) {
+fun SheikhAppNavHost(
+    modifier: Modifier = Modifier,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {},
+) {
     val sessionViewModel: SessionViewModel = koinViewModel()
     val session by sessionViewModel.state.collectAsStateWithLifecycle()
 
@@ -68,15 +77,55 @@ fun SheikhAppNavHost(modifier: Modifier = Modifier) {
             } else {
                 AuthRoute.Login
             },
+            pendingAction = pendingAction,
+            onActionHandled = onActionHandled,
             modifier = modifier,
         )
     }
 }
 
 @Composable
-private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modifier) {
+private fun SheikhAppNavHost(
+    startDestination: NavKey,
+    pendingAction: String? = null,
+    onActionHandled: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
+    val callController: CallSessionController = koinInject()
+
+    /** See the identical helper in `:app`'s `AppNavigation.kt` — same reopen decision tree, cases
+     * 1 and 2 from docs/Meeting-Call-Lifecycle-Plan.md. */
+    fun openActiveCallIfLive() {
+        val callSession = callController.state.value
+        val requestId = callSession.requestId
+        val channelName = callSession.channelName
+        val userAccount = callSession.userAccount
+        if (!callSession.isLive || requestId == null || channelName == null || userAccount == null) return
+        val top = backStack.lastOrNull()
+        if (top is MeetingRoute.Call && top.requestId == requestId) return
+        backStack.add(
+            MeetingRoute.Call(
+                requestId = requestId,
+                token = "",
+                channelName = channelName,
+                userAccount = userAccount,
+                remoteDisplayName = callSession.remoteDisplayName,
+            ),
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        openActiveCallIfLive()
+    }
+
+    LaunchedEffect(pendingAction) {
+        if (pendingAction == CallForegroundService.ACTION_OPEN_ACTIVE_CALL) {
+            openActiveCallIfLive()
+            onActionHandled()
+        }
+    }
 
     fun selectTab(destination: SheikhBottomNavDestination) {
         val root: NavKey = when (destination) {
@@ -112,9 +161,12 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                 entry<SheikhAppRoute.Home> {
                     SheikhHomeScreen(
                         onOpenProfile = { selectTab(SheikhBottomNavDestination.Profile) },
+                        onOpenActiveCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
+                            backStack.add(MeetingRoute.Call(requestId = requestId, token = token, channelName = channelName, userAccount = userAccount, remoteDisplayName = remoteDisplayName))
+                        },
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
-                                onMeetingAccepted = { requestId, token, channelName, userAccount ->
+                                onMeetingAccepted = { requestId, token, channelName, userAccount, remoteDisplayName ->
                                     // Guards against stacking duplicate Call entries — e.g. the
                                     // Busy-state "Rejoin" fallback or the auto-navigate effect
                                     // both firing for the same accepted call in quick succession.
@@ -122,7 +174,7 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
                                     android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: onMeetingAccepted requestId=$requestId, backstack top=$top, size=${backStack.size}")
                                     if (top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId) {
                                         android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: pushing Call($requestId)")
-                                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
                                     } else {
                                         android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, already on Call($requestId)")
                                     }
@@ -154,8 +206,8 @@ private fun SheikhAppNavHost(startDestination: NavKey, modifier: Modifier = Modi
 
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
-                    onNavigateToCall = { requestId, token, channelName, userAccount ->
-                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount))
+                    onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
+                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->

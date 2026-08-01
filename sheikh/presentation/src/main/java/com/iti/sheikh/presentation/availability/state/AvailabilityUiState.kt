@@ -14,6 +14,7 @@ sealed interface AvailabilityUiState {
         val token: String,
         val channelName: String,
         val userAccount: String,
+        val remoteDisplayName: String? = null,
     ) : AvailabilityUiState
 }
 
