@@ -21,6 +21,7 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationWordFeedback
 import com.example.mushaf.domain.model.recite.RecitationSettings
 import com.example.mushaf.domain.model.recite.RecitationWordStatus
+import com.example.mushaf.domain.repository.AyahNoteRepository
 import com.example.mushaf.domain.repository.LiveRecitationRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
@@ -88,8 +89,29 @@ class MushafReducerTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
+    }
+
+    private class FakeAyahNoteRepo : AyahNoteRepository {
+        private val notes = MutableStateFlow<Map<String, com.example.mushaf.domain.model.AyahNote>>(emptyMap())
+
+        override fun observeNote(surahNumber: Int, ayahNumber: Int): Flow<com.example.mushaf.domain.model.AyahNote?> =
+            notes.map { it[key(surahNumber, ayahNumber)] }
+
+        override fun observeNotes(surahNumber: Int): Flow<List<com.example.mushaf.domain.model.AyahNote>> =
+            notes.map { map -> map.values.filter { it.surahNumber == surahNumber }.sortedBy { it.ayahNumber } }
+
+        override suspend fun upsert(note: com.example.mushaf.domain.model.AyahNote) {
+            notes.value = notes.value + (key(note.surahNumber, note.ayahNumber) to note)
+        }
+
+        override suspend fun delete(surahNumber: Int, ayahNumber: Int) {
+            notes.value = notes.value - key(surahNumber, ayahNumber)
+        }
+
+        private fun key(surahNumber: Int, ayahNumber: Int) = "$surahNumber:$ayahNumber"
     }
 
     private class FakePrefsRepo(initial: ReaderPreferences) : ReaderPreferencesRepository {
@@ -280,6 +302,7 @@ class MushafReducerTest {
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
         localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
         localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
+        noteRepo: AyahNoteRepository = FakeAyahNoteRepo(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
@@ -297,6 +320,10 @@ class MushafReducerTest {
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
             localSpeechRecognizer = localSpeechRecognizer,
             localWordCorpusRepository = localWordCorpusRepository,
+            observeAyahNote = com.example.mushaf.domain.usecase.ObserveAyahNoteUseCase(noteRepo),
+            upsertAyahNote = com.example.mushaf.domain.usecase.UpsertAyahNoteUseCase(noteRepo),
+            deleteAyahNote = com.example.mushaf.domain.usecase.DeleteAyahNoteUseCase(noteRepo),
+            getAyahText = com.example.mushaf.domain.usecase.GetAyahTextUseCase(mushafRepo),
         )
     }
 
@@ -1129,6 +1156,7 @@ class MushafReducerTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }

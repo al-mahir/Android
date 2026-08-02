@@ -7,6 +7,8 @@ import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.MushafWord
 import com.example.mushaf.domain.usecase.GetPageUseCase
+import com.example.mushaf.domain.usecase.GetAyahTextUseCase
+import com.example.mushaf.domain.usecase.ObserveAyahNoteUseCase
 import com.example.mushaf.domain.usecase.ObserveReaderPreferencesUseCase
 import com.example.mushaf.domain.usecase.SaveLastPageUseCase
 import com.example.mushaf.domain.usecase.SetTajweedEnabledUseCase
@@ -48,6 +50,7 @@ import com.example.designsystem.text.UiText
 import com.example.mushaf.presentation.core.error.toUiText
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.MushafUiState
+import com.example.mushaf.presentation.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -88,6 +91,10 @@ class MushafViewModel(
     private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
     private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
+    private val observeAyahNote: ObserveAyahNoteUseCase,
+    private val upsertAyahNote: com.example.mushaf.domain.usecase.UpsertAyahNoteUseCase,
+    private val deleteAyahNote: com.example.mushaf.domain.usecase.DeleteAyahNoteUseCase,
+    private val getAyahText: GetAyahTextUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -105,6 +112,7 @@ class MushafViewModel(
     private var initialized = false
     private val loadJobs = mutableMapOf<Int, Job>()
     private var sessionJob: Job? = null
+    private var noteJob: Job? = null
     private var pendingStartDetection = false
     private var detectionJob: Job? = null
     private var controlChannel: Channel<RecitationControl>? = null
@@ -347,6 +355,15 @@ class MushafViewModel(
                 }
             }
             is MushafIntent.DeleteTafsir -> manageTafsirDownload.delete(intent.tafsirKey)
+
+            // Ayah action sheet
+            is MushafIntent.ShowAyahActions -> showAyahActions(intent.surah, intent.ayah)
+            MushafIntent.DismissAyahActions -> dismissAyahActions()
+            MushafIntent.OpenAyahNoteEditor -> openAyahNoteEditor()
+            MushafIntent.CloseAyahNoteEditor -> _state.update { it.copy(ayahNoteEditorOpen = false) }
+            is MushafIntent.SaveAyahNote -> saveAyahNote(intent.text)
+            MushafIntent.DeleteAyahNote -> removeAyahNote()
+            MushafIntent.CopyAyah -> copyAyah()
             
             // User Guide
             MushafIntent.GuideNextStep -> {
@@ -434,6 +451,79 @@ class MushafViewModel(
         }.catch { e ->
             Log.w(TAG, "Failed to observe available tafsir books", e)
         }.launchIn(viewModelScope)
+    }
+
+    private fun showAyahActions(surah: Int, ayah: Int) {
+        noteJob?.cancel()
+        _state.update {
+            it.copy(
+                ayahActionSheet = com.example.mushaf.presentation.state.AyahActionSheetState(
+                    surahNumber = surah,
+                    ayahNumber = ayah,
+                ),
+                ayahNoteEditorOpen = false,
+            )
+        }
+
+        observeAyahNote(surah, ayah)
+            .onEach { note ->
+                _state.update { state ->
+                    val sheet = state.ayahActionSheet
+                    if (sheet != null && sheet.surahNumber == surah && sheet.ayahNumber == ayah) {
+                        state.copy(ayahActionSheet = sheet.copy(note = note))
+                    } else {
+                        state
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
+            .also { noteJob = it }
+
+        viewModelScope.launch {
+            val text = getAyahText(surah, ayah).getOrNull().orEmpty()
+            _state.update { state ->
+                val sheet = state.ayahActionSheet
+                if (sheet != null && sheet.surahNumber == surah && sheet.ayahNumber == ayah) {
+                    state.copy(ayahActionSheet = sheet.copy(ayahText = text))
+                } else {
+                    state
+                }
+            }
+        }
+    }
+
+    private fun dismissAyahActions() {
+        noteJob?.cancel()
+        noteJob = null
+        _state.update { it.copy(ayahActionSheet = null, ayahNoteEditorOpen = false) }
+    }
+
+    private fun openAyahNoteEditor() {
+        _state.update { it.copy(ayahNoteEditorOpen = true) }
+    }
+
+    private fun saveAyahNote(text: String) {
+        val sheet = _state.value.ayahActionSheet ?: return
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            runCatching { upsertAyahNote(sheet.surahNumber, sheet.ayahNumber, trimmed) }
+                .onFailure { Log.e(TAG, "Failed to save ayah note", it) }
+            _state.update { it.copy(ayahNoteEditorOpen = false) }
+        }
+    }
+
+    private fun removeAyahNote() {
+        val sheet = _state.value.ayahActionSheet ?: return
+        viewModelScope.launch {
+            runCatching { deleteAyahNote(sheet.surahNumber, sheet.ayahNumber) }
+                .onFailure { Log.e(TAG, "Failed to delete ayah note", it) }
+            _state.update { it.copy(ayahNoteEditorOpen = false) }
+        }
+    }
+
+    private fun copyAyah() {
+        _effects.trySend(MushafEffect.ShowMessage(R.string.ayah_copied_to_clipboard))
     }
 
     private fun loadReciters() {

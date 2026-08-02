@@ -34,6 +34,7 @@ class GetPageUseCaseTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<TafsirResult?> = Result.Success(null)
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<TafsirResult>> = Result.Success(emptyList())
     }

@@ -42,4 +42,19 @@
     <string name="tafsir_qurtubi">Tafsir Al-Qurtubi</string>
     <string name="tafsir_saadi">Tafsir As-Sa\'di</string>
     <string name="tafsir_muyassar">Al-Tafsir Al-Muyassar</string>
+
+    <!-- Ayah action sheet -->
+    <string name="ayah_actions_title">Ayah actions</string>
+    <string name="ayah_reference_format">%1$s · Ayah %2$d</string>
+    <string name="ayah_action_tafsir">Tafsir</string>
+    <string name="ayah_action_copy">Copy</string>
+    <string name="ayah_action_notes">Notes</string>
+    <string name="ayah_note_saved_title">Note</string>
+    <string name="ayah_note_view_edit">View / edit note</string>
+    <string name="ayah_note_title">Ayah note</string>
+    <string name="ayah_note_hint">Write your note…</string>
+    <string name="ayah_note_cancel">Cancel</string>
+    <string name="ayah_note_save">Save</string>
+    <string name="ayah_note_delete">Delete note</string>
+    <string name="ayah_copied_to_clipboard">Ayah copied to clipboard</string>
 </resources>

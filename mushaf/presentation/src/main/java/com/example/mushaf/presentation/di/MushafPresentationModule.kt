@@ -42,6 +42,10 @@ val mushafPresentationModule = module {
     factory { com.example.mushaf.domain.usecase.search.SearchTafsirUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetAyahTextUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ObserveAyahNoteUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.UpsertAyahNoteUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.DeleteAyahNoteUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -67,7 +71,7 @@ val mushafPresentationModule = module {
 
     viewModel {
         MushafViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
         )
     }
 

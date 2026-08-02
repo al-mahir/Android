@@ -56,6 +56,10 @@ data class MushafUiState(
     val selectedTafsirKey: String = "mukhtasar",
     val availableTafsirBooks: List<com.example.mushaf.domain.model.TafsirBook> = emptyList(),
 
+    // Ayah action sheet
+    val ayahActionSheet: AyahActionSheetState? = null,
+    val ayahNoteEditorOpen: Boolean = false,
+
     // User Guide
     val showUserGuide: Boolean = false,
     val guideStep: Int = 1,
@@ -94,6 +98,13 @@ sealed interface TafsirState {
     data class Success(val tafsir: com.example.mushaf.domain.model.TafsirResult) : TafsirState
     data class Error(val message: UiText) : TafsirState
 }
+
+data class AyahActionSheetState(
+    val surahNumber: Int,
+    val ayahNumber: Int,
+    val ayahText: String = "",
+    val note: com.example.mushaf.domain.model.AyahNote? = null,
+)
 
 enum class CaptureError {
     PERMISSION_DENIED,
