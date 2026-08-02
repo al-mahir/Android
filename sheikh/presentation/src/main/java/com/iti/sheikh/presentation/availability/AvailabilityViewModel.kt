@@ -1,22 +1,25 @@
 package com.iti.sheikh.presentation.availability
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.MeetingCurrentUserProvider
+import com.iti.meeting.domain.repository.IncomingRequestEvent
+import com.iti.meeting.domain.repository.MeetingRepository
+import com.iti.meeting.domain.repository.MeetingRequestEvent
+import com.iti.sheikh.presentation.availability.state.AvailabilityEffect
 import com.iti.sheikh.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.sheikh.presentation.core.mvi.DefaultStateHolder
 import com.iti.sheikh.presentation.core.mvi.EffectPublisher
 import com.iti.sheikh.presentation.core.mvi.StateHolder
-import com.iti.meeting.domain.repository.MeetingRepository
-import com.iti.meeting.domain.repository.IncomingRequestEvent
-import com.iti.meeting.domain.repository.MeetingRequestEvent
-import com.iti.sheikh.presentation.availability.state.AvailabilityEffect
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 class AvailabilityViewModel(
     private val repository: MeetingRepository,
@@ -42,8 +45,13 @@ class AvailabilityViewModel(
 
     private fun goAvailable() = viewModelScope.launch {
         val sheikhId = currentUserProvider.currentUserId() ?: return@launch
-        mySheikhId = sheikhId
         heartbeat.start()
+            .onFailure { error ->
+                android.util.Log.e(TAG, "goAvailable: setMyAvailability(AVAILABLE) failed, staying Offline", error)
+                sendEffect(AvailabilityEffect.ShowMessage(error.message ?: "Couldn't go available. Please try again."))
+                return@launch
+            }
+        mySheikhId = sheikhId
 
         repository.observeIncomingRequests(sheikhId)
             .onEach { event ->
@@ -84,12 +92,12 @@ class AvailabilityViewModel(
     private fun startCountdown(expiresAtString: String) {
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
-            val expiresAt = runCatching { 
+            val expiresAt = runCatching {
                 val str = if (expiresAtString.endsWith("Z") || expiresAtString.contains("+")) expiresAtString else "${expiresAtString}Z"
-                java.time.Instant.parse(str) 
-            }.getOrNull() ?: java.time.Instant.now()
+                Instant.parse(str)
+            }.getOrNull() ?: Clock.System.now()
             while (isActive) {
-                if (expiresAt.isBefore(java.time.Instant.now()) || expiresAt == java.time.Instant.now()) {
+                if (expiresAt <= Clock.System.now()) {
                     updateState {
                         if (this is AvailabilityUiState.IncomingRequest) AvailabilityUiState.Available else this
                     }
@@ -114,6 +122,7 @@ class AvailabilityViewModel(
                         token = accepted.agoraToken,
                         channelName = accepted.channelName,
                         userAccount = accepted.userAccount,
+                        remoteDisplayName = requestState.studentName,
                     )
                 }
                 heartbeat.pause()
@@ -127,14 +136,16 @@ class AvailabilityViewModel(
 
     /** Watches the accepted request's topic so the panel resets to Available if the call ends remotely. */
     private fun observeActiveCall(requestId: String) {
-        android.util.Log.d(TAG, "observeActiveCall: subscribing requestId=$requestId")
+        Log.d(TAG, "observeActiveCall: subscribing requestId=$requestId")
         activeCallJob?.cancel()
         activeCallJob = repository.observeMeetingRequestEvents(requestId)
             .onEach { event ->
                 android.util.Log.d(TAG, "observeActiveCall: event=$event for requestId=$requestId")
                 if (event is MeetingRequestEvent.MeetingEnded) {
                     activeRequestId = null
-                    heartbeat.start()
+                    heartbeat.start().onFailure { error ->
+                        Log.e(TAG, "observeActiveCall: resuming heartbeat failed", error)
+                    }
                     updateState { if (this is AvailabilityUiState.Busy) AvailabilityUiState.Available else this }
                     android.util.Log.d(TAG, "observeActiveCall: MeetingEnded -> reset to Available, currentState=$currentState")
                 }
@@ -150,7 +161,6 @@ class AvailabilityViewModel(
     }
 
     override fun onCleared() {
-        super.onCleared()
         if (mySheikhId != null) heartbeat.stop()
     }
 

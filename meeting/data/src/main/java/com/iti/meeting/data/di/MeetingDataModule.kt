@@ -1,6 +1,7 @@
 package com.iti.meeting.data.di
 
 import com.iti.meeting.domain.config.MeetingKitConfig
+import com.iti.meeting.data.local.ActiveCallStore
 import com.iti.meeting.data.local.PendingMeetingRequestStore
 import com.iti.meeting.data.remote.MeetingApi
 import com.iti.meeting.domain.repository.MeetingRepository
@@ -28,8 +29,9 @@ val meetingDataModule = module {
 
     single { MeetingApi(httpClient = get()) }
     single { PendingMeetingRequestStore(context = androidContext()) }
+    single { ActiveCallStore(context = androidContext()) }
     single<MeetingRepository> {
-        MeetingRepositoryImpl(api = get(), stompClient = get(), pendingRequestStore = get())
+        MeetingRepositoryImpl(api = get(), stompClient = get(), pendingRequestStore = get(), activeCallStore = get())
     }
 }
 

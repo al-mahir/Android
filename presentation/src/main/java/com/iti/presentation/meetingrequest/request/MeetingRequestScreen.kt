@@ -14,7 +14,7 @@ fun MeetingRequestScreen(
     sheikhId: String,
     sheikhName: String? = null,
     onBack: () -> Unit,
-    onMeetingAccepted: (String, String, String, String) -> Unit,
+    onMeetingAccepted: (String, String, String, String, String?) -> Unit,
     onShowMessage: (String) -> Unit,
     viewModel: MeetingRequestViewModel = koinViewModel(),
 ) {
@@ -32,7 +32,7 @@ fun MeetingRequestScreen(
     val acceptedRequestId = (state as? RequestUiState.Accepted)?.requestId
     LaunchedEffect(acceptedRequestId) {
         val accepted = state as? RequestUiState.Accepted ?: return@LaunchedEffect
-        onMeetingAccepted(accepted.requestId, accepted.token, accepted.channelName, accepted.userAccount)
+        onMeetingAccepted(accepted.requestId, accepted.token, accepted.channelName, accepted.userAccount, sheikhName)
     }
 
     // Self-heals a ViewModel instance stuck on a terminal state from a previous flow (e.g. a

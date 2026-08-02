@@ -5,11 +5,13 @@ import com.example.mushaf.domain.model.Hizb
 import com.example.mushaf.domain.model.Juz
 import com.example.mushaf.domain.model.MushafPage
 import com.example.mushaf.domain.model.Surah
+import com.example.mushaf.domain.model.TafsirBook
 import com.example.mushaf.domain.model.TafsirResult
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.usecase.GetPageUseCase
 import com.iti.domain.core.Result
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -34,13 +36,14 @@ class GetPageUseCaseTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<TafsirResult?> = Result.Success(null)
-        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<TafsirResult>> = Result.Success(emptyList())
         override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): TafsirResult? = null
-        override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
-        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override suspend fun getAvailableTafsirBooks(): List<TafsirBook> = emptyList()
+        override fun observeAvailableTafsirBooks(): Flow<List<TafsirBook>> = emptyFlow()
         override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
         override fun deleteTafsirBook(tafsirKey: String) = Unit
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<TafsirResult>> = Result.Success(emptyList())
         override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): TafsirResult? = null
     }
 

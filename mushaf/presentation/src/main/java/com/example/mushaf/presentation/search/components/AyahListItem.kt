@@ -22,12 +22,16 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.presentation.R
 import com.example.mushaf.domain.model.AyahSearchResult
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun AyahListItem(
     ayah: AyahSearchResult,
     query: String = "",
     onClick: (AyahSearchResult) -> Unit,
+    isBookmarked: Boolean = false,
+    onBookmark: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -44,16 +48,37 @@ fun AyahListItem(
                 .fillMaxWidth()
                 .padding(14.dp)
         ) {
-            Text(
-                text = stringResource(
-                    R.string.ayah_title_format,
-                    ayah.surahNameArabic,
-                    ayah.surahNameEnglish,
-                    ayah.ayahNumber
-                ),
-                style = Theme.typography.body.small,
-                color = Theme.colors.hint
-            )
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(
+                        R.string.ayah_title_format,
+                        ayah.surahNameArabic,
+                        ayah.surahNameEnglish,
+                        ayah.ayahNumber
+                    ),
+                    style = Theme.typography.body.small,
+                    color = Theme.colors.hint,
+                    modifier = Modifier.weight(1f)
+                )
+                if (onBookmark != null) {
+                    androidx.compose.material3.IconButton(
+                        onClick = onBookmark,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        androidx.compose.material3.Icon(
+                            painter = painterResource(
+                                if (isBookmarked) {
+                                    com.example.designsystem.R.drawable.ic_bookmark_filled
+                                } else {
+                                    com.example.designsystem.R.drawable.ic_bookmark
+                                },
+                            ),
+                            contentDescription = stringResource(R.string.mushaf_cd_bookmark_ayah),
+                            tint = Theme.colors.primary
+                        )
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
             Text(
                 text = ayah.ayahText.highlight(query, Theme.colors.primary),

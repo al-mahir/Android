@@ -33,6 +33,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -82,6 +83,9 @@ fun createAlmahirHttpClient(
     install(createPublicEndpointGuard(isPublicEndpoint))
 
     install(Auth) {
+        reAuthorizeOnResponse { response ->
+            response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden
+        }
         bearer {
             loadTokens { tokenStore.getTokens()?.toBearerTokens() }
             refreshTokens { refreshSession(tokenStore, refreshEndpoint) }

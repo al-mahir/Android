@@ -6,6 +6,7 @@ import com.iti.domain.connectivity.ConnectivityObserver
 import com.iti.domain.connectivity.ConnectivityStatus
 import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.sheikh.presentation.R
 import com.iti.sheikh.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.sheikh.presentation.core.mvi.DefaultStateHolder
@@ -19,10 +20,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 class SheikhHomeViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val connectivityObserver: ConnectivityObserver,
+    private val meetingRepository: MeetingRepository,
 ) : ViewModel(),
     StateHolder<SheikhHomeUiState> by DefaultStateHolder(SheikhHomeUiState()),
     EffectPublisher<SheikhHomeEffect> by DefaultEffectPublisher() {
@@ -31,12 +34,54 @@ class SheikhHomeViewModel(
 
     init {
         observeContent()
+        observeActiveCall()
     }
 
     fun onIntent(intent: SheikhHomeIntent) {
         when (intent) {
             SheikhHomeIntent.ProfileClicked -> sendEffect(SheikhHomeEffect.OpenProfile)
             SheikhHomeIntent.Retry -> observeContent()
+            SheikhHomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
+            SheikhHomeIntent.DismissActiveCallClicked -> dismissActiveCall()
+        }
+    }
+
+    /** See the identical logic (and its rationale) in `:presentation`'s `HomeViewModel` — this is
+     * the sheikh-side twin of the same case-3 rejoin flow from
+     * docs/Meeting-Call-Lifecycle-Plan.md. */
+    private fun observeActiveCall() {
+        meetingRepository.observeActiveCall()
+            .onEach { active -> updateState { copy(activeCall = active) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun rejoinActiveCall() {
+        val active = currentState.activeCall ?: return
+        viewModelScope.launch {
+            meetingRepository.refreshToken(active.requestId)
+                .onSuccess { refreshed ->
+                    sendEffect(
+                        SheikhHomeEffect.OpenActiveCall(
+                            requestId = active.requestId,
+                            token = refreshed.token,
+                            channelName = refreshed.channelName,
+                            userAccount = refreshed.userAccount,
+                            remoteDisplayName = active.remoteDisplayName,
+                        ),
+                    )
+                }
+                .onFailure {
+                    meetingRepository.clearActiveCall()
+                    sendEffect(SheikhHomeEffect.ShowMessage(R.string.sheikh_home_active_call_ended))
+                }
+        }
+    }
+
+    private fun dismissActiveCall() {
+        val active = currentState.activeCall ?: return
+        viewModelScope.launch {
+            meetingRepository.endMeeting(active.requestId)
+            meetingRepository.clearActiveCall()
         }
     }
 

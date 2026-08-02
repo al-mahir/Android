@@ -35,6 +35,8 @@ fun SurahListItem(
     surah: Surah,
     query: String = "",
     onClick: (Surah) -> Unit,
+    isBookmarked: Boolean = false,
+    onBookmark: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -103,6 +105,26 @@ fun SurahListItem(
                     style = Theme.typography.title,
                     color = Theme.colors.primaryFont
                 )
+            }
+
+            if (onBookmark != null) {
+                Spacer(Modifier.width(8.dp))
+                androidx.compose.material3.IconButton(
+                    onClick = onBookmark,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        painter = androidx.compose.ui.res.painterResource(
+                            if (isBookmarked) {
+                                com.example.designsystem.R.drawable.ic_bookmark_filled
+                            } else {
+                                com.example.designsystem.R.drawable.ic_bookmark
+                            },
+                        ),
+                        contentDescription = stringResource(R.string.mushaf_cd_bookmark),
+                        tint = Theme.colors.primary
+                    )
+                }
             }
         }
     }

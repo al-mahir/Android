@@ -43,6 +43,7 @@
     <!-- Top bar content descriptions -->
     <string name="mushaf_cd_back">Back</string>
     <string name="mushaf_cd_bookmark">Bookmark</string>
+    <string name="mushaf_cd_bookmark_ayah">Bookmark this ayah</string>
     <string name="mushaf_cd_settings">Settings</string>
 
     <!-- Bottom bar — modes -->

@@ -2,6 +2,7 @@ package com.iti.meeting.presentation.call
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,18 +68,18 @@ fun CallScreen(
     token: String,
     channelName: String,
     userAccount: String,
+    remoteDisplayName: String? = null,
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
-    remember(requestId) { viewModel.prepareForRequest(requestId) }
+    LaunchedEffect(requestId) { viewModel.prepareForRequest(requestId) }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     android.util.Log.d("MeetingLifecycle", "CallScreen: composed requestId=$requestId state=$state")
-    val handleLeave: () -> Unit = {
+        val handleLeave: () -> Unit = {
         android.util.Log.d("MeetingLifecycle", "CallScreen: handleLeave requestId=$requestId")
         viewModel.endCall()
-        onLeave()
     }
 
        BackHandler(enabled = state !is CallUiState.Ended) {
@@ -93,20 +94,31 @@ fun CallScreen(
     }
     val joinPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    ) { _ ->
+        // Permissions are requested so the in-call mic/camera buttons won't need to prompt later,
+        // but a grant must never be treated as consent to publish — join muted/camera-off for
+        // privacy and let the user opt in per-call via the in-call toggles.
         viewModel.joinChannel(
             context = context,
             requestId = requestId,
             token = token,
             channelName = channelName,
             userAccount = userAccount,
-            micEnabled = results[Manifest.permission.RECORD_AUDIO] == true,
-            cameraEnabled = results[Manifest.permission.CAMERA] == true,
+            remoteDisplayName = remoteDisplayName,
+            micEnabled = false,
+            cameraEnabled = false,
         )
     }
 
     LaunchedEffect(Unit) {
-        joinPermissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA))
+        val permissions = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            add(Manifest.permission.CAMERA)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        joinPermissionsLauncher.launch(permissions.toTypedArray())
     }
 
     if (state is CallUiState.Ended) {
@@ -115,7 +127,7 @@ fun CallScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(CallBackground)) {
         when (val current = state) {
-            is CallUiState.Connecting -> ConnectingContent()
+            is CallUiState.Idle, is CallUiState.Connecting -> ConnectingContent()
 
             is CallUiState.InCall -> InCallContent(
                 state = current,

@@ -58,6 +58,24 @@ class AlmahirHttpClientTest {
     }
 
     @Test
+    fun `refreshes the session and replays the request after a 403`() = runBlocking {
+        val store = FakeTokenStore(TokenPair(ACCESS_TOKEN, REFRESH_TOKEN))
+        val client = clientWith(store) { request ->
+            when {
+                request.url.encodedPath.endsWith(AlmahirApi.Auth.REFRESH) -> respondJson(REFRESHED_BODY)
+                request.headers[HttpHeaders.Authorization] == "Bearer $NEW_ACCESS_TOKEN" -> respondJson(SUCCESS_BODY)
+                else -> respondJson(UNAUTHORIZED_BODY, HttpStatusCode.Forbidden)
+            }
+        }
+
+        client.post(AlmahirApi.Auth.LOGOUT) { jsonBody() }
+
+        assertEquals(3, recordedRequests.size)
+        assertEquals("Bearer $NEW_ACCESS_TOKEN", recordedRequests.last().headers[HttpHeaders.Authorization])
+        assertEquals(TokenPair(NEW_ACCESS_TOKEN, NEW_REFRESH_TOKEN), store.getTokens())
+    }
+
+    @Test
     fun `does not refresh when a public endpoint rejects the credentials`() = runBlocking {
         val store = FakeTokenStore(TokenPair(ACCESS_TOKEN, REFRESH_TOKEN))
         val client = clientWith(store) { respondJson(UNAUTHORIZED_BODY, HttpStatusCode.Unauthorized) }

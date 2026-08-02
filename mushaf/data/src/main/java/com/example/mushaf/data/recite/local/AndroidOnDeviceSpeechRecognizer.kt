@@ -10,6 +10,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.RequiresPermission
 import com.example.mushaf.data.MushafLog
 import com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability
@@ -94,6 +95,7 @@ class AndroidOnDeviceSpeechRecognizer(
      * already been proven to just fail with `ERROR_LANGUAGE_NOT_SUPPORTED` — [listen] falls
      * through to the network-based recognizer instead, which commonly does cover Arabic.
      */
+    @ChecksSdkIntAtLeast(api = 34)
     private suspend fun onDeviceSupportsArabic(): Boolean {
         if (Build.VERSION.SDK_INT < 34) return false
         return runCatching {

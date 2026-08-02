@@ -2,6 +2,7 @@ package com.iti.meeting.domain.repository
 
 import com.iti.domain.model.MeetingSheikhSummary
 import com.iti.domain.model.SheikhAvailabilityStatus
+import com.iti.meeting.domain.model.ActiveCallRecord
 import com.iti.meeting.domain.model.MeetingRequestAccepted
 import com.iti.meeting.domain.model.PendingMeetingRequest
 import com.iti.meeting.domain.model.SheikhAvailability
@@ -49,6 +50,15 @@ interface MeetingRepository {
     fun observePendingRequest(): Flow<PendingMeetingRequest?>
     suspend fun getPendingRequest(): PendingMeetingRequest?
     suspend fun clearPendingRequest()
+
+    /** Locally-cached record of a call the current user had joined — see [ActiveCallRecord]. The
+     * only thing that survives real process death mid-call; used to offer a "rejoin" prompt on
+     * the next cold start. Written by `CallSessionController` on a successful join, cleared on
+     * any terminal state. */
+    fun observeActiveCall(): Flow<ActiveCallRecord?>
+    suspend fun getActiveCall(): ActiveCallRecord?
+    suspend fun saveActiveCall(record: ActiveCallRecord)
+    suspend fun clearActiveCall()
 
     /**
      * The single unified topic for one request's lifecycle

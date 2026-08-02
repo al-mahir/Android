@@ -88,14 +88,15 @@ class MushafReducerTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
-        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
         override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): com.example.mushaf.domain.model.TafsirResult? = null
         override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
-        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = kotlinx.coroutines.flow.emptyFlow()
         override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
         override fun deleteTafsirBook(tafsirKey: String) = Unit
         override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     private class FakePrefsRepo(initial: ReaderPreferences) : ReaderPreferencesRepository {
@@ -283,21 +284,44 @@ class MushafReducerTest {
         }
     }
 
-    private class FakeAppPrefsRepo : com.iti.domain.settings.repository.AppPreferencesRepository {
-        val flow = MutableStateFlow(com.iti.domain.settings.model.AppPreferences())
-        override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = flow
-        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): Result<Unit> = Result.Success(Unit)
-        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): Result<Unit> = Result.Success(Unit)
-        override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-        override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-        override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-        override suspend fun saveUser(user: com.iti.domain.model.User): Result<Unit> = Result.Success(Unit)
-        override suspend fun clearUser(): Result<Unit> = Result.Success(Unit)
+    private class FakeAppPreferencesRepo : com.iti.domain.settings.repository.AppPreferencesRepository {
+        override val preferences = MutableStateFlow(com.iti.domain.settings.model.AppPreferences())
+        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode) = Result.Success(Unit)
+        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage) = Result.Success(Unit)
+        override suspend fun setRemindersEnabled(enabled: Boolean) = Result.Success(Unit)
+        override suspend fun setErrorSoundsEnabled(enabled: Boolean) = Result.Success(Unit)
+        override suspend fun setDataSaverEnabled(enabled: Boolean) = Result.Success(Unit)
+        override suspend fun saveUser(user: com.iti.domain.model.User) = Result.Success(Unit)
+        override suspend fun clearUser() = Result.Success(Unit)
     }
 
     private class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
-        override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> = flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
-        override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus = com.iti.domain.connectivity.ConnectivityStatus.Available
+        override val status = MutableStateFlow(com.iti.domain.connectivity.ConnectivityStatus.Available)
+        override fun currentStatus() = com.iti.domain.connectivity.ConnectivityStatus.Available
+    }
+
+    private class FakeAlmahirRepository : com.iti.domain.repository.AlmahirRepository {
+        private val bookmarks = mutableMapOf<String, com.iti.domain.model.Bookmark>()
+        override fun observeCurrentUser() = flowOf<Result<com.iti.domain.model.User>>()
+        override fun observeSubscription() = flowOf<Result<com.iti.domain.model.Subscription>>()
+        override fun observeLegalDocument(type: com.iti.domain.model.LegalDocumentType) = flowOf<Result<com.iti.domain.model.LegalDocument>>()
+        override suspend fun restorePurchases() = Result.Success(true)
+        override suspend fun logout() = Result.Success(Unit)
+        override suspend fun deleteAccount() = Result.Success(Unit)
+        override fun observeBookmarks(type: com.iti.domain.model.BookmarkType) =
+            flowOf(Result.Success(bookmarks.values.filter { it.type == type }))
+        override fun observeAllBookmarks() = flowOf(Result.Success(bookmarks.values.toList()))
+        override suspend fun getBookmarks(type: com.iti.domain.model.BookmarkType) =
+            Result.Success(bookmarks.values.filter { it.type == type })
+        override suspend fun getBookmark(id: String) = Result.Success(bookmarks[id])
+        override suspend fun addBookmark(bookmark: com.iti.domain.model.Bookmark): Result<Unit> {
+            bookmarks[bookmark.id] = bookmark
+            return Result.Success(Unit)
+        }
+        override suspend fun removeBookmark(id: String): Result<Unit> {
+            bookmarks.remove(id)
+            return Result.Success(Unit)
+        }
     }
 
     private fun buildViewModel(
@@ -309,8 +333,9 @@ class MushafReducerTest {
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
         localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
         localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
-        appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPrefsRepo(),
+        appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepo(),
         connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
+        almahirRepository: FakeAlmahirRepository = FakeAlmahirRepository(),
     ): MushafViewModel {
         return MushafViewModel(
             getPage = GetPageUseCase(mushafRepo),
@@ -333,6 +358,8 @@ class MushafReducerTest {
             manageTafsirDownload = com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(mushafRepo),
             observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(appPrefsRepo),
             connectivityObserver = connectivityObserver,
+            toggleBookmarkUseCase = com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase(almahirRepository),
+            observeBookmarks = com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase(almahirRepository),
         )
     }
 
@@ -1165,14 +1192,15 @@ class MushafReducerTest {
         override suspend fun getSurahStartingPage(surahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?> = Result.Success(null)
         override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = Result.Success(null)
+        override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = Result.Success(null)
         override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<com.example.mushaf.domain.model.TafsirResult?> = Result.Success(null)
-        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
         override suspend fun getTafsirFromApi(surah: Int, ayah: Int, lang: String, tafsirKey: String): com.example.mushaf.domain.model.TafsirResult? = null
         override suspend fun getAvailableTafsirBooks(): List<com.example.mushaf.domain.model.TafsirBook> = emptyList()
-        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = flowOf(emptyList())
+        override fun observeAvailableTafsirBooks(): Flow<List<com.example.mushaf.domain.model.TafsirBook>> = kotlinx.coroutines.flow.emptyFlow()
         override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
         override fun deleteTafsirBook(tafsirKey: String) = Unit
         override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): com.example.mushaf.domain.model.TafsirResult? = null
+        override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<com.example.mushaf.domain.model.TafsirResult>> = Result.Success(emptyList())
     }
 
     @Test

@@ -2,7 +2,12 @@ package com.iti.presentation.sheikh
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.domain.core.Result
 import com.iti.domain.core.fold
+import com.iti.domain.model.Bookmark
+import com.iti.domain.model.BookmarkType
+import com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase
+import com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
@@ -13,23 +18,52 @@ import com.iti.presentation.sheikh.state.SheikhListEffect
 import com.iti.presentation.sheikh.state.SheikhListIntent
 import com.iti.presentation.sheikh.state.SheikhListUiState
 import com.iti.presentation.sheikh.state.applyFilters
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class SheikhListViewModel(
     private val getSheikhs: GetSheikhsUseCase,
+    private val observeBookmarks: ObserveBookmarksUseCase,
+    private val toggleBookmark: ToggleBookmarkUseCase,
 ) : ViewModel(),
     StateHolder<SheikhListUiState> by DefaultStateHolder(SheikhListUiState()),
     EffectPublisher<SheikhListEffect> by DefaultEffectPublisher() {
 
     init {
         load()
+        observeBookmarkedSheikhs()
     }
 
     fun onIntent(intent: SheikhListIntent) = when (intent) {
         is SheikhListIntent.SearchQueryChanged -> updateSearch(intent.query)
         is SheikhListIntent.FilterSelected -> updateFilter(intent.filter)
         is SheikhListIntent.SheikhClicked -> sendEffect(SheikhListEffect.NavigateToSheikhDetails(intent.sheikhId))
+        is SheikhListIntent.ToggleSheikhBookmark -> toggleSheikhBookmark(intent.sheikhId)
         SheikhListIntent.Retry -> load()
+    }
+
+    private fun observeBookmarkedSheikhs() {
+        observeBookmarks(BookmarkType.SHEIKH)
+            .onEach { result ->
+                if (result is Result.Success) {
+                    updateState { copy(bookmarkedSheikhIds = result.data.mapNotNull { it.sheikhId }.toSet()) }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun toggleSheikhBookmark(sheikhId: String) {
+        viewModelScope.launch {
+            toggleBookmark(
+                Bookmark(
+                    id = "",
+                    type = BookmarkType.SHEIKH,
+                    sheikhId = sheikhId,
+                    createdAtEpochMillis = System.currentTimeMillis(),
+                ),
+            )
+        }
     }
 
     private fun load() {

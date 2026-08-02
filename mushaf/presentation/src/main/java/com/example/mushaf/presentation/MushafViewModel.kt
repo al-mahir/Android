@@ -90,6 +90,8 @@ class MushafViewModel(
     private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
     private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver,
+    private val toggleBookmarkUseCase: com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase,
+    private val observeBookmarks: com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MushafUiState())
@@ -273,6 +275,28 @@ class MushafViewModel(
                 _state.update { it.copy(isOffline = status == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) }
             }
             .launchIn(viewModelScope)
+
+        observeBookmarks(com.iti.domain.model.BookmarkType.PAGE)
+            .onEach { result ->
+                if (result is Result.Success) {
+                    val pages = result.data.mapNotNull { it.pageNumber }.toSet()
+                    _state.update { it.copy(bookmarkedPages = pages) }
+                }
+            }
+            .launchIn(viewModelScope)
+
+        observeBookmarks(com.iti.domain.model.BookmarkType.AYAH)
+            .onEach { result ->
+                if (result is Result.Success) {
+                    val ayahs = result.data.mapNotNull { bookmark ->
+                        val surah = bookmark.surahNumber
+                        val ayah = bookmark.ayahNumber
+                        if (surah != null && ayah != null) surah to ayah else null
+                    }.toSet()
+                    _state.update { it.copy(bookmarkedAyahs = ayahs) }
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onIntent(intent: MushafIntent) {
@@ -374,6 +398,31 @@ class MushafViewModel(
             }
             MushafIntent.DismissGuide -> {
                 viewModelScope.launch { setFirstMushafLaunchCompleted() }
+            }
+            MushafIntent.TogglePageBookmark -> {
+                viewModelScope.launch {
+                    val page = _state.value.currentPage
+                    val bookmark = com.iti.domain.model.Bookmark(
+                        id = "",
+                        type = com.iti.domain.model.BookmarkType.PAGE,
+                        pageNumber = page,
+                        createdAtEpochMillis = System.currentTimeMillis()
+                    )
+                    toggleBookmarkUseCase(bookmark)
+                }
+            }
+            is MushafIntent.ToggleAyahBookmark -> {
+                viewModelScope.launch {
+                    val bookmark = com.iti.domain.model.Bookmark(
+                        id = "",
+                        type = com.iti.domain.model.BookmarkType.AYAH,
+                        surahNumber = intent.surah,
+                        ayahNumber = intent.ayah,
+                        pageNumber = _state.value.currentPage,
+                        createdAtEpochMillis = System.currentTimeMillis()
+                    )
+                    toggleBookmarkUseCase(bookmark)
+                }
             }
         }
     }
@@ -748,10 +797,6 @@ class MushafViewModel(
             }
         }
     }
-
-    /** Null means "gave up" (unavailable, no corpus coverage for this page, or the timeout
-     * elapsed with nothing usable) - never thrown; the already-running session just keeps
-     * grading from [pageStart] as though detection never ran. */
     private suspend fun detectStartCursor(pageStart: RecitationCursor, pageWordCount: Int): RecitationCursor? {
         val window = localWordCorpusRepository.wordsFrom(pageStart, pageWordCount).getOrNull() ?: emptyList()
         Log.i(TAG, "Start detection: corpus window size=${window.size} (requested $pageWordCount from ${pageStart.wordId})")

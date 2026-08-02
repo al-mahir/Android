@@ -15,7 +15,7 @@ import org.koin.androidx.compose.koinViewModel
  */
 @Composable
 fun SheikhAvailabilityPanel(
-    onMeetingAccepted: (String, String, String, String) -> Unit,
+    onMeetingAccepted: (String, String, String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AvailabilityViewModel = koinViewModel(),
 ) {
@@ -35,14 +35,14 @@ fun SheikhAvailabilityPanel(
     LaunchedEffect(busyRequestId) {
         val busy = state as? AvailabilityUiState.Busy ?: return@LaunchedEffect
         android.util.Log.d("MeetingLifecycle", "SheikhAvailabilityPanel: auto-navigating to Call requestId=${busy.requestId}")
-        onMeetingAccepted(busy.requestId, busy.token, busy.channelName, busy.userAccount)
+        onMeetingAccepted(busy.requestId, busy.token, busy.channelName, busy.userAccount, busy.remoteDisplayName)
     }
 
     SheikhAvailabilityContent(
         state = state,
         onIntent = viewModel::onIntent,
         onRejoinCall = { busy ->
-            onMeetingAccepted(busy.requestId, busy.token, busy.channelName, busy.userAccount)
+            onMeetingAccepted(busy.requestId, busy.token, busy.channelName, busy.userAccount, busy.remoteDisplayName)
         },
         modifier = modifier,
     )

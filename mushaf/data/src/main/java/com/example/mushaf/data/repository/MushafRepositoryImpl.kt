@@ -122,6 +122,10 @@ class MushafRepositoryImpl(
         dataSource.getAyahPage(surahNumber, ayahNumber)
     }
 
+    override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> = resultOf(mapError) {
+        textDataSource.getVerseText(surahNumber, ayahNumber)
+    }
+
     override suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?> = resultOf(mapError) {
         val juzPages = intArrayOf(
             1, 22, 42, 62, 82, 102, 122, 142, 162, 182,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="meeting_call_notification_channel_name">Active call</string>
+    <string name="meeting_call_notification_title_named">Call with %1$s</string>
+    <string name="meeting_call_notification_title_generic">Ongoing call</string>
+    <string name="meeting_call_notification_connecting">Connecting…</string>
+    <string name="meeting_call_notification_mute">Mute</string>
+    <string name="meeting_call_notification_unmute">Unmute</string>
+    <string name="meeting_call_notification_end">End call</string>
+</resources>

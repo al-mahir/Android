@@ -210,6 +210,13 @@
     <string name="session_stat_duration">المدة</string>
     <string name="session_breakdown_title">أين كانت الأخطاء</string>
     <string name="session_practice_title">يستحق المراجعة</string>
+    <string name="session_practice_focus_label">مجال التدريب: %s</string>
+
+    <string name="bookmark_tab_surah">السورة</string>
+    <string name="bookmark_tab_ayah">الآية</string>
+    <string name="bookmark_tab_page">الصفحة</string>
+    <string name="bookmark_tab_sheikh">الشيخ</string>
+
     <string name="session_practice_item">%1$s ×%2$d</string>
     <string name="session_category_memorization">الحفظ</string>
     <string name="session_category_tashkil">التشكيل</string>
@@ -308,4 +315,34 @@
     <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
     <string name="home_pending_meeting_view">عرض</string>
     <string name="home_pending_meeting_cancel">إلغاء</string>
+
+    <!-- Home — Ongoing Call rejoin card -->
+    <string name="home_active_call_title">كنت في مكالمة</string>
+    <string name="home_active_call_subtitle">مع %1$s</string>
+    <string name="home_active_call_subtitle_generic">اضغط للتحقق مما إذا كانت لا تزال نشطة</string>
+    <string name="home_active_call_rejoin">إعادة الانضمام</string>
+    <string name="home_active_call_dismiss">لم أعد في هذه المكالمة</string>
+    <string name="home_active_call_ended">لقد انتهت هذه المكالمة بالفعل</string>
+
+    <string name="bookmark_screen_title">المفضلة</string>
+    <string name="bookmark_search_hint">ابحث في مفضلتك…</string>
+    <string name="bookmark_surah_meta_format">%1$d آية · صفحة %2$d</string>
+    <string name="bookmark_surah_ayah_count_format">%1$d آية</string>
+    <string name="bookmark_ayah_text_unavailable">نص الآية غير متاح</string>
+    <string name="bookmark_ayah_reference_format">سورة %1$s · %2$d:%3$d</string>
+    <string name="bookmark_page_label_format">صفحة %1$d</string>
+    <string name="bookmark_page_meta_format">%1$s · الجزء %2$d</string>
+    <string name="bookmark_cd_remove">إزالة الإشارة المرجعية</string>
+    <string name="bookmark_remove_confirm_title">إزالة الإشارة المرجعية؟</string>
+    <string name="bookmark_remove_confirm_message">ستتم إزالة هذه الإشارة المرجعية من قائمتك.</string>
+    <string name="bookmark_remove_confirm_action">إزالة</string>
+    <string name="bookmark_remove_cancel_action">إلغاء</string>
+    <string name="bookmark_empty_surah_title">لا توجد سور محفوظة بعد</string>
+    <string name="bookmark_empty_surah_description">أضف سورة إلى المفضلة من نتائج البحث.</string>
+    <string name="bookmark_empty_ayah_title">لا توجد آيات محفوظة بعد</string>
+    <string name="bookmark_empty_ayah_description">اضغط مطولاً على كلمة في المصحف أو أضف آية من البحث لحفظها.</string>
+    <string name="bookmark_empty_page_title">لا توجد صفحات محفوظة بعد</string>
+    <string name="bookmark_empty_page_description">اضغط على أيقونة الإشارة المرجعية أثناء القراءة لحفظ الصفحة.</string>
+    <string name="bookmark_empty_sheikh_title">لا يوجد شيوخ محفوظون بعد</string>
+    <string name="bookmark_empty_sheikh_description">اضغط على أيقونة الإشارة المرجعية في بطاقة الشيخ لحفظه.</string>
 </resources>

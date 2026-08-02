@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -32,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -72,6 +72,7 @@ fun SheikhListScreen(
         onSearchChanged = { viewModel.onIntent(SheikhListIntent.SearchQueryChanged(it)) },
         onFilterSelected = { viewModel.onIntent(SheikhListIntent.FilterSelected(it)) },
         onSheikhClick = { viewModel.onIntent(SheikhListIntent.SheikhClicked(it)) },
+        onSheikhBookmarkClick = { viewModel.onIntent(SheikhListIntent.ToggleSheikhBookmark(it)) },
         onRetry = { viewModel.onIntent(SheikhListIntent.Retry) },
         modifier = modifier,
     )
@@ -84,6 +85,7 @@ private fun SheikhListContent(
     onSearchChanged: (String) -> Unit,
     onFilterSelected: (SheikhFilter) -> Unit,
     onSheikhClick: (String) -> Unit,
+    onSheikhBookmarkClick: (String) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -141,6 +143,8 @@ private fun SheikhListContent(
                             SheikhCard(
                                 sheikh = sheikh,
                                 onClick = { onSheikhClick(sheikh.id) },
+                                isBookmarked = sheikh.id in state.bookmarkedSheikhIds,
+                                onBookmarkClick = { onSheikhBookmarkClick(sheikh.id) },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                             )
                         }
@@ -232,6 +236,8 @@ private fun SheikhFilterRow(
 private fun SheikhCard(
     sheikh: Sheikh,
     onClick: () -> Unit,
+    isBookmarked: Boolean,
+    onBookmarkClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -274,11 +280,17 @@ private fun SheikhCard(
             SheikhStatusChip(availability = sheikh.availability)
         }
 
-        IconButton(onClick = {}) {
+        IconButton(onClick = onBookmarkClick) {
             Icon(
-                imageVector = Icons.Filled.FavoriteBorder,
+                painter = painterResource(
+                    if (isBookmarked) {
+                        com.example.designsystem.R.drawable.ic_bookmark_filled
+                    } else {
+                        com.example.designsystem.R.drawable.ic_bookmark
+                    },
+                ),
                 contentDescription = stringResource(R.string.sheikh_cd_favourite),
-                tint = Theme.colors.secondaryFont,
+                tint = if (isBookmarked) Theme.colors.primary else Theme.colors.secondaryFont,
                 modifier = Modifier.size(20.dp),
             )
         }

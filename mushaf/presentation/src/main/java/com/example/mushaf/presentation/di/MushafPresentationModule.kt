@@ -38,6 +38,7 @@ val mushafPresentationModule = module {
     factory { SearchAyahUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchAyahByMeaningUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTargetPageUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.GetAyahTextUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.search.SearchTafsirUseCase(get()) }
     factory { com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(get()) }
@@ -72,6 +73,7 @@ val mushafPresentationModule = module {
         MushafViewModel(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get()
         )
     }
 
@@ -85,7 +87,9 @@ val mushafPresentationModule = module {
             searchTafsirUseCase = get(),
             getTargetPageUseCase = get(),
             saveLastPageUseCase = get(),
-            connectivityObserver = get()
+            connectivityObserver = get(),
+            toggleBookmarkUseCase = get(),
+            observeBookmarks = get(),
         )
     }
 

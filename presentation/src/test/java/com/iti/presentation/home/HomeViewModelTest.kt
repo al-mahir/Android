@@ -188,6 +188,10 @@ class HomeViewModelTest {
         override suspend fun clearPendingRequest() = Unit
         override fun observeMeetingRequestEvents(requestId: String): Flow<com.iti.meeting.domain.repository.MeetingRequestEvent> = flowOf()
         override fun observeIncomingRequests(sheikhId: String): Flow<com.iti.meeting.domain.repository.IncomingRequestEvent> = flowOf()
+        override fun observeActiveCall(): Flow<com.iti.meeting.domain.model.ActiveCallRecord?> = flowOf(null)
+        override suspend fun getActiveCall(): com.iti.meeting.domain.model.ActiveCallRecord? = null
+        override suspend fun saveActiveCall(record: com.iti.meeting.domain.model.ActiveCallRecord) = Unit
+        override suspend fun clearActiveCall() = Unit
     }
 
     private class FakeReadingProgressRepository(
