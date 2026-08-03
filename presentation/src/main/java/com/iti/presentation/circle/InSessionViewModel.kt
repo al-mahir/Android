@@ -2,8 +2,9 @@ package com.iti.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.iti.domain.core.getOrNull
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
+import com.iti.meeting.domain.model.circle.CircleMember
+import com.iti.meeting.domain.repository.CircleRepository
+import com.iti.meeting.domain.repository.CircleRosterEvent
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
 import com.iti.presentation.circle.state.InSessionUiState
@@ -12,20 +13,20 @@ import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 class InSessionViewModel(
     private val circleId: String,
-    private val getCircles: GetStudyCirclesUseCase,
+    private val circleRepository: CircleRepository,
 ) : ViewModel(),
     StateHolder<InSessionUiState> by DefaultStateHolder(InSessionUiState()),
     EffectPublisher<InSessionEffect> by DefaultEffectPublisher() {
 
     init {
         observeCircle()
-        seedParticipants()
+        observeRoster()
     }
 
     fun onIntent(intent: InSessionIntent) = when (intent) {
@@ -37,33 +38,60 @@ class InSessionViewModel(
     }
 
     private fun observeCircle() {
-        getCircles()
-            .catch {}
-            .onEach { result ->
-                val circles = result.getOrNull() ?: return@onEach
-                val circle = circles.firstOrNull { it.id == circleId }
-                updateState { copy(circle = circle) }
-            }
-            .launchIn(viewModelScope)
-    }
-
-    private fun seedParticipants() {
-        updateState {
-            copy(
-                participants = FAKE_PARTICIPANTS,
-                speakingParticipantId = FAKE_PARTICIPANTS.firstOrNull()?.id,
+        viewModelScope.launch {
+            circleRepository.getCircle(circleId).fold(
+                onSuccess = { circle -> updateState { copy(circle = circle) } },
+                onFailure = { /* keep last known circle; roster still renders */ },
             )
         }
     }
 
-    private companion object {
-        val FAKE_PARTICIPANTS = listOf(
-            SessionParticipant("p1", "عمر", "عم", isSpeaking = true, isMuted = false),
-            SessionParticipant("p2", "فاطمة", "فا"),
-            SessionParticipant("p3", "محمد", "مح"),
-            SessionParticipant("p4", "أنس", "أي"),
-            SessionParticipant("p5", "سارة", "سا"),
-            SessionParticipant("p6", "يحيى", "يا"),
-        )
+    private fun observeRoster() {
+        viewModelScope.launch {
+            circleRepository.getMembers(circleId).fold(
+                onSuccess = { members ->
+                    updateState {
+                        copy(
+                            participants = members.map { it.toParticipant() },
+                            speakingParticipantId = null,
+                        )
+                    }
+                },
+                onFailure = { /* empty roster until events arrive */ },
+            )
+        }
+
+        circleRepository.observeCircleEvents(circleId)
+            .onEach { event ->
+                when (event) {
+                    is CircleRosterEvent.MemberJoined -> addParticipant(event.member)
+                    is CircleRosterEvent.MemberLeft -> removeParticipant(event.userId)
+                    is CircleRosterEvent.MemberRemoved -> removeParticipant(event.userId)
+                    CircleRosterEvent.Started,
+                    CircleRosterEvent.Ended,
+                    CircleRosterEvent.Cancelled,
+                    -> Unit
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun addParticipant(member: CircleMember) {
+        updateState {
+            val exists = participants.any { it.id == member.userId }
+            if (exists) this else copy(participants = participants + member.toParticipant())
+        }
+    }
+
+    private fun removeParticipant(userId: String) {
+        updateState { copy(participants = participants.filterNot { it.id == userId }) }
     }
 }
+
+private fun CircleMember.toParticipant() = SessionParticipant(
+    id = userId,
+    name = displayName,
+    initials = initials,
+    isSpeaking = false,
+    isMuted = true,
+)

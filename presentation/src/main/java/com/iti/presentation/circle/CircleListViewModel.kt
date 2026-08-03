@@ -2,25 +2,20 @@ package com.iti.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.iti.domain.core.fold
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
-import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
+import com.iti.meeting.domain.model.circle.Circle
+import com.iti.meeting.domain.model.circle.CircleType
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.presentation.circle.state.CircleListEffect
 import com.iti.presentation.circle.state.CircleListIntent
 import com.iti.presentation.circle.state.CircleListUiState
-import com.iti.presentation.circle.state.CircleListUiState.Companion.TAG_ALL
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class CircleListViewModel(
-    private val getCircles: GetStudyCirclesUseCase,
-    private val joinCircle: JoinStudyCircleUseCase,
+    private val circleRepository: CircleRepository,
 ) : ViewModel(),
     StateHolder<CircleListUiState> by DefaultStateHolder(CircleListUiState()),
     EffectPublisher<CircleListEffect> by DefaultEffectPublisher() {
@@ -31,65 +26,53 @@ class CircleListViewModel(
 
     fun onIntent(intent: CircleListIntent) = when (intent) {
         is CircleListIntent.SearchQueryChanged -> updateSearch(intent.query)
-        is CircleListIntent.TagSelected -> updateTag(intent.tag)
-        is CircleListIntent.JoinCircle -> join(intent.circleId)
+        is CircleListIntent.TypeSelected -> updateType(intent.type)
+        is CircleListIntent.CircleClicked -> sendEffect(CircleListEffect.OpenCircle(intent.circleId))
+        CircleListIntent.CreateCircleClicked -> sendEffect(CircleListEffect.OpenCreateCircle)
         CircleListIntent.Retry -> load()
     }
 
     private fun load() {
         updateState { copy(isLoading = true, isError = false) }
-        getCircles()
-            .onEach { result ->
-                result.fold(
-                    onSuccess = { circles ->
-                        val tags = listOf(TAG_ALL) +
-                            circles.map { it.surahName }.distinct().sorted()
-                        updateState {
-                            copy(
-                                circles = circles,
-                                filteredCircles = circles.applyFilters(searchQuery, selectedTag),
-                                availableTags = tags,
-                                isLoading = false,
-                                isError = false,
-                            )
-                        }
-                    },
-                    onError = { updateState { copy(isLoading = false, isError = true) } },
-                )
-            }
-            .catch { updateState { copy(isLoading = false, isError = true) } }
-            .launchIn(viewModelScope)
+        viewModelScope.launch {
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(
+                            circles = circles,
+                            filteredCircles = circles.applyFilters(searchQuery, selectedType),
+                            isLoading = false,
+                            isError = false,
+                        )
+                    }
+                },
+                onFailure = { updateState { copy(isLoading = false, isError = true) } },
+            )
+        }
     }
 
     private fun updateSearch(query: String) {
         updateState {
             copy(
                 searchQuery = query,
-                filteredCircles = circles.applyFilters(query, selectedTag),
+                filteredCircles = circles.applyFilters(query, selectedType),
             )
         }
     }
 
-    private fun updateTag(tag: String) {
+    private fun updateType(type: CircleType?) {
         updateState {
             copy(
-                selectedTag = tag,
-                filteredCircles = circles.applyFilters(searchQuery, tag),
+                selectedType = type,
+                filteredCircles = circles.applyFilters(searchQuery, type),
             )
-        }
-    }
-
-    private fun join(circleId: String) {
-        viewModelScope.launch {
-            joinCircle(circleId)
-            sendEffect(CircleListEffect.NavigateToJoiningCircle(circleId))
         }
     }
 }
 
-private fun List<com.iti.domain.model.StudyCircle>.applyFilters(query: String, tag: String) =
+private fun List<Circle>.applyFilters(query: String, type: CircleType?) =
     filter { circle ->
-        (tag == TAG_ALL || circle.surahName == tag) &&
-            (query.isBlank() || circle.surahName.contains(query, ignoreCase = true) ||
-                circle.hostName.contains(query, ignoreCase = true))
+        (type == null || circle.type == type) &&
+            (query.isBlank() || circle.name.contains(query, ignoreCase = true) ||
+                circle.host?.displayName.orEmpty().contains(query, ignoreCase = true))
     }

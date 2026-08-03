@@ -1,9 +1,10 @@
 package com.iti.presentation.circle.state
 
-import com.iti.domain.model.StudyCircle
+import androidx.annotation.StringRes
+import com.iti.meeting.domain.model.circle.Circle
 
 data class JoiningCircleUiState(
-    val circle: StudyCircle? = null,
+    val circle: Circle? = null,
     val isLoading: Boolean = true,
 )
 
@@ -14,4 +15,5 @@ sealed interface JoiningCircleIntent {
 sealed interface JoiningCircleEffect {
     data object NavigateBack : JoiningCircleEffect
     data class NavigateToSession(val circleId: String) : JoiningCircleEffect
+    data class ShowMessage(@StringRes val messageRes: Int) : JoiningCircleEffect
 }

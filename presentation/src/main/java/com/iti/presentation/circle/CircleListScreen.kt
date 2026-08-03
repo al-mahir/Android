@@ -1,6 +1,7 @@
 package com.iti.presentation.circle
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -33,6 +36,7 @@ import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.domain.model.circle.CircleType
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.CircleListEffect
 import com.iti.presentation.circle.state.CircleListIntent
@@ -43,7 +47,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun CircleListScreen(
     onBack: () -> Unit,
-    onNavigateToJoiningCircle: (String) -> Unit,
+    onOpenCircle: (String) -> Unit,
+    onOpenCreateCircle: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CircleListViewModel = koinViewModel(),
 ) {
@@ -51,7 +56,8 @@ fun CircleListScreen(
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
-            is CircleListEffect.NavigateToJoiningCircle -> onNavigateToJoiningCircle(effect.circleId)
+            is CircleListEffect.OpenCircle -> onOpenCircle(effect.circleId)
+            CircleListEffect.OpenCreateCircle -> onOpenCreateCircle()
             CircleListEffect.NavigateBack -> onBack()
         }
     }
@@ -60,9 +66,10 @@ fun CircleListScreen(
         state = state,
         onBack = onBack,
         onSearchChanged = { viewModel.onIntent(CircleListIntent.SearchQueryChanged(it)) },
-        onTagSelected = { viewModel.onIntent(CircleListIntent.TagSelected(it)) },
-        onJoin = { viewModel.onIntent(CircleListIntent.JoinCircle(it)) },
+        onTypeSelected = { viewModel.onIntent(CircleListIntent.TypeSelected(it)) },
+        onCircleClick = { viewModel.onIntent(CircleListIntent.CircleClicked(it)) },
         onRetry = { viewModel.onIntent(CircleListIntent.Retry) },
+        onCreateCircle = { viewModel.onIntent(CircleListIntent.CreateCircleClicked) },
         modifier = modifier,
     )
 }
@@ -72,55 +79,69 @@ private fun CircleListContent(
     state: CircleListUiState,
     onBack: () -> Unit,
     onSearchChanged: (String) -> Unit,
-    onTagSelected: (String) -> Unit,
-    onJoin: (String) -> Unit,
+    onTypeSelected: (CircleType?) -> Unit,
+    onCircleClick: (String) -> Unit,
     onRetry: () -> Unit,
+    onCreateCircle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Theme.colors.backGround),
-    ) {
-        BackTitleTopBar(
-            title = stringResource(R.string.circle_list_title),
-            onBackClick = onBack,
-        )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = Theme.colors.backGround,
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onCreateCircle,
+                containerColor = Theme.colors.primary,
+                contentColor = Theme.colors.onPrimary,
+            ) {
+                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+            }
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
+            BackTitleTopBar(
+                title = stringResource(R.string.circle_list_title),
+                onBackClick = onBack,
+            )
 
-        when {
-            state.isLoading -> CircleListSkeleton()
-            state.isError -> NetworkErrorScreen(modifier = Modifier.fillMaxSize(), onRetry = onRetry)
-            else -> {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    item {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            CircleSearchBar(query = state.searchQuery, onQueryChanged = onSearchChanged)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            CircleTagRow(
-                                tags = state.availableTags,
-                                selected = state.selectedTag,
-                                onSelected = onTagSelected,
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                    }
-
-                    if (state.filteredCircles.isEmpty()) {
+            when {
+                state.isLoading -> CircleListSkeleton()
+                state.isError -> NetworkErrorScreen(modifier = Modifier.fillMaxSize(), onRetry = onRetry)
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                         item {
-                            EmptyDataScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                CircleSearchBar(query = state.searchQuery, onQueryChanged = onSearchChanged)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                CircleTypeRow(
+                                    selected = state.selectedType,
+                                    onSelected = onTypeSelected,
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
                         }
-                    } else {
-                        items(state.filteredCircles, key = { it.id }) { circle ->
-                            CircleCard(
-                                circle = circle,
-                                onJoin = { onJoin(circle.id) },
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            )
-                        }
-                    }
 
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
+                        if (state.filteredCircles.isEmpty()) {
+                            item {
+                                EmptyDataScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                            }
+                        } else {
+                            items(state.filteredCircles, key = { it.id }) { circle ->
+                                CircleCard(
+                                    circle = circle,
+                                    onClick = { onCircleClick(circle.id) },
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(80.dp)) }
+                    }
                 }
             }
         }
@@ -159,25 +180,30 @@ private fun CircleSearchBar(
 }
 
 @Composable
-private fun CircleTagRow(
-    tags: List<String>,
-    selected: String,
-    onSelected: (String) -> Unit,
+private fun CircleTypeRow(
+    selected: CircleType?,
+    onSelected: (CircleType?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val options = listOf<CircleType?>(null, CircleType.PUBLIC, CircleType.PRIVATE)
     LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(tags) { tag ->
-            val isSelected = tag == selected
+        items(options) { type ->
+            val label = when (type) {
+                null -> stringResource(R.string.circle_filter_all)
+                CircleType.PUBLIC -> stringResource(R.string.circle_type_public)
+                CircleType.PRIVATE -> stringResource(R.string.circle_type_private)
+            }
+            val isSelected = type == selected
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(if (isSelected) Theme.colors.primary else Theme.colors.surface)
-                    .clickable { onSelected(tag) }
+                    .clickable { onSelected(type) }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = tag,
+                    text = label,
                     style = Theme.typography.body.small,
                     color = if (isSelected) Theme.colors.onPrimary else Theme.colors.secondaryFont,
                 )

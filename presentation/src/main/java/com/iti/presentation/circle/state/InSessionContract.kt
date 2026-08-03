@@ -1,9 +1,9 @@
 package com.iti.presentation.circle.state
 
-import com.iti.domain.model.StudyCircle
+import com.iti.meeting.domain.model.circle.Circle
 
 data class InSessionUiState(
-    val circle: StudyCircle? = null,
+    val circle: Circle? = null,
     val isMicMuted: Boolean = true,
     val isHandRaised: Boolean = false,
     val participants: List<SessionParticipant> = emptyList(),

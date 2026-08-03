@@ -40,7 +40,9 @@ import com.iti.meeting.presentation.navigation.MeetingRoute
 import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
 import com.iti.meeting.presentation.navigation.meetingEntries
 import org.koin.compose.koinInject
+import com.iti.presentation.circle.CircleDetailsScreen
 import com.iti.presentation.circle.CircleListScreen
+import com.iti.presentation.circle.CreateCircleScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
 import com.iti.presentation.home.HomeScreen
@@ -65,7 +67,9 @@ sealed interface AppRoute : NavKey {
     data object SheikhList : AppRoute
     data class SheikhDetails(val sheikhId: String) : AppRoute
     data object CircleList : AppRoute
-    data class JoiningCircle(val circleId: String) : AppRoute
+    data class CircleDetails(val circleId: String) : AppRoute
+    data object CreateCircle : AppRoute
+    data class JoiningCircle(val circleId: String, val membershipId: String) : AppRoute
     data class InSession(val circleId: String) : AppRoute
 }
 
@@ -242,6 +246,7 @@ private fun AppNavHost(
                                 },
                                 onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                                 onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                                onOpenCircle = { circleId -> backStack.add(AppRoute.CircleDetails(circleId)) },
                                 onOpenMeetingRequest = { sheikhId, sheikhName ->
                                     backStack.add(
                                         MeetingRequestRoute.SendMeetingRequest(
@@ -342,8 +347,8 @@ private fun AppNavHost(
                             SheikhDetailsScreen(
                                 sheikhId = route.sheikhId,
                                 onBack = { backStack.removeLastOrNull() },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
                                 },
                                 onRequestMeeting = { sheikhId, sheikhName ->
                                     backStack.add(
@@ -359,8 +364,33 @@ private fun AppNavHost(
                         entry<AppRoute.CircleList> {
                             CircleListScreen(
                                 onBack = { backStack.removeLastOrNull() },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
+                                },
+                                onOpenCreateCircle = { backStack.add(AppRoute.CreateCircle) },
+                            )
+                        }
+
+                        entry<AppRoute.CreateCircle> {
+                            CreateCircleScreen(
+                                onBack = { backStack.removeLastOrNull() },
+                                onCircleCreated = { circleId ->
+                                    backStack.removeLastOrNull()
+                                    backStack.add(AppRoute.InSession(circleId))
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.CircleDetails> { route ->
+                            CircleDetailsScreen(
+                                circleId = route.circleId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onOpenJoining = { circleId, membershipId ->
+                                    backStack.add(AppRoute.JoiningCircle(circleId, membershipId))
+                                },
+                                onOpenSession = { circleId ->
+                                    backStack.removeLastOrNull()
+                                    backStack.add(AppRoute.InSession(circleId))
                                 },
                             )
                         }
@@ -368,6 +398,7 @@ private fun AppNavHost(
                         entry<AppRoute.JoiningCircle> { route ->
                             JoiningCircleScreen(
                                 circleId = route.circleId,
+                                membershipId = route.membershipId,
                                 onBack = { backStack.removeLastOrNull() },
                                 onNavigateToSession = { circleId ->
                                     backStack.removeLastOrNull()

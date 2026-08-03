@@ -3,15 +3,45 @@ package com.iti.meeting.data.remote
 
 object MeetingEndpoints {
 
+    /** Qur'an Study Circles — `docs/features/20-quran-study-circles-api.md`. */
     object Circles {
-        const val BASE = "api/v1/circles"
+        const val BASE = "api/circles"
+
+        /** `GET/PATCH/DELETE /api/circles/{circleId}` — details / update / cancel (SCHEDULED only). */
         fun byId(circleId: String) = "$BASE/$circleId"
-        fun joinRequests(circleId: String) = "${byId(circleId)}/join-requests"
-        fun approve(circleId: String) = "${byId(circleId)}/approve"
-        fun reject(circleId: String) = "${byId(circleId)}/reject"
-        fun participants(circleId: String) = "${byId(circleId)}/participants"
+
+        /** `POST /api/circles/{circleId}/start` — SCHEDULED -> ONGOING (owner only). */
+        fun start(circleId: String) = "${byId(circleId)}/start"
+
+        /** `POST /api/circles/{circleId}/join` — body `{password}`; returns membershipId. */
+        fun join(circleId: String) = "${byId(circleId)}/join"
+
+        /** `POST /api/circles/{circleId}/leave` — user leaves an active circle. */
         fun leave(circleId: String) = "${byId(circleId)}/leave"
+
+        /** `POST /api/circles/{circleId}/end` — ONGOING -> COMPLETED (owner only). */
         fun end(circleId: String) = "${byId(circleId)}/end"
+
+        /** `POST /api/circles/{circleId}/approve/{userId}` — approve a pending join request (owner). */
+        fun approve(circleId: String, userId: String) = "${byId(circleId)}/approve/$userId"
+
+        /** `POST /api/circles/{circleId}/reject/{userId}` — reject a pending join request (owner). */
+        fun reject(circleId: String, userId: String) = "${byId(circleId)}/reject/$userId"
+
+        /** `DELETE /api/circles/{circleId}/members/{userId}` — owner removes a member. */
+        fun removeMember(circleId: String, userId: String) = "${byId(circleId)}/members/$userId"
+
+        /** `GET /api/circles/{circleId}/token` — Agora token (owner or active member, ONGOING only). */
+        fun token(circleId: String) = "${byId(circleId)}/token"
+
+        /** `GET /api/circles/{circleId}/pending-requests` — owner's pending join requests. */
+        fun pendingRequests(circleId: String) = "${byId(circleId)}/pending-requests"
+
+        /** `GET /api/circles/{circleId}/members` — active members (private requires membership). */
+        fun members(circleId: String) = "${byId(circleId)}/members"
+
+        /** `GET /api/circles/mine` — active circles the current user is a member of. */
+        const val MINE = "$BASE/mine"
     }
 
     object Sheikh {
@@ -60,4 +90,13 @@ object MeetingWsDestinations {
      * client-side.
      */
     fun sheikhRequests(sheikhId: String) = "/topic/sheikhs/$sheikhId/requests"
+
+    /** Roster + lifecycle for a circle's members and owner (`MEMBER_JOINED/LEFT/REMOVED`, `CIRCLE_STARTED/ENDED/CANCELLED`). */
+    fun circle(circleId: String) = "/topic/circles/$circleId"
+
+    /** Live pending join requests, delivered to the circle owner (`CIRCLE_JOIN_REQUEST_RECEIVED/REMOVED`). */
+    fun circleRequests(circleId: String) = "/topic/circles/$circleId/requests"
+
+    /** The requesting user's own join-request decision (`REQUEST_APPROVED/REJECTED`). */
+    fun circleMembership(membershipId: String) = "/topic/circle-memberships/$membershipId"
 }

@@ -95,16 +95,16 @@ private fun InSessionContent(
             .background(SessionBackground),
     ) {
         SessionTopBar(
-            surahName = state.circle?.surahName ?: "",
+            surahName = state.circle?.name ?: "",
             onLeave = { onIntent(InSessionIntent.Leave) },
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         HostSection(
-            hostName = state.circle?.hostName ?: "",
-            hostInitials = state.circle?.hostInitials ?: "",
-            hostId = state.circle?.hostId ?: "",
+            hostName = state.circle?.host?.displayName.orEmpty(),
+            hostInitials = state.circle?.host?.initials.orEmpty(),
+            hostId = state.circle?.host?.userId.orEmpty(),
         )
 
         Spacer(modifier = Modifier.weight(1f))

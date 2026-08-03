@@ -3,7 +3,6 @@ package com.iti.data.repository
 import com.iti.data.core.error.toDomainError
 import com.iti.data.datasource.AlmahirDataSource
 import com.iti.data.datasource.AlmahirLocalDataSource
-import com.iti.data.datasource.circle.CircleDataSource
 import com.iti.data.datasource.sheikh.SheikhDataSource
 import com.iti.data.local.recitation.RecitationSessionDao
 import com.iti.data.local.recitation.RecitationSessionEntity
@@ -11,14 +10,12 @@ import com.iti.data.local.recitation.StoredMistake
 import com.iti.data.local.recitation.StoredPracticeFocus
 import com.iti.data.mapper.toDomain
 import com.iti.data.mapper.toSlug
-import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.domain.core.Result
 import com.iti.domain.core.asResult
 import com.iti.domain.core.resultOf
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.Sheikh
-import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
 import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.User
@@ -28,9 +25,9 @@ import com.iti.domain.model.recitation.SessionMistakeCategory
 import com.iti.domain.model.recitation.SessionPosition
 import com.iti.domain.model.recitation.SessionPracticeFocus
 import com.iti.domain.repository.AlmahirRepository
-import com.iti.domain.repository.CircleRepository
 import com.iti.domain.repository.RecitationSessionRepository
 import com.iti.domain.repository.SheikhRepository
+import com.iti.domain.settings.repository.AppPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
@@ -39,12 +36,11 @@ import kotlinx.serialization.json.Json
 class AlmahirRepositoryImpl(
     private val dataSource: AlmahirDataSource,
     private val sheikhDataSource: SheikhDataSource,
-    private val circleDataSource: CircleDataSource,
     private val dao: RecitationSessionDao,
     private val localDataSource: AlmahirLocalDataSource,
-    private val appPreferencesDataStore: AppPreferencesDataStore,
+    private val appPreferencesRepository: AppPreferencesRepository,
     private val json: Json = SessionJson,
-) : AlmahirRepository, SheikhRepository, CircleRepository, RecitationSessionRepository {
+) : AlmahirRepository, SheikhRepository, RecitationSessionRepository {
 
     // ── AlmahirRepository ────────────────────────────────────────────────
 
@@ -73,12 +69,12 @@ class AlmahirRepositoryImpl(
 
     override suspend fun logout(): Result<Unit> = resultOf {
         dataSource.logout()
-        appPreferencesDataStore.clearUser()
+        appPreferencesRepository.clearUser()
     }
 
     override suspend fun deleteAccount(): Result<Unit> = resultOf {
         dataSource.deleteAccount()
-        appPreferencesDataStore.clearUser()
+        appPreferencesRepository.clearUser()
     }
 
     override fun observeBookmarks(type: com.iti.domain.model.BookmarkType): Flow<Result<List<com.iti.domain.model.Bookmark>>> =
@@ -118,22 +114,6 @@ class AlmahirRepositoryImpl(
     override suspend fun searchSheikhs(name: String): Result<List<Sheikh>> = resultOf(mapError = { it.toDomainError() }) {
         sheikhDataSource.searchSheikhs(name).map { it.toDomain() }
     }
-
-    // ── CircleRepository ──────────────────────────────────────────────────
-
-    override fun observeStudyCircles(): Flow<Result<List<StudyCircle>>> =
-        circleDataSource.observeStudyCircles().map { dtos -> dtos.map { it.toDomain() } }.asResult()
-
-    override fun observeSheikhCircles(sheikhId: String): Flow<Result<List<StudyCircle>>> =
-        circleDataSource.observeStudyCircles().map { dtos ->
-            dtos.filter { it.hostId == sheikhId }.map { it.toDomain() }
-        }.asResult()
-
-    override suspend fun joinStudyCircle(circleId: String): Result<Unit> =
-        resultOf { circleDataSource.joinStudyCircle(circleId) }
-
-    override suspend fun cancelJoinCircle(circleId: String): Result<Unit> =
-        resultOf { circleDataSource.cancelJoinCircle(circleId) }
 
     // ── RecitationSessionRepository ──────────────────────────────────────
 

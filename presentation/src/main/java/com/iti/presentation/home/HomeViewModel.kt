@@ -4,12 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.core.fold
 import com.iti.domain.core.getOrNull
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
-import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.presentation.R
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
@@ -36,8 +34,7 @@ class HomeViewModel(
     private val getReadingProgress: GetReadingProgressUseCase,
     private val getAyahOfTheDay: GetAyahOfTheDayUseCase,
     private val getSheikhs: GetSheikhsUseCase,
-    private val getStudyCircles: GetStudyCirclesUseCase,
-    private val joinStudyCircle: JoinStudyCircleUseCase,
+    private val circleRepository: CircleRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val meetingRepository: MeetingRepository,
 ) : ViewModel(),
@@ -61,7 +58,7 @@ class HomeViewModel(
             HomeIntent.SeeAllCirclesClicked -> sendEffect(HomeEffect.OpenCircleList)
             HomeIntent.ContinueReadingClicked -> openReadingProgress()
             is HomeIntent.SheikhClicked -> sendEffect(HomeEffect.OpenSheikh(intent.sheikhId))
-            is HomeIntent.JoinCircleClicked -> join(intent.circleId)
+            is HomeIntent.CircleClicked -> sendEffect(HomeEffect.OpenCircle(intent.circleId))
             HomeIntent.ViewPendingMeetingClicked -> viewPendingMeeting()
             HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
             HomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
@@ -132,7 +129,7 @@ class HomeViewModel(
         contentJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
 
-        // Load sheikhs from real API in parallel (one-shot suspend).
+        // Load sheikhs and my circles from the real APIs in parallel (one-shot suspends).
         viewModelScope.launch {
             getSheikhs().fold(
                 onSuccess = { sheikhs -> updateState { copy(sheikhs = sheikhs) } },
@@ -140,21 +137,29 @@ class HomeViewModel(
             )
         }
 
-        // Observe user, reading progress, ayah of the day, circles, and connectivity.
+        viewModelScope.launch {
+            circleRepository.getMyCircles().fold(
+                onSuccess = { circles -> updateState { copy(myCircles = circles) } },
+                onFailure = { error ->
+                    android.util.Log.w("HomeViewModel", "getMyCircles failed", error)
+                    /* My circles are a section; a partial failure leaves it empty. */
+                },
+            )
+        }
+
+        // Observe user, reading progress, ayah of the day, and connectivity.
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
             getAyahOfTheDay(),
-            getStudyCircles(),
             connectivityObserver.status
-        ) { userResult, readingProgress, ayahOfTheDay, circlesResult, connectivity ->
+        ) { userResult, readingProgress, ayahOfTheDay, connectivity ->
             val user = userResult.getOrNull()
-            val circles = circlesResult.getOrNull()
-            if (user == null || circles == null) {
+            if (user == null) {
                 null
             } else {
                 val isOffline = connectivity == ConnectivityStatus.Unavailable
-                HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles, isOffline)
+                HomeContentSnapshot(user, readingProgress, ayahOfTheDay, isOffline)
             }
         }
             .onEach { snapshot ->
@@ -168,7 +173,6 @@ class HomeViewModel(
                             user = snapshot.user,
                             readingProgress = snapshot.readingProgress,
                             ayahOfTheDay = snapshot.ayahOfTheDay,
-                            circles = snapshot.circles.take(2),
                             isOffline = snapshot.isOffline,
                         )
                     }
@@ -181,16 +185,5 @@ class HomeViewModel(
     private fun openReadingProgress() {
         val page = currentState.readingProgress?.pageNumber ?: return
         sendEffect(HomeEffect.OpenMushafAtPage(page))
-    }
-
-    private fun join(circleId: String) {
-        if (circleId in currentState.joiningCircleIds) return
-        updateState { copy(joiningCircleIds = joiningCircleIds + circleId) }
-
-        viewModelScope.launch {
-            runCatching { joinStudyCircle(circleId) }
-                .onFailure { sendEffect(HomeEffect.ShowMessage(R.string.home_join_failed)) }
-            updateState { copy(joiningCircleIds = joiningCircleIds - circleId) }
-        }
     }
 }

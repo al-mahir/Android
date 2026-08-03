@@ -1,5 +1,6 @@
 package com.iti.presentation.circle
 
+import android.widget.Toast
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -29,7 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,10 +38,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
-import com.iti.domain.model.StudyCircle
+import com.iti.meeting.domain.model.circle.Circle
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.JoiningCircleEffect
 import com.iti.presentation.circle.state.JoiningCircleIntent
+import com.iti.presentation.circle.state.JoiningCircleUiState
 import com.iti.presentation.core.mvi.ObserveEffect
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -48,17 +50,21 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun JoiningCircleScreen(
     circleId: String,
+    membershipId: String,
     onBack: () -> Unit,
     onNavigateToSession: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: JoiningCircleViewModel = koinViewModel(parameters = { parametersOf(circleId) }),
+    viewModel: JoiningCircleViewModel = koinViewModel(parameters = { parametersOf(circleId, membershipId) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             JoiningCircleEffect.NavigateBack -> onBack()
             is JoiningCircleEffect.NavigateToSession -> onNavigateToSession(effect.circleId)
+            is JoiningCircleEffect.ShowMessage ->
+                Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -95,7 +101,7 @@ fun JoiningCircleScreen(
             Text(
                 text = stringResource(
                     R.string.joining_circle_waiting_body,
-                    state.circle?.surahName ?: "",
+                    state.circle?.name ?: "",
                 ),
                 style = Theme.typography.body.medium,
                 color = Theme.colors.secondaryFont,
@@ -150,7 +156,7 @@ private fun PulsingWaitIcon() {
 }
 
 @Composable
-private fun CircleInfoCard(circle: StudyCircle) {
+private fun CircleInfoCard(circle: Circle) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,25 +166,20 @@ private fun CircleInfoCard(circle: StudyCircle) {
     ) {
         Column {
             Text(
-                text = circle.surahName,
+                text = circle.name,
                 style = Theme.typography.body.large,
                 color = Theme.colors.primaryFont,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${circle.hostName} · ${circle.participantCount}/${circle.maxParticipants}",
+                text = stringResource(
+                    R.string.circle_participants_label,
+                    circle.currentMembers,
+                    circle.maxParticipants,
+                ),
                 style = Theme.typography.body.small,
                 color = Theme.colors.secondaryFont,
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color(0xFFFFEBEE))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-            ) {
-                Text(text = "LIVE", style = Theme.typography.body.small, color = Color(0xFFE53935))
-            }
         }
     }
 }

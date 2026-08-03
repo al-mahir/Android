@@ -5,9 +5,6 @@ import com.iti.domain.usecase.GetRecitationSessionUseCase
 import com.iti.domain.usecase.ObserveRecitationSessionsUseCase
 import com.iti.presentation.sessions.SessionHistoryViewModel
 import com.iti.domain.model.LegalDocumentType
-import com.iti.domain.usecase.circle.CancelJoinCircleUseCase
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
-import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.legal.GetLegalDocumentUseCase
 import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
@@ -27,6 +24,7 @@ import com.iti.domain.usecase.settings.SetDataSaverEnabledUseCase
 import com.iti.domain.usecase.settings.SetErrorSoundsEnabledUseCase
 import com.iti.domain.usecase.settings.SetRemindersEnabledUseCase
 import com.iti.domain.usecase.settings.SetThemeModeUseCase
+import com.iti.presentation.circle.CircleDetailsViewModel
 import com.iti.presentation.circle.CircleListViewModel
 import com.iti.presentation.circle.InSessionViewModel
 import com.iti.presentation.circle.JoiningCircleViewModel
@@ -63,11 +61,6 @@ val presentationModule = module {
     factory { GetSheikhsUseCase(get()) }
     factory { GetSheikhByIdUseCase(get()) }
 
-    // ── Use cases — Circle (CircleRepository → fake) ──────────────────────────
-    factory { GetStudyCirclesUseCase(get()) }
-    factory { JoinStudyCircleUseCase(get()) }
-    factory { CancelJoinCircleUseCase(get()) }
-
     // ── Settings use cases ────────────────────────────────────────────────────
     factory { ObserveAppPreferencesUseCase(get()) }
     factory { SetThemeModeUseCase(get()) }
@@ -101,7 +94,7 @@ val presentationModule = module {
 
     // ── ViewModels ────────────────────────────────────────────────────────────
     viewModel { MainViewModel(get()) }
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
     viewModel { PackagesViewModel(get(), get(), get()) }
@@ -122,10 +115,14 @@ val presentationModule = module {
         )
     }
     viewModel { SheikhListViewModel(get(), get(), get()) }
-    viewModel { (sheikhId: String) -> SheikhDetailsViewModel(sheikhId, get(), get(), get()) }
-    viewModel { CircleListViewModel(get(), get()) }
-    viewModel { (circleId: String) -> JoiningCircleViewModel(circleId, get(), get()) }
+    viewModel { (sheikhId: String) -> SheikhDetailsViewModel(sheikhId, get(), get()) }
+    viewModel { CircleListViewModel(get()) }
+    viewModel { (circleId: String) -> CircleDetailsViewModel(circleId, get()) }
+    viewModel { (circleId: String, membershipId: String) ->
+        JoiningCircleViewModel(circleId, membershipId, get())
+    }
     viewModel { (circleId: String) -> InSessionViewModel(circleId, get()) }
+    viewModel { com.iti.presentation.circle.CreateCircleViewModel(get()) }
     viewModel { com.iti.presentation.bookmark.BookmarkViewModel(get(), get(), get(), get(), get()) }
 }
 

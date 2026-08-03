@@ -2,20 +2,26 @@ package com.iti.presentation.profile
 
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.repository.AlmahirRepository
+import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.domain.auth.usecase.LogoutUseCase
+import com.iti.domain.connectivity.ConnectivityObserver
+import com.iti.domain.connectivity.ConnectivityStatus
 import com.iti.presentation.R
 import com.iti.presentation.profile.model.ProfileMenuType
 import com.iti.presentation.profile.state.ProfileDialog
 import com.iti.presentation.profile.state.ProfileEffect
 import com.iti.presentation.profile.state.ProfileIntent
 import com.iti.presentation.testing.FakeAlmahirRepository
+import com.iti.presentation.testing.FakeAppPreferencesRepository
 import com.iti.presentation.testing.FakeAuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -190,10 +196,18 @@ class ProfileViewModelTest {
         repository: AlmahirRepository,
         authRepository: FakeAuthRepository = FakeAuthRepository(),
     ) = ProfileViewModel(
-        getCurrentUser = GetCurrentUserUseCase(repository),
+        getCurrentUser = GetCurrentUserUseCase(
+            FakeAppPreferencesRepository(AppPreferences(user = FakeAlmahirRepository.USER)),
+        ),
         getSubscription = GetSubscriptionUseCase(repository),
         logout = LogoutUseCase(authRepository),
         deleteAccount = DeleteAccountUseCase(repository),
+        connectivityObserver = StubConnectivityObserver,
     )
+
+    private object StubConnectivityObserver : ConnectivityObserver {
+        override val status: Flow<ConnectivityStatus> = flowOf(ConnectivityStatus.Available)
+        override fun currentStatus(): ConnectivityStatus = ConnectivityStatus.Available
+    }
 }
 

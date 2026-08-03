@@ -8,7 +8,7 @@ sealed interface HomeIntent {
     data object SeeAllSheikhsClicked : HomeIntent
     data object SeeAllCirclesClicked : HomeIntent
     data class SheikhClicked(val sheikhId: String) : HomeIntent
-    data class JoinCircleClicked(val circleId: String) : HomeIntent
+    data class CircleClicked(val circleId: String) : HomeIntent
     data object ViewPendingMeetingClicked : HomeIntent
     data object CancelPendingMeetingClicked : HomeIntent
     data object RejoinActiveCallClicked : HomeIntent

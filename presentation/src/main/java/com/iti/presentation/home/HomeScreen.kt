@@ -20,6 +20,7 @@ fun HomeScreen(
     onOpenSheikh: (String) -> Unit,
     onOpenSheikhList: () -> Unit,
     onOpenCircleList: () -> Unit,
+    onOpenCircle: (String) -> Unit,
     onOpenMeetingRequest: (String, String?) -> Unit,
     onOpenActiveCall: (String, String, String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
@@ -36,6 +37,7 @@ fun HomeScreen(
             HomeEffect.OpenCircleList -> onOpenCircleList()
             is HomeEffect.OpenMushafAtPage -> onOpenMushafAtPage(effect.page)
             is HomeEffect.OpenSheikh -> onOpenSheikh(effect.sheikhId)
+            is HomeEffect.OpenCircle -> onOpenCircle(effect.circleId)
             is HomeEffect.OpenMeetingRequest -> onOpenMeetingRequest(effect.sheikhId, effect.sheikhName)
             is HomeEffect.OpenActiveCall ->
                 onOpenActiveCall(effect.requestId, effect.token, effect.channelName, effect.userAccount, effect.remoteDisplayName)
@@ -52,7 +54,7 @@ fun HomeScreen(
         onSeeAllSheikhsClick = { viewModel.onIntent(HomeIntent.SeeAllSheikhsClicked) },
         onSeeAllCirclesClick = { viewModel.onIntent(HomeIntent.SeeAllCirclesClicked) },
         onSheikhClick = { sheikhId -> viewModel.onIntent(HomeIntent.SheikhClicked(sheikhId)) },
-        onJoinCircleClick = { circleId -> viewModel.onIntent(HomeIntent.JoinCircleClicked(circleId)) },
+        onCircleClick = { circleId -> viewModel.onIntent(HomeIntent.CircleClicked(circleId)) },
         onRetryClick = { viewModel.onIntent(HomeIntent.Retry) },
         onViewPendingMeetingClick = { viewModel.onIntent(HomeIntent.ViewPendingMeetingClicked) },
         onCancelPendingMeetingClick = { viewModel.onIntent(HomeIntent.CancelPendingMeetingClicked) },

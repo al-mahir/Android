@@ -68,7 +68,7 @@
 
     <string name="home_section_continue_reading">متابعة القراءة</string>
     <string name="home_section_sheikhs">تعلّم مع شيخ</string>
-    <string name="home_section_circles">الحلقات النشطة</string>
+    <string name="home_section_my_circles">حلقاتك</string>
     <string name="home_see_all">عرض الكل</string>
 
     <string name="home_last_read">آخر قراءة</string>
@@ -290,16 +290,48 @@
     <string name="circle_search_hint">ابحث بالسورة أو الشيخ…</string>
     <string name="circle_join">انضم</string>
     <string name="circle_waiting">بانتظار القبول</string>
-    <string name="circle_participants_label">%1$d/%2$d · %3$s</string>
-    <string name="circle_difficulty_beginner">مبتدئ</string>
-    <string name="circle_difficulty_intermediate">متوسط</string>
-    <string name="circle_difficulty_advanced">متقدم</string>
+    <string name="circle_participants_label">%1$d/%2$d</string>
+    <string name="circle_row_subtitle">%1$s · %2$d/%3$d</string>
+    <string name="circle_filter_all">الكل</string>
+    <string name="circle_status_scheduled">مجدولة</string>
+    <string name="circle_status_ongoing">جارية</string>
+    <string name="circle_status_completed">مكتملة</string>
+    <string name="circle_status_cancelled">ملغاة</string>
+    <string name="circle_type_public">عامة</string>
+    <string name="circle_type_private">خاصة</string>
+
+    <!-- ===== Circle Details ===== -->
+    <string name="circle_details_title">تفاصيل الحلقة</string>
+    <string name="circle_details_date">مجدولة: %1$s</string>
+    <string name="circle_waiting_approval">في انتظار موافقة المضيف</string>
+    <string name="circle_password_hint">كلمة مرور الحلقة (إن وجدت)</string>
+    <string name="circle_password_confirm">تأكيد والانضمام</string>
+    <string name="circle_password_dismiss">إلغاء</string>
+    <string name="circle_join_error_full">هذه الحلقة ممتلئة.</string>
+    <string name="circle_join_error_conflict">تتداخل هذه الحلقة مع حلقة أخرى انضممت إليها.</string>
+    <string name="circle_join_error_password">كلمة المرور غير صحيحة.</string>
+    <string name="circle_join_error_generic">تعذّر الانضمام إلى الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== Create Circle ===== -->
+    <string name="create_circle_title">إنشاء حلقة</string>
+    <string name="create_circle_subtitle">Create Circle</string>
+    <string name="create_circle_user_role_note">كمستخدم عادي، يمكنك إنشاء حلقات خاصة فقط. يمكن للشيوخ المعتمدين إنشاء حلقات عامة.</string>
+    <string name="create_circle_title_hint">عنوان الحلقة (مثال: مراجعة الفجر اليومية)</string>
+    <string name="create_circle_goals_hint">أهداف الحلقة ووصفها…</string>
+    <string name="create_circle_password_hint">كود الوصول للحلقة (مثال: A7B29X)</string>
+    <string name="create_circle_privacy_label">الخصوصية</string>
+    <string name="create_circle_privacy_private">خاصة (بالكود فقط)</string>
+    <string name="create_circle_privacy_public">عامة (للشيخ فقط)</string>
+    <string name="create_circle_cta">إنشاء وإنشاء رابط</string>
+    <string name="create_circle_error_generic">تعذّر إنشاء الحلقة. حاول مرة أخرى.</string>
 
     <!-- ===== Joining Circle ===== -->
     <string name="joining_circle_title">الانضمام للحلقة</string>
     <string name="joining_circle_waiting_title">في انتظار الموافقة…</string>
     <string name="joining_circle_waiting_body">يتحقق المضيف من طلبك للانضمام إلى حلقة %1$s.</string>
     <string name="joining_circle_cancel">إلغاء الطلب</string>
+    <string name="joining_circle_rejected">تم رفض طلبك من قبل المضيف.</string>
+    <string name="joining_circle_wait_failed">تعذّر الوصول إلى الحلقة. حاول مرة أخرى.</string>
 
     <!-- ===== In Session ===== -->
     <string name="session_leave">مغادرة</string>

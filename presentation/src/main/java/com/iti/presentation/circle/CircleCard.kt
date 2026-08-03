@@ -1,6 +1,7 @@
 package com.iti.presentation.circle
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,26 +13,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.components.button.ButtonHeightCompact
-import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.theme.Theme
-import com.iti.domain.model.CircleDifficulty
-import com.iti.domain.model.StudyCircle
+import com.iti.meeting.domain.model.circle.Circle
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.model.circle.CircleType
 import com.iti.presentation.R
 import com.iti.presentation.sheikh.SheikhInitialsAvatar
 
 @Composable
 fun CircleCard(
-    circle: StudyCircle,
-    onJoin: () -> Unit,
+    circle: Circle,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -39,6 +41,7 @@ fun CircleCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Theme.colors.surface)
+            .clickable(onClick = onClick)
             .padding(14.dp),
     ) {
         Row(
@@ -47,15 +50,18 @@ fun CircleCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = circle.surahName,
+                text = circle.name,
                 style = Theme.typography.body.large,
                 color = Theme.colors.onSurface,
             )
-            if (circle.isLive) LiveBadge()
+            if (circle.status == CircleStatus.ONGOING) LiveBadge()
         }
 
         Spacer(modifier = Modifier.height(6.dp))
-        DifficultyBadge(difficulty = circle.difficulty)
+        Row(horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small)) {
+            StatusBadge(status = circle.status)
+            TypeBadge(type = circle.type)
+        }
         Spacer(modifier = Modifier.height(10.dp))
 
         Row(
@@ -63,51 +69,34 @@ fun CircleCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SheikhInitialsAvatar(
-                initials = circle.hostInitials,
-                sheikhId = circle.hostId,
+                initials = circle.host?.initials.orEmpty(),
+                sheikhId = circle.host?.userId.orEmpty(),
                 size = 36,
             )
             Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = circle.hostName,
+                    text = circle.host?.displayName.orEmpty(),
                     style = Theme.typography.body.medium,
                     color = Theme.colors.onSurface,
                 )
                 Text(
                     text = stringResource(
                         R.string.circle_participants_label,
-                        circle.participantCount,
+                        circle.currentMembers,
                         circle.maxParticipants,
-                        circle.currentActivity,
                     ),
                     style = Theme.typography.body.small,
                     color = Theme.colors.secondaryFont,
                 )
             }
 
-            if (!circle.isJoined && !circle.isWaitingApproval) {
-                PrimaryButton(
-                    caption = stringResource(R.string.circle_join),
-                    onClick = onJoin,
-                    height = ButtonHeightCompact,
-                    modifier = Modifier.width(80.dp),
-                )
-            } else if (circle.isWaitingApproval) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Theme.colors.surfaceVariant)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.circle_waiting),
-                        style = Theme.typography.body.small,
-                        color = Theme.colors.secondaryFont,
-                    )
-                }
-            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Theme.colors.secondaryFont,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -117,41 +106,49 @@ private fun LiveBadge() {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(Color(0xFFFFEBEE))
+            .background(Theme.colors.error.copy(alpha = 0.12f))
             .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Box(modifier = Modifier.size(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFE53935)))
-        Text(text = "LIVE", style = Theme.typography.body.small, color = Color(0xFFE53935))
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(Theme.colors.error),
+        )
+        Text(text = "LIVE", style = Theme.typography.body.small, color = Theme.colors.error)
     }
 }
 
 @Composable
-private fun DifficultyBadge(difficulty: CircleDifficulty) {
-    val (label, bg, fg) = when (difficulty) {
-        CircleDifficulty.BEGINNER -> Triple(
-            stringResource(R.string.circle_difficulty_beginner),
-            Color(0xFFE8F5E9),
-            Color(0xFF2E7D32),
-        )
-        CircleDifficulty.INTERMEDIATE -> Triple(
-            stringResource(R.string.circle_difficulty_intermediate),
-            Color(0xFFFFF8E1),
-            Color(0xFFF57F17),
-        )
-        CircleDifficulty.ADVANCED -> Triple(
-            stringResource(R.string.circle_difficulty_advanced),
-            Color(0xFFFFEBEE),
-            Color(0xFFC62828),
-        )
+private fun StatusBadge(status: CircleStatus) {
+    val label = when (status) {
+        CircleStatus.SCHEDULED -> stringResource(R.string.circle_status_scheduled)
+        CircleStatus.ONGOING -> stringResource(R.string.circle_status_ongoing)
+        CircleStatus.COMPLETED -> stringResource(R.string.circle_status_completed)
+        CircleStatus.CANCELLED -> stringResource(R.string.circle_status_cancelled)
     }
+    Badge(text = label)
+}
+
+@Composable
+private fun TypeBadge(type: CircleType) {
+    val label = when (type) {
+        CircleType.PUBLIC -> stringResource(R.string.circle_type_public)
+        CircleType.PRIVATE -> stringResource(R.string.circle_type_private)
+    }
+    Badge(text = label)
+}
+
+@Composable
+private fun Badge(text: String) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(bg)
+            .background(Theme.colors.surfaceVariant)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text(text = label, style = Theme.typography.body.small, color = fg)
+        Text(text = text, style = Theme.typography.body.small, color = Theme.colors.secondaryFont)
     }
 }

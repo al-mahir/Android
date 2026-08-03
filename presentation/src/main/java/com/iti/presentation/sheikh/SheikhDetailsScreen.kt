@@ -34,7 +34,7 @@ import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
 import com.iti.domain.model.Sheikh
-import com.iti.domain.model.StudyCircle
+import com.iti.meeting.domain.model.circle.Circle
 import com.iti.presentation.R
 import com.iti.presentation.circle.CircleCard
 import com.iti.presentation.core.mvi.ObserveEffect
@@ -48,7 +48,7 @@ import org.koin.core.parameter.parametersOf
 fun SheikhDetailsScreen(
     sheikhId: String,
     onBack: () -> Unit,
-    onNavigateToJoiningCircle: (String) -> Unit,
+    onOpenCircle: (String) -> Unit,
     onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhDetailsViewModel = koinViewModel(parameters = { parametersOf(sheikhId) }),
@@ -58,15 +58,14 @@ fun SheikhDetailsScreen(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             SheikhDetailsEffect.NavigateBack -> onBack()
-            is SheikhDetailsEffect.NavigateToJoiningCircle ->
-                onNavigateToJoiningCircle(effect.circleId)
+            is SheikhDetailsEffect.OpenCircle -> onOpenCircle(effect.circleId)
         }
     }
 
     SheikhDetailsContent(
         state = state,
         onBack = onBack,
-        onJoinCircle = { viewModel.onIntent(SheikhDetailsIntent.JoinCircle(it)) },
+        onCircleClick = { viewModel.onIntent(SheikhDetailsIntent.CircleClicked(it)) },
         onRetry = { viewModel.onIntent(SheikhDetailsIntent.Retry) },
         onRequestMeeting = onRequestMeeting,
         modifier = modifier,
@@ -77,7 +76,7 @@ fun SheikhDetailsScreen(
 private fun SheikhDetailsContent(
     state: SheikhDetailsUiState,
     onBack: () -> Unit,
-    onJoinCircle: (String) -> Unit,
+    onCircleClick: (String) -> Unit,
     onRetry: () -> Unit,
     onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
@@ -101,7 +100,7 @@ private fun SheikhDetailsContent(
             else -> SheikhDetailsBody(
                 sheikh = state.sheikh,
                 circles = state.circles,
-                onJoinCircle = onJoinCircle,
+                onCircleClick = onCircleClick,
                 onRequestMeeting = { onRequestMeeting(state.sheikh.id, state.sheikh.name) },
             )
         }
@@ -111,8 +110,8 @@ private fun SheikhDetailsContent(
 @Composable
 private fun SheikhDetailsBody(
     sheikh: Sheikh,
-    circles: List<StudyCircle>,
-    onJoinCircle: (String) -> Unit,
+    circles: List<Circle>,
+    onCircleClick: (String) -> Unit,
     onRequestMeeting: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -198,7 +197,7 @@ private fun SheikhDetailsBody(
             circles.forEach { circle ->
                 CircleCard(
                     circle = circle,
-                    onJoin = { onJoinCircle(circle.id) },
+                    onClick = { onCircleClick(circle.id) },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 )
             }

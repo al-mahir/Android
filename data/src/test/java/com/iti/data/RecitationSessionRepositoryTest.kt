@@ -1,23 +1,29 @@
 package com.iti.data
 
 import com.iti.data.datasource.AlmahirDataSource
-import com.iti.data.datasource.circle.CircleDataSource
+import com.iti.data.datasource.AlmahirLocalDataSource
 import com.iti.data.datasource.sheikh.SheikhDataSource
 import com.iti.data.dto.LegalDocumentDto
-import com.iti.data.dto.StudyCircleDto
 import com.iti.data.dto.SubscriptionDto
 import com.iti.data.dto.SubscriptionPackageDto
 import com.iti.data.dto.UserDto
 import com.iti.data.dto.sheikh.SheikhApiDto
+import com.iti.data.local.bookmark.BookmarkEntity
 import com.iti.data.local.recitation.RecitationSessionDao
 import com.iti.data.local.recitation.RecitationSessionEntity
 import com.iti.data.repository.AlmahirRepositoryImpl
+import com.iti.domain.core.Result
 import com.iti.domain.core.getOrNull
+import com.iti.domain.model.User
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.model.recitation.SessionMistake
 import com.iti.domain.model.recitation.SessionMistakeCategory
 import com.iti.domain.model.recitation.SessionPosition
 import com.iti.domain.model.recitation.SessionPracticeFocus
+import com.iti.domain.settings.model.AppLanguage
+import com.iti.domain.settings.model.AppPreferences
+import com.iti.domain.settings.model.ThemeMode
+import com.iti.domain.settings.repository.AppPreferencesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -79,18 +85,33 @@ class RecitationSessionRepositoryTest {
         override suspend fun searchSheikhs(name: String): List<SheikhApiDto> = emptyList()
     }
 
-    private class StubCircleDataSource : CircleDataSource {
-        override fun observeStudyCircles(): Flow<List<StudyCircleDto>> = MutableStateFlow(emptyList())
-        override suspend fun joinStudyCircle(circleId: String) = Unit
-        override suspend fun cancelJoinCircle(circleId: String) = Unit
+    private class StubLocalDataSource : AlmahirLocalDataSource {
+        override fun observeBookmarksByType(type: String): Flow<List<BookmarkEntity>> = MutableStateFlow(emptyList())
+        override fun observeAllBookmarks(): Flow<List<BookmarkEntity>> = MutableStateFlow(emptyList())
+        override suspend fun getBookmarksByType(type: String): List<BookmarkEntity> = emptyList()
+        override suspend fun getBookmarkById(id: String): BookmarkEntity? = null
+        override suspend fun upsertBookmark(bookmark: BookmarkEntity) = Unit
+        override suspend fun deleteBookmark(id: String) = Unit
+    }
+
+    private class StubPreferencesRepository : AppPreferencesRepository {
+        override val preferences: Flow<AppPreferences> = MutableStateFlow(AppPreferences())
+        override suspend fun setThemeMode(mode: ThemeMode): Result<Unit> = Result.Success(Unit)
+        override suspend fun setLanguage(language: AppLanguage): Result<Unit> = Result.Success(Unit)
+        override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+        override suspend fun saveUser(user: User): Result<Unit> = Result.Success(Unit)
+        override suspend fun clearUser(): Result<Unit> = Result.Success(Unit)
     }
 
     private val dao = InMemoryDao()
     private val repository = AlmahirRepositoryImpl(
         dataSource = StubAlmahirDataSource(),
         sheikhDataSource = StubSheikhDataSource(),
-        circleDataSource = StubCircleDataSource(),
         dao = dao,
+        localDataSource = StubLocalDataSource(),
+        appPreferencesRepository = StubPreferencesRepository(),
     )
 
     private fun summary(id: String = "s1") = RecitationSessionSummary(

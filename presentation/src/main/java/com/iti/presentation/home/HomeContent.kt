@@ -38,7 +38,7 @@ fun HomeContent(
     onSeeAllSheikhsClick: () -> Unit,
     onSeeAllCirclesClick: () -> Unit,
     onSheikhClick: (String) -> Unit,
-    onJoinCircleClick: (String) -> Unit,
+    onCircleClick: (String) -> Unit,
     onRetryClick: () -> Unit,
     onViewPendingMeetingClick: () -> Unit = {},
     onCancelPendingMeetingClick: () -> Unit = {},
@@ -140,21 +140,20 @@ fun HomeContent(
                     }
                 }
 
-                // ── Active circles ───────────────────────────────────────────
-                if (state.circles.isNotEmpty() && !state.isOffline) {
+                // ── My circles ──────────────────────────────────────────────
+                if (state.myCircles.isNotEmpty() && !state.isOffline) {
                     item(key = "circles-header") {
                         SectionHeader(
-                            title = stringResource(R.string.home_section_circles),
+                            title = stringResource(R.string.home_section_my_circles),
                             actionLabel = stringResource(R.string.home_see_all),
                             onActionClick = onSeeAllCirclesClick,
                             modifier = gutter,
                         )
                     }
-                    items(items = state.circles, key = { circle -> circle.id }) { circle ->
+                    items(items = state.myCircles, key = { circle -> circle.id }) { circle ->
                         ActiveCircleRow(
                             circle = circle,
-                            isJoining = circle.id in state.joiningCircleIds,
-                            onJoinClick = { onJoinCircleClick(circle.id) },
+                            onClick = { onCircleClick(circle.id) },
                             modifier = gutter,
                         )
                     }

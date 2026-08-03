@@ -1,29 +1,28 @@
 package com.iti.presentation.circle.state
 
-import com.iti.domain.model.StudyCircle
+import com.iti.meeting.domain.model.circle.Circle
+import com.iti.meeting.domain.model.circle.CircleType
 
 data class CircleListUiState(
-    val circles: List<StudyCircle> = emptyList(),
-    val filteredCircles: List<StudyCircle> = emptyList(),
+    val circles: List<Circle> = emptyList(),
+    val filteredCircles: List<Circle> = emptyList(),
     val searchQuery: String = "",
-    val selectedTag: String = TAG_ALL,
-    val availableTags: List<String> = emptyList(),
+    val selectedType: CircleType? = null,
     val isLoading: Boolean = true,
     val isError: Boolean = false,
-) {
-    companion object {
-        const val TAG_ALL = "All"
-    }
-}
+)
 
 sealed interface CircleListIntent {
     data class SearchQueryChanged(val query: String) : CircleListIntent
-    data class TagSelected(val tag: String) : CircleListIntent
-    data class JoinCircle(val circleId: String) : CircleListIntent
+    data class TypeSelected(val type: CircleType?) : CircleListIntent
+    data class CircleClicked(val circleId: String) : CircleListIntent
+    data object CreateCircleClicked : CircleListIntent
     data object Retry : CircleListIntent
 }
 
 sealed interface CircleListEffect {
-    data class NavigateToJoiningCircle(val circleId: String) : CircleListEffect
+    data class OpenCircle(val circleId: String) : CircleListEffect
+    data object OpenCreateCircle : CircleListEffect
     data object NavigateBack : CircleListEffect
 }
+
