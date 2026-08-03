@@ -3,11 +3,15 @@ package com.iti.sheikh.presentation.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.theme.Theme
 import com.iti.sheikh.presentation.R
@@ -20,6 +24,7 @@ fun SheikhHomeContent(
     state: SheikhHomeUiState,
     onProfileClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onOpenCircles: () -> Unit,
     onRejoinActiveCallClick: () -> Unit = {},
     onDismissActiveCallClick: () -> Unit = {},
     availabilityPanel: @Composable () -> Unit,
