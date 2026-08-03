@@ -300,8 +300,14 @@ class MushafReducerTest {
         private val bookmarks = mutableMapOf<String, com.iti.domain.model.Bookmark>()
         override fun observeCurrentUser() = flowOf<Result<com.iti.domain.model.User>>()
         override fun observeSubscription() = flowOf<Result<com.iti.domain.model.Subscription>>()
+        override fun observeSubscriptionPackages() =
+            flowOf<Result<List<com.iti.domain.model.SubscriptionPackage>>>()
+        override suspend fun startFreeTrial(): Result<com.iti.domain.model.Subscription> =
+            Result.Success(com.iti.domain.model.Subscription(com.iti.domain.model.SubscriptionPlan.NONE, null))
+        override suspend fun selectSubscriptionPackage(packageId: String): Result<com.iti.domain.model.Subscription> =
+            Result.Success(com.iti.domain.model.Subscription(com.iti.domain.model.SubscriptionPlan.NONE, null))
         override fun observeLegalDocument(type: com.iti.domain.model.LegalDocumentType) = flowOf<Result<com.iti.domain.model.LegalDocument>>()
-        override suspend fun restorePurchases() = Result.Success(true)
+        override suspend fun requestSubscriptionCancellation(message: String) = Result.Success(Unit)
         override suspend fun logout() = Result.Success(Unit)
         override suspend fun deleteAccount() = Result.Success(Unit)
         override fun observeBookmarks(type: com.iti.domain.model.BookmarkType) =

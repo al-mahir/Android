@@ -315,6 +315,7 @@ private fun AppNavHost(
                             ProfileScreen(
                                 visibleMenuItems = if (isOnline) com.iti.presentation.profile.model.ProfileMenuType.entries.toSet() else offlineMenus,
                                 onOpenPremium = { backStack.add(ProfileRoute.Premium) },
+                                onOpenMySubscription = { backStack.add(ProfileRoute.MySubscription) },
                                 onOpenLegalDocument = { documentType ->
                                     backStack.add(ProfileRoute.StaticContent(documentType))
                                 },
