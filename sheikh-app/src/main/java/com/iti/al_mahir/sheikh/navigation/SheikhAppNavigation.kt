@@ -201,6 +201,7 @@ private fun SheikhAppNavHost(
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
                         visibleMenuItems = sheikhProfileMenuItems,
+                        onOpenMySubscription = { backStack.add(ProfileRoute.MySubscription) }
                     )
                 }
 
