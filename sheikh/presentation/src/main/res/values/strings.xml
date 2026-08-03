@@ -5,6 +5,14 @@
     <string name="sheikh_home_avatar_content_description">Open profile</string>
 
     <string name="sheikh_home_error_generic">Something went wrong. Please try again.</string>
+
+    <!-- Home — Ongoing Call rejoin card (call survived on the notification/service, but the app process restarted) -->
+    <string name="sheikh_home_active_call_title">You were in a call</string>
+    <string name="sheikh_home_active_call_subtitle">With %1$s</string>
+    <string name="sheikh_home_active_call_subtitle_generic">Tap to check if it\'s still active</string>
+    <string name="sheikh_home_active_call_rejoin">Rejoin</string>
+    <string name="sheikh_home_active_call_dismiss">Not in this call anymore</string>
+    <string name="sheikh_home_active_call_ended">That call has already ended</string>
     <string name="meetingrequest_availability_incoming_request_title">Request from %1$s</string>
     <string name="meetingrequest_availability_expires_in_seconds">Expires in %1$d seconds</string>
     <string name="meetingrequest_availability_incoming_request_accept">Accept</string>
@@ -17,4 +25,5 @@
     <string name="meetingrequest_availability_toggle_available">Go Available</string>
     <string name="meetingrequest_availability_busy_title">You are Busy</string>
     <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
+    <string name="meetingrequest_availability_busy_rejoin">Rejoin</string>
 </resources>

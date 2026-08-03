@@ -7,7 +7,7 @@ import com.iti.presentation.meetingrequest.request.MeetingRequestScreen
 
 fun EntryProviderScope<NavKey>.meetingRequestEntries(
     onNavigate: (NavKey) -> Unit,
-    onNavigateToCall: (String, String, String, Int) -> Unit,
+    onNavigateToCall: (String, String, String, String, String?) -> Unit,
     onBack: () -> Unit,
     onShowMessage: (String) -> Unit,
 ) {
@@ -21,6 +21,7 @@ fun EntryProviderScope<NavKey>.meetingRequestEntries(
     entry<MeetingRequestRoute.SendMeetingRequest> { route ->
         MeetingRequestScreen(
             sheikhId = route.sheikhId,
+            sheikhName = route.sheikhName,
             onBack = onBack,
             onMeetingAccepted = onNavigateToCall,
             onShowMessage = onShowMessage,

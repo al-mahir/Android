@@ -54,6 +54,10 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>
     <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
+    
+    <!-- ===== Offline Banner ===== -->
+    <string name="offline_banner_offline">لا يوجد اتصال بالإنترنت</string>
+    <string name="offline_banner_online">تمت استعادة الاتصال</string>
 
     <!-- ===== Home ===== -->
     <string name="home_brand_title">المَاهِر</string>
@@ -108,13 +112,40 @@
 
     <!-- Account actions -->
     <string name="profile_buy_premium">اشترِ الماهر Premium</string>
-    <string name="profile_restore_purchases">استعادة المشتريات</string>
-    <string name="profile_restoring_purchases">جارٍ الاستعادة…</string>
     <string name="profile_logout">تسجيل الخروج</string>
 
-    <string name="profile_restore_succeeded">تمت استعادة مشترياتك.</string>
-    <string name="profile_restore_nothing_found">لم يتم العثور على مشتريات سابقة.</string>
-    <string name="profile_restore_failed">تعذّرت استعادة المشتريات. حاول مرة أخرى.</string>
+    <!-- Packages / checkout -->
+    <string name="packages_title">اختر باقتك</string>
+    <string name="packages_recommended_badge">الأكثر طلبًا</string>
+    <string name="packages_price_period_month">/شهريًا</string>
+    <string name="packages_select_button">اختر الباقة</string>
+    <string name="packages_selecting_button">جارٍ الاختيار…</string>
+    <string name="packages_start_trial_cta">ابدأ تجربة مجانية لمدة 7 أيام</string>
+    <string name="packages_starting_trial">جارٍ بدء التجربة…</string>
+    <string name="packages_error_generic">تعذّر تحميل الباقات. حاول مرة أخرى.</string>
+    <string name="packages_purchase_succeeded">أصبحت الآن مشتركًا في الماهر Premium!</string>
+    <string name="packages_purchase_failed">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="packages_trial_started">بدأت تجربتك المجانية!</string>
+
+    <!-- My subscription -->
+    <string name="subscription_details_title">اشتراكي</string>
+    <string name="subscription_details_plan_label">الباقة</string>
+    <string name="subscription_details_price_label">السعر</string>
+    <string name="subscription_details_renews_label">تاريخ التجديد</string>
+    <string name="subscription_details_features_label">ما يشمله الاشتراك</string>
+    <string name="subscription_details_error_generic">تعذّر تحميل بيانات اشتراكك. حاول مرة أخرى.</string>
+    <string name="subscription_details_return_button">استرجاع اشتراكي</string>
+
+    <!-- Return-subscription support sheet -->
+    <string name="subscription_cancellation_sheet_title">تواصل مع الدعم</string>
+    <string name="subscription_cancellation_sheet_description">أخبرنا لماذا ترغب باسترجاع اشتراكك، وسيتواصل معك فريق الدعم.</string>
+    <string name="subscription_cancellation_message_hint">اكتب رسالتك…</string>
+    <string name="subscription_cancellation_send_button">إرسال الرسالة</string>
+    <string name="subscription_cancellation_sending">جارٍ الإرسال…</string>
+    <string name="subscription_cancellation_sent_title">تم إرسال الرسالة</string>
+    <string name="subscription_cancellation_sent_description">تم إرسال رسالتك. سنرسل لك بريدًا إلكترونيًا بالنتيجة.</string>
+    <string name="subscription_cancellation_done_button">تم</string>
+    <string name="subscription_cancellation_error">تعذّر إرسال رسالتك. حاول مرة أخرى.</string>
 
     <!-- Social channels (accessibility labels) -->
     <string name="profile_social_github">جيت هَب</string>
@@ -125,6 +156,7 @@
     <string name="profile_social_instagram">إنستغرام</string>
 
     <!-- Menu -->
+    <string name="profile_menu_my_subscription">اشتراكي</string>
     <string name="profile_menu_about">عن الماهر</string>
     <string name="profile_menu_feature_request">طلب خاصية جديدة</string>
     <string name="profile_menu_help_center">مركز المساعدة</string>
@@ -206,6 +238,13 @@
     <string name="session_stat_duration">المدة</string>
     <string name="session_breakdown_title">أين كانت الأخطاء</string>
     <string name="session_practice_title">يستحق المراجعة</string>
+    <string name="session_practice_focus_label">مجال التدريب: %s</string>
+
+    <string name="bookmark_tab_surah">السورة</string>
+    <string name="bookmark_tab_ayah">الآية</string>
+    <string name="bookmark_tab_page">الصفحة</string>
+    <string name="bookmark_tab_sheikh">الشيخ</string>
+
     <string name="session_practice_item">%1$s ×%2$d</string>
     <string name="session_category_memorization">الحفظ</string>
     <string name="session_category_tashkil">التشكيل</string>
@@ -291,4 +330,47 @@
     <string name="meetingrequest_request_declined_subtitle">الشيخ غير متاح للقاء الآن.</string>
     <string name="meetingrequest_request_expired">انتهت صلاحية الطلب</string>
     <string name="meetingrequest_request_expired_subtitle">لم يرد الشيخ في الوقت المحدد. يرجى المحاولة مرة أخرى.</string>
+    <string name="meetingrequest_request_ended">انتهت المكالمة</string>
+    <string name="meetingrequest_request_ended_subtitle">انتهى اللقاء.</string>
+    <string name="meetingrequest_request_already_pending_title">يوجد طلب معلق بالفعل</string>
+    <string name="meetingrequest_request_already_pending_subtitle">لديك بالفعل طلب معلق مع هذا الشيخ.</string>
+    <string name="meetingrequest_request_already_pending_cancel">إلغاء هذا الطلب</string>
+
+    <!-- Home — Pending Meeting Request -->
+    <string name="home_pending_meeting_title">تم إرسال طلب اللقاء</string>
+    <string name="home_pending_meeting_subtitle">في انتظار رد %1$s</string>
+    <string name="home_pending_meeting_subtitle_generic">في انتظار رد الشيخ</string>
+    <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
+    <string name="home_pending_meeting_view">عرض</string>
+    <string name="home_pending_meeting_cancel">إلغاء</string>
+
+    <!-- Home — Ongoing Call rejoin card -->
+    <string name="home_active_call_title">كنت في مكالمة</string>
+    <string name="home_active_call_subtitle">مع %1$s</string>
+    <string name="home_active_call_subtitle_generic">اضغط للتحقق مما إذا كانت لا تزال نشطة</string>
+    <string name="home_active_call_rejoin">إعادة الانضمام</string>
+    <string name="home_active_call_dismiss">لم أعد في هذه المكالمة</string>
+    <string name="home_active_call_ended">لقد انتهت هذه المكالمة بالفعل</string>
+
+    <string name="bookmark_screen_title">المفضلة</string>
+    <string name="bookmark_search_hint">ابحث في مفضلتك…</string>
+    <string name="bookmark_surah_meta_format">%1$d آية · صفحة %2$d</string>
+    <string name="bookmark_surah_ayah_count_format">%1$d آية</string>
+    <string name="bookmark_ayah_text_unavailable">نص الآية غير متاح</string>
+    <string name="bookmark_ayah_reference_format">سورة %1$s · %2$d:%3$d</string>
+    <string name="bookmark_page_label_format">صفحة %1$d</string>
+    <string name="bookmark_page_meta_format">%1$s · الجزء %2$d</string>
+    <string name="bookmark_cd_remove">إزالة الإشارة المرجعية</string>
+    <string name="bookmark_remove_confirm_title">إزالة الإشارة المرجعية؟</string>
+    <string name="bookmark_remove_confirm_message">ستتم إزالة هذه الإشارة المرجعية من قائمتك.</string>
+    <string name="bookmark_remove_confirm_action">إزالة</string>
+    <string name="bookmark_remove_cancel_action">إلغاء</string>
+    <string name="bookmark_empty_surah_title">لا توجد سور محفوظة بعد</string>
+    <string name="bookmark_empty_surah_description">أضف سورة إلى المفضلة من نتائج البحث.</string>
+    <string name="bookmark_empty_ayah_title">لا توجد آيات محفوظة بعد</string>
+    <string name="bookmark_empty_ayah_description">اضغط مطولاً على كلمة في المصحف أو أضف آية من البحث لحفظها.</string>
+    <string name="bookmark_empty_page_title">لا توجد صفحات محفوظة بعد</string>
+    <string name="bookmark_empty_page_description">اضغط على أيقونة الإشارة المرجعية أثناء القراءة لحفظ الصفحة.</string>
+    <string name="bookmark_empty_sheikh_title">لا يوجد شيوخ محفوظون بعد</string>
+    <string name="bookmark_empty_sheikh_description">اضغط على أيقونة الإشارة المرجعية في بطاقة الشيخ لحفظه.</string>
 </resources>

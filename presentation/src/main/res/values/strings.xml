@@ -54,6 +54,10 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">No connection. Please check your network and try again.</string>
     <string name="error_generic">Something went wrong. Please try again.</string>
+    
+    <!-- ===== Offline Banner ===== -->
+    <string name="offline_banner_offline">No internet connection</string>
+    <string name="offline_banner_online">Back online</string>
 
     <!-- ===== Home ===== -->
     <string name="home_brand_title">Al-Māhir</string>
@@ -108,13 +112,40 @@
 
     <!-- Account actions -->
     <string name="profile_buy_premium">Buy Al-Māhir Premium</string>
-    <string name="profile_restore_purchases">Restore purchases</string>
-    <string name="profile_restoring_purchases">Restoring…</string>
     <string name="profile_logout">Sign out</string>
 
-    <string name="profile_restore_succeeded">Your purchases have been restored.</string>
-    <string name="profile_restore_nothing_found">No previous purchases found.</string>
-    <string name="profile_restore_failed">Couldn\'t restore purchases. Please try again.</string>
+    <!-- Packages / checkout -->
+    <string name="packages_title">Choose Your Package</string>
+    <string name="packages_recommended_badge">RECOMMENDED</string>
+    <string name="packages_price_period_month">/month</string>
+    <string name="packages_select_button">Select Package</string>
+    <string name="packages_selecting_button">Selecting…</string>
+    <string name="packages_start_trial_cta">Start free 7-day trial</string>
+    <string name="packages_starting_trial">Starting trial…</string>
+    <string name="packages_error_generic">Couldn\'t load packages. Please try again.</string>
+    <string name="packages_purchase_succeeded">You\'re now Al-Māhir Premium!</string>
+    <string name="packages_purchase_failed">Something went wrong. Please try again.</string>
+    <string name="packages_trial_started">Your free trial has started!</string>
+
+    <!-- My subscription -->
+    <string name="subscription_details_title">My Subscription</string>
+    <string name="subscription_details_plan_label">Package</string>
+    <string name="subscription_details_price_label">Price</string>
+    <string name="subscription_details_renews_label">Renews on</string>
+    <string name="subscription_details_features_label">What\'s included</string>
+    <string name="subscription_details_error_generic">Couldn\'t load your subscription. Please try again.</string>
+    <string name="subscription_details_return_button">Return my subscription</string>
+
+    <!-- Return-subscription support sheet -->
+    <string name="subscription_cancellation_sheet_title">Contact support</string>
+    <string name="subscription_cancellation_sheet_description">Tell us why you\'d like to return your subscription, and our support team will follow up.</string>
+    <string name="subscription_cancellation_message_hint">Type your message…</string>
+    <string name="subscription_cancellation_send_button">Send message</string>
+    <string name="subscription_cancellation_sending">Sending…</string>
+    <string name="subscription_cancellation_sent_title">Message sent</string>
+    <string name="subscription_cancellation_sent_description">Your message was sent. We will send you an email with the result.</string>
+    <string name="subscription_cancellation_done_button">Done</string>
+    <string name="subscription_cancellation_error">Couldn\'t send your message. Please try again.</string>
 
     <!-- Social channels (accessibility labels) -->
     <string name="profile_social_github">GitHub</string>
@@ -125,6 +156,7 @@
     <string name="profile_social_instagram">Instagram</string>
 
     <!-- Menu -->
+    <string name="profile_menu_my_subscription">My Subscription</string>
     <string name="profile_menu_about">About Al-Māhir</string>
     <string name="profile_menu_feature_request">Request a new feature</string>
     <string name="profile_menu_help_center">Help center</string>
@@ -206,6 +238,11 @@
     <string name="session_stat_duration">Duration</string>
     <string name="session_breakdown_title">Where the mistakes were</string>
     <string name="session_practice_title">Worth practising</string>
+    <string name="session_practice_focus_label">Focus Area: %s</string>
+    <string name="bookmark_tab_surah">Surah</string>
+    <string name="bookmark_tab_ayah">Ayah</string>
+    <string name="bookmark_tab_page">Page</string>
+    <string name="bookmark_tab_sheikh">Sheikh</string>
     <string name="session_practice_item">%1$s ×%2$d</string>
     <string name="session_category_memorization">Memorization</string>
     <string name="session_category_tashkil">Vowels</string>
@@ -289,4 +326,47 @@
     <string name="meetingrequest_request_declined_subtitle">The sheikh isn\'t able to meet right now.</string>
     <string name="meetingrequest_request_expired">Request Expired</string>
     <string name="meetingrequest_request_expired_subtitle">The sheikh didn\'t respond in time. Please try again.</string>
+    <string name="meetingrequest_request_ended">Call Ended</string>
+    <string name="meetingrequest_request_ended_subtitle">The meeting has ended.</string>
+    <string name="meetingrequest_request_already_pending_title">Request Already Pending</string>
+    <string name="meetingrequest_request_already_pending_subtitle">You already have a pending request with this sheikh.</string>
+    <string name="meetingrequest_request_already_pending_cancel">Cancel That Request</string>
+
+    <!-- Home — Pending Meeting Request -->
+    <string name="home_pending_meeting_title">Meeting request sent</string>
+    <string name="home_pending_meeting_subtitle">Waiting for %1$s to respond</string>
+    <string name="home_pending_meeting_subtitle_generic">Waiting for the sheikh to respond</string>
+    <string name="home_pending_meeting_countdown">%1$d:%2$02d</string>
+    <string name="home_pending_meeting_view">View</string>
+    <string name="home_pending_meeting_cancel">Cancel</string>
+
+    <!-- Home — Ongoing Call rejoin card (call survived on the notification/service, but the app process restarted) -->
+    <string name="home_active_call_title">You were in a call</string>
+    <string name="home_active_call_subtitle">With %1$s</string>
+    <string name="home_active_call_subtitle_generic">Tap to check if it\'s still active</string>
+    <string name="home_active_call_rejoin">Rejoin</string>
+    <string name="home_active_call_dismiss">Not in this call anymore</string>
+    <string name="home_active_call_ended">That call has already ended</string>
+
+    <string name="bookmark_screen_title">Bookmarks</string>
+    <string name="bookmark_search_hint">Search your bookmarks…</string>
+    <string name="bookmark_surah_meta_format">%1$d Ayahs · Page %2$d</string>
+    <string name="bookmark_surah_ayah_count_format">%1$d Ayahs</string>
+    <string name="bookmark_ayah_text_unavailable">Ayah text unavailable</string>
+    <string name="bookmark_ayah_reference_format">Surah %1$s · %2$d:%3$d</string>
+    <string name="bookmark_page_label_format">Page %1$d</string>
+    <string name="bookmark_page_meta_format">%1$s · Juz %2$d</string>
+    <string name="bookmark_cd_remove">Remove bookmark</string>
+    <string name="bookmark_remove_confirm_title">Remove bookmark?</string>
+    <string name="bookmark_remove_confirm_message">This bookmark will be removed from your list.</string>
+    <string name="bookmark_remove_confirm_action">Remove</string>
+    <string name="bookmark_remove_cancel_action">Cancel</string>
+    <string name="bookmark_empty_surah_title">No surah bookmarks yet</string>
+    <string name="bookmark_empty_surah_description">Bookmark a surah from search results.</string>
+    <string name="bookmark_empty_ayah_title">No ayah bookmarks yet</string>
+    <string name="bookmark_empty_ayah_description">Long-press a word in the Mushaf or bookmark from search to save an ayah.</string>
+    <string name="bookmark_empty_page_title">No page bookmarks yet</string>
+    <string name="bookmark_empty_page_description">Tap the bookmark icon while reading to save a page.</string>
+    <string name="bookmark_empty_sheikh_title">No sheikh bookmarks yet</string>
+    <string name="bookmark_empty_sheikh_description">Tap the bookmark icon on a sheikh\'s card to save them.</string>
 </resources>

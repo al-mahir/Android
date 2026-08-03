@@ -2,6 +2,8 @@ package com.iti.presentation.testing
 
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
+import com.iti.domain.model.Bookmark
+import com.iti.domain.model.BookmarkType
 import com.iti.domain.model.CircleDifficulty
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
@@ -9,6 +11,7 @@ import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
@@ -32,14 +35,14 @@ import kotlinx.coroutines.flow.map
 class FakeAlmahirRepository(
     private val user: User = USER,
     private val subscription: Subscription = FREE_SUBSCRIPTION,
+    private val packages: List<SubscriptionPackage> = emptyList(),
     private val sheikhs: List<Sheikh> = listOf(SHEIKH),
     initialCircles: List<StudyCircle> = listOf(CIRCLE),
     private val failSheikhs: Boolean = false,
     private val failSubscription: Boolean = false,
     private val failLogout: Boolean = false,
     private val failDeleteAccount: Boolean = false,
-    private val failRestore: Boolean = false,
-    private val restoreResult: Boolean = false,
+    private val failCancellation: Boolean = false,
 ) : AlmahirRepository, SheikhRepository, CircleRepository {
 
     val joined = mutableListOf<String>()
@@ -47,10 +50,10 @@ class FakeAlmahirRepository(
         private set
     var deletedAccount = false
         private set
-    var restoreCount = 0
-        private set
+    val cancellationRequests = mutableListOf<String>()
 
     private val circles = MutableStateFlow(initialCircles)
+    private val bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
 
     // ── AlmahirRepository ────────────────────────────────────────────────
 
@@ -59,6 +62,14 @@ class FakeAlmahirRepository(
     override fun observeSubscription(): Flow<Result<Subscription>> = flowOf(
         if (failSubscription) Result.Error(BOOM) else Result.Success(subscription)
     )
+
+    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+        flowOf(Result.Success(packages))
+
+    override suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
+
+    override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
+        Result.Success(subscription)
 
     override fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>> = flowOf(
         Result.Success(
@@ -71,9 +82,9 @@ class FakeAlmahirRepository(
         )
     )
 
-    override suspend fun restorePurchases(): Result<Boolean> {
-        restoreCount++
-        return if (failRestore) Result.Error(BOOM) else Result.Success(restoreResult)
+    override suspend fun requestSubscriptionCancellation(message: String): Result<Unit> {
+        cancellationRequests += message
+        return if (failCancellation) Result.Error(BOOM) else Result.Success(Unit)
     }
 
     override suspend fun logout(): Result<Unit> {
@@ -85,6 +96,28 @@ class FakeAlmahirRepository(
     override suspend fun deleteAccount(): Result<Unit> {
         if (failDeleteAccount) return Result.Error(BOOM)
         deletedAccount = true
+        return Result.Success(Unit)
+    }
+
+    override fun observeBookmarks(type: BookmarkType): Flow<Result<List<Bookmark>>> =
+        bookmarks.map { list -> Result.Success(list.filter { it.type == type }) }
+
+    override fun observeAllBookmarks(): Flow<Result<List<Bookmark>>> =
+        bookmarks.map { Result.Success(it) }
+
+    override suspend fun getBookmarks(type: BookmarkType): Result<List<Bookmark>> =
+        Result.Success(bookmarks.value.filter { it.type == type })
+
+    override suspend fun getBookmark(id: String): Result<Bookmark?> =
+        Result.Success(bookmarks.value.firstOrNull { it.id == id })
+
+    override suspend fun addBookmark(bookmark: Bookmark): Result<Unit> {
+        bookmarks.value = bookmarks.value.filterNot { it.id == bookmark.id } + bookmark
+        return Result.Success(Unit)
+    }
+
+    override suspend fun removeBookmark(id: String): Result<Unit> {
+        bookmarks.value = bookmarks.value.filterNot { it.id == id }
         return Result.Success(Unit)
     }
 
@@ -161,4 +194,3 @@ class FakeAlmahirRepository(
         )
     }
 }
-

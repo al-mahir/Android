@@ -6,6 +6,14 @@
 
     <string name="sheikh_home_error_generic">حدث خطأ ما. حاول مرة أخرى.</string>
 
+    <!-- Home — Ongoing Call rejoin card -->
+    <string name="sheikh_home_active_call_title">كنت في مكالمة</string>
+    <string name="sheikh_home_active_call_subtitle">مع %1$s</string>
+    <string name="sheikh_home_active_call_subtitle_generic">اضغط للتحقق مما إذا كانت لا تزال نشطة</string>
+    <string name="sheikh_home_active_call_rejoin">إعادة الانضمام</string>
+    <string name="sheikh_home_active_call_dismiss">لم أعد في هذه المكالمة</string>
+    <string name="sheikh_home_active_call_ended">لقد انتهت هذه المكالمة بالفعل</string>
+
     <string name="meetingrequest_availability_incoming_request_title">طلب من %1$s</string>
     <string name="meetingrequest_availability_expires_in_seconds">تنتهي خلال %1$d ثانية</string>
     <string name="meetingrequest_availability_incoming_request_accept">قبول</string>
@@ -18,4 +26,5 @@
     <string name="meetingrequest_availability_toggle_available">تفعيل التواجد</string>
     <string name="meetingrequest_availability_busy_title">أنت مشغول</string>
     <string name="meetingrequest_availability_busy_subtitle">في لقاء حالياً.</string>
+    <string name="meetingrequest_availability_busy_rejoin">الانضمام مجدداً</string>
 </resources>

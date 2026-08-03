@@ -1,20 +1,25 @@
 package com.iti.sheikh.presentation.availability
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.MeetingCurrentUserProvider
+import com.iti.meeting.domain.repository.IncomingRequestEvent
+import com.iti.meeting.domain.repository.MeetingRepository
+import com.iti.meeting.domain.repository.MeetingRequestEvent
+import com.iti.sheikh.presentation.availability.state.AvailabilityEffect
 import com.iti.sheikh.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.sheikh.presentation.core.mvi.DefaultStateHolder
 import com.iti.sheikh.presentation.core.mvi.EffectPublisher
 import com.iti.sheikh.presentation.core.mvi.StateHolder
-import com.iti.meeting.domain.repository.MeetingRepository
-import com.iti.meeting.domain.repository.IncomingRequestEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 class AvailabilityViewModel(
     private val repository: MeetingRepository,
@@ -25,7 +30,9 @@ class AvailabilityViewModel(
 
     private val heartbeat = AvailabilityHeartbeat(repository, viewModelScope)
     private var countdownJob: Job? = null
+    private var activeCallJob: Job? = null
     private var mySheikhId: String? = null
+    private var activeRequestId: String? = null
 
     fun onIntent(intent: AvailabilityIntent) {
         when (intent) {
@@ -38,9 +45,14 @@ class AvailabilityViewModel(
 
     private fun goAvailable() = viewModelScope.launch {
         val sheikhId = currentUserProvider.currentUserId() ?: return@launch
+        heartbeat.start()
+            .onFailure { error ->
+                android.util.Log.e(TAG, "goAvailable: setMyAvailability(AVAILABLE) failed, staying Offline", error)
+                sendEffect(AvailabilityEffect.ShowMessage(error.message ?: "Couldn't go available. Please try again."))
+                return@launch
+            }
         mySheikhId = sheikhId
-        heartbeat.start(sheikhId)
-        
+
         repository.observeIncomingRequests(sheikhId)
             .onEach { event ->
                 when (event) {
@@ -62,23 +74,30 @@ class AvailabilityViewModel(
                 }
             }
             .launchIn(viewModelScope)
-            
+
+        repository.reconnected
+            .onEach { repository.getSheikhAvailability(sheikhId) }
+            .launchIn(viewModelScope)
+
         updateState { AvailabilityUiState.Available }
     }
 
     private fun goOffline() {
-        val sheikhId = mySheikhId ?: return
-        heartbeat.stop(sheikhId)
+        heartbeat.stop()
         countdownJob?.cancel()
+        activeCallJob?.cancel()
         updateState { AvailabilityUiState.Offline }
     }
 
     private fun startCountdown(expiresAtString: String) {
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {
-            val expiresAt = runCatching { java.time.Instant.parse(expiresAtString) }.getOrNull() ?: java.time.Instant.now()
+            val expiresAt = runCatching {
+                val str = if (expiresAtString.endsWith("Z") || expiresAtString.contains("+")) expiresAtString else "${expiresAtString}Z"
+                Instant.parse(str)
+            }.getOrNull() ?: Clock.System.now()
             while (isActive) {
-                if (expiresAt.isBefore(java.time.Instant.now()) || expiresAt == java.time.Instant.now()) {
+                if (expiresAt <= Clock.System.now()) {
                     updateState {
                         if (this is AvailabilityUiState.IncomingRequest) AvailabilityUiState.Available else this
                     }
@@ -92,40 +111,61 @@ class AvailabilityViewModel(
     private fun accept() = viewModelScope.launch {
         val requestState = currentState as? AvailabilityUiState.IncomingRequest ?: return@launch
         countdownJob?.cancel()
+        android.util.Log.d(TAG, "accept: calling acceptMeetingRequest(${requestState.requestId})")
         repository.acceptMeetingRequest(requestState.requestId)
             .onSuccess { accepted ->
-                updateState { AvailabilityUiState.Busy }
-                sendEffect(
-                    AvailabilityEffect.NavigateToCall(
-                        circleId = accepted.circleId,
-                        token = accepted.sheikhAgoraToken,
+                android.util.Log.d(TAG, "accept: SUCCESS requestId=${accepted.requestId} channel=${accepted.channelName} tokenLen=${accepted.agoraToken.length}")
+                activeRequestId = accepted.requestId
+                updateState {
+                    AvailabilityUiState.Busy(
+                        requestId = accepted.requestId,
+                        token = accepted.agoraToken,
                         channelName = accepted.channelName,
-                        uid = accepted.uid,
-                    ),
-                )
+                        userAccount = accepted.userAccount,
+                        remoteDisplayName = requestState.studentName,
+                    )
+                }
+                heartbeat.pause()
+                observeActiveCall(accepted.requestId)
             }
             .onFailure { error ->
+                android.util.Log.e(TAG, "accept: FAILED", error)
                 sendEffect(AvailabilityEffect.ShowMessage(error.message ?: "Failed to accept"))
             }
+    }
+
+    /** Watches the accepted request's topic so the panel resets to Available if the call ends remotely. */
+    private fun observeActiveCall(requestId: String) {
+        Log.d(TAG, "observeActiveCall: subscribing requestId=$requestId")
+        activeCallJob?.cancel()
+        activeCallJob = repository.observeMeetingRequestEvents(requestId)
+            .onEach { event ->
+                android.util.Log.d(TAG, "observeActiveCall: event=$event for requestId=$requestId")
+                if (event is MeetingRequestEvent.MeetingEnded) {
+                    activeRequestId = null
+                    heartbeat.start().onFailure { error ->
+                        Log.e(TAG, "observeActiveCall: resuming heartbeat failed", error)
+                    }
+                    updateState { if (this is AvailabilityUiState.Busy) AvailabilityUiState.Available else this }
+                    android.util.Log.d(TAG, "observeActiveCall: MeetingEnded -> reset to Available, currentState=$currentState")
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun decline() = viewModelScope.launch {
         val requestState = currentState as? AvailabilityUiState.IncomingRequest ?: return@launch
         countdownJob?.cancel()
-        repository.declineMeetingRequest(requestState.requestId, reason = null)
+        repository.declineMeetingRequest(requestState.requestId)
         updateState { AvailabilityUiState.Available }
     }
 
     override fun onCleared() {
-        super.onCleared()
-        mySheikhId?.let { heartbeat.stop(it) }
+        if (mySheikhId != null) heartbeat.stop()
     }
 
     private companion object {
         const val COUNTDOWN_TICK_MS = 1_000L
+        const val TAG = "MeetingLifecycle"
     }
 }
-
-
-
-

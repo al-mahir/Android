@@ -8,6 +8,7 @@
     <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
     <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
     <string name="mushaf_retry">إعادة المحاولة</string>
+    <string name="mushaf_offline_mode_not_available">This mode requires an internet connection.</string>
 
     <!-- Tajweed toggle -->
     <string name="mushaf_tajweed_label">التجويد</string>
@@ -20,6 +21,7 @@
 
     <!-- Search Screen -->
     <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="search_meaning_offline">Meaning search requires an internet connection.</string>
     <string name="revelation_meccan">مكية</string>
     <string name="revelation_medinan">مدنية</string>
     <string name="verses_count_format">%1$d آية</string>
@@ -40,6 +42,7 @@
     <!-- Top bar content descriptions -->
     <string name="mushaf_cd_back">Back</string>
     <string name="mushaf_cd_bookmark">Bookmark</string>
+    <string name="mushaf_cd_bookmark_ayah">Bookmark this ayah</string>
     <string name="mushaf_cd_settings">Settings</string>
 
     <!-- Bottom bar — modes -->

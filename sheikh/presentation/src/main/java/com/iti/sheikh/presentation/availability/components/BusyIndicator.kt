@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,11 +27,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.theme.Theme
 import com.iti.sheikh.presentation.R
 
 @Composable
-fun BusyIndicator(modifier: Modifier = Modifier) {
+fun BusyIndicator(onRejoinCall: () -> Unit = {}, modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "busyPulse")
     val dotAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
@@ -61,7 +63,11 @@ fun BusyIndicator(modifier: Modifier = Modifier) {
                     .clip(CircleShape)
                     .background(Theme.colors.amber),
             )
-            Column(modifier = Modifier.padding(start = Theme.spacing.medium)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = Theme.spacing.medium),
+            ) {
                 BasicText(
                     text = stringResource(R.string.meetingrequest_availability_busy_title),
                     style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont),
@@ -75,6 +81,12 @@ fun BusyIndicator(modifier: Modifier = Modifier) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            PrimaryButton(
+                caption = stringResource(R.string.meetingrequest_availability_busy_rejoin),
+                onClick = onRejoinCall,
+                height = 36.dp,
+                modifier = Modifier.padding(start = Theme.spacing.small),
+            )
         }
     }
 }

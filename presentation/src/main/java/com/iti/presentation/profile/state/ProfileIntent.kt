@@ -9,7 +9,7 @@ sealed interface ProfileIntent {
 
     data object PremiumClicked : ProfileIntent
 
-    data object RestorePurchasesClicked : ProfileIntent
+    data object MySubscriptionClicked : ProfileIntent
 
     data object LogoutClicked : ProfileIntent
 

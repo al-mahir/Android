@@ -55,11 +55,13 @@ fun TafsirBottomSheet(
     tafsirState: TafsirState,
     availableBooks: List<TafsirBook>,
     selectedKey: String,
+    isAyahBookmarked: Boolean,
     onDismiss: () -> Unit,
     onRetry: (() -> Unit)? = null,
     onChangeTafsir: (String) -> Unit,
     onDownloadTafsir: (String, String) -> Unit,
     onDeleteTafsir: (String) -> Unit,
+    onBookmarkAyah: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showSelection by remember { mutableStateOf(false) }
@@ -98,8 +100,10 @@ fun TafsirBottomSheet(
                 TafsirContent(
                     tafsirState = tafsirState,
                     selectedKey = selectedKey,
+                    isAyahBookmarked = isAyahBookmarked,
                     onRetry = onRetry,
                     onBadgeClick = { showSelection = true },
+                    onBookmarkAyah = onBookmarkAyah,
                 )
             }
         }
@@ -112,8 +116,10 @@ fun TafsirBottomSheet(
 private fun TafsirContent(
     tafsirState: TafsirState,
     selectedKey: String,
+    isAyahBookmarked: Boolean,
     onRetry: (() -> Unit)?,
     onBadgeClick: () -> Unit,
+    onBookmarkAyah: () -> Unit,
 ) {
     when (tafsirState) {
         is TafsirState.Idle -> {}
@@ -200,6 +206,19 @@ private fun TafsirContent(
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Start,
                     )
+                    IconButton(onClick = onBookmarkAyah) {
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(
+                                if (isAyahBookmarked) {
+                                    com.example.designsystem.R.drawable.ic_bookmark_filled
+                                } else {
+                                    com.example.designsystem.R.drawable.ic_bookmark
+                                },
+                            ),
+                            contentDescription = stringResource(com.example.mushaf.presentation.R.string.mushaf_cd_bookmark_ayah),
+                            tint = Theme.colors.primary,
+                        )
+                    }
                     Spacer(Modifier.width(8.dp))
                     Box(modifier = Modifier.clickable { onBadgeClick() }) {
                         SourceBadge(

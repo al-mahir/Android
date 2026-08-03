@@ -7,5 +7,5 @@ import org.koin.dsl.module
 
 val meetingPresentationModule = module {
     viewModel { SheikhBrowseViewModel(repository = get()) }
-    viewModel { MeetingRequestViewModel(repository = get(), currentUserProvider = get()) }
+    viewModel { MeetingRequestViewModel(repository = get()) }
 }

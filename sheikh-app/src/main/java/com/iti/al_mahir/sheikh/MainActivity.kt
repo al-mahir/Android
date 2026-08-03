@@ -30,15 +30,19 @@ class MainActivity : ComponentActivity() {
 
     private var isPreferencesReady = false
 
+    private val pendingAction = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         splashScreen.setKeepOnScreenCondition { !isPreferencesReady }
 
         super.onCreate(savedInstanceState)
+        intent?.action?.let { pendingAction.value = it }
 
         enableEdgeToEdge()
         setContent {
             val preferences by observePreferences().collectAsStateWithLifecycle(initialValue = null)
+            val action by pendingAction.collectAsStateWithLifecycle()
 
             val systemInDarkTheme = isSystemInDarkTheme()
             val view = LocalView.current
@@ -64,16 +68,26 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = !darkTheme
                 }
             }
-
+            
             AlMahirTheme(isDarkTheme = darkTheme, locale = locale) {
-                Box(
+                androidx.compose.foundation.layout.Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Theme.colors.backGround),
                 ) {
-                    SheikhAppNavHost()
+                    Box(modifier = Modifier.weight(1f)) {
+                        SheikhAppNavHost(
+                            pendingAction = action,
+                            onActionHandled = { pendingAction.value = null },
+                        )
+                    }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        intent.action?.let { pendingAction.value = it }
     }
 }

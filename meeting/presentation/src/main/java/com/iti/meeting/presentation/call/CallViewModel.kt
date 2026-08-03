@@ -1,164 +1,64 @@
 package com.iti.meeting.presentation.call
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
-import com.iti.meeting.domain.config.MeetingKitConfig
+import com.iti.meeting.presentation.call.session.CallSessionController
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
 import com.iti.meeting.presentation.core.mvi.StateHolder
-import io.agora.rtc2.Constants
-import io.agora.rtc2.IRtcEngineEventHandler
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
-private const val TAG = "MeetingCall"
-
+/**
+ * Thin per-screen adapter over [CallSessionController], which owns the actual Agora engine and
+ * call state at app-process scope (see that class's doc + `docs/Meeting-Call-Lifecycle-Plan.md`).
+ * `CallScreen` can come and go — get recomposed, have its `ViewModelStoreOwner` recreated — without
+ * ever affecting the underlying call.
+ */
 class CallViewModel(
-    private val config: MeetingKitConfig,
-) : ViewModel(), StateHolder<CallUiState> by DefaultStateHolder(CallUiState.Connecting) {
+    private val controller: CallSessionController,
+) : ViewModel(), StateHolder<CallUiState> by DefaultStateHolder(controller.currentState.callState) {
 
-    var engine: AgoraEngineWrapper? = null
-        private set
+    val engine: AgoraEngineWrapper? get() = controller.engine
 
-    private var durationJob: Job? = null
+    init {
+        controller.state
+            .map { it.callState }
+            .onEach { updateState { it } }
+            .launchIn(viewModelScope)
+    }
+
+    fun prepareForRequest(requestId: String) = controller.prepareForRequest(requestId)
 
     fun joinChannel(
         context: Context,
+        requestId: String,
         token: String,
         channelName: String,
-        uid: Int,
+        userAccount: String,
+        remoteDisplayName: String? = null,
         micEnabled: Boolean,
         cameraEnabled: Boolean,
-    ) {
-        if (engine != null) return
+    ) = controller.joinChannel(
+        context = context,
+        requestId = requestId,
+        token = token,
+        channelName = channelName,
+        userAccount = userAccount,
+        remoteDisplayName = remoteDisplayName,
+        micEnabled = micEnabled,
+        cameraEnabled = cameraEnabled,
+    )
 
-        Log.i(TAG, "joinChannel: channel=$channelName uid=$uid appIdLen=${config.agoraAppId.length} tokenLen=${token.length} mic=$micEnabled cam=$cameraEnabled")
+    fun endCall() = controller.endCall()
 
-        val eventHandler = object : IRtcEngineEventHandler() {
-            override fun onJoinChannelSuccess(channel: String?, joinedUid: Int, elapsed: Int) {
-                Log.i(TAG, "onJoinChannelSuccess: channel=$channel uid=$joinedUid elapsed=${elapsed}ms")
-                startDurationTimer()
-            }
+    fun toggleMic() = controller.toggleMic()
 
-            override fun onUserJoined(remoteUid: Int, elapsed: Int) {
-                Log.i(TAG, "onUserJoined: remoteUid=$remoteUid elapsed=${elapsed}ms")
-                updateState {
-                    if (this is CallUiState.InCall) copy(remoteUid = remoteUid)
-                    else CallUiState.InCall(remoteUid = remoteUid, isMicEnabled = micEnabled, isCameraEnabled = cameraEnabled)
-                }
-            }
+    fun toggleCamera() = controller.toggleCamera()
 
-            override fun onUserOffline(remoteUid: Int, reason: Int) {
-                Log.i(TAG, "onUserOffline: remoteUid=$remoteUid reason=$reason")
-                updateState {
-                    if (this is CallUiState.InCall) copy(remoteUid = null, isRemoteMicEnabled = true, isRemoteCameraEnabled = true)
-                    else this
-                }
-            }
+    fun toggleSpeaker() = controller.toggleSpeaker()
 
-            override fun onUserMuteAudio(remoteUid: Int, muted: Boolean) {
-                Log.i(TAG, "onUserMuteAudio: remoteUid=$remoteUid muted=$muted")
-                updateState {
-                    if (this is CallUiState.InCall && remoteUid == this.remoteUid) copy(isRemoteMicEnabled = !muted) else this
-                }
-            }
-
-            override fun onUserMuteVideo(remoteUid: Int, muted: Boolean) {
-                Log.i(TAG, "onUserMuteVideo: remoteUid=$remoteUid muted=$muted")
-                updateState {
-                    if (this is CallUiState.InCall && remoteUid == this.remoteUid) copy(isRemoteCameraEnabled = !muted) else this
-                }
-            }
-
-            override fun onConnectionStateChanged(state: Int, reason: Int) {
-                Log.i(TAG, "onConnectionStateChanged: state=$state reason=$reason")
-                when (state) {
-                    Constants.CONNECTION_STATE_RECONNECTING ->
-                        updateState { if (this is CallUiState.InCall) copy(isReconnecting = true) else this }
-                    Constants.CONNECTION_STATE_CONNECTED ->
-                        updateState { if (this is CallUiState.InCall) copy(isReconnecting = false) else this }
-                    Constants.CONNECTION_STATE_FAILED ->
-                        updateState { CallUiState.Error("Connection lost. Please try again.") }
-                }
-            }
-
-            override fun onError(err: Int) {
-                Log.e(TAG, "onError: code=$err")
-                updateState { CallUiState.Error("Call error ($err)") }
-            }
-
-            override fun onTokenPrivilegeWillExpire(token: String?) {
-                Log.w(TAG, "onTokenPrivilegeWillExpire")
-            }
-
-            override fun onRequestToken() {
-                Log.w(TAG, "onRequestToken: engine is requesting a fresh token, current one was rejected/expired")
-            }
-
-            override fun onConnectionLost() {
-                Log.w(TAG, "onConnectionLost")
-            }
-
-            override fun onLeaveChannel(stats: IRtcEngineEventHandler.RtcStats?) {
-                Log.i(TAG, "onLeaveChannel")
-            }
-        }
-
-        val wrapper = AgoraEngineWrapper(context.applicationContext, config.agoraAppId, eventHandler)
-        engine = wrapper
-        wrapper.joinChannel(token, channelName, uid, publishAudio = micEnabled, publishVideo = cameraEnabled)
-        updateState { CallUiState.InCall(remoteUid = null, isMicEnabled = micEnabled, isCameraEnabled = cameraEnabled) }
-    }
-
-    private fun startDurationTimer() {
-        durationJob?.cancel()
-        durationJob = viewModelScope.launch {
-            while (true) {
-                delay(1_000)
-                updateState { if (this is CallUiState.InCall) copy(callDurationSeconds = callDurationSeconds + 1) else this }
-            }
-        }
-    }
-
-    fun toggleMic() {
-        val current = currentState as? CallUiState.InCall ?: return
-        val newState = !current.isMicEnabled
-        engine?.setLocalAudioEnabled(newState)
-        updateState {
-            if (this is CallUiState.InCall) copy(isMicEnabled = newState) else this
-        }
-    }
-
-    fun toggleCamera() {
-        val current = currentState as? CallUiState.InCall ?: return
-        val newState = !current.isCameraEnabled
-        engine?.setLocalVideoEnabled(newState)
-        updateState {
-            if (this is CallUiState.InCall) copy(isCameraEnabled = newState) else this
-        }
-    }
-
-    fun toggleSpeaker() {
-        val current = currentState as? CallUiState.InCall ?: return
-        val newState = !current.isSpeakerEnabled
-        engine?.setSpeakerphoneEnabled(newState)
-        updateState {
-            if (this is CallUiState.InCall) copy(isSpeakerEnabled = newState) else this
-        }
-    }
-
-    fun switchCamera() {
-        engine?.switchCamera()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        durationJob?.cancel()
-        engine?.leaveChannel()
-        engine?.destroy()
-        engine = null
-    }
+    fun switchCamera() = controller.switchCamera()
 }

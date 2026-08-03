@@ -1,13 +1,12 @@
 package com.iti.presentation.profile.navigation
 
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.iti.presentation.attributions.AttributionsScreen
 import com.iti.presentation.sessions.SessionHistoryScreen
 import com.iti.presentation.staticcontent.StaticContentScreen
+import com.iti.presentation.subscription.PackagesScreen
+import com.iti.presentation.subscription.SubscriptionDetailsScreen
 
 
 fun EntryProviderScope<NavKey>.profileEntries(
@@ -29,6 +28,10 @@ fun EntryProviderScope<NavKey>.profileEntries(
     }
 
     entry<ProfileRoute.Premium> {
-        EmptyDataScreen(modifier = Modifier.fillMaxSize())
+        PackagesScreen(onBack = onBack)
+    }
+
+    entry<ProfileRoute.MySubscription> {
+        SubscriptionDetailsScreen(onBack = onBack)
     }
 }

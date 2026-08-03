@@ -1,6 +1,9 @@
 package com.iti.meeting.presentation.call
 
 sealed interface CallUiState {
+    /** No call in progress — the state `CallSessionController` starts in and returns to once a
+     * call is torn down. `CallScreen` never composes while this is current in normal operation. */
+    data object Idle : CallUiState
     data object Connecting : CallUiState
     data class InCall(
         val remoteUid: Int?,
@@ -14,5 +17,6 @@ sealed interface CallUiState {
         val callDurationSeconds: Long = 0L,
         val isReconnecting: Boolean = false,
     ) : CallUiState
+    data object Ended : CallUiState
     data class Error(val message: String) : CallUiState
 }

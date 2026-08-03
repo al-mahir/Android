@@ -19,8 +19,11 @@ android {
     }
 
     defaultConfig {
-        val restUrl = localProperties.getProperty("meetingRestBaseUrl", "http://10.0.2.2:8080")
-        val wsUrl = localProperties.getProperty("meetingWsBaseUrl", "ws://10.0.2.2:8080")
+        val meetingBaseUrl = localProperties.getProperty("baseUrl", "").trimEnd('/')
+        val restUrl = localProperties.getProperty("meetingRestBaseUrl", "")
+            .ifBlank { meetingBaseUrl }
+        val wsUrl = localProperties.getProperty("meetingWsBaseUrl", "")
+            .ifBlank { meetingBaseUrl.replaceFirst("https://", "wss://").replaceFirst("http://", "ws://") }
         val agoraAppId = localProperties.getProperty("meetingAgoraAppId", "")
         buildConfigField("String", "REST_BASE_URL", "\"$restUrl\"")
         buildConfigField("String", "WS_BASE_URL", "\"$wsUrl\"")

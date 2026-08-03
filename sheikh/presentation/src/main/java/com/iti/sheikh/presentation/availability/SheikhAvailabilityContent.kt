@@ -12,14 +12,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.iti.sheikh.presentation.availability.AvailabilityToggleRow
-import com.iti.sheikh.presentation.availability.BusyIndicator
-import com.iti.sheikh.presentation.availability.IncomingRequestCard
+import com.iti.sheikh.presentation.availability.components.IncomingRequestCard
 
 @Composable
 fun SheikhAvailabilityContent(
     state: AvailabilityUiState,
     onIntent: (AvailabilityIntent) -> Unit,
+    onRejoinCall: (AvailabilityUiState.Busy) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -52,7 +51,7 @@ fun SheikhAvailabilityContent(
                     onDecline = { onIntent(AvailabilityIntent.Decline) },
                 )
 
-                AvailabilityUiState.Busy -> BusyIndicator()
+                is AvailabilityUiState.Busy -> BusyIndicator(onRejoinCall = { onRejoinCall(targetState) })
             }
         }
     }

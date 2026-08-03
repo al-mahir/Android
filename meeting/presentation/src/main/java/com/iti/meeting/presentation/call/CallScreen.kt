@@ -2,6 +2,8 @@ package com.iti.meeting.presentation.call
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,14 +64,27 @@ private val DangerRed = Color(0xFFE94235)
 
 @Composable
 fun CallScreen(
+    requestId: String,
     token: String,
     channelName: String,
-    uid: Int,
+    userAccount: String,
+    remoteDisplayName: String? = null,
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
+    LaunchedEffect(requestId) { viewModel.prepareForRequest(requestId) }
+
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    android.util.Log.d("MeetingLifecycle", "CallScreen: composed requestId=$requestId state=$state")
+        val handleLeave: () -> Unit = {
+        android.util.Log.d("MeetingLifecycle", "CallScreen: handleLeave requestId=$requestId")
+        viewModel.endCall()
+    }
+
+       BackHandler(enabled = state !is CallUiState.Ended) {
+        handleLeave()
+    }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.toggleMic()
@@ -78,24 +94,40 @@ fun CallScreen(
     }
     val joinPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    ) { _ ->
+        // Permissions are requested so the in-call mic/camera buttons won't need to prompt later,
+        // but a grant must never be treated as consent to publish — join muted/camera-off for
+        // privacy and let the user opt in per-call via the in-call toggles.
         viewModel.joinChannel(
             context = context,
+            requestId = requestId,
             token = token,
             channelName = channelName,
-            uid = uid,
-            micEnabled = results[Manifest.permission.RECORD_AUDIO] == true,
-            cameraEnabled = results[Manifest.permission.CAMERA] == true,
+            userAccount = userAccount,
+            remoteDisplayName = remoteDisplayName,
+            micEnabled = false,
+            cameraEnabled = false,
         )
     }
 
     LaunchedEffect(Unit) {
-        joinPermissionsLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA))
+        val permissions = buildList {
+            add(Manifest.permission.RECORD_AUDIO)
+            add(Manifest.permission.CAMERA)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        joinPermissionsLauncher.launch(permissions.toTypedArray())
+    }
+
+    if (state is CallUiState.Ended) {
+        LaunchedEffect(Unit) { onLeave() }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(CallBackground)) {
         when (val current = state) {
-            is CallUiState.Connecting -> ConnectingContent()
+            is CallUiState.Idle, is CallUiState.Connecting -> ConnectingContent()
 
             is CallUiState.InCall -> InCallContent(
                 state = current,
@@ -116,10 +148,12 @@ fun CallScreen(
                 },
                 onToggleSpeaker = viewModel::toggleSpeaker,
                 onSwitchCamera = viewModel::switchCamera,
-                onLeave = onLeave,
+                onLeave = handleLeave,
             )
 
-            is CallUiState.Error -> ErrorContent(message = current.message, onLeave = onLeave)
+            CallUiState.Ended -> ConnectingContent()
+
+            is CallUiState.Error -> ErrorContent(message = current.message, onLeave = handleLeave)
         }
     }
 }

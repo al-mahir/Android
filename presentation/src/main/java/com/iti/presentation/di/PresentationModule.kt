@@ -13,8 +13,11 @@ import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhByIdUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
+import com.iti.domain.usecase.subscription.GetSubscriptionPackagesUseCase
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
-import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
+import com.iti.domain.usecase.subscription.RequestSubscriptionCancellationUseCase
+import com.iti.domain.usecase.subscription.SelectSubscriptionPackageUseCase
+import com.iti.domain.usecase.subscription.StartFreeTrialUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.domain.usecase.settings.DeleteAllRecordingsUseCase
@@ -27,6 +30,7 @@ import com.iti.domain.usecase.settings.SetThemeModeUseCase
 import com.iti.presentation.circle.CircleListViewModel
 import com.iti.presentation.circle.InSessionViewModel
 import com.iti.presentation.circle.JoiningCircleViewModel
+import com.iti.presentation.core.MainViewModel
 import com.iti.presentation.core.platform.AppReviewLauncher
 import com.iti.presentation.core.platform.StoreListingAppReviewLauncher
 import com.iti.presentation.home.HomeViewModel
@@ -35,6 +39,8 @@ import com.iti.presentation.settings.SettingsViewModel
 import com.iti.presentation.sheikh.SheikhDetailsViewModel
 import com.iti.presentation.sheikh.SheikhListViewModel
 import com.iti.presentation.staticcontent.StaticContentViewModel
+import com.iti.presentation.subscription.PackagesViewModel
+import com.iti.presentation.subscription.SubscriptionDetailsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
@@ -46,7 +52,10 @@ val presentationModule = module {
     factory { GetReadingProgressUseCase(get()) }
     factory { GetAyahOfTheDayUseCase() }
     factory { GetSubscriptionUseCase(get()) }
-    factory { RestorePurchasesUseCase(get()) }
+    factory { GetSubscriptionPackagesUseCase(get()) }
+    factory { StartFreeTrialUseCase(get()) }
+    factory { SelectSubscriptionPackageUseCase(get()) }
+    factory { RequestSubscriptionCancellationUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
     factory { GetLegalDocumentUseCase(get()) }
 
@@ -73,6 +82,13 @@ val presentationModule = module {
     factory { GetRecitationSessionUseCase(get()) }
     factory { DeleteRecitationSessionUseCase(get()) }
 
+    // ── Bookmark use cases ────────────────────────────────────────────────────
+    factory { com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.ObserveAllBookmarksUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.AddBookmarkUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.RemoveBookmarkUseCase(get()) }
+    factory { com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase(get()) }
+
     // ── Platform ──────────────────────────────────────────────────────────────
     single<AppReviewLauncher> { StoreListingAppReviewLauncher(androidContext().packageName) }
 
@@ -84,9 +100,12 @@ val presentationModule = module {
     }
 
     // ── ViewModels ────────────────────────────────────────────────────────────
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
+    viewModel { PackagesViewModel(get(), get(), get()) }
+    viewModel { SubscriptionDetailsViewModel(get(), get(), get()) }
     viewModel { (documentType: LegalDocumentType) ->
         StaticContentViewModel(documentType, get())
     }
@@ -102,11 +121,12 @@ val presentationModule = module {
             deleteAllRecordings = get(),
         )
     }
-    viewModel { SheikhListViewModel(get()) }
+    viewModel { SheikhListViewModel(get(), get(), get()) }
     viewModel { (sheikhId: String) -> SheikhDetailsViewModel(sheikhId, get(), get(), get()) }
     viewModel { CircleListViewModel(get(), get()) }
     viewModel { (circleId: String) -> JoiningCircleViewModel(circleId, get(), get()) }
     viewModel { (circleId: String) -> InSessionViewModel(circleId, get()) }
+    viewModel { com.iti.presentation.bookmark.BookmarkViewModel(get(), get(), get(), get(), get()) }
 }
 
 const val APP_VERSION = "app_version"

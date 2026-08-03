@@ -35,7 +35,7 @@ import com.iti.presentation.profile.state.ProfileUiState
 fun ProfileContent(
     state: ProfileUiState,
     onPremiumClick: () -> Unit,
-    onRestorePurchasesClick: () -> Unit,
+    onMySubscriptionClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
     onMenuOptionClick: (ProfileMenuType) -> Unit,
@@ -90,19 +90,20 @@ fun ProfileContent(
                             modifier = gutter,
                         )
 
-                        AccountActionsBlock(
-                            isPremium = state.isPremium,
-                            isRestoringPurchases = state.isRestoringPurchases,
-                            onPremiumClick = onPremiumClick,
-                            onRestorePurchasesClick = onRestorePurchasesClick,
-                            onLogoutClick = onLogoutClick,
-                            modifier = gutter,
-                        )
+                        if (!state.isOffline) {
+                            AccountActionsBlock(
+                                isPremium = state.isPremium,
+                                onPremiumClick = onPremiumClick,
+                                onMySubscriptionClick = onMySubscriptionClick,
+                                onLogoutClick = onLogoutClick,
+                                modifier = gutter,
+                            )
 
-                        SocialMediaChannelsRow(
-                            onChannelClick = onSocialChannelClick,
-                            modifier = gutter,
-                        )
+                            SocialMediaChannelsRow(
+                                onChannelClick = onSocialChannelClick,
+                                modifier = gutter,
+                            )
+                        }
                     }
                 }
 
@@ -123,13 +124,15 @@ fun ProfileContent(
                     )
                 }
 
-                item(key = "delete-account") {
-                    ProfileMenuRow(
-                        title = stringResource(R.string.profile_delete_account),
-                        contentColor = Theme.colors.error,
-                        onClick = onDeleteAccountClick,
-                        modifier = gutter.padding(top = Theme.spacing.small),
-                    )
+                if (!state.isOffline) {
+                    item(key = "delete-account") {
+                        ProfileMenuRow(
+                            title = stringResource(R.string.profile_delete_account),
+                            contentColor = Theme.colors.error,
+                            onClick = onDeleteAccountClick,
+                            modifier = gutter.padding(top = Theme.spacing.small),
+                        )
+                    }
                 }
             }
         }
@@ -149,13 +152,13 @@ private val MenuEntries = listOf(
         type = ProfileMenuType.SESSIONS,
         titleRes = R.string.profile_menu_sessions,
         iconRes = DesignSystemR.drawable.ic_info,
-        showChevron = true,
+        showChevron = false,
     ),
     MenuEntry(
         type = ProfileMenuType.SETTINGS,
         titleRes = R.string.settings_title,
         iconRes = DesignSystemR.drawable.ic_settings,
-        showChevron = true,
+        showChevron = false,
     ),
     MenuEntry(
         type = ProfileMenuType.ABOUT,

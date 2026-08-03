@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,7 +37,10 @@ class MushafSearchViewModel(
     private val searchTafsirUseCase: com.example.mushaf.domain.usecase.search.SearchTafsirUseCase,
     private val getLastReadUseCase: GetLastReadUseCase,
     private val getTargetPageUseCase: GetTargetPageUseCase,
-    private val saveLastPageUseCase: SaveLastPageUseCase
+    private val saveLastPageUseCase: SaveLastPageUseCase,
+    private val connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver,
+    private val toggleBookmarkUseCase: com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase,
+    private val observeBookmarks: com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase,
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -53,9 +57,28 @@ class MushafSearchViewModel(
     private var currentAyahOffset = 0
     private val AYAH_PAGE_SIZE = 50
 
-    private val searchResultsFlow = combine(_query.debounce(500L), _searchType, _useHyDe) { query, searchType, useHyDe ->
-        Triple(query, searchType, useHyDe)
-    }.flatMapLatest { (query, searchType, useHyDe) ->
+    private val bookmarkedSurahsFlow: kotlinx.coroutines.flow.Flow<Set<Int>> =
+        observeBookmarks(com.iti.domain.model.BookmarkType.SURAH).map { result ->
+            result.getOrNull()?.mapNotNull { it.surahNumber }?.toSet() ?: emptySet()
+        }
+
+    private val bookmarkedAyahsFlow: kotlinx.coroutines.flow.Flow<Set<Pair<Int, Int>>> =
+        observeBookmarks(com.iti.domain.model.BookmarkType.AYAH).map { result ->
+            result.getOrNull()?.mapNotNull { bookmark ->
+                val surah = bookmark.surahNumber
+                val ayah = bookmark.ayahNumber
+                if (surah != null && ayah != null) surah to ayah else null
+            }?.toSet() ?: emptySet()
+        }
+
+    private val searchResultsFlow = combine(
+        _query.debounce(500L), 
+        _searchType, 
+        _useHyDe, 
+        connectivityObserver.status
+    ) { query, searchType, useHyDe, connectionStatus ->
+        Quadruple(query, searchType, useHyDe, connectionStatus)
+    }.flatMapLatest { (query, searchType, useHyDe, connectionStatus) ->
         flow {
             _errorMessage.value = null
             _hydeUsed.value = false
@@ -96,6 +119,13 @@ class MushafSearchViewModel(
                 _ayahs.value = emptyList()
                 _tafsirs.value = emptyList()
                 _isPaginatingAyahs.value = true
+                
+                if (connectionStatus == com.iti.domain.connectivity.ConnectivityStatus.Unavailable) {
+                    _errorMessage.value = UiText.Resource(com.example.mushaf.presentation.R.string.search_meaning_offline)
+                    _isPaginatingAyahs.value = false
+                    emit(MushafSearchStateUpdate(surahs = emptyList()))
+                    return@flow
+                }
 
                 val result = searchAyahByMeaningUseCase(
                     query = query,
@@ -132,7 +162,9 @@ class MushafSearchViewModel(
         _hydeUsed,
         _errorMessage,
         getLastReadUseCase(),
-        _shouldNavigateToMushaf
+        _shouldNavigateToMushaf,
+        bookmarkedSurahsFlow,
+        bookmarkedAyahsFlow,
     ) { args ->
         val query = args[0] as String
         val searchType = args[1] as SearchType
@@ -146,7 +178,11 @@ class MushafSearchViewModel(
         val errorMessage = args[9] as UiText?
         val lastRead = args[10] as com.example.mushaf.domain.model.LastReadSession?
         val shouldNavigate = args[11] as Boolean
-        
+        @Suppress("UNCHECKED_CAST")
+        val bookmarkedSurahs = args[12] as Set<Int>
+        @Suppress("UNCHECKED_CAST")
+        val bookmarkedAyahs = args[13] as Set<Pair<Int, Int>>
+
         MushafSearchState(
             query = query,
             searchType = searchType,
@@ -160,7 +196,9 @@ class MushafSearchViewModel(
             hasReachedEndAyahs = hasReachedEnd,
             errorMessage = errorMessage,
             lastReadSession = lastRead,
-            shouldNavigateToMushaf = shouldNavigate
+            shouldNavigateToMushaf = shouldNavigate,
+            bookmarkedSurahs = bookmarkedSurahs,
+            bookmarkedAyahs = bookmarkedAyahs,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -207,6 +245,33 @@ class MushafSearchViewModel(
             MushafSearchIntent.ClearNavigationEffect -> {
                 _shouldNavigateToMushaf.value = false
             }
+            is MushafSearchIntent.ToggleSurahBookmark -> {
+                viewModelScope.launch {
+                    val page = getTargetPageUseCase.forSurah(intent.surah.number).getOrNull()
+                    val bookmark = com.iti.domain.model.Bookmark(
+                        id = "",
+                        type = com.iti.domain.model.BookmarkType.SURAH,
+                        surahNumber = intent.surah.number,
+                        pageNumber = page,
+                        createdAtEpochMillis = System.currentTimeMillis()
+                    )
+                    toggleBookmarkUseCase(bookmark)
+                }
+            }
+            is MushafSearchIntent.ToggleAyahBookmark -> {
+                viewModelScope.launch {
+                    val page = getTargetPageUseCase.forAyah(intent.surahNumber, intent.ayahNumber).getOrNull()
+                    val bookmark = com.iti.domain.model.Bookmark(
+                        id = "",
+                        type = com.iti.domain.model.BookmarkType.AYAH,
+                        surahNumber = intent.surahNumber,
+                        ayahNumber = intent.ayahNumber,
+                        pageNumber = page,
+                        createdAtEpochMillis = System.currentTimeMillis()
+                    )
+                    toggleBookmarkUseCase(bookmark)
+                }
+            }
         }
     }
 
@@ -239,6 +304,8 @@ class MushafSearchViewModel(
             _isPaginatingAyahs.value = false
         }
     }
+
+    private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
     private data class MushafSearchStateUpdate(
         val surahs: List<com.example.mushaf.domain.model.Surah> = emptyList(),

@@ -1,10 +1,9 @@
-package com.iti.sheikh.presentation.availability
+package com.iti.sheikh.presentation.availability.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
@@ -38,6 +38,8 @@ import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.theme.Theme
 import com.iti.sheikh.presentation.R
 import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 @Composable
 fun IncomingRequestCard(
@@ -49,20 +51,23 @@ fun IncomingRequestCard(
     modifier: Modifier = Modifier,
 ) {
     val totalSeconds = remember(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
-        (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(1)
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { Instant.parse(str) }.getOrNull() ?: Clock.System.now()
+        (parsed.epochSeconds - Clock.System.now().epochSeconds).coerceAtLeast(1)
     }
     var remainingSeconds by remember(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
-        val remaining = parsed.epochSecond - java.time.Instant.now().epochSecond
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { Instant.parse(str) }.getOrNull() ?: Clock.System.now()
+        val remaining = parsed.epochSeconds - Clock.System.now().epochSeconds
         mutableLongStateOf(remaining.coerceAtLeast(0))
     }
 
     LaunchedEffect(expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val str = if (expiresAt.endsWith("Z") || expiresAt.contains("+")) expiresAt else "${expiresAt}Z"
+        val parsed = runCatching { Instant.parse(str) }.getOrNull() ?: Clock.System.now()
         while (remainingSeconds > 0) {
             delay(1_000L)
-            remainingSeconds = (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(0)
+            remainingSeconds = (parsed.epochSeconds - Clock.System.now().epochSeconds).coerceAtLeast(0)
         }
     }
 
@@ -162,7 +167,7 @@ private fun studentInitials(name: String): String {
 @Composable
 private fun CountdownRing(
     fraction: Float,
-    color: androidx.compose.ui.graphics.Color,
+    color: Color,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {

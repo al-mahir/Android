@@ -4,6 +4,8 @@ import com.iti.domain.auth.MeetingAuthTokenProvider
 import com.iti.meeting.data.remote.MeetingWsDestinations
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.websocket.webSocket
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.close
@@ -98,7 +100,22 @@ class StompClient(
 
     private suspend fun openSession(isReconnect: Boolean): Long {
         var connectedAtMs = 0L
-        httpClient.webSocket(urlString = "$wsUrl${MeetingWsDestinations.CONNECT_PATH}") {
+        val token = tokenProvider.currentToken()
+        val url = if (token != null) {
+            "$wsUrl${MeetingWsDestinations.CONNECT_PATH}?token=$token"
+        } else {
+            "$wsUrl${MeetingWsDestinations.CONNECT_PATH}"
+        }
+        httpClient.webSocket(
+            urlString = url,
+            request = {
+                if (token != null) {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
+                val httpUrl = wsUrl.replace("wss://", "https://").replace("ws://", "http://")
+                header(HttpHeaders.Origin, httpUrl)
+            }
+        ) {
             val session: WebSocketSession = this
             activeSession = session
             connectedAtMs = System.currentTimeMillis()

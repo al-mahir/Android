@@ -23,6 +23,8 @@ import com.iti.presentation.home.components.AyahOfTheDayCard
 import com.iti.presentation.home.components.ContinueReadingCard
 import com.iti.presentation.home.components.HomeHeader
 import com.iti.presentation.home.components.HomeSkeleton
+import com.iti.presentation.home.components.OngoingCallCard
+import com.iti.presentation.home.components.PendingMeetingRequestCard
 import com.iti.presentation.home.components.SheikhProfileCard
 import com.iti.presentation.home.state.HomeUiState
 
@@ -38,6 +40,10 @@ fun HomeContent(
     onSheikhClick: (String) -> Unit,
     onJoinCircleClick: (String) -> Unit,
     onRetryClick: () -> Unit,
+    onViewPendingMeetingClick: () -> Unit = {},
+    onCancelPendingMeetingClick: () -> Unit = {},
+    onRejoinActiveCallClick: () -> Unit = {},
+    onDismissActiveCallClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val rootModifier = modifier
@@ -73,6 +79,30 @@ fun HomeContent(
                 ),
                 verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
             ) {
+                // ── Ongoing call (process died mid-call — rejoin prompt) ───────
+                state.activeCall?.let { active ->
+                    item(key = "active-call") {
+                        OngoingCallCard(
+                            call = active,
+                            onRejoin = onRejoinActiveCallClick,
+                            onDismiss = onDismissActiveCallClick,
+                            modifier = gutter,
+                        )
+                    }
+                }
+
+                // ── Pending meeting request ──────────────────────────────────
+                state.pendingMeetingRequest?.let { pending ->
+                    item(key = "pending-meeting-request") {
+                        PendingMeetingRequestCard(
+                            request = pending,
+                            onView = onViewPendingMeetingClick,
+                            onCancel = onCancelPendingMeetingClick,
+                            modifier = gutter,
+                        )
+                    }
+                }
+
                 // ── Continue reading ─────────────────────────────────────────
                 state.readingProgress?.let { progress ->
                     item(key = "continue-reading") {
@@ -85,7 +115,7 @@ fun HomeContent(
                 }
 
                 // ── Sheikhs ─────────────────────────────────────────────────
-                if (state.sheikhs.isNotEmpty()) {
+                if (state.sheikhs.isNotEmpty() && !state.isOffline) {
                     item(key = "sheikhs-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_sheikhs),
@@ -111,7 +141,7 @@ fun HomeContent(
                 }
 
                 // ── Active circles ───────────────────────────────────────────
-                if (state.circles.isNotEmpty()) {
+                if (state.circles.isNotEmpty() && !state.isOffline) {
                     item(key = "circles-header") {
                         SectionHeader(
                             title = stringResource(R.string.home_section_circles),

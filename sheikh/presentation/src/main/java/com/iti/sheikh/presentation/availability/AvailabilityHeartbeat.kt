@@ -3,45 +3,48 @@ package com.iti.sheikh.presentation.availability
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.domain.model.SheikhAvailabilityStatus
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
-/**
- * Drives the sheikh's AVAILABLE status as a repeating heartbeat rather than a single API call —
- * the backend TTLs the status (~45s) so a killed app auto-reverts to OFFLINE without needing an
- * explicit call. See docs/Android-Agora-Implementation.md §10.1.
- */
+
 class AvailabilityHeartbeat(
     private val repository: MeetingRepository,
     private val scope: CoroutineScope,
 ) {
     private var job: Job? = null
 
-    fun start(sheikhId: String) {
-        if (job?.isActive == true) return
+
+    suspend fun start(): Result<Unit> {
+        if (job?.isActive == true) return Result.success(Unit)
+        val firstPing = repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
         job = scope.launch {
             while (isActive) {
-                repository.setMyAvailability(sheikhId, SheikhAvailabilityStatus.AVAILABLE)
-                delay(HEARTBEAT_INTERVAL_MS)
+                delay(HEARTBEAT_INTERVAL_MS.milliseconds)
+                repository.setMyAvailability(SheikhAvailabilityStatus.AVAILABLE)
             }
         }
+        return firstPing
     }
 
-    fun stop(sheikhId: String) {
+        @OptIn(DelicateCoroutinesApi::class)
+    fun stop() {
         job?.cancel()
         job = null
-        scope.launch { repository.setMyAvailability(sheikhId, SheikhAvailabilityStatus.OFFLINE) }
+        GlobalScope.launch(Dispatchers.IO) { repository.setMyAvailability(SheikhAvailabilityStatus.OFFLINE) }
+    }
+
+    fun pause() {
+        job?.cancel()
+        job = null
     }
 
     private companion object {
         const val HEARTBEAT_INTERVAL_MS = 20_000L
     }
 }
-
-
-
-
-
-

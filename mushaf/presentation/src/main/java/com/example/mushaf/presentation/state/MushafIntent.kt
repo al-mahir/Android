@@ -73,6 +73,10 @@ sealed interface MushafIntent {
     data object DeleteAyahNote : MushafIntent
     data object CopyAyah : MushafIntent
 
+    // Bookmarks
+    data object TogglePageBookmark : MushafIntent
+    data class ToggleAyahBookmark(val surah: Int, val ayah: Int) : MushafIntent
+
     // User Guide
     data object GuideNextStep : MushafIntent
     data object DismissGuide : MushafIntent

@@ -14,6 +14,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SheikhHomeScreen(
     onOpenProfile: () -> Unit,
+    onOpenActiveCall: (String, String, String, String, String?) -> Unit,
     availabilityPanel: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhHomeViewModel = koinViewModel(),
@@ -24,6 +25,8 @@ fun SheikhHomeScreen(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             SheikhHomeEffect.OpenProfile -> onOpenProfile()
+            is SheikhHomeEffect.OpenActiveCall ->
+                onOpenActiveCall(effect.requestId, effect.token, effect.channelName, effect.userAccount, effect.remoteDisplayName)
             is SheikhHomeEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
@@ -33,6 +36,8 @@ fun SheikhHomeScreen(
         state = state,
         onProfileClick = { viewModel.onIntent(SheikhHomeIntent.ProfileClicked) },
         onRetryClick = { viewModel.onIntent(SheikhHomeIntent.Retry) },
+        onRejoinActiveCallClick = { viewModel.onIntent(SheikhHomeIntent.RejoinActiveCallClicked) },
+        onDismissActiveCallClick = { viewModel.onIntent(SheikhHomeIntent.DismissActiveCallClicked) },
         availabilityPanel = availabilityPanel,
         modifier = modifier,
     )

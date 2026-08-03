@@ -4,11 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.auth.usecase.LogoutUseCase
 import com.iti.domain.core.Result
-import com.iti.domain.core.fold
 import com.iti.domain.core.getOrNull
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
-import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.presentation.R
@@ -30,12 +28,15 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 
+import com.iti.domain.connectivity.ConnectivityObserver
+import com.iti.domain.connectivity.ConnectivityStatus
+
 class ProfileViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getSubscription: GetSubscriptionUseCase,
-    private val restorePurchases: RestorePurchasesUseCase,
     private val logout: LogoutUseCase,
     private val deleteAccount: DeleteAccountUseCase,
+    private val connectivityObserver: ConnectivityObserver,
 ) : ViewModel(),
     StateHolder<ProfileUiState> by DefaultStateHolder(ProfileUiState()),
     EffectPublisher<ProfileEffect> by DefaultEffectPublisher() {
@@ -50,7 +51,7 @@ class ProfileViewModel(
         when (intent) {
             ProfileIntent.Retry -> observeAccount()
             ProfileIntent.PremiumClicked -> sendEffect(ProfileEffect.OpenPremium)
-            ProfileIntent.RestorePurchasesClicked -> restore()
+            ProfileIntent.MySubscriptionClicked -> sendEffect(ProfileEffect.OpenMySubscription)
             ProfileIntent.LogoutClicked -> openDialog(ProfileDialog.LOGOUT)
             ProfileIntent.DeleteAccountClicked -> openDialog(ProfileDialog.DELETE_ACCOUNT)
             ProfileIntent.DialogConfirmed -> confirmDialog()
@@ -68,10 +69,12 @@ class ProfileViewModel(
         accountJob = combine(
             getCurrentUser(),
             getSubscription(),
-        ) { userResult, subscriptionResult ->
+            connectivityObserver.status
+        ) { userResult, subscriptionResult, connectivity ->
             val user = userResult.getOrNull() ?: error("Failed to load current user")
             val subscription = subscriptionResult.getOrNull() ?: error("Failed to load subscription")
-            ProfileAccountSnapshot(user, subscription)
+            val isOffline = connectivity == ConnectivityStatus.Unavailable
+            ProfileAccountSnapshot(user, subscription, isOffline)
         }
             .catch {
                 updateState {
@@ -85,28 +88,11 @@ class ProfileViewModel(
                         errorMessageRes = null,
                         user = snapshot.user,
                         subscription = snapshot.subscription,
+                        isOffline = snapshot.isOffline,
                     )
                 }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun restore() {
-        if (currentState.isRestoringPurchases) return
-        updateState { copy(isRestoringPurchases = true) }
-
-        viewModelScope.launch {
-            val messageRes = restorePurchases().fold(
-                onSuccess = { restored ->
-                    if (restored) R.string.profile_restore_succeeded
-                    else R.string.profile_restore_nothing_found
-                },
-                onError = { R.string.profile_restore_failed },
-            )
-
-            updateState { copy(isRestoringPurchases = false) }
-            sendEffect(ProfileEffect.ShowMessage(messageRes))
-        }
     }
 
     private fun openDialog(dialog: ProfileDialog) {

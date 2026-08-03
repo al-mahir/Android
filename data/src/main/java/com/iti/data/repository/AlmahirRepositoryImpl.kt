@@ -2,6 +2,7 @@ package com.iti.data.repository
 
 import com.iti.data.core.error.toDomainError
 import com.iti.data.datasource.AlmahirDataSource
+import com.iti.data.datasource.AlmahirLocalDataSource
 import com.iti.data.datasource.circle.CircleDataSource
 import com.iti.data.datasource.sheikh.SheikhDataSource
 import com.iti.data.local.recitation.RecitationSessionDao
@@ -19,6 +20,7 @@ import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.User
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.model.recitation.SessionMistake
@@ -39,6 +41,7 @@ class AlmahirRepositoryImpl(
     private val sheikhDataSource: SheikhDataSource,
     private val circleDataSource: CircleDataSource,
     private val dao: RecitationSessionDao,
+    private val localDataSource: AlmahirLocalDataSource,
     private val appPreferencesDataStore: AppPreferencesDataStore,
     private val json: Json = SessionJson,
 ) : AlmahirRepository, SheikhRepository, CircleRepository, RecitationSessionRepository {
@@ -51,11 +54,22 @@ class AlmahirRepositoryImpl(
     override fun observeSubscription(): Flow<Result<Subscription>> =
         dataSource.observeSubscription().map { dto -> dto.toDomain() }.asResult()
 
+    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+        dataSource.observeSubscriptionPackages()
+            .map { dtos -> dtos.map { it.toDomain() } }
+            .asResult()
+
+    override suspend fun startFreeTrial(): Result<Subscription> =
+        resultOf { dataSource.startFreeTrial().toDomain() }
+
+    override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
+        resultOf { dataSource.selectSubscriptionPackage(packageId).toDomain() }
+
     override fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>> =
         dataSource.observeLegalDocument(type.toSlug()).map { dto -> dto.toDomain() }.asResult()
 
-    override suspend fun restorePurchases(): Result<Boolean> =
-        resultOf { dataSource.restorePurchases() }
+    override suspend fun requestSubscriptionCancellation(message: String): Result<Unit> =
+        resultOf { dataSource.requestSubscriptionCancellation(message) }
 
     override suspend fun logout(): Result<Unit> = resultOf {
         dataSource.logout()
@@ -66,6 +80,30 @@ class AlmahirRepositoryImpl(
         dataSource.deleteAccount()
         appPreferencesDataStore.clearUser()
     }
+
+    override fun observeBookmarks(type: com.iti.domain.model.BookmarkType): Flow<Result<List<com.iti.domain.model.Bookmark>>> =
+        localDataSource.observeBookmarksByType(type.name).map { entities ->
+            entities.map { it.toDomain() }
+        }.asResult()
+
+    override fun observeAllBookmarks(): Flow<Result<List<com.iti.domain.model.Bookmark>>> =
+        localDataSource.observeAllBookmarks().map { entities ->
+            entities.map { it.toDomain() }
+        }.asResult()
+
+    override suspend fun getBookmarks(type: com.iti.domain.model.BookmarkType): Result<List<com.iti.domain.model.Bookmark>> = resultOf {
+        localDataSource.getBookmarksByType(type.name).map { it.toDomain() }
+    }
+
+    override suspend fun getBookmark(id: String): Result<com.iti.domain.model.Bookmark?> = resultOf {
+        localDataSource.getBookmarkById(id)?.toDomain()
+    }
+
+    override suspend fun addBookmark(bookmark: com.iti.domain.model.Bookmark): Result<Unit> =
+        resultOf { localDataSource.upsertBookmark(bookmark.toEntity()) }
+
+    override suspend fun removeBookmark(id: String): Result<Unit> =
+        resultOf { localDataSource.deleteBookmark(id) }
 
     // ── SheikhRepository ──────────────────────────────────────────────────
 
@@ -186,6 +224,28 @@ class AlmahirRepositoryImpl(
 
     private fun String.toCategory(): SessionMistakeCategory =
         SessionMistakeCategory.entries.firstOrNull { it.name == this } ?: SessionMistakeCategory.OTHER
+
+    private fun com.iti.domain.model.Bookmark.toEntity() = com.iti.data.local.bookmark.BookmarkEntity(
+        id = id,
+        type = type.name,
+        surahNumber = surahNumber,
+        ayahNumber = ayahNumber,
+        pageNumber = pageNumber,
+        sheikhId = sheikhId,
+        note = note,
+        createdAtEpochMillis = createdAtEpochMillis
+    )
+
+    private fun com.iti.data.local.bookmark.BookmarkEntity.toDomain() = com.iti.domain.model.Bookmark(
+        id = id,
+        type = com.iti.domain.model.BookmarkType.valueOf(type),
+        surahNumber = surahNumber,
+        ayahNumber = ayahNumber,
+        pageNumber = pageNumber,
+        sheikhId = sheikhId,
+        note = note,
+        createdAtEpochMillis = createdAtEpochMillis
+    )
 }
 
 internal val SessionJson: Json = Json {

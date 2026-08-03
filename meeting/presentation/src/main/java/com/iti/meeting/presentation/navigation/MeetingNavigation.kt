@@ -18,9 +18,11 @@ fun EntryProviderScope<NavKey>.meetingEntries(
 ) {
     entry<MeetingRoute.Call> { route ->
         CallScreen(
+            requestId = route.requestId,
             token = route.token,
             channelName = route.channelName,
-            uid = route.uid,
+            userAccount = route.userAccount,
+            remoteDisplayName = route.remoteDisplayName,
             onLeave = onBack,
         )
     }
