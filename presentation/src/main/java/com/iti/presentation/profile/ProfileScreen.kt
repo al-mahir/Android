@@ -26,6 +26,7 @@ import org.koin.compose.koinInject
 @Composable
 fun ProfileScreen(
     onOpenPremium: () -> Unit,
+    onOpenMySubscription: () -> Unit,
     onOpenLegalDocument: (LegalDocumentType) -> Unit,
     onSignedOut: () -> Unit,
     onOpenSettings: () -> Unit = {},
@@ -61,6 +62,8 @@ fun ProfileScreen(
         when (effect) {
             ProfileEffect.OpenPremium -> onOpenPremium()
 
+            ProfileEffect.OpenMySubscription -> onOpenMySubscription()
+
             ProfileEffect.OpenSettings -> onOpenSettings()
 
             ProfileEffect.OpenSessions -> onOpenSessions()
@@ -94,7 +97,7 @@ fun ProfileScreen(
     ProfileContent(
         state = state,
         onPremiumClick = { viewModel.onIntent(ProfileIntent.PremiumClicked) },
-        onRestorePurchasesClick = { viewModel.onIntent(ProfileIntent.RestorePurchasesClicked) },
+        onMySubscriptionClick = { viewModel.onIntent(ProfileIntent.MySubscriptionClicked) },
         onLogoutClick = { viewModel.onIntent(ProfileIntent.LogoutClicked) },
         onDeleteAccountClick = { viewModel.onIntent(ProfileIntent.DeleteAccountClicked) },
         onMenuOptionClick = { menuType -> viewModel.onIntent(ProfileIntent.MenuOptionClicked(menuType)) },

@@ -3,7 +3,6 @@ package com.iti.presentation.profile
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.repository.AlmahirRepository
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
-import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.domain.auth.usecase.LogoutUseCase
@@ -165,36 +164,6 @@ class ProfileViewModelTest {
     }
 
     @Test
-    fun `a repeated tap while restoring does not send a second request`() = runTest(dispatcher) {
-        val repository = FakeAlmahirRepository()
-        val viewModel = viewModel(repository)
-        testScheduler.advanceUntilIdle()
-
-        viewModel.onIntent(ProfileIntent.RestorePurchasesClicked)
-        assertTrue(viewModel.state.value.isRestoringPurchases)
-        viewModel.onIntent(ProfileIntent.RestorePurchasesClicked)
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(1, repository.restoreCount)
-        assertFalse(viewModel.state.value.isRestoringPurchases)
-    }
-
-    @Test
-    fun `restoring nothing is reported distinctly from restoring something`() =
-        runTest(dispatcher) {
-            val viewModel = viewModel(FakeAlmahirRepository(restoreResult = true))
-            testScheduler.advanceUntilIdle()
-
-            viewModel.onIntent(ProfileIntent.RestorePurchasesClicked)
-            testScheduler.advanceUntilIdle()
-
-            assertEquals(
-                ProfileEffect.ShowMessage(R.string.profile_restore_succeeded),
-                viewModel.effect.first(),
-            )
-        }
-
-    @Test
     fun `menu options map to their destinations`() = runTest(dispatcher) {
         val viewModel = viewModel(FakeAlmahirRepository())
         testScheduler.advanceUntilIdle()
@@ -223,7 +192,6 @@ class ProfileViewModelTest {
     ) = ProfileViewModel(
         getCurrentUser = GetCurrentUserUseCase(repository),
         getSubscription = GetSubscriptionUseCase(repository),
-        restorePurchases = RestorePurchasesUseCase(repository),
         logout = LogoutUseCase(authRepository),
         deleteAccount = DeleteAccountUseCase(repository),
     )

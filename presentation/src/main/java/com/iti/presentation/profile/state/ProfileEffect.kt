@@ -9,6 +9,8 @@ sealed interface ProfileEffect {
 
     data object OpenPremium : ProfileEffect
 
+    data object OpenMySubscription : ProfileEffect
+
     data object OpenSettings : ProfileEffect
 
     /** The reciter wants their past sessions. */
