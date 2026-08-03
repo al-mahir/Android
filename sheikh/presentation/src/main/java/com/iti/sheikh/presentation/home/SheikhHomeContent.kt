@@ -3,10 +3,8 @@ package com.iti.sheikh.presentation.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -72,6 +70,14 @@ fun SheikhHomeContent(
             Column(modifier = gutter) {
                 availabilityPanel()
             }
+
+            PrimaryButton(
+                caption = stringResource(R.string.sheikh_home_open_circles),
+                onClick = onOpenCircles,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Theme.spacing.medium),
+            )
         }
     }
 }

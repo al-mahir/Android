@@ -36,6 +36,8 @@ import com.iti.presentation.profile.navigation.ProfileRoute
 import com.iti.presentation.profile.navigation.profileEntries
 import com.iti.presentation.settings.navigation.SettingsRoute
 import com.iti.presentation.settings.navigation.settingsEntries
+import com.iti.sheikh.presentation.circle.navigation.SheikhCircleRoute
+import com.iti.sheikh.presentation.circle.navigation.sheikhCircleEntries
 import com.iti.sheikh.presentation.home.SheikhHomeScreen
 import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import org.koin.androidx.compose.koinViewModel
