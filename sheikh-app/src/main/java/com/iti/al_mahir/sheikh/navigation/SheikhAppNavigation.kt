@@ -191,6 +191,7 @@ private fun SheikhAppNavHost(
                 entry<SheikhAppRoute.Profile> {
                     ProfileScreen(
                         onOpenPremium = { backStack.add(ProfileRoute.Premium) },
+                        onOpenMySubscription = { backStack.add(ProfileRoute.MySubscription) },
                         onOpenLegalDocument = { documentType ->
                             backStack.add(ProfileRoute.StaticContent(documentType))
                         },
