@@ -135,9 +135,6 @@ class MushafRepositoryImpl(
         if (juzNumber in 1..30) juzPages[juzNumber - 1] else null
     }
 
-    override suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?> =
-        resultOf(mapError) { textDataSource.getVerseText(surahNumber, ayahNumber) }
-
     override suspend fun getTafsirForAyah(surah: Int, ayah: Int): Result<TafsirResult?> = resultOf(mapError) {
         tafsirDataSource.getTafsirForAyah(surah, ayah)?.let { raw ->
             val surahMeta = metadataDataSource.getSurah(raw.surahNumber)

@@ -135,15 +135,7 @@ fun MushafScreen(
         }
     }
 
-    val context = LocalContext.current
 
-    com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effects) { effect ->
-        when (effect) {
-            is com.example.mushaf.presentation.state.MushafEffect.ShowMessage ->
-                android.widget.Toast.makeText(context, effect.messageRes, android.widget.Toast.LENGTH_SHORT).show()
-            com.example.mushaf.presentation.state.MushafEffect.NavigateBack -> onBack()
-        }
-    }
 
     val pagerState = rememberPagerState(
         initialPage = state.currentPage - 1,
