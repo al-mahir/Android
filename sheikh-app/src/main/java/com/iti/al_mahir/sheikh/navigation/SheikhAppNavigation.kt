@@ -169,6 +169,7 @@ private fun SheikhAppNavHost(
                         onOpenActiveCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
                             backStack.add(MeetingRoute.Call(requestId = requestId, token = token, channelName = channelName, userAccount = userAccount, remoteDisplayName = remoteDisplayName))
                         },
+                        onOpenCircles = { backStack.add(SheikhCircleRoute.CircleList) },
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
                                 onMeetingAccepted = { requestId, token, channelName, userAccount, remoteDisplayName ->
@@ -222,6 +223,11 @@ private fun SheikhAppNavHost(
                     },
                 )
                 meetingEntries(
+                    onNavigate = { route -> backStack.add(route) },
+                    onBack = { backStack.removeLastOrNull() },
+                )
+
+                sheikhCircleEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onBack = { backStack.removeLastOrNull() },
                 )
