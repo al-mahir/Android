@@ -45,6 +45,12 @@ class MeetingRequestViewModel(
     }
 
     private fun send(sheikhId: String, sheikhName: String?, note: String?) = viewModelScope.launch {
+        // Guards against a rapid double-tap firing two concurrent `sendMeetingRequest` calls —
+        // now that a stale/expiring token is silently refreshed and the request transparently
+        // resent (see `MeetingHttpClient`), two racing taps that would previously have had a good
+        // chance of one hard-failing outright can now both actually succeed, creating two
+        // distinct pending requests server-side.
+        if (currentState is RequestUiState.Sending) return@launch
         updateState { RequestUiState.Sending }
         when (val result = repository.sendMeetingRequest(sheikhId, sheikhName, note)) {
             is SendMeetingRequestResult.Pending -> {
