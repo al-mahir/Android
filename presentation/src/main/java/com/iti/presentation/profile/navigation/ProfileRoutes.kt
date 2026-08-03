@@ -13,6 +13,9 @@ sealed interface ProfileRoute : NavKey {
     @Serializable
     data object Premium : ProfileRoute
 
+    @Serializable
+    data object MySubscription : ProfileRoute
+
     /** The reciter's recorded sessions. */
     @Serializable
     data object Sessions : ProfileRoute
