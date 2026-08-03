@@ -27,18 +27,16 @@ import com.iti.data.connectivity.AndroidConnectivityObserver
 import com.iti.domain.connectivity.ConnectivityObserver
 
 val almahirDataModule = module {
-    // ── Connectivity ──────────────────────────────────────────────────────────
     single<ConnectivityObserver> { AndroidConnectivityObserver(androidContext()) }
-    // ── Network (shared HTTP client, token store, JSON) ──────────────────────
     includes(networkModule)
 
+    single { AppPreferencesDataStore(androidContext()) }
+
     // ── Data sources ──────────────────────────────────────────────────────────
-    single<AlmahirDataSource> { AlmahirFakeDataSource() }
+    single<AlmahirDataSource> { AlmahirFakeDataSource(get()) }
     single<SheikhDataSource> { SheikhRemoteDataSource(httpClient = get(AlmahirClient)) }
     single<CircleDataSource> { FakeCircleDataSource() }
 
-    // ── Almahir bucket: user/subscription/legal-doc/account, sheikh, circle,
-    //    and saved recitation sessions all live on one merged repository ──────
     single { AlmahirDatabase.create(androidContext()) }
     single { get<AlmahirDatabase>().recitationSessionDao() }
     single { get<AlmahirDatabase>().bookmarkDao() }
@@ -49,11 +47,6 @@ val almahirDataModule = module {
     single<CircleRepository> { get<AlmahirRepositoryImpl>() }
     single<RecitationSessionRepository> { get<AlmahirRepositoryImpl>() }
 
-    // ── App preferences + recordings (kept separate: Context-backed DataStore
-    //    is eagerly constructed, and :data's unit tests have no mocking library,
-    //    so merging it into the DAO-based repo above would force every test of
-    //    that class to build a real Context) ──────────────────────────────────
-    single { AppPreferencesDataStore(androidContext()) }
     single { SettingsRepositoryImpl(get()) }
     single<AppPreferencesRepository> { get<SettingsRepositoryImpl>() }
     single<RecordingsRepository> { get<SettingsRepositoryImpl>() }
