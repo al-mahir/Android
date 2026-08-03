@@ -112,13 +112,40 @@
 
     <!-- Account actions -->
     <string name="profile_buy_premium">اشترِ الماهر Premium</string>
-    <string name="profile_restore_purchases">استعادة المشتريات</string>
-    <string name="profile_restoring_purchases">جارٍ الاستعادة…</string>
     <string name="profile_logout">تسجيل الخروج</string>
 
-    <string name="profile_restore_succeeded">تمت استعادة مشترياتك.</string>
-    <string name="profile_restore_nothing_found">لم يتم العثور على مشتريات سابقة.</string>
-    <string name="profile_restore_failed">تعذّرت استعادة المشتريات. حاول مرة أخرى.</string>
+    <!-- Packages / checkout -->
+    <string name="packages_title">اختر باقتك</string>
+    <string name="packages_recommended_badge">الأكثر طلبًا</string>
+    <string name="packages_price_period_month">/شهريًا</string>
+    <string name="packages_select_button">اختر الباقة</string>
+    <string name="packages_selecting_button">جارٍ الاختيار…</string>
+    <string name="packages_start_trial_cta">ابدأ تجربة مجانية لمدة 7 أيام</string>
+    <string name="packages_starting_trial">جارٍ بدء التجربة…</string>
+    <string name="packages_error_generic">تعذّر تحميل الباقات. حاول مرة أخرى.</string>
+    <string name="packages_purchase_succeeded">أصبحت الآن مشتركًا في الماهر Premium!</string>
+    <string name="packages_purchase_failed">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="packages_trial_started">بدأت تجربتك المجانية!</string>
+
+    <!-- My subscription -->
+    <string name="subscription_details_title">اشتراكي</string>
+    <string name="subscription_details_plan_label">الباقة</string>
+    <string name="subscription_details_price_label">السعر</string>
+    <string name="subscription_details_renews_label">تاريخ التجديد</string>
+    <string name="subscription_details_features_label">ما يشمله الاشتراك</string>
+    <string name="subscription_details_error_generic">تعذّر تحميل بيانات اشتراكك. حاول مرة أخرى.</string>
+    <string name="subscription_details_return_button">استرجاع اشتراكي</string>
+
+    <!-- Return-subscription support sheet -->
+    <string name="subscription_cancellation_sheet_title">تواصل مع الدعم</string>
+    <string name="subscription_cancellation_sheet_description">أخبرنا لماذا ترغب باسترجاع اشتراكك، وسيتواصل معك فريق الدعم.</string>
+    <string name="subscription_cancellation_message_hint">اكتب رسالتك…</string>
+    <string name="subscription_cancellation_send_button">إرسال الرسالة</string>
+    <string name="subscription_cancellation_sending">جارٍ الإرسال…</string>
+    <string name="subscription_cancellation_sent_title">تم إرسال الرسالة</string>
+    <string name="subscription_cancellation_sent_description">تم إرسال رسالتك. سنرسل لك بريدًا إلكترونيًا بالنتيجة.</string>
+    <string name="subscription_cancellation_done_button">تم</string>
+    <string name="subscription_cancellation_error">تعذّر إرسال رسالتك. حاول مرة أخرى.</string>
 
     <!-- Social channels (accessibility labels) -->
     <string name="profile_social_github">جيت هَب</string>
@@ -129,6 +156,7 @@
     <string name="profile_social_instagram">إنستغرام</string>
 
     <!-- Menu -->
+    <string name="profile_menu_my_subscription">اشتراكي</string>
     <string name="profile_menu_about">عن الماهر</string>
     <string name="profile_menu_feature_request">طلب خاصية جديدة</string>
     <string name="profile_menu_help_center">مركز المساعدة</string>
