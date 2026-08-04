@@ -39,8 +39,15 @@ class AlMahirApp : Application() {
                         ) 
                     }
                     single<com.iti.domain.auth.MeetingAuthTokenProvider> {
-                        com.iti.domain.auth.MeetingAuthTokenProvider {
-                            org.koin.core.context.GlobalContext.get().get<TokenStore>().getTokens()?.accessToken
+                        val tokenStore = org.koin.core.context.GlobalContext.get().get<TokenStore>()
+                        val refresher = com.iti.data.core.token.TokenRefresher(
+                            tokenStore = tokenStore,
+                            refreshEndpoint = com.iti.data.core.network.AlmahirApi.Auth.REFRESH,
+                        )
+                        object : com.iti.domain.auth.MeetingAuthTokenProvider {
+                            override suspend fun currentToken(): String? = tokenStore.getTokens()?.accessToken
+                            override suspend fun refreshToken(): String? = refresher.refresh()?.accessToken
+                            override suspend fun onAuthenticationExpired() = tokenStore.clear()
                         }
                     }
                     single<com.iti.domain.auth.MeetingCurrentUserProvider> {

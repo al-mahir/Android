@@ -252,13 +252,32 @@ class CallSessionController(
        fun endCall() {
         val id = currentState.requestId
         if (id != null) scope.launch {
-            repository.endMeeting(id)
+            endMeetingReliably(id)
             repository.clearActiveCall()
         }
         releaseEngine()
         eventsJob?.cancel()
         eventsJob = null
         updateCallState { if (this is CallUiState.Ended) this else CallUiState.Ended }
+    }
+
+    /** [repository.endMeeting] was previously fire-and-forget with its [Result] discarded — if it
+     * failed (network blip, an auth retry that ultimately gave up, etc.) the client-side UI still
+     * showed [CallUiState.Ended] as normal, but the backend was never told, so it never broadcasts
+     * `MEETING_ENDED` and the sheikh's server-side status stays BUSY: no local symptom at all, but
+     * every subsequent request to that sheikh silently can't go anywhere. One retry, with logging
+     * either way so a stuck case is traceable in logcat under this tag. */
+    private suspend fun endMeetingReliably(id: String) {
+        repository.endMeeting(id)
+            .onSuccess { Log.d(TAG, "endCall: endMeeting($id) SUCCESS") }
+            .onFailure { error ->
+                Log.w(TAG, "endCall: endMeeting($id) failed, retrying once", error)
+                repository.endMeeting(id)
+                    .onSuccess { Log.d(TAG, "endCall: endMeeting($id) retry SUCCESS") }
+                    .onFailure {
+                        Log.e(TAG, "endCall: endMeeting($id) failed again — backend was never told this call ended, sheikh may be stuck BUSY server-side", it)
+                    }
+            }
     }
 
       private fun persistActiveCall() {

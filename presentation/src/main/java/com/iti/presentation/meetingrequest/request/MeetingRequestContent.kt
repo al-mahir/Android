@@ -153,18 +153,29 @@ private fun SendingContent() {
     }
 }
 
+
+private fun parseExpiresAt(expiresAtString: String): java.time.Instant {
+    val fixed = if (expiresAtString.endsWith("Z") || expiresAtString.contains("+")) {
+        expiresAtString
+    } else {
+        "${expiresAtString}Z"
+    }
+    return runCatching { java.time.Instant.parse(fixed) }.getOrNull()
+        ?: java.time.Instant.now().plusSeconds(60)
+}
+
 @Composable
 private fun PendingContent(state: RequestUiState.Pending, onCancel: () -> Unit) {
     val totalSeconds = remember(state.expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(state.expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val parsed = parseExpiresAt(state.expiresAt)
         (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(1)
     }
     var remainingSeconds by remember(state.expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(state.expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val parsed = parseExpiresAt(state.expiresAt)
         mutableLongStateOf((parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(0))
     }
     LaunchedEffect(state.expiresAt) {
-        val parsed = runCatching { java.time.Instant.parse(state.expiresAt) }.getOrNull() ?: java.time.Instant.now()
+        val parsed = parseExpiresAt(state.expiresAt)
         while (remainingSeconds > 0) {
             delay(1_000L)
             remainingSeconds = (parsed.epochSecond - java.time.Instant.now().epochSecond).coerceAtLeast(0)

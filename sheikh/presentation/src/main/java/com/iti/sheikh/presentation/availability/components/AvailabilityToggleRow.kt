@@ -99,9 +99,10 @@ fun AvailabilityToggleRow(
                     checkedThumbColor = Theme.colors.onPrimary,
                     checkedTrackColor = Theme.colors.primary,
                     checkedBorderColor = Theme.colors.primary,
+
                     uncheckedThumbColor = Theme.colors.onDisable,
-                    uncheckedTrackColor = Theme.colors.disable,
-                    uncheckedBorderColor = Theme.colors.disable,
+                    uncheckedTrackColor = Theme.colors.surface,
+                    uncheckedBorderColor = Theme.colors.outline,
                 ),
             )
         }

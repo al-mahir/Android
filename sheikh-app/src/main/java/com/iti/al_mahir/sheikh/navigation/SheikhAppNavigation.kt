@@ -21,7 +21,10 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.components.bottomnav.BottomNavBar
 import com.example.designsystem.components.bottomnav.BottomNavTab
+import com.iti.sheikh.presentation.availability.AvailabilityUiState
+import com.iti.sheikh.presentation.availability.SheikhAvailabilityController
 import com.iti.sheikh.presentation.availability.SheikhAvailabilityPanel
+import com.iti.sheikh.presentation.availability.service.SheikhAvailabilityForegroundService
 import com.iti.meeting.presentation.call.session.CallForegroundService
 import com.iti.meeting.presentation.call.session.CallSessionController
 import com.iti.meeting.presentation.navigation.MeetingRoute
@@ -94,6 +97,7 @@ private fun SheikhAppNavHost(
     val backStack = remember { mutableStateListOf(startDestination) }
     val context = LocalContext.current
     val callController: CallSessionController = koinInject()
+    val availabilityController: SheikhAvailabilityController = koinInject()
 
         fun isPhantomReplayOfEndedCall(requestId: String): Boolean {
         val session = callController.state.value
@@ -124,9 +128,27 @@ private fun SheikhAppNavHost(
     }
 
     LaunchedEffect(pendingAction) {
-        if (pendingAction == CallForegroundService.ACTION_OPEN_ACTIVE_CALL) {
-            openActiveCallIfLive()
-            onActionHandled()
+        when (pendingAction) {
+            CallForegroundService.ACTION_OPEN_ACTIVE_CALL -> {
+                openActiveCallIfLive()
+                onActionHandled()
+            }
+            SheikhAvailabilityForegroundService.ACTION_ACCEPT_INCOMING_REQUEST -> {
+                // Belt-and-suspenders: the state machine shouldn't allow a new IncomingRequest
+                // while already Busy/live on a call, but never let a stale/duplicate notification
+                // tap interrupt an active call.
+                if (!callController.state.value.isLive) {
+                    val incoming = availabilityController.currentState as? AvailabilityUiState.IncomingRequest
+                    if (incoming != null) {
+                        if (backStack.lastOrNull() != SheikhAppRoute.Home) {
+                            backStack.clear()
+                            backStack.add(SheikhAppRoute.Home)
+                        }
+                        availabilityController.accept(incoming.requestId)
+                    }
+                }
+                onActionHandled()
+            }
         }
     }
 
@@ -191,6 +213,7 @@ private fun SheikhAppNavHost(
                 entry<SheikhAppRoute.Profile> {
                     ProfileScreen(
                         onOpenPremium = { backStack.add(ProfileRoute.Premium) },
+                        onOpenMySubscription = { backStack.add(ProfileRoute.MySubscription) },
                         onOpenLegalDocument = { documentType ->
                             backStack.add(ProfileRoute.StaticContent(documentType))
                         },
