@@ -13,9 +13,10 @@
 
 ## ⚠️ Current status — two reported bugs, one confirmed as a backend issue, one still open
 
-1. **Ringing notification firing more than once for a single incoming request.** Partially
-   addressed (see "Fixes applied" below) but **the user has reported it still happening after the
-   fix landed.** Not resolved.
+1. **Ringing notification firing more than once for a single incoming request.** Root cause found:
+   not a duplicate event, but two overlapping audio sources (notification-channel sound +
+   `IncomingRequestRinger`'s own player) for the same single ring — see "Bug A" below. Fixed in
+   code; **not yet verified on-device.**
 2. **After ending a call and sending a new request to the same sheikh, neither app can navigate
    into the new call — the sheikh app appears to show/return to the first (already-ended)
    meeting.** Root-caused as far as client-side logs allow: **`POST /api/instant-meetings/{id}/end`
@@ -120,7 +121,30 @@ show successful `refreshToken`/retry cycles in later sessions).
 
 ### Bug A: ringing notification firing more than once per incoming request
 
-**Fixes applied**:
+**Update — root cause found and fixed**: the reported symptom ("2 rings a few milliseconds apart,
+sounds like an echo") was never a duplicate STOMP event or a duplicate `notify()` call — it was
+**two independent audio sources firing for the same single ring**.
+`SheikhAvailabilityForegroundService.ensureChannels()` created the `RINGING_CHANNEL_ID` channel
+with its own `setSound(ringtoneUri, ...)`, so Android's system played that channel's alert sound
+the instant `notifySafely()` posted the heads-up notification. At the same time,
+`showRingingNotification()` also calls `ringer.start()` (`IncomingRequestRinger`), which starts its
+**own** looping `MediaPlayer` on the same default ringtone. Two players, same ringtone, started a
+few ms apart (notification post vs. `MediaPlayer.prepare()`/`start()`) — exactly the echo effect
+reported, and it happened on every single ring, unconditionally (unrelated to the "possible
+duplicate STOMP delivery" theory below, which remains unconfirmed and may still be worth checking
+if echoing persists).
+
+**Fix applied**: removed `setSound(...)` from the ringing channel — `IncomingRequestRinger` is now
+the sole audio source (it already loops, respects ringer mode/DND, and has its own 45s timeout).
+Notification channels are immutable once created, so devices that already got the old
+sound-bearing channel needed it recreated under a new ID: `RINGING_CHANNEL_ID` changed from
+`"sheikh_availability_ringing"` to `"sheikh_availability_ringing_v2"`, and `ensureChannels()` now
+calls `manager.deleteNotificationChannel(LEGACY_RINGING_CHANNEL_ID)` to clean up the old one instead
+of leaving an orphaned channel in system settings. `:sheikh:presentation` `compileDebugKotlin`
+clean. **Not yet verified on-device** — no emulator/device available in this environment.
+
+**Previously-applied fixes** (still in place, real hardening, but not the actual cause of the
+echo):
 1. `goAvailable()` in `SheikhAvailabilityController` had no idempotency guard. Since it's now a
    process-lifetime singleton (unlike the old ViewModel it replaced, which was recreated — and thus
    implicitly re-guarded — every time Home was recomposed), a second call anywhere in the process's

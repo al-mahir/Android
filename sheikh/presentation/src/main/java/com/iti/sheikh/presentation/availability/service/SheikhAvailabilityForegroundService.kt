@@ -11,8 +11,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -32,14 +30,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
 
-/**
- * Keeps the sheikh's availability listening alive regardless of screen/background state — the
- * Uber-style "you're online" counterpart to [com.iti.meeting.presentation.call.session
- * .CallForegroundService], which does the same for an active call. Shows a persistent, silent
- * "You're Online" notification (deactivatable via its own action) plus, whenever
- * [SheikhAvailabilityController.state] is [AvailabilityUiState.IncomingRequest], a separate loud
- * ringing notification with Accept/Decline actions.
- */
+
 @Suppress("InlinedApi")
 class SheikhAvailabilityForegroundService : Service() {
 
@@ -145,8 +136,9 @@ class SheikhAvailabilityForegroundService : Service() {
             )
         }
 
+              manager.deleteNotificationChannel(LEGACY_RINGING_CHANNEL_ID)
+
         if (manager.getNotificationChannel(RINGING_CHANNEL_ID) == null) {
-            val ringtoneUri = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_RINGTONE)
             manager.createNotificationChannel(
                 NotificationChannel(
                     RINGING_CHANNEL_ID,
@@ -154,15 +146,10 @@ class SheikhAvailabilityForegroundService : Service() {
                     NotificationManager.IMPORTANCE_HIGH,
                 ).apply {
                     enableVibration(true)
-                    if (ringtoneUri != null) {
-                        setSound(
-                            ringtoneUri,
-                            AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                                .build(),
-                        )
-                    }
+                    // No setSound(): IncomingRequestRinger is the sole audio source for ringing
+                    // (it loops, respects ringer mode/DND, and has its own timeout) — attaching a
+                    // sound here too would make the system play a second, overlapping alert.
+                    setSound(null, null)
                 },
             )
         }
@@ -260,7 +247,8 @@ class SheikhAvailabilityForegroundService : Service() {
         private const val ACTION_GO_OFFLINE = "com.iti.sheikh.presentation.availability.service.ACTION_GO_OFFLINE"
         private const val ACTION_DECLINE = "com.iti.sheikh.presentation.availability.service.ACTION_DECLINE"
         private const val ONLINE_CHANNEL_ID = "sheikh_availability_online"
-        private const val RINGING_CHANNEL_ID = "sheikh_availability_ringing"
+        private const val LEGACY_RINGING_CHANNEL_ID = "sheikh_availability_ringing"
+        private const val RINGING_CHANNEL_ID = "sheikh_availability_ringing_v2"
         private const val ONLINE_NOTIFICATION_ID = 4301
         private const val RINGING_NOTIFICATION_ID = 4302
         private const val TAG = "SheikhAvailabilityForegroundService"
