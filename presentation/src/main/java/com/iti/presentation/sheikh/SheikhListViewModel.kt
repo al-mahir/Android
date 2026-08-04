@@ -18,8 +18,10 @@ import com.iti.presentation.sheikh.state.SheikhListEffect
 import com.iti.presentation.sheikh.state.SheikhListIntent
 import com.iti.presentation.sheikh.state.SheikhListUiState
 import com.iti.presentation.sheikh.state.applyFilters
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class SheikhListViewModel(
@@ -33,6 +35,7 @@ class SheikhListViewModel(
     init {
         load()
         observeBookmarkedSheikhs()
+        pollAvailability()
     }
 
     fun onIntent(intent: SheikhListIntent) = when (intent) {
@@ -66,9 +69,9 @@ class SheikhListViewModel(
         }
     }
 
-    private fun load() {
+    private fun load(silent: Boolean = false) {
         viewModelScope.launch {
-            updateState { copy(isLoading = true, isError = false) }
+            if (!silent) updateState { copy(isLoading = true, isError = false) }
             getSheikhs().fold(
                 onSuccess = { list ->
                     updateState {
@@ -81,9 +84,21 @@ class SheikhListViewModel(
                     }
                 },
                 onError = {
-                    updateState { copy(isLoading = false, isError = true) }
+                    // A silent background refresh failing (e.g. transient network blip) shouldn't
+                    // blow away an already-loaded list into an error screen.
+                    if (!silent) updateState { copy(isLoading = false, isError = true) }
                 },
             )
+        }
+    }
+
+
+    private fun pollAvailability() {
+        viewModelScope.launch {
+            while (isActive) {
+                delay(AVAILABILITY_POLL_INTERVAL_MS)
+                load(silent = true)
+            }
         }
     }
 
@@ -103,5 +118,9 @@ class SheikhListViewModel(
                 filteredSheikhs = sheikhs.applyFilters(searchQuery, filter),
             )
         }
+    }
+
+    private companion object {
+        const val AVAILABILITY_POLL_INTERVAL_MS = 20_000L
     }
 }
