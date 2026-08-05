@@ -65,16 +65,7 @@ fun createMeetingHttpClient(
         }
     }
 
-    // This client has no refresh logic of its own by design (see `MeetingAuthTokenProvider`'s
-    // KDoc) — previously a plain `onRequest` hook just statically attached whatever token
-    // `currentToken()` returned, so a 401/403 here (e.g. an access token that expired between
-    // requests) was returned straight to the caller with no retry at all — the actual root cause
-    // of a "meeting request" call failing outright even when the app's other, Auth-plugin-backed
-    // HTTP client would have refreshed and retried transparently for the same kind of failure.
-    // Mirrors that same `Auth`/`bearer` mechanism here: on 401/403, ask the host to refresh (up to
-    // [MAX_REFRESH_ATTEMPTS] times) and retry once with the fresh token; if refreshing still
-    // can't produce a working token, tell the host the session has expired so it can log the user
-    // out (`MeetingAuthTokenProvider.onAuthenticationExpired`).
+
     install(Auth) {
         reAuthorizeOnResponse { response ->
             response.status == HttpStatusCode.Unauthorized || response.status == HttpStatusCode.Forbidden
