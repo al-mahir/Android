@@ -7,7 +7,7 @@ import com.iti.meeting.domain.model.ActiveCallRecord
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.MeetingRequestEvent
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
-import com.iti.meeting.presentation.call.CallUiState
+import com.iti.meeting.presentation.call.state.CallUiState
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
 import com.iti.meeting.presentation.core.mvi.StateHolder
 import io.agora.rtc2.Constants
@@ -261,13 +261,7 @@ class CallSessionController(
         updateCallState { if (this is CallUiState.Ended) this else CallUiState.Ended }
     }
 
-    /** [repository.endMeeting] was previously fire-and-forget with its [Result] discarded — if it
-     * failed (network blip, an auth retry that ultimately gave up, etc.) the client-side UI still
-     * showed [CallUiState.Ended] as normal, but the backend was never told, so it never broadcasts
-     * `MEETING_ENDED` and the sheikh's server-side status stays BUSY: no local symptom at all, but
-     * every subsequent request to that sheikh silently can't go anywhere. One retry, with logging
-     * either way so a stuck case is traceable in logcat under this tag. */
-    private suspend fun endMeetingReliably(id: String) {
+       private suspend fun endMeetingReliably(id: String) {
         repository.endMeeting(id)
             .onSuccess { Log.d(TAG, "endCall: endMeeting($id) SUCCESS") }
             .onFailure { error ->
