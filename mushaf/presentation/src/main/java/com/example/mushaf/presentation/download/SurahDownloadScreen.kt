@@ -49,6 +49,7 @@ fun SurahDownloadScreen(
     modifier: Modifier = Modifier,
 ) {
     val viewModel: SurahDownloadViewModel = koinViewModel(
+        key = "surah_download_$reciterId",
         parameters = { parametersOf(reciterId) }
     )
     val state by viewModel.state.collectAsStateWithLifecycle()

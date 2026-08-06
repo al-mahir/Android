@@ -30,6 +30,9 @@ interface RecitationDao {
     @Query("SELECT * FROM download_status WHERE reciterId = :reciterId")
     fun observeAllDownloadStatusesForReciter(reciterId: Int): Flow<List<DownloadStatusEntity>>
 
+    @Query("SELECT * FROM download_status")
+    fun observeAllDownloadStatuses(): Flow<List<DownloadStatusEntity>>
+
     @Query("DELETE FROM ayah_timings WHERE reciterId = :reciterId AND verseKey LIKE :surahId || ':%'")
     suspend fun deleteTimingsForSurah(reciterId: Int, surahId: Int)
 

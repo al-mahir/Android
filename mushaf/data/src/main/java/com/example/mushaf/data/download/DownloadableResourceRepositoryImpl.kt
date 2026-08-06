@@ -11,6 +11,7 @@ import com.example.mushaf.domain.repository.RecitationRepository
 import com.iti.domain.core.Result
 import com.iti.domain.core.resultOf
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
@@ -30,22 +31,31 @@ class DownloadableResourceRepositoryImpl(
     }
 
     private fun observeReciters(): Flow<Result<List<DownloadableResource>>> {
-        return recitationRepository.getReciters().map { recitersResult ->
+        return combine(
+            recitationRepository.getReciters(),
+            recitationDao.observeAllDownloadStatuses()
+        ) { recitersResult, downloadStatuses ->
             when (recitersResult) {
                 is Result.Success -> {
                     val resources = recitersResult.data.map { reciter ->
+                        val reciterStatuses = downloadStatuses.filter { it.reciterId == reciter.id }
+                        val fullStatus = reciterStatuses.find { it.id == "${reciter.id}_full" }
                         val localTimings = recitationDao.getAllTimingsForReciter(reciter.id)
                         val dbDownloadedCount = localTimings.count { it.localAudioPath != null && java.io.File(it.localAudioPath).exists() }
                         val audioDir = java.io.File(context.filesDir, "audio/${reciter.id}")
                         val fileDownloadedCount = if (audioDir.exists()) audioDir.listFiles { _, name -> name.endsWith(".mp3") }?.size ?: 0 else 0
                         val downloadedCount = maxOf(dbDownloadedCount, fileDownloadedCount)
 
-                        val state = if (downloadedCount >= 6236) {
-                            DownloadState.Downloaded
-                        } else if (downloadedCount > 0) {
-                            DownloadState.Downloading(downloadedCount.toFloat() / 6236f)
-                        } else {
-                            DownloadState.NotDownloaded
+                        val state = when {
+                            fullStatus?.isCompleted == true || downloadedCount >= 6236 -> DownloadState.Downloaded
+                            fullStatus?.isDownloading == true -> DownloadState.Downloading(fullStatus.progress / 100f)
+                            reciterStatuses.any { it.isDownloading } -> {
+                                val activeDownloading = reciterStatuses.filter { it.isDownloading }
+                                val avgProgress = activeDownloading.map { it.progress }.average().toFloat()
+                                DownloadState.Downloading((downloadedCount.toFloat() / 6236f).coerceAtLeast(avgProgress / 100f))
+                            }
+                            downloadedCount > 0 -> DownloadState.Downloading(downloadedCount.toFloat() / 6236f)
+                            else -> DownloadState.NotDownloaded
                         }
 
                         val exactSizeBytes = when (reciter.id) {

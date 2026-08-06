@@ -13,16 +13,19 @@ import com.example.mushaf.presentation.R
 @Composable
 fun LocalizedText.resolve(): String {
     val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
-    return if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) arabic else english
+    val configLocale = LocalConfiguration.current.locales[0]
+    val isArabic = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl || 
+                   configLocale?.language == ARABIC_LANGUAGE
+    return if (isArabic) arabic else english
 }
-
-
-
 
 @Composable
 fun rememberFormattedSize(sizeBytes: Long): String {
     val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
-    val locale = if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) java.util.Locale("ar") else java.util.Locale("en")
+    val configLocale = LocalConfiguration.current.locales[0]
+    val isArabic = layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl || 
+                   configLocale?.language == ARABIC_LANGUAGE
+    val locale = if (isArabic) java.util.Locale("ar") else (configLocale ?: java.util.Locale.ENGLISH)
     
     val sizeInGb = sizeBytes / (1024f * 1024f * 1024f)
     val sizeInMb = sizeBytes / (1024f * 1024f)

@@ -14,4 +14,7 @@ data class DownloadStatusEntity(
     val totalSizeBytes: Long,
     val downloadedBytes: Long,
     val errorMessage: String?
-)
+) {
+    val isCompleted: Boolean get() = state == "COMPLETED"
+    val isDownloading: Boolean get() = state == "DOWNLOADING" || state == "PENDING"
+}

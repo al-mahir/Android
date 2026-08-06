@@ -60,7 +60,8 @@ class SurahDownloadViewModel(
             .launchIn(viewModelScope)
 
         getDownloadProgress(reciterId)
-            .onEach { statuses ->
+            .onEach { allStatuses ->
+                val statuses = allStatuses.filter { it.reciterId == reciterId }
                 updateState {
                     val isFullCompleted = statuses.any { it.id == "${reciterId}_full" && it.isCompleted }
                     val newSurahs = surahs.map { item ->
