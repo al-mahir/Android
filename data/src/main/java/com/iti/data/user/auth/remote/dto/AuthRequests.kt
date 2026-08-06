@@ -39,3 +39,9 @@ data class ResetPasswordRequest(
     val newPassword: String,
     val confirmPassword: String,
 )
+
+@Serializable
+data class ChangePasswordRequest(
+    val password: String,
+    val confirmPassword: String,
+)

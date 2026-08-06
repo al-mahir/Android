@@ -1,12 +1,11 @@
 package com.iti.data.user.auth.remote
 
 import com.iti.data.user.auth.remote.dto.AuthDataDto
-import com.iti.data.user.auth.remote.dto.ForgotPasswordRequest
+import com.iti.data.user.auth.remote.dto.ChangePasswordRequest
 import com.iti.data.user.auth.remote.dto.GoogleAuthRequest
 import com.iti.data.user.auth.remote.dto.LoginRequest
 import com.iti.data.user.auth.remote.dto.LogoutRequest
 import com.iti.data.user.auth.remote.dto.RegisterRequest
-import com.iti.data.user.auth.remote.dto.ResetPasswordRequest
 import com.iti.data.user.auth.remote.dto.UserDto
 import com.iti.data.core.network.AlmahirApi
 import com.iti.data.core.network.dto.ApiResponse
@@ -83,11 +82,17 @@ class AuthRemoteDataSource(
     suspend fun logout(request: LogoutRequest): ApiResponse<Unit> =
         postJson(AlmahirApi.Auth.LOGOUT, request)
 
-    suspend fun forgotPassword(request: ForgotPasswordRequest): ApiResponse<Unit> =
-        postJson(AlmahirApi.Auth.FORGOT_PASSWORD, request)
+    suspend fun verifyEmail(email: String): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.verifyEmail(email)).body()
 
-    suspend fun resetPassword(request: ResetPasswordRequest): ApiResponse<Unit> =
-        postJson(AlmahirApi.Auth.RESET_PASSWORD, request)
+    suspend fun verifyOtp(otp: String, email: String): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.verifyOtp(otp, email)).body()
+
+    suspend fun changePassword(email: String, request: ChangePasswordRequest): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.changePassword(email)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
 
     private suspend inline fun <reified B : Any, reified R> postJson(
         path: String,
