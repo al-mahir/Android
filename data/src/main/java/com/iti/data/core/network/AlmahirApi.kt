@@ -12,13 +12,22 @@ object AlmahirApi {
         const val GOOGLE = "api/auth/user/google"
         const val REFRESH = "api/auth/user/refresh"
         const val LOGOUT = "api/auth/logout"
-        const val FORGOT_PASSWORD = "api/auth/user/forgot-password"
-        const val RESET_PASSWORD = "api/auth/user/reset-password"
 
-        private val PUBLIC = setOf(REGISTER, LOGIN, GOOGLE, REFRESH, FORGOT_PASSWORD, RESET_PASSWORD)
+        object ForgotPassword {
+            fun verifyEmail(email: String) = "forgot-password/verify-email/$email"
+            fun verifyOtp(otp: String, email: String) = "forgot-password/verify-otp/$otp/$email"
+            fun changePassword(email: String) = "forgot-password/change-password/$email"
+        }
 
-        fun isPublic(encodedPath: String): Boolean =
-            encodedPath.trim('/') in PUBLIC
+        private val PUBLIC_EXACT = setOf(REGISTER, LOGIN, GOOGLE, REFRESH)
+
+        fun isPublic(encodedPath: String): Boolean {
+            val clean = encodedPath.trim('/')
+            return clean in PUBLIC_EXACT ||
+                clean.contains("forgot-password/") ||
+                clean.startsWith("forgot-password/") ||
+                clean.startsWith("api/auth/forgot-password/")
+        }
 
         object Sheikh {
             const val REGISTER = "api/auth/sheikh/register"
@@ -26,10 +35,15 @@ object AlmahirApi {
             const val GOOGLE = "api/auth/sheikh/google"
             const val REFRESH = "api/auth/sheikh/refresh"
 
-            private val PUBLIC = setOf(REGISTER, LOGIN, GOOGLE, REFRESH)
+            private val PUBLIC_EXACT = setOf(REGISTER, LOGIN, GOOGLE, REFRESH)
 
-            fun isPublic(encodedPath: String): Boolean =
-                encodedPath.trim('/') in PUBLIC
+            fun isPublic(encodedPath: String): Boolean {
+                val clean = encodedPath.trim('/')
+                return clean in PUBLIC_EXACT ||
+                    clean.contains("forgot-password/") ||
+                    clean.startsWith("forgot-password/") ||
+                    clean.startsWith("api/auth/forgot-password/")
+            }
         }
     }
 

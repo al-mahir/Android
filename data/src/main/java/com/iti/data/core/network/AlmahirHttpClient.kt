@@ -75,7 +75,7 @@ fun createAlmahirHttpClient(
                     Log.d("HttpClient", message)
                 }
             }
-            level = LogLevel.BODY
+            level = LogLevel.HEADERS
             sanitizeHeader { header -> header == HttpHeaders.Authorization }
         }
     }
