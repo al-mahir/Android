@@ -11,12 +11,16 @@ data class DownloadsUiState(
     val errorMessageRes: Int? = null,
     val pendingDeletion: DownloadableResource? = null,
     val pendingFullDownload: DownloadableResource? = null,
+    val pendingDownloadOptions: DownloadableResource? = null,
 ) {
     val isEmpty: Boolean get() = !isLoading && resources.isEmpty() && errorMessageRes == null
 }
 
 sealed interface DownloadsIntent {
     data class DownloadClicked(val id: String) : DownloadsIntent
+    data object DownloadOptionsFullQuran : DownloadsIntent
+    data object DownloadOptionsSurahs : DownloadsIntent
+    data object DownloadOptionsDismissed : DownloadsIntent
     data object DownloadFullConfirmed : DownloadsIntent
     data object DownloadFullDismissed : DownloadsIntent
     data class CancelClicked(val id: String) : DownloadsIntent

@@ -14,8 +14,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -136,10 +138,23 @@ fun DownloadsContent(
         }
     }
 
+    state.pendingDownloadOptions?.let { _ ->
+        ConfirmationDialog(
+            title = stringResource(R.string.download_dialog_title),
+            message = stringResource(R.string.download_dialog_message),
+            confirmLabel = stringResource(R.string.download_dialog_entire_quran),
+            dismissLabel = stringResource(R.string.download_dialog_select_surahs),
+            onConfirm = { onIntent(DownloadsIntent.DownloadOptionsFullQuran) },
+            onDismiss = { onIntent(DownloadsIntent.DownloadOptionsSurahs) },
+            onDismissRequest = { onIntent(DownloadsIntent.DownloadOptionsDismissed) },
+        )
+    }
+
     state.pendingFullDownload?.let { target ->
+        val formattedSize = com.example.mushaf.presentation.download.components.rememberFormattedSize(target.sizeBytes)
         ConfirmationDialog(
             title = stringResource(R.string.downloads_full_quran_title),
-            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve()),
+            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve(), formattedSize),
             confirmLabel = stringResource(R.string.downloads_action_download),
             dismissLabel = stringResource(R.string.downloads_delete_cancel),
             onConfirm = { onIntent(DownloadsIntent.DownloadFullConfirmed) },

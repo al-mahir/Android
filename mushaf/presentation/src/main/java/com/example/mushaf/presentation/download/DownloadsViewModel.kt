@@ -45,11 +45,23 @@ class DownloadsViewModel(
                 if (kind == ResourceKind.RECITER) {
                     val resource = currentState.resources.firstOrNull { it.id == intent.id }
                     if (resource != null) {
-                        updateState { copy(pendingFullDownload = resource) }
+                        updateState { copy(pendingDownloadOptions = resource) }
                     }
                 } else {
                     viewModelScope.launch { startDownload(intent.id) }
                 }
+            }
+            DownloadsIntent.DownloadOptionsFullQuran -> {
+                val target = currentState.pendingDownloadOptions ?: return
+                updateState { copy(pendingDownloadOptions = null, pendingFullDownload = target) }
+            }
+            DownloadsIntent.DownloadOptionsSurahs -> {
+                val target = currentState.pendingDownloadOptions ?: return
+                updateState { copy(pendingDownloadOptions = null) }
+                sendEffect(DownloadsEffect.NavigateToSurahList(target.id))
+            }
+            DownloadsIntent.DownloadOptionsDismissed -> {
+                updateState { copy(pendingDownloadOptions = null) }
             }
             DownloadsIntent.DownloadFullConfirmed -> {
                 val target = currentState.pendingFullDownload ?: return
