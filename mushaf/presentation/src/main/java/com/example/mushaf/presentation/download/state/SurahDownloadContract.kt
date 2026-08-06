@@ -4,6 +4,7 @@ import com.example.mushaf.domain.model.DownloadStatus
 
 data class SurahDownloadUiState(
     val reciterId: Int = -1,
+    val reciterName: com.example.mushaf.domain.model.LocalizedText? = null,
     val surahs: List<SurahDownloadItem> = emptyList(),
 )
 

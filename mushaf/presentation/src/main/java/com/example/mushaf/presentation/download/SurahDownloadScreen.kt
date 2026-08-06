@@ -36,6 +36,7 @@ import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.download.state.SurahDownloadIntent
 import com.example.mushaf.presentation.download.state.SurahDownloadItem
 import com.example.mushaf.presentation.download.state.SurahDownloadUiState
+import com.example.mushaf.presentation.download.components.resolve
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -91,7 +92,7 @@ fun SurahDownloadContent(
             .background(Theme.colors.backGround)
     ) {
         PlainTitleTopBar(
-            title = stringResource(R.string.downloads_title_reciters),
+            title = state.reciterName?.resolve() ?: stringResource(R.string.downloads_title_reciters),
             onBackClick = onBack
         )
 
@@ -111,6 +112,13 @@ fun SurahDownloadContent(
     }
 }
 
+private fun Int.toArabicNumerals(): String {
+    val arabicDigits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
+    return toString().map { char ->
+        if (char in '0'..'9') arabicDigits[char - '0'] else char
+    }.joinToString("")
+}
+
 @Composable
 fun SurahDownloadCard(
     item: SurahDownloadItem,
@@ -118,6 +126,9 @@ fun SurahDownloadCard(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isArabic = androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ar"
+    val numberStr = if (isArabic) item.surahNumber.toArabicNumerals() else item.surahNumber.toString()
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -128,7 +139,7 @@ fun SurahDownloadCard(
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small)
     ) {
         Text(
-            text = stringResource(R.string.surah_number_name_format, item.surahNumber, item.name),
+            text = "$numberStr. ${item.name}",
             style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
             color = Theme.colors.primaryFont,
             modifier = Modifier.weight(1f)
