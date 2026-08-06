@@ -110,7 +110,7 @@
 
     <!-- Full Quran Download confirmation -->
     <string name="downloads_full_quran_title">تنزيل القرآن كاملًا؟</string>
-    <string name="downloads_full_quran_message">أنت على وشك تنزيل تلاوة القرآن كاملًا للشيخ %1$s. سيتطلب هذا حوالي 1.2 جيجابايت من مساحة التخزين.</string>
+    <string name="downloads_full_quran_message">أنت على وشك تنزيل تلاوة القرآن كاملًا للشيخ %1$s. سيتطلب هذا حوالي %2$s من مساحة التخزين.</string>
 
     <!-- Errors -->
     <string name="downloads_error_generic">لم نتمكن من تحميل هذه القائمة. يرجى المحاولة مرة أخرى.</string>
@@ -234,9 +234,11 @@
 
     <!-- Download options dialog -->
     <string name="download_dialog_title">تحميل التلاوة</string>
-    <string name="download_dialog_message">هل تريد تحميل القرآن كاملاً (~١.٢ جيجابايت) أو اختيار سور محددة؟</string>
+    <string name="download_dialog_message">هل تريد تحميل القرآن كاملاً أو اختيار سور محددة؟</string>
     <string name="download_dialog_entire_quran">القرآن كاملاً</string>
     <string name="download_dialog_select_surahs">اختيار السور</string>
+    <string name="downloads_size_gb">%1$s جيجابايت</string>
+    <string name="downloads_size_mb">%1$s ميجابايت</string>
 
     <string name="surah_number_name_format">%1$d. %2$s</string>
 </resources>

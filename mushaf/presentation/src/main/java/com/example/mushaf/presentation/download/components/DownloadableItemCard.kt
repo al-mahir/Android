@@ -117,13 +117,11 @@ private fun DownloadTrailing(
             )
 
             is DownloadState.Downloading -> {
-                
-                
                 Box(
                     modifier = Modifier
                         .size(Theme.size.iconMedium)
                         .clip(CircleShape)
-                        .clickable(onClick = onCancel)
+                        .clickable(onClick = onDownload)
                         .semantics { role = Role.Button },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -135,9 +133,9 @@ private fun DownloadTrailing(
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                     Icon(
-                        painter = painterResource(DesignSystemR.drawable.ic_cancel),
-                        contentDescription = stringResource(R.string.downloads_action_cancel),
-                        tint = Theme.colors.hint,
+                        painter = painterResource(DesignSystemR.drawable.ic_download),
+                        contentDescription = stringResource(R.string.downloads_action_download),
+                        tint = Theme.colors.primary,
                         modifier = Modifier.size(Theme.size.iconSmall),
                     )
                 }
