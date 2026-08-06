@@ -4,7 +4,7 @@ import java.util.regex.Pattern
 
 object AuthValidators {
 
-    private const val EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$"
+    private const val EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}$"
     private const val PASSWORD_PATTERN = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#\$%^&+=!]).{8,}\$"
 
 
@@ -14,7 +14,7 @@ object AuthValidators {
     private val passwordPattern = Pattern.compile(PASSWORD_PATTERN)
     private val egyptPhonePattern = Pattern.compile(EGYPT_PHONE_PATTERN)
 
-    fun isValidEmail(email: String): Boolean = emailPattern.matcher(email).matches()
+    fun isValidEmail(email: String): Boolean = emailPattern.matcher(email.trim()).matches()
 
     fun isValidPassword(password: String): Boolean = passwordPattern.matcher(password).matches()
 

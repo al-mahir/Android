@@ -22,39 +22,71 @@ class RegisterUseCase(private val repository: AuthRepository) {
         password: String,
         phoneNumber: String
     ): Result<User> {
+        val trimmedUsername = username.trim()
+        val trimmedFirstName = firstName.trim()
+        val trimmedLastName = lastName.trim()
+        val trimmedEmail = email.trim()
+        val trimmedPhone = phoneNumber.trim()
+
         val fieldErrors = buildMap {
-            if (username.isBlank()) put(AuthField.USERNAME, AuthValidationCode.REQUIRED)
-            if (firstName.isBlank()) put(AuthField.FIRST_NAME, AuthValidationCode.REQUIRED)
-            if (lastName.isBlank()) put(AuthField.LAST_NAME, AuthValidationCode.REQUIRED)
-            if (!AuthValidators.isValidPhoneNumber(phoneNumber)) {
+            if (trimmedUsername.isBlank()) put(AuthField.USERNAME, AuthValidationCode.REQUIRED)
+            if (trimmedFirstName.isBlank()) put(AuthField.FIRST_NAME, AuthValidationCode.REQUIRED)
+            if (trimmedLastName.isBlank()) put(AuthField.LAST_NAME, AuthValidationCode.REQUIRED)
+            if (trimmedPhone.isBlank()) {
+                put(AuthField.PHONE_NUMBER, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidPhoneNumber(trimmedPhone)) {
                 put(AuthField.PHONE_NUMBER, AuthValidationCode.INVALID_PHONE_NUMBER)
             }
-            if (!AuthValidators.isValidEmail(email)) put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
-            if (!AuthValidators.isValidPassword(password)) put(AuthField.PASSWORD, AuthValidationCode.WEAK_PASSWORD)
+            if (trimmedEmail.isBlank()) {
+                put(AuthField.EMAIL, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidEmail(trimmedEmail)) {
+                put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
+            }
+            if (password.isBlank()) {
+                put(AuthField.PASSWORD, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidPassword(password)) {
+                put(AuthField.PASSWORD, AuthValidationCode.WEAK_PASSWORD)
+            }
         }
 
         if (fieldErrors.isNotEmpty()) return validationFailure(fieldErrors)
 
-        return repository.register(username, firstName, lastName, email, password, phoneNumber)
+        return repository.register(
+            username = trimmedUsername,
+            firstName = trimmedFirstName,
+            lastName = trimmedLastName,
+            email = trimmedEmail,
+            password = password,
+            phoneNumber = trimmedPhone
+        )
     }
 }
 
 class LoginUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(email: String, password: String): Result<AuthData> {
+        val trimmedEmail = email.trim()
         val fieldErrors = buildMap {
-            if (!AuthValidators.isValidEmail(email)) put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
+            if (trimmedEmail.isBlank()) {
+                put(AuthField.EMAIL, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidEmail(trimmedEmail)) {
+                put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
+            }
             if (password.isBlank()) put(AuthField.PASSWORD, AuthValidationCode.REQUIRED)
         }
 
         if (fieldErrors.isNotEmpty()) return validationFailure(fieldErrors)
 
-        return repository.login(email, password)
+        return repository.login(trimmedEmail, password)
     }
 }
 
 class LoginWithGoogleUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(idToken: String): Result<AuthData> {
-        return repository.loginWithGoogle(idToken)
+        val trimmed = idToken.trim()
+        if (trimmed.isBlank()) {
+            return Result.Error(DomainError.ValidationError(AuthValidationCode.REQUIRED))
+        }
+        return repository.loginWithGoogle(trimmed)
     }
 }
 
@@ -76,28 +108,55 @@ class RefreshTokensUseCase(private val repository: AuthRepository) {
 
 class ForgotPasswordUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(email: String): Result<Unit> {
-        if (!AuthValidators.isValidEmail(email)) {
+        val trimmed = email.trim()
+        if (trimmed.isBlank()) {
+            return validationFailure(mapOf(AuthField.EMAIL to AuthValidationCode.REQUIRED))
+        }
+        if (!AuthValidators.isValidEmail(trimmed)) {
             return validationFailure(mapOf(AuthField.EMAIL to AuthValidationCode.INVALID_EMAIL))
         }
-        return repository.forgotPassword(email)
+        return repository.forgotPassword(trimmed)
     }
 }
 
 class VerifyOtpUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(email: String, otp: String): Result<Unit> {
-        if (otp.length != OTP_LENGTH) {
-            return validationFailure(mapOf(AuthField.OTP to AuthValidationCode.INVALID_OTP))
+        val trimmedEmail = email.trim()
+        val trimmedOtp = otp.trim()
+        val fieldErrors = buildMap {
+            if (trimmedEmail.isBlank()) {
+                put(AuthField.EMAIL, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidEmail(trimmedEmail)) {
+                put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
+            }
+            if (trimmedOtp.isBlank()) {
+                put(AuthField.OTP, AuthValidationCode.REQUIRED)
+            } else if (trimmedOtp.length != OTP_LENGTH || !trimmedOtp.all { it.isDigit() }) {
+                put(AuthField.OTP, AuthValidationCode.INVALID_OTP)
+            }
         }
-        return repository.verifyOtp(email, otp)
+        if (fieldErrors.isNotEmpty()) return validationFailure(fieldErrors)
+        return repository.verifyOtp(trimmedEmail, trimmedOtp)
     }
 }
 
 class ResetPasswordUseCase(private val repository: AuthRepository) {
-    suspend operator fun invoke(token: String, newPassword: String): Result<Unit> {
-        if (!AuthValidators.isValidPassword(newPassword)) {
-            return validationFailure(mapOf(AuthField.PASSWORD to AuthValidationCode.WEAK_PASSWORD))
+    suspend operator fun invoke(email: String, newPassword: String): Result<Unit> {
+        val trimmedEmail = email.trim()
+        val fieldErrors = buildMap {
+            if (trimmedEmail.isBlank()) {
+                put(AuthField.EMAIL, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidEmail(trimmedEmail)) {
+                put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
+            }
+            if (newPassword.isBlank()) {
+                put(AuthField.PASSWORD, AuthValidationCode.REQUIRED)
+            } else if (!AuthValidators.isValidPassword(newPassword)) {
+                put(AuthField.PASSWORD, AuthValidationCode.WEAK_PASSWORD)
+            }
         }
-        return repository.resetPassword(token, newPassword)
+        if (fieldErrors.isNotEmpty()) return validationFailure(fieldErrors)
+        return repository.resetPassword(trimmedEmail, newPassword)
     }
 }
 

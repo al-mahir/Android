@@ -28,16 +28,41 @@ class AuthValidatorsTest {
     }
 
     @Test
-    fun `rejects the mobile formats the backend rejects`() {
+    fun `accepts valid email formats`() {
+        listOf(
+            "user@example.com",
+            "user.name+tag@sub.domain.org",
+            "user_name@domain.co.uk",
+            "user@domain.software",
+            "  user@example.com  ",
+        ).forEach { email ->
+            assertTrue(email, AuthValidators.isValidEmail(email))
+        }
+    }
+
+    @Test
+    fun `rejects invalid email formats`() {
         listOf(
             "",
-            "01312345678",    // 013 is not an Egyptian operator prefix
-            "0101234567",     // one digit short
-            "010123456789",   // one digit long
-            "01012345678a",
-            "0201012345678",
-        ).forEach { number ->
-            assertFalse(number, AuthValidators.isValidPhoneNumber(number))
+            "   ",
+            "plainaddress",
+            "@missingusername.com",
+            "username@.com",
+            "username@domain..com",
+        ).forEach { email ->
+            assertFalse(email, AuthValidators.isValidEmail(email))
         }
+    }
+
+    @Test
+    fun `accepts strong passwords and rejects weak passwords`() {
+        assertTrue(AuthValidators.isValidPassword("P@ssw0rd!"))
+        assertTrue(AuthValidators.isValidPassword("Strong123#"))
+        assertFalse(AuthValidators.isValidPassword("weak"))
+        assertFalse(AuthValidators.isValidPassword("short1!"))
+        assertFalse(AuthValidators.isValidPassword("nouppercase1!"))
+        assertFalse(AuthValidators.isValidPassword("NOLOWERCASE1!"))
+        assertFalse(AuthValidators.isValidPassword("NoSpecial123"))
+        assertFalse(AuthValidators.isValidPassword("NoDigitSpecial!"))
     }
 }

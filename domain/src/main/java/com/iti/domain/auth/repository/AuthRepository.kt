@@ -31,7 +31,7 @@ interface AuthRepository {
     
     suspend fun forgotPassword(email: String): Result<Unit>
     
-    suspend fun resetPassword(token: String, newPassword: String): Result<Unit>
+    suspend fun resetPassword(email: String, newPassword: String): Result<Unit>
     
     suspend fun verifyOtp(email: String, otp: String): Result<Unit>
 }

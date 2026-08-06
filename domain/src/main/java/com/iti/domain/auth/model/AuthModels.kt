@@ -10,7 +10,9 @@ data class User(
     val profilePictureUrl: String? = null,
     val provider: String? = null,
     val roles: List<String> = emptyList(),
-)
+) {
+    val fullName: String get() = "$firstName $lastName".trim()
+}
 
 data class AuthTokens(
     val accessToken: String,
