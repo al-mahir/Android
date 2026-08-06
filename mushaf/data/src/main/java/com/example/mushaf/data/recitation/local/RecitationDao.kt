@@ -35,4 +35,10 @@ interface RecitationDao {
 
     @Query("DELETE FROM ayah_timings WHERE reciterId = :reciterId")
     suspend fun deleteAllTimingsForReciter(reciterId: Int)
+
+    @Query("DELETE FROM download_status WHERE reciterId = :reciterId AND surahId = :surahId")
+    suspend fun deleteDownloadStatusForSurah(reciterId: Int, surahId: Int)
+
+    @Query("DELETE FROM download_status WHERE reciterId = :reciterId")
+    suspend fun deleteAllDownloadStatusesForReciter(reciterId: Int)
 }

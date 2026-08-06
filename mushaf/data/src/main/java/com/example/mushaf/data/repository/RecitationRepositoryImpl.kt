@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 
 class RecitationRepositoryImpl(
     private val dataSource: RecitationDataSource,
@@ -126,11 +127,19 @@ class RecitationRepositoryImpl(
     override fun cancelDownloadRecitation(reciterId: Int, surahNumber: Int?) {
         val tag = "download_reciter_${reciterId}_surah_${surahNumber ?: -1}"
         androidx.work.WorkManager.getInstance(context).cancelAllWorkByTag(tag)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            if (surahNumber != null) {
+                dao.deleteDownloadStatusForSurah(reciterId, surahNumber)
+            } else {
+                dao.deleteAllDownloadStatusesForReciter(reciterId)
+            }
+        }
     }
 
     override fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>> {
         return dao.observeAllDownloadStatusesForReciter(reciterId).map { entities ->
-            entities.map { entity ->
+            val localTimings = dao.getAllTimingsForReciter(reciterId)
+            val mappedStatuses = entities.map { entity ->
                 com.example.mushaf.domain.model.DownloadStatus(
                     id = entity.id,
                     reciterId = entity.reciterId,
@@ -139,7 +148,32 @@ class RecitationRepositoryImpl(
                     state = entity.state,
                     errorMessage = entity.errorMessage
                 )
+            }.toMutableList()
+
+            for (s in 1..114) {
+                val surahCatalogItem = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(s - 1)
+                val expectedVerseCount = surahCatalogItem?.verseCount ?: 0
+                val existingStatus = mappedStatuses.find { it.surahId == s }
+                if (existingStatus == null && expectedVerseCount > 0) {
+                    val downloadedVerses = localTimings.count { 
+                        it.verseKey.startsWith("$s:") && it.localAudioPath != null && java.io.File(it.localAudioPath).exists() 
+                    }
+                    if (downloadedVerses >= expectedVerseCount) {
+                        mappedStatuses.add(
+                            com.example.mushaf.domain.model.DownloadStatus(
+                                id = "${reciterId}_$s",
+                                reciterId = reciterId,
+                                surahId = s,
+                                progress = 100,
+                                state = com.example.mushaf.domain.model.DownloadStatus.STATE_COMPLETED,
+                                errorMessage = null
+                            )
+                        )
+                    }
+                }
             }
+
+            mappedStatuses
         }
     }
 }
