@@ -2,12 +2,11 @@ package com.iti.data.user.auth.repository
 
 import com.iti.data.user.auth.remote.AuthRemoteDataSource
 import com.iti.data.user.auth.remote.dto.AuthDataDto
-import com.iti.data.user.auth.remote.dto.ForgotPasswordRequest
+import com.iti.data.user.auth.remote.dto.ChangePasswordRequest
 import com.iti.data.user.auth.remote.dto.GoogleAuthRequest
 import com.iti.data.user.auth.remote.dto.LoginRequest
 import com.iti.data.user.auth.remote.dto.LogoutRequest
 import com.iti.data.user.auth.remote.dto.RegisterRequest
-import com.iti.data.user.auth.remote.dto.ResetPasswordRequest
 import com.iti.data.user.auth.remote.dto.UserDto
 import com.iti.data.core.network.dto.ApiResponse
 import com.iti.data.core.network.dto.RefreshTokenRequest
@@ -55,26 +54,14 @@ class AuthRepositoryImpl(
                 )
             )
         },
-        onSuccess = { 
-            val user = it.toDomain()
-            tokenStore.saveUserId(user.id)
-            appPreferencesDataStore.saveUser(
-                com.iti.domain.model.User(
-                    id = user.id,
-                    displayName = "${user.firstName} ${user.lastName}".trim(),
-                    initials = "${user.firstName.firstOrNull() ?: ""}${user.lastName.firstOrNull() ?: ""}".uppercase(),
-                    avatarUrl = user.profilePictureUrl,
-                    email = user.email,
-                    joinedAtEpochMillis = System.currentTimeMillis() // Or parse from Dto if available
-                )
-            )
-            user
+        onSuccess = { dto ->
+            dto.toDomain()
         },
     )
 
     override suspend fun login(email: String, password: String): Result<AuthData> = apiCall(
         request = { remoteDataSource.login(LoginRequest(email, password)) },
-        onSuccess = { it.persistThenMap() },
+        onSuccess = { it.persistThenMap(fallbackEmail = email) },
     )
 
     override suspend fun loginWithGoogle(idToken: String): Result<AuthData> = apiCall(
@@ -108,42 +95,143 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun forgotPassword(email: String): Result<Unit> =
-        apiCallForUnit { remoteDataSource.forgotPassword(ForgotPasswordRequest(email)) }
+        apiCallForUnit { remoteDataSource.verifyEmail(email) }
 
-    override suspend fun resetPassword(token: String, newPassword: String): Result<Unit> =
+    override suspend fun verifyOtp(email: String, otp: String): Result<Unit> =
+        apiCallForUnit { remoteDataSource.verifyOtp(otp, email) }
+
+    override suspend fun resetPassword(email: String, newPassword: String): Result<Unit> =
         apiCallForUnit {
-            remoteDataSource.resetPassword(ResetPasswordRequest(token, newPassword, newPassword))
+            remoteDataSource.changePassword(
+                email = email,
+                request = ChangePasswordRequest(password = newPassword, confirmPassword = newPassword)
+            )
         }
 
     override suspend fun getProfile(): Result<User> =
         Result.Error(DomainError.ServerError(NOT_IMPLEMENTED))
 
-    // The backend exposes no OTP endpoint yet; the UI flow is unblocked with a local stub.
-    override suspend fun verifyOtp(email: String, otp: String): Result<Unit> = Result.Success(Unit)
-
-    private suspend fun AuthDataDto.persistThenMap(): AuthData {
-        val tokens = AuthTokens(accessToken.orEmpty(), refreshToken.orEmpty())
-        if (tokens.accessToken.isNotBlank() && tokens.refreshToken.isNotBlank()) {
+    private suspend fun AuthDataDto.persistThenMap(fallbackEmail: String? = null): AuthData {
+        val effectiveAccessToken = accessToken ?: token.orEmpty()
+        val effectiveRefreshToken = refreshToken.orEmpty()
+        val tokens = AuthTokens(effectiveAccessToken, effectiveRefreshToken)
+        if (tokens.accessToken.isNotBlank()) {
             tokenStore.save(TokenPair(tokens.accessToken, tokens.refreshToken))
         }
-        val domainUser = user.toDomain()
-        tokenStore.saveUserId(domainUser.id)
-        
-        appPreferencesDataStore.saveUser(
-            com.iti.domain.model.User(
-                id = domainUser.id,
-                displayName = "${domainUser.firstName} ${domainUser.lastName}".trim(),
-                initials = "${domainUser.firstName.firstOrNull() ?: ""}${domainUser.lastName.firstOrNull() ?: ""}".uppercase(),
-                avatarUrl = domainUser.profilePictureUrl,
-                email = domainUser.email,
-                joinedAtEpochMillis = System.currentTimeMillis() // Or parse from Dto if available
-            )
-        )
-        
+
+        val domainUser = resolveDomainUser(fallbackEmail)
+        if (domainUser.id.isNotBlank()) {
+            tokenStore.saveUserId(domainUser.id)
+        }
+
+        val appUser = resolveAppPreferencesUser(fallbackEmail)
+        // Clear previous user data before saving new user data to prevent stale data leaks
+        appPreferencesDataStore.clearUser()
+        appPreferencesDataStore.saveUser(appUser)
+
         return AuthData(
             tokens = tokens,
             user = domainUser,
             isNewUser = isNewUser ?: false,
+        )
+    }
+
+    private fun AuthDataDto.resolveDomainUser(fallbackEmail: String? = null): User {
+        val nested = this.user
+        val resolvedId = nested?.id?.ifBlank { null }
+            ?: nested?.mongoId?.ifBlank { null }
+            ?: this.id?.ifBlank { null }
+            ?: this.mongoId?.ifBlank { null }
+            ?: ""
+
+        val resolvedUsername = nested?.username
+            ?: this.username
+            ?: ""
+
+        val resolvedFirstName = nested?.firstName
+            ?: this.firstName
+            ?: ""
+
+        val resolvedLastName = nested?.lastName
+            ?: this.lastName
+            ?: ""
+
+        val resolvedEmail = nested?.email
+            ?: this.email
+            ?: fallbackEmail
+            ?: ""
+
+        val resolvedPhone = nested?.phoneNumber
+            ?: nested?.snakePhoneNumber
+            ?: this.phoneNumber
+
+        val resolvedPic = nested?.profilePictureUrl
+            ?: nested?.avatarUrl
+            ?: nested?.snakeAvatarUrl
+            ?: this.profilePictureUrl
+            ?: this.avatarUrl
+
+        val resolvedRoles = if (nested != null && nested.roles.isNotEmpty()) {
+            nested.roles
+        } else {
+            this.roles
+        }
+
+        return User(
+            id = resolvedId,
+            username = resolvedUsername,
+            firstName = resolvedFirstName,
+            lastName = resolvedLastName,
+            email = resolvedEmail,
+            phoneNumber = resolvedPhone,
+            profilePictureUrl = resolvedPic,
+            provider = nested?.provider,
+            roles = resolvedRoles,
+        )
+    }
+
+    private fun AuthDataDto.resolveAppPreferencesUser(fallbackEmail: String? = null): com.iti.domain.model.User {
+        val domainUser = resolveDomainUser(fallbackEmail)
+        val nested = this.user
+
+        val rawDisplayName = nested?.displayName
+            ?: nested?.snakeDisplayName
+            ?: nested?.name
+            ?: this.displayName
+            ?: this.snakeDisplayName
+            ?: this.name
+
+        val displayName = when {
+            !rawDisplayName.isNullOrBlank() -> rawDisplayName.trim()
+            domainUser.firstName.isNotBlank() || domainUser.lastName.isNotBlank() ->
+                "${domainUser.firstName} ${domainUser.lastName}".trim()
+            domainUser.username.isNotBlank() -> domainUser.username
+            domainUser.email.isNotBlank() -> domainUser.email.substringBefore('@')
+            !fallbackEmail.isNullOrBlank() -> fallbackEmail.substringBefore('@')
+            else -> ""
+        }
+
+        val initials = when {
+            domainUser.firstName.isNotBlank() && domainUser.lastName.isNotBlank() ->
+                "${domainUser.firstName.first()}${domainUser.lastName.first()}".uppercase()
+            displayName.isNotBlank() -> {
+                val parts = displayName.split(" ").filter { it.isNotBlank() }
+                if (parts.size >= 2) {
+                    "${parts[0].first()}${parts[1].first()}".uppercase()
+                } else {
+                    displayName.take(2).uppercase()
+                }
+            }
+            else -> ""
+        }
+
+        return com.iti.domain.model.User(
+            id = domainUser.id,
+            displayName = displayName,
+            initials = initials,
+            avatarUrl = domainUser.profilePictureUrl,
+            email = domainUser.email,
+            joinedAtEpochMillis = System.currentTimeMillis(),
         )
     }
 
@@ -154,7 +242,7 @@ class AuthRepositoryImpl(
         val response = request()
         val payload = response.data
         when {
-            !response.success -> Result.Error(response.toDomainError())
+            !response.isSuccessful -> Result.Error(response.toDomainError())
             payload == null -> Result.Error(DomainError.ServerError(response.message ?: EMPTY_PAYLOAD))
             else -> Result.Success(onSuccess(payload))
         }
@@ -168,7 +256,7 @@ class AuthRepositoryImpl(
         request: suspend () -> ApiResponse<Unit>,
     ): Result<Unit> = try {
         val response = request()
-        if (response.success) Result.Success(Unit) else Result.Error(response.toDomainError())
+        if (response.isSuccessful) Result.Success(Unit) else Result.Error(response.toDomainError())
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (throwable: Throwable) {
@@ -176,13 +264,13 @@ class AuthRepositoryImpl(
     }
 
     private fun UserDto?.toDomain(): User = User(
-        id = this?.id.orEmpty(),
+        id = this?.id?.ifBlank { null } ?: this?.mongoId.orEmpty(),
         username = this?.username.orEmpty(),
         firstName = this?.firstName.orEmpty(),
         lastName = this?.lastName.orEmpty(),
         email = this?.email.orEmpty(),
-        phoneNumber = this?.phoneNumber,
-        profilePictureUrl = this?.profilePictureUrl,
+        phoneNumber = this?.phoneNumber ?: this?.snakePhoneNumber,
+        profilePictureUrl = this?.profilePictureUrl ?: this?.avatarUrl ?: this?.snakeAvatarUrl,
         provider = this?.provider,
         roles = this?.roles.orEmpty(),
     )
