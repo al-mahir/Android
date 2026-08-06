@@ -39,10 +39,21 @@
     <string name="auth_send_reset_link">إرسال رابط إعادة التعيين</string>
     <string name="auth_back_to_sign_in">العودة لتسجيل الدخول</string>
 
+    <!-- Reset Password Screen -->
+    <string name="auth_reset_password_title">إعادة تعيين كلمة المرور</string>
+    <string name="auth_reset_password_subtitle">أدخل كلمة المرور الجديدة أدناه</string>
+    <string name="auth_new_password">كلمة المرور الجديدة</string>
+    <string name="auth_enter_new_password">أدخل كلمة المرور الجديدة</string>
+    <string name="auth_confirm_password">تأكيد كلمة المرور</string>
+    <string name="auth_enter_confirm_password">تأكيد كلمة المرور الجديدة</string>
+    <string name="auth_reset_password_button">إعادة تعيين كلمة المرور</string>
+    <string name="auth_password_reset_success">تمت إعادة تعيين كلمة المرور بنجاح. يرجى تسجيل الدخول.</string>
+
     <!-- Authentication errors -->
     <string name="auth_error_required">هذا الحقل مطلوب</string>
     <string name="auth_error_invalid_email">أدخل بريداً إلكترونياً صحيحاً</string>
     <string name="auth_error_weak_password">استخدم 8 أحرف على الأقل تتضمن حرفاً كبيراً وصغيراً ورقماً ورمزاً</string>
+    <string name="auth_error_password_mismatch">كلمتا المرور غير متطابقتين</string>
     <string name="auth_error_invalid_phone_number">أدخل رقم هاتف مصري صحيح، مثال 01012345678</string>
     <string name="auth_error_invalid_otp">أدخل الرمز المكون من 6 أرقام</string>
     <string name="auth_error_validation">يرجى مراجعة الحقول المحددة</string>
@@ -50,6 +61,9 @@
     <string name="auth_error_conflict">يوجد حساب بهذه البيانات بالفعل</string>
     <string name="auth_error_google_unavailable">تسجيل الدخول عبر جوجل غير متاح حالياً. يرجى استخدام بريدك الإلكتروني وكلمة المرور.</string>
     <string name="auth_error_registered_sign_in_failed">تم إنشاء حسابك. يرجى تسجيل الدخول.</string>
+    <string name="auth_otp_verification_failed">فشل التحقق من الرمز. يرجى المحاولة مرة أخرى.</string>
+    <string name="auth_email_verified">تم التحقق من البريد الإلكتروني بنجاح!</string>
+    <string name="auth_email_verified_sign_in">تم التحقق من البريد الإلكتروني! يرجى تسجيل الدخول.</string>
 
     <!-- ===== Shared errors ===== -->
     <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>

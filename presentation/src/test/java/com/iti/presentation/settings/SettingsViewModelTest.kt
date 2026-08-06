@@ -1,6 +1,7 @@
 package com.iti.presentation.settings
 
 import com.iti.domain.core.Result
+import com.iti.domain.model.User
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
@@ -191,6 +192,9 @@ private class FakeAppPreferencesRepository(
         state.value = state.value.copy(dataSaverEnabled = enabled)
         return Result.Success(Unit)
     }
+
+    override suspend fun saveUser(user: User): Result<Unit> = Result.Success(Unit)
+    override suspend fun clearUser(): Result<Unit> = Result.Success(Unit)
 }
 
 private class FakeRecordingsRepository : RecordingsRepository {

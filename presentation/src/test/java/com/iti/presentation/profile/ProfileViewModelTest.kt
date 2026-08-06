@@ -220,12 +220,15 @@ class ProfileViewModelTest {
     private fun viewModel(
         repository: AlmahirRepository,
         authRepository: FakeAuthRepository = FakeAuthRepository(),
+        appPreferencesRepo: com.iti.presentation.testing.FakeAppPreferencesRepository = com.iti.presentation.testing.FakeAppPreferencesRepository(),
+        connectivityObserver: com.iti.presentation.testing.FakeConnectivityObserver = com.iti.presentation.testing.FakeConnectivityObserver(),
     ) = ProfileViewModel(
-        getCurrentUser = GetCurrentUserUseCase(repository),
+        getCurrentUser = GetCurrentUserUseCase(appPreferencesRepo),
         getSubscription = GetSubscriptionUseCase(repository),
         restorePurchases = RestorePurchasesUseCase(repository),
         logout = LogoutUseCase(authRepository),
         deleteAccount = DeleteAccountUseCase(repository),
+        connectivityObserver = connectivityObserver,
     )
 }
 

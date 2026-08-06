@@ -187,3 +187,34 @@ class FakeAlmahirRepository(
     }
 }
 
+class FakeAppPreferencesRepository(
+    initialUser: User? = FakeAlmahirRepository.USER,
+) : com.iti.domain.settings.repository.AppPreferencesRepository {
+    private val state = MutableStateFlow(
+        com.iti.domain.settings.model.AppPreferences(
+            user = initialUser
+        )
+    )
+    override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = state
+    override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): Result<Unit> = Result.Success(Unit)
+    override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): Result<Unit> = Result.Success(Unit)
+    override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+    override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+    override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
+    override suspend fun saveUser(user: User): Result<Unit> {
+        state.value = state.value.copy(user = user)
+        return Result.Success(Unit)
+    }
+    override suspend fun clearUser(): Result<Unit> {
+        state.value = state.value.copy(user = null)
+        return Result.Success(Unit)
+    }
+}
+
+class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
+    override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> =
+        flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+    override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus =
+        com.iti.domain.connectivity.ConnectivityStatus.Available
+}
+

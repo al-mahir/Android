@@ -1,6 +1,7 @@
 package com.iti.presentation.auth.navigation
 
 import androidx.navigation3.runtime.NavKey
+import com.iti.presentation.auth.otp.OtpFlow
 import kotlinx.serialization.Serializable
 
 /**
@@ -21,5 +22,12 @@ sealed interface AuthRoute : NavKey {
     data object ForgotPassword : AuthRoute
 
     @Serializable
-    data class OtpVerify(val email: String) : AuthRoute
+    data class OtpVerify(
+        val email: String,
+        val flow: OtpFlow = OtpFlow.FORGOT_PASSWORD,
+    ) : AuthRoute
+
+    @Serializable
+    data class ResetPassword(val email: String) : AuthRoute
 }
+

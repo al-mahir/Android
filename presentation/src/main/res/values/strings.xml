@@ -39,10 +39,21 @@
     <string name="auth_send_reset_link">Send Reset Link</string>
     <string name="auth_back_to_sign_in">Back to Sign In</string>
 
+    <!-- Reset Password Screen -->
+    <string name="auth_reset_password_title">Reset Password</string>
+    <string name="auth_reset_password_subtitle">Enter your new password below</string>
+    <string name="auth_new_password">New Password</string>
+    <string name="auth_enter_new_password">Enter new password</string>
+    <string name="auth_confirm_password">Confirm Password</string>
+    <string name="auth_enter_confirm_password">Confirm new password</string>
+    <string name="auth_reset_password_button">Reset Password</string>
+    <string name="auth_password_reset_success">Password reset successfully. Please sign in.</string>
+
     <!-- Authentication errors -->
     <string name="auth_error_required">This field is required</string>
     <string name="auth_error_invalid_email">Enter a valid email address</string>
     <string name="auth_error_weak_password">Use at least 8 characters with upper and lower case letters, a number, and a symbol</string>
+    <string name="auth_error_password_mismatch">Passwords do not match</string>
     <string name="auth_error_invalid_phone_number">Enter a valid Egyptian mobile number, e.g. 01012345678</string>
     <string name="auth_error_invalid_otp">Enter the 6-digit code</string>
     <string name="auth_error_validation">Please check the highlighted fields</string>
@@ -50,6 +61,9 @@
     <string name="auth_error_conflict">An account with these details already exists</string>
     <string name="auth_error_google_unavailable">Google sign-in isn\'t available right now. Please use your email and password.</string>
     <string name="auth_error_registered_sign_in_failed">Your account was created. Please sign in.</string>
+    <string name="auth_otp_verification_failed">OTP verification failed. Please try again.</string>
+    <string name="auth_email_verified">Email verified successfully!</string>
+    <string name="auth_email_verified_sign_in">Email verified! Please sign in.</string>
 
     <!-- ===== Shared errors ===== -->
     <string name="error_network">No connection. Please check your network and try again.</string>

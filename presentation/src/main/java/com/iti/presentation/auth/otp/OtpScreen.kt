@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.textfield.OtpField
 import com.example.designsystem.theme.Theme
+import com.example.designsystem.text.asString
 import androidx.compose.ui.res.stringResource
 import com.iti.presentation.R
 
@@ -57,8 +58,20 @@ fun OtpScreen(
             onValueChange = { onIntent(OtpIntent.OtpChanged(it)) },
             length = 6,
             isError = state.isError,
-            modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.large)
+            modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.small)
         )
+
+        if (state.errorMessage != null) {
+            Text(
+                text = state.errorMessage.asString(),
+                style = Theme.typography.body.small,
+                color = Theme.colors.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = Theme.spacing.medium)
+            )
+        } else {
+            Spacer(modifier = Modifier.height(Theme.spacing.medium))
+        }
         
         PrimaryButton(
             caption = stringResource(id = R.string.auth_verify_code),

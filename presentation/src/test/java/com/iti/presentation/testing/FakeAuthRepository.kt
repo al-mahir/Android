@@ -9,7 +9,7 @@ import com.iti.domain.core.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class FakeAuthRepository(
+open class FakeAuthRepository(
     private val loginResult: Result<AuthData> = Result.Success(AUTH_DATA),
     private val registerResult: Result<User> = Result.Success(USER),
     private val logoutResult: Result<Unit> = Result.Success(Unit),
@@ -57,12 +57,12 @@ class FakeAuthRepository(
 
     override suspend fun refreshTokens(): Result<AuthTokens> = Result.Success(TOKENS)
 
-    override suspend fun forgotPassword(email: String): Result<Unit> = Result.Success(Unit)
+    open override suspend fun forgotPassword(email: String): Result<Unit> = Result.Success(Unit)
 
-    override suspend fun resetPassword(token: String, newPassword: String): Result<Unit> =
+    open override suspend fun resetPassword(email: String, newPassword: String): Result<Unit> =
         Result.Success(Unit)
 
-    override suspend fun verifyOtp(email: String, otp: String): Result<Unit> = Result.Success(Unit)
+    open override suspend fun verifyOtp(email: String, otp: String): Result<Unit> = Result.Success(Unit)
 
     companion object {
         val TOKENS = AuthTokens(accessToken = "access", refreshToken = "refresh")
