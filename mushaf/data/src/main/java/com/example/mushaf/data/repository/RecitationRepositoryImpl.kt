@@ -54,7 +54,11 @@ class RecitationRepositoryImpl(
                     // Offline fallback: Use fully local entities
                     localEntities.map { local ->
                         val (surah, ayah) = local.verseKey.split(":").map { it.toInt() }
-                        val segmentsList = kotlinx.serialization.json.Json.decodeFromString<List<List<Long>>>(local.segmentsJson)
+                        val segmentsList = try {
+                            kotlinx.serialization.json.Json.decodeFromString<List<List<Long>>>(local.segmentsJson)
+                        } catch (e: Exception) {
+                            emptyList()
+                        }
                         val wordTimings = segmentsList.map { segmentArray ->
                             com.example.mushaf.domain.model.WordTiming(
                                 wordIndex = segmentArray[0].toInt(),
@@ -70,6 +74,25 @@ class RecitationRepositoryImpl(
                             audioUrl = local.localAudioPath ?: local.audioUrl,
                             wordTimings = wordTimings
                         )
+                    }
+                } else if (remoteList.isEmpty() && verseKeys.isNotEmpty()) {
+                    // Fallback to local files if database entities missing but files exist for this reciter
+                    val audioDir = java.io.File(context.filesDir, "audio/$reciterId")
+                    verseKeys.mapNotNull { vk ->
+                        val parts = vk.split(":")
+                        val s = parts.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
+                        val a = parts.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
+                        val file = java.io.File(audioDir, "${s}_$a.mp3")
+                        if (file.exists()) {
+                            AyahTiming(
+                                surahNumber = s,
+                                ayahNumber = a,
+                                timestampFrom = 0L,
+                                timestampTo = 0L,
+                                audioUrl = file.absolutePath,
+                                wordTimings = emptyList()
+                            )
+                        } else null
                     }
                 } else {
                     // Online: Map remote and overlay with local audio path if downloaded
@@ -128,10 +151,19 @@ class RecitationRepositoryImpl(
         val tag = "download_reciter_${reciterId}_surah_${surahNumber ?: -1}"
         androidx.work.WorkManager.getInstance(context).cancelAllWorkByTag(tag)
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            val audioDir = java.io.File(context.filesDir, "audio/$reciterId")
             if (surahNumber != null) {
                 dao.deleteDownloadStatusForSurah(reciterId, surahNumber)
+                dao.deleteTimingsForSurah(reciterId, surahNumber)
+                if (audioDir.exists()) {
+                    audioDir.listFiles { _, name -> name.startsWith("${surahNumber}_") }?.forEach { it.delete() }
+                }
             } else {
                 dao.deleteAllDownloadStatusesForReciter(reciterId)
+                dao.deleteAllTimingsForReciter(reciterId)
+                if (audioDir.exists()) {
+                    audioDir.deleteRecursively()
+                }
             }
         }
     }
@@ -139,6 +171,7 @@ class RecitationRepositoryImpl(
     override fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>> {
         return dao.observeAllDownloadStatusesForReciter(reciterId).map { entities ->
             val localTimings = dao.getAllTimingsForReciter(reciterId)
+            val audioDir = java.io.File(context.filesDir, "audio/$reciterId")
             val mappedStatuses = entities.map { entity ->
                 com.example.mushaf.domain.model.DownloadStatus(
                     id = entity.id,
@@ -155,9 +188,13 @@ class RecitationRepositoryImpl(
                 val expectedVerseCount = surahCatalogItem?.verseCount ?: 0
                 val existingStatus = mappedStatuses.find { it.surahId == s }
                 if (existingStatus == null && expectedVerseCount > 0) {
-                    val downloadedVerses = localTimings.count { 
-                        it.verseKey.startsWith("$s:") && it.localAudioPath != null && java.io.File(it.localAudioPath).exists() 
+                    val dbDownloadedVerses = localTimings.count { 
+                        it.verseKey.substringBefore(":") == s.toString() && it.localAudioPath != null && java.io.File(it.localAudioPath).exists() 
                     }
+                    val fileDownloadedVerses = if (audioDir.exists()) {
+                        (1..expectedVerseCount).count { v -> java.io.File(audioDir, "${s}_$v.mp3").exists() }
+                    } else 0
+                    val downloadedVerses = maxOf(dbDownloadedVerses, fileDownloadedVerses)
                     if (downloadedVerses >= expectedVerseCount) {
                         mappedStatuses.add(
                             com.example.mushaf.domain.model.DownloadStatus(

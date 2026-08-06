@@ -147,12 +147,27 @@ fun SurahDownloadCard(
 
         when {
             item.status?.isCompleted == true -> {
-                Icon(
-                    painter = painterResource(DesignSystemR.drawable.ic_check),
-                    contentDescription = null,
-                    tint = Theme.colors.success,
-                    modifier = Modifier.size(Theme.size.iconMedium)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall)
+                ) {
+                    Icon(
+                        painter = painterResource(DesignSystemR.drawable.ic_check),
+                        contentDescription = null,
+                        tint = Theme.colors.success,
+                        modifier = Modifier.size(Theme.size.iconMedium)
+                    )
+                    Icon(
+                        painter = painterResource(DesignSystemR.drawable.ic_trash),
+                        contentDescription = stringResource(R.string.downloads_action_delete),
+                        tint = Theme.colors.error,
+                        modifier = Modifier
+                            .size(Theme.size.iconMedium)
+                            .clip(CircleShape)
+                            .clickable(onClick = onCancel)
+                            .padding(2.dp)
+                    )
+                }
             }
             item.isDownloading -> {
                 Box(

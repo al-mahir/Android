@@ -18,6 +18,7 @@ class DownloadableResourceRepositoryImpl(
     private val recitationRepository: RecitationRepository,
     private val mushafRepository: MushafRepository,
     private val recitationDao: RecitationDao,
+    private val context: android.content.Context,
 ) : DownloadableResourceRepository {
 
     override fun observeResources(kind: ResourceKind): Flow<Result<List<DownloadableResource>>> {
@@ -34,7 +35,11 @@ class DownloadableResourceRepositoryImpl(
                 is Result.Success -> {
                     val resources = recitersResult.data.map { reciter ->
                         val localTimings = recitationDao.getAllTimingsForReciter(reciter.id)
-                        val downloadedCount = localTimings.count { it.localAudioPath != null && java.io.File(it.localAudioPath).exists() }
+                        val dbDownloadedCount = localTimings.count { it.localAudioPath != null && java.io.File(it.localAudioPath).exists() }
+                        val audioDir = java.io.File(context.filesDir, "audio/${reciter.id}")
+                        val fileDownloadedCount = if (audioDir.exists()) audioDir.listFiles { _, name -> name.endsWith(".mp3") }?.size ?: 0 else 0
+                        val downloadedCount = maxOf(dbDownloadedCount, fileDownloadedCount)
+
                         val state = if (downloadedCount >= 6236) {
                             DownloadState.Downloaded
                         } else if (downloadedCount > 0) {
@@ -125,6 +130,11 @@ class DownloadableResourceRepositoryImpl(
         if (reciterId != null) {
             recitationRepository.cancelDownloadRecitation(reciterId, null)
             recitationDao.deleteAllTimingsForReciter(reciterId)
+            recitationDao.deleteAllDownloadStatusesForReciter(reciterId)
+            val audioDir = java.io.File(context.filesDir, "audio/$reciterId")
+            if (audioDir.exists()) {
+                audioDir.deleteRecursively()
+            }
         } else {
             mushafRepository.deleteTafsirBook(id)
         }

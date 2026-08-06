@@ -79,7 +79,7 @@ val mushafDataModule = module {
     single<ReaderPreferencesRepository> { get<MushafPreferencesRepositoryImpl>() }
     single<RecitationSettingsRepository> { get<MushafPreferencesRepositoryImpl>() }
 
-    single<DownloadableResourceRepository> { DownloadableResourceRepositoryImpl(get(), get(), get()) }
+    single<DownloadableResourceRepository> { DownloadableResourceRepositoryImpl(get(), get(), get(), androidContext()) }
 
     single<PcmRecorder> { AudioRecordPcmRecorder() }
     single { WavDebugSink(androidContext()) }
