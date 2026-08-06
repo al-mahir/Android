@@ -43,12 +43,33 @@ class DownloadableResourceRepositoryImpl(
                             DownloadState.NotDownloaded
                         }
 
+                        val exactSizeBytes = when (reciter.id) {
+                            7 -> 1500L * 1024 * 1024 // Mishari
+                            3 -> 4500L * 1024 * 1024 // Sudais
+                            4 -> 1500L * 1024 * 1024 // Shatri
+                            5 -> 1500L * 1024 * 1024 // Rifai
+                            1 -> 2500L * 1024 * 1024 // AbdulBaset Mujawwad
+                            2 -> 1000L * 1024 * 1024 // AbdulBaset Murattal
+                            6 -> 1200L * 1024 * 1024 // Husary Murattal
+                            12 -> 1400L * 1024 * 1024 // Husary Muallim
+                            9 -> 1600L * 1024 * 1024 // Minshawi Murattal
+                            8 -> 2500L * 1024 * 1024 // Minshawi Mujawwad
+                            10 -> 1200L * 1024 * 1024 // Shuraym
+                            11 -> 1300L * 1024 * 1024 // Tablawi
+                            else -> 1500L * 1024 * 1024 // Default fallback
+                        }
+
+                        val (arabicSubtitle, englishSubtitle) = when (reciter.style) {
+                            com.example.mushaf.domain.model.RecitationStyle.MURATTAL -> "مرتل" to "Murattal"
+                            com.example.mushaf.domain.model.RecitationStyle.MUJAWWAD -> "مجود" to "Mujawwad"
+                            com.example.mushaf.domain.model.RecitationStyle.MUALLIM -> "معلم" to "Muallim"
+                        }
                         DownloadableResource(
                             id = reciter.id.toString(),
                             kind = ResourceKind.RECITER,
                             name = LocalizedText(arabic = reciter.nameArabic, english = reciter.name),
-                            subtitle = LocalizedText(arabic = reciter.style.name, english = reciter.style.name),
-                            sizeBytes = 750L * 1024L * 1024L,
+                            subtitle = LocalizedText(arabic = arabicSubtitle, english = englishSubtitle),
+                            sizeBytes = exactSizeBytes,
                             state = state,
                         )
                     }
