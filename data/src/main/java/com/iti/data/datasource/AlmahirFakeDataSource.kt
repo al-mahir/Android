@@ -130,7 +130,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_LIGHT,
                 name = "Light",
                 monthlyPriceMinorUnits = 4_000,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "30-minute sessions",
                     "Weekly progress report",
@@ -142,7 +142,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_INTENSIVE,
                 name = "Intensive",
                 monthlyPriceMinorUnits = 6_500,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "45-minute sessions",
                     "Personalized revision plan",
@@ -155,7 +155,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_ELITE,
                 name = "Elite",
                 monthlyPriceMinorUnits = 12_000,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "60-minute sessions",
                     "1-on-1 dedicated sheikh",
@@ -171,7 +171,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_LIGHT,
                 name = "الأساسية",
                 monthlyPriceMinorUnits = 4_000,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "حصص مدتها 30 دقيقة",
                     "تقرير تقدم أسبوعي",
@@ -183,7 +183,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_INTENSIVE,
                 name = "مكثفة",
                 monthlyPriceMinorUnits = 6_500,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "حصص مدتها 45 دقيقة",
                     "خطة مراجعة شخصية",
@@ -196,7 +196,7 @@ class AlmahirFakeDataSource(
                 id = PACKAGE_ID_ELITE,
                 name = "النخبة",
                 monthlyPriceMinorUnits = 12_000,
-                currencyCode = "USD",
+                currencyCode = "EGP",
                 features = listOf(
                     "حصص مدتها 60 دقيقة",
                     "شيخ مخصص فردي",

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.iti.domain.core.Result
 import com.iti.domain.core.fold
 import com.iti.domain.usecase.subscription.GetSubscriptionPackagesUseCase
-import com.iti.domain.usecase.subscription.SelectSubscriptionPackageUseCase
 import com.iti.domain.usecase.subscription.StartFreeTrialUseCase
 import com.iti.presentation.R
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
@@ -22,7 +21,6 @@ import kotlinx.coroutines.launch
 
 class PackagesViewModel(
     private val getSubscriptionPackages: GetSubscriptionPackagesUseCase,
-    private val selectSubscriptionPackage: SelectSubscriptionPackageUseCase,
     private val startFreeTrial: StartFreeTrialUseCase,
 ) : ViewModel(),
     StateHolder<PackagesUiState> by DefaultStateHolder(PackagesUiState()),
@@ -62,13 +60,7 @@ class PackagesViewModel(
 
     private fun selectPackage(packageId: String) {
         if (currentState.processingPackageId != null || currentState.isStartingTrial) return
-        updateState { copy(processingPackageId = packageId) }
-
-        viewModelScope.launch {
-            val succeeded = selectSubscriptionPackage(packageId) is Result.Success
-            updateState { copy(processingPackageId = null) }
-            completePurchase(succeeded)
-        }
+        sendEffect(PackagesEffect.NavigateToCheckout(packageId))
     }
 
     private fun startTrial() {
@@ -78,17 +70,13 @@ class PackagesViewModel(
         viewModelScope.launch {
             val succeeded = startFreeTrial() is Result.Success
             updateState { copy(isStartingTrial = false) }
-            completePurchase(succeeded, isTrial = true)
+            completeTrial(succeeded)
         }
     }
 
-    private fun completePurchase(succeeded: Boolean, isTrial: Boolean = false) {
+    private fun completeTrial(succeeded: Boolean) {
         if (succeeded) {
-            sendEffect(
-                PackagesEffect.ShowMessage(
-                    if (isTrial) R.string.packages_trial_started else R.string.packages_purchase_succeeded
-                )
-            )
+            sendEffect(PackagesEffect.ShowMessage(R.string.packages_trial_started))
             sendEffect(PackagesEffect.PurchaseCompleted)
         } else {
             sendEffect(PackagesEffect.ShowMessage(R.string.packages_purchase_failed))

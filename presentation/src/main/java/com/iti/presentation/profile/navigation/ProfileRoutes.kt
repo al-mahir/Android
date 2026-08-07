@@ -16,6 +16,9 @@ sealed interface ProfileRoute : NavKey {
     @Serializable
     data object MySubscription : ProfileRoute
 
+    @Serializable
+    data class Checkout(val packageId: String) : ProfileRoute
+
     /** The reciter's recorded sessions. */
     @Serializable
     data object Sessions : ProfileRoute

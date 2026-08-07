@@ -6,5 +6,7 @@ sealed interface PackagesEffect {
 
     data object PurchaseCompleted : PackagesEffect
 
+    data class NavigateToCheckout(val packageId: String) : PackagesEffect
+
     data class ShowMessage(@StringRes val messageRes: Int) : PackagesEffect
 }

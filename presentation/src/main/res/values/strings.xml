@@ -127,6 +127,52 @@
     <string name="packages_purchase_failed">Something went wrong. Please try again.</string>
     <string name="packages_trial_started">Your free trial has started!</string>
 
+    <!-- Checkout -->
+    <string name="checkout_title">Checkout</string>
+    <string name="checkout_secured_by_paymob">Secured by Paymob</string>
+    <string name="checkout_reciter_pass_eyebrow">RECITER PASS</string>
+    <string name="checkout_price_period_month">/ Month</string>
+    <string name="checkout_purchasing_as_pattern">Purchasing as %1$s</string>
+    <string name="checkout_tab_wallet">Mobile Wallet</string>
+    <string name="checkout_tab_card">Credit/Debit Card</string>
+    <string name="checkout_select_payment_method">Select Payment Method</string>
+    <string name="checkout_wallet_vodafone_cash">Vodafone Cash</string>
+    <string name="checkout_wallet_orange_cash">Orange Cash</string>
+    <string name="checkout_wallet_etisalat_cash">e&amp; money</string>
+    <string name="checkout_wallet_we_pay">We Pay</string>
+    <string name="checkout_wallet_hint_pattern">Pay with your %1$s wallet</string>
+    <string name="checkout_wallet_number_label">Mobile Wallet Number</string>
+    <string name="checkout_wallet_number_hint">e.g. 01012345678</string>
+    <string name="checkout_security_note">Your payment is processed securely. We never store your wallet credentials.</string>
+    <string name="checkout_pay_button_pattern">Pay %1$s</string>
+    <string name="checkout_select_card_brand">Select Card Brand</string>
+    <string name="checkout_card_visa">Visa</string>
+    <string name="checkout_card_mastercard">Mastercard</string>
+    <string name="checkout_card_details_title">Card Details</string>
+    <string name="checkout_card_number_label">Card Number</string>
+    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
+    <string name="checkout_expiry_label">Expiry Date</string>
+    <string name="checkout_expiry_hint">MM/YY</string>
+    <string name="checkout_cvv_label">CVV</string>
+    <string name="checkout_cvv_hint">123</string>
+    <string name="checkout_cardholder_name_label">Cardholder Name</string>
+    <string name="checkout_cardholder_name_hint">Name on card</string>
+    <string name="checkout_load_error">Couldn\'t load this package. Please try again.</string>
+    <string name="checkout_error_intention_failed">Couldn\'t start the payment. Please try again.</string>
+    <string name="checkout_payment_success">Payment successful — your subscription is active!</string>
+    <string name="checkout_payment_failed">Payment failed. Please try again.</string>
+    <string name="checkout_payment_pending">Your payment is being processed. We\'ll notify you once it\'s confirmed.</string>
+    <string name="checkout_error_wallet_number_invalid">Enter a valid Egyptian mobile number</string>
+    <string name="checkout_error_wallet_prefix_vodafone">Enter your Vodafone Cash number</string>
+    <string name="checkout_error_wallet_prefix_orange">Enter your Orange Cash number</string>
+    <string name="checkout_error_wallet_prefix_etisalat">Enter your e&amp; money number</string>
+    <string name="checkout_error_wallet_prefix_we">Enter your We Pay number</string>
+    <string name="checkout_error_card_number_invalid">Enter a valid card number</string>
+    <string name="checkout_error_card_brand_mismatch">This card doesn\'t match the selected brand</string>
+    <string name="checkout_error_expiry_invalid">Enter a valid, non-expired date</string>
+    <string name="checkout_error_cvv_invalid">Enter a valid CVV</string>
+    <string name="checkout_error_cardholder_name_required">Enter the name on the card</string>
+
     <!-- My subscription -->
     <string name="subscription_details_title">My Subscription</string>
     <string name="subscription_details_plan_label">Package</string>
