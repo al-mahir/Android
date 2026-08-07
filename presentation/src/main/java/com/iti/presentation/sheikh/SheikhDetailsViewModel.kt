@@ -14,9 +14,11 @@ import com.iti.presentation.core.mvi.StateHolder
 import com.iti.presentation.sheikh.state.SheikhDetailsEffect
 import com.iti.presentation.sheikh.state.SheikhDetailsIntent
 import com.iti.presentation.sheikh.state.SheikhDetailsUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class SheikhDetailsViewModel(
@@ -30,6 +32,7 @@ class SheikhDetailsViewModel(
 
     init {
         load()
+        pollAvailability()
     }
 
     fun onIntent(intent: SheikhDetailsIntent) = when (intent) {
@@ -38,23 +41,9 @@ class SheikhDetailsViewModel(
     }
 
     private fun load() {
-        // Load sheikh from real API (suspend)
         viewModelScope.launch {
             updateState { copy(isLoading = true, isError = false) }
-            getSheikhById(sheikhId).fold(
-                onSuccess = { sheikh ->
-                    updateState {
-                        copy(
-                            sheikh = sheikh,
-                            isLoading = false,
-                            isError = sheikh == null,
-                        )
-                    }
-                },
-                onError = {
-                    updateState { copy(isLoading = false, isError = true) }
-                },
-            )
+            fetchSheikh(silent = false)
         }
 
         // Observe circles from fake/reactive source (Flow)
@@ -67,10 +56,41 @@ class SheikhDetailsViewModel(
             .launchIn(viewModelScope)
     }
 
+    private suspend fun fetchSheikh(silent: Boolean) {
+        getSheikhById(sheikhId).fold(
+            onSuccess = { sheikh ->
+                updateState {
+                    copy(
+                        sheikh = sheikh,
+                        isLoading = false,
+                        isError = sheikh == null,
+                    )
+                }
+            },
+            onError = {
+                if (!silent) updateState { copy(isLoading = false, isError = true) }
+            },
+        )
+    }
+
+
+    private fun pollAvailability() {
+        viewModelScope.launch {
+            while (isActive) {
+                delay(AVAILABILITY_POLL_INTERVAL_MS)
+                fetchSheikh(silent = true)
+            }
+        }
+    }
+
     private fun join(circleId: String) {
         viewModelScope.launch {
             joinCircle(circleId)
             sendEffect(SheikhDetailsEffect.NavigateToJoiningCircle(circleId))
         }
+    }
+
+    private companion object {
+        const val AVAILABILITY_POLL_INTERVAL_MS = 20_000L
     }
 }

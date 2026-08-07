@@ -5,18 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
 import com.iti.meeting.presentation.call.session.CallSessionController
+import com.iti.meeting.presentation.call.state.CallUiState
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
 import com.iti.meeting.presentation.core.mvi.StateHolder
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 
-/**
- * Thin per-screen adapter over [CallSessionController], which owns the actual Agora engine and
- * call state at app-process scope (see that class's doc + `docs/Meeting-Call-Lifecycle-Plan.md`).
- * `CallScreen` can come and go — get recomposed, have its `ViewModelStoreOwner` recreated — without
- * ever affecting the underlying call.
- */
+
 class CallViewModel(
     private val controller: CallSessionController,
 ) : ViewModel(), StateHolder<CallUiState> by DefaultStateHolder(controller.currentState.callState) {

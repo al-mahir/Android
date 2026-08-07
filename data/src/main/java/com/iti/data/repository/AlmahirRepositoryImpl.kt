@@ -20,6 +20,7 @@ import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.User
 import com.iti.domain.model.recitation.RecitationSessionSummary
 import com.iti.domain.model.recitation.SessionMistake
@@ -53,11 +54,22 @@ class AlmahirRepositoryImpl(
     override fun observeSubscription(): Flow<Result<Subscription>> =
         dataSource.observeSubscription().map { dto -> dto.toDomain() }.asResult()
 
+    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+        dataSource.observeSubscriptionPackages()
+            .map { dtos -> dtos.map { it.toDomain() } }
+            .asResult()
+
+    override suspend fun startFreeTrial(): Result<Subscription> =
+        resultOf { dataSource.startFreeTrial().toDomain() }
+
+    override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
+        resultOf { dataSource.selectSubscriptionPackage(packageId).toDomain() }
+
     override fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>> =
         dataSource.observeLegalDocument(type.toSlug()).map { dto -> dto.toDomain() }.asResult()
 
-    override suspend fun restorePurchases(): Result<Boolean> =
-        resultOf { dataSource.restorePurchases() }
+    override suspend fun requestSubscriptionCancellation(message: String): Result<Unit> =
+        resultOf { dataSource.requestSubscriptionCancellation(message) }
 
     override suspend fun logout(): Result<Unit> = resultOf {
         dataSource.logout()

@@ -6,6 +6,7 @@ import com.iti.domain.model.BookmarkType
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
@@ -16,9 +17,15 @@ interface AlmahirRepository {
 
     fun observeSubscription(): Flow<Result<Subscription>>
 
+    fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>>
+
+    suspend fun startFreeTrial(): Result<Subscription>
+
+    suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription>
+
     fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>>
 
-    suspend fun restorePurchases(): Result<Boolean>
+    suspend fun requestSubscriptionCancellation(message: String): Result<Unit>
 
     suspend fun logout(): Result<Unit>
 

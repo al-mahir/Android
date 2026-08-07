@@ -6,6 +6,7 @@ import com.iti.data.datasource.sheikh.SheikhDataSource
 import com.iti.data.dto.LegalDocumentDto
 import com.iti.data.dto.StudyCircleDto
 import com.iti.data.dto.SubscriptionDto
+import com.iti.data.dto.SubscriptionPackageDto
 import com.iti.data.dto.UserDto
 import com.iti.data.dto.sheikh.SheikhApiDto
 import com.iti.data.local.recitation.RecitationSessionDao
@@ -60,9 +61,14 @@ class RecitationSessionRepositoryTest {
     private class StubAlmahirDataSource : AlmahirDataSource {
         override fun observeCurrentUser(): Flow<UserDto> = MutableStateFlow(UserDto(id = "u", displayName = "u"))
         override fun observeSubscription(): Flow<SubscriptionDto> = MutableStateFlow(SubscriptionDto(plan = "none"))
+        override fun observeSubscriptionPackages(): Flow<List<SubscriptionPackageDto>> =
+            MutableStateFlow(emptyList())
+        override suspend fun startFreeTrial(): SubscriptionDto = SubscriptionDto(plan = "none")
+        override suspend fun selectSubscriptionPackage(packageId: String): SubscriptionDto =
+            SubscriptionDto(plan = "none")
         override fun observeLegalDocument(documentType: String): Flow<LegalDocumentDto> =
             MutableStateFlow(LegalDocumentDto(type = documentType, title = "", body = ""))
-        override suspend fun restorePurchases(): Boolean = false
+        override suspend fun requestSubscriptionCancellation(message: String) = Unit
         override suspend fun logout() = Unit
         override suspend fun deleteAccount() = Unit
     }
