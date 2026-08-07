@@ -13,9 +13,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.VectorPainter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
@@ -27,6 +32,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.designsystem.R as DesignSystemR
 import com.example.mushaf.domain.model.LineType
 import com.example.mushaf.domain.model.MushafConstants
 import com.example.mushaf.domain.model.MushafPage
@@ -59,6 +65,9 @@ fun MushafPageView(
 ) {
     val fontFamily = rememberPageFontFamily(page.pageNumber, mode)
     val surahNameFontFamily = rememberSurahNameFontFamily()
+    val surahBannerPainter = rememberVectorPainter(
+        image = ImageVector.vectorResource(id = DesignSystemR.drawable.surah_name_design),
+    )
     val contentColor = Theme.colors.onSurface
     val highlightColor = Theme.colors.primary.copy(alpha = 0.20f)
     val mistakeColor = Theme.colors.error
@@ -191,11 +200,16 @@ fun MushafPageView(
                 val isVisible = when {
                     !areAyahsHidden -> true
                     !isAyahWord -> true
+                    token.isEndOfAyah -> true
                     token.wordId in revealedWordIds -> true
                     else -> false
                 }
 
                 if (!isVisible) return@forEach
+
+                if (token.isSurahNameBanner) {
+                    drawSurahNameBanner(token, surahBannerPainter, availableWidthPx, availableHeightPx)
+                }
 
                 val mark = token.wordId?.let(wordMarks::get)
 
@@ -209,9 +223,9 @@ fun MushafPageView(
                         ),
                     )
                 }
-                
-                
-                
+
+
+
                 val glyphColor = when (mark) {
                     RecitationWordMark.MISTAKE -> mistakeColor
                     RecitationWordMark.HINT -> hintColor
@@ -259,12 +273,33 @@ private fun DrawScope.drawMarkUnderline(
     )
 }
 
- 
+private fun DrawScope.drawSurahNameBanner(
+    token: PageToken,
+    painter: VectorPainter,
+    availableWidthPx: Int,
+    availableHeightPx: Int,
+) {
+    val paddingY = SURAH_BANNER_PADDING_VERTICAL.toPx()
+    val frameTop = (token.top - paddingY).coerceAtLeast(0f)
+    val frameBottom = (token.top + token.layout.size.height + paddingY).coerceAtMost(availableHeightPx.toFloat())
+    val frameHeight = frameBottom - frameTop
+    translate(left = 0f, top = frameTop) {
+        with(painter) { draw(size = Size(availableWidthPx.toFloat(), frameHeight)) }
+    }
+}
+
+private val SURAH_BANNER_PADDING_VERTICAL = 14.dp
+private const val SURAH_BANNER_WIDTH_FRACTION = 0.55f
+private const val SURAH_BANNER_HEIGHT_FRACTION = 0.55f
+
+
 private data class PageToken(
     val layout: TextLayoutResult,
     val left: Float,
     val top: Float,
     val wordId: String?,
+    val isEndOfAyah: Boolean = false,
+    val isSurahNameBanner: Boolean = false,
 )
 
 
@@ -376,14 +411,20 @@ private fun buildPageTokens(
                 )
                 line.words.forEachIndexed { i, word ->
                     val top = slotCenterY - layouts[i].size.height / 2f
-                    tokens.add(PageToken(layouts[i], lefts[i], top, word.id))
+                    tokens.add(PageToken(layouts[i], lefts[i], top, word.id, word.isEndOfAyah))
                 }
             }
 
             LineType.SURAH_NAME -> {
                 val glyph = PageFontProvider.surahNameGlyph(line.surahNumber ?: 1)
                 val layout = if (surahNameFontFamily != null && glyph != null) {
-                    val size = fitLineSize(glyph, surahNameFontFamily, measurer, availableWidthPx, slotHeightPx)
+                    val size = fitLineSize(
+                        text = glyph,
+                        font = surahNameFontFamily,
+                        measurer = measurer,
+                        maxWidthPx = (availableWidthPx * SURAH_BANNER_WIDTH_FRACTION).toInt(),
+                        slotHeightPx = slotHeightPx * SURAH_BANNER_HEIGHT_FRACTION,
+                    )
                     measurer.measure(
                         text = AnnotatedString(glyph),
                         style = TextStyle(fontFamily = surahNameFontFamily, fontSize = size, color = contentColor),
@@ -398,11 +439,11 @@ private fun buildPageTokens(
                         maxLines = 1,
                     )
                 }
-                tokens.add(centeredToken(layout, availableWidthPx, slotCenterY))
+                tokens.add(centeredToken(layout, availableWidthPx, slotCenterY, isSurahNameBanner = true))
             }
 
             LineType.BASMALLAH -> {
-                
+
                 val size = fitLineSize(SurahInfo.BASMALLAH_LIGATURE, FontFamily.Default, measurer, availableWidthPx, slotHeightPx)
                 val layout = measurer.measure(
                     text = AnnotatedString(SurahInfo.BASMALLAH_LIGATURE),
@@ -417,13 +458,19 @@ private fun buildPageTokens(
     return tokens
 }
 
- 
-private fun centeredToken(layout: TextLayoutResult, availableWidthPx: Int, slotCenterY: Float): PageToken =
+
+private fun centeredToken(
+    layout: TextLayoutResult,
+    availableWidthPx: Int,
+    slotCenterY: Float,
+    isSurahNameBanner: Boolean = false,
+): PageToken =
     PageToken(
         layout = layout,
         left = (availableWidthPx - layout.size.width) / 2f,
         top = slotCenterY - layout.size.height / 2f,
         wordId = null,
+        isSurahNameBanner = isSurahNameBanner,
     )
 
  
