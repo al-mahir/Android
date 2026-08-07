@@ -43,8 +43,8 @@ class GetPageUseCaseTest {
         override fun observeAvailableTafsirBooks(): Flow<List<TafsirBook>> = emptyFlow()
         override suspend fun downloadTafsirBook(tafsirKey: String, downloadUrl: String) = Unit
         override fun deleteTafsirBook(tafsirKey: String) = Unit
-        override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): TafsirResult? = null
         override suspend fun searchTafsir(query: String, limit: Int, offset: Int): Result<List<TafsirResult>> = Result.Success(emptyList())
+        override suspend fun getTafsirFromLocalJson(tafsirKey: String, surah: Int, ayah: Int): TafsirResult? = null
     }
 
     @Test

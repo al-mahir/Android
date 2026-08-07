@@ -182,8 +182,6 @@ private fun AppNavHost(
         }
     }
 
-
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -234,11 +232,7 @@ private fun AppNavHost(
                                     backStack.add(AppRoute.Mushaf(startPage = page))
                                 },
                                 onOpenSheikh = { sheikhId ->
-                                    backStack.add(
-                                        AppRoute.SheikhDetails(
-                                            sheikhId
-                                        )
-                                    )
+                                    backStack.add(AppRoute.SheikhDetails(sheikhId))
                                 },
                                 onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                                 onOpenCircleList = { backStack.add(AppRoute.CircleList) },
@@ -273,6 +267,9 @@ private fun AppNavHost(
                                 onSearchClick = {
                                     backStack.removeAll { it == AppRoute.Search }
                                     backStack.add(AppRoute.Search)
+                                },
+                                onNavigateToSurahDownload = { reciterId ->
+                                    backStack.add(DownloadsRoute.SurahDownload(reciterId))
                                 },
                             )
                         }
@@ -405,7 +402,12 @@ private fun AppNavHost(
                             )
                         }
 
-                        downloadsEntries(onBack = { backStack.removeLastOrNull() })
+                        downloadsEntries(
+                            onBack = { backStack.removeLastOrNull() },
+                            onNavigateToSurahList = { reciterId ->
+                                backStack.add(com.example.mushaf.presentation.download.navigation.DownloadsRoute.SurahDownload(reciterId))
+                            }
+                        )
 
                         reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
 
@@ -464,5 +466,3 @@ private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
         AppRoute.Profile -> AppBottomNavDestination.Profile
         else -> null
     }
-
-

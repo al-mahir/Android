@@ -224,7 +224,6 @@ private fun SheikhAppNavHost(
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
                         visibleMenuItems = sheikhProfileMenuItems,
-                        onOpenMySubscription = { backStack.add(ProfileRoute.MySubscription) }
                     )
                 }
 
@@ -235,7 +234,7 @@ private fun SheikhAppNavHost(
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
-                        backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
+                        backStack.add(MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->

@@ -78,7 +78,7 @@ class FakeDownloadableResourceRepository(
                 kind = ResourceKind.RECITER,
                 name = LocalizedText("محمود خليل الحصري", "Mahmoud Khalil Al-Husary"),
                 subtitle = LocalizedText("حفص عن عاصم", "Hafs 'an 'Asim"),
-                sizeBytes = 820 * MB,
+                sizeBytes = 1258422528L,
                 state = DownloadState.Downloaded,
             ),
             DownloadableResource(
@@ -86,28 +86,28 @@ class FakeDownloadableResourceRepository(
                 kind = ResourceKind.RECITER,
                 name = LocalizedText("محمد صديق المنشاوي", "Mohamed Siddiq Al-Minshawi"),
                 subtitle = LocalizedText("حفص عن عاصم", "Hafs 'an 'Asim"),
-                sizeBytes = 760 * MB,
+                sizeBytes = 1722899470L,
             ),
             DownloadableResource(
                 id = "reciter_abdulbasit",
                 kind = ResourceKind.RECITER,
                 name = LocalizedText("عبد الباسط عبد الصمد", "Abdul Basit Abdus Samad"),
                 subtitle = LocalizedText("ورش عن نافع", "Warsh 'an Nafi'"),
-                sizeBytes = 910 * MB,
+                sizeBytes = 1052944030L,
             ),
             DownloadableResource(
                 id = "reciter_sudais",
                 kind = ResourceKind.RECITER,
                 name = LocalizedText("عبد الرحمن السديس", "Abdurrahman As-Sudais"),
                 subtitle = LocalizedText("حفص عن عاصم", "Hafs 'an 'Asim"),
-                sizeBytes = 680 * MB,
+                sizeBytes = 4811956517L,
             ),
             DownloadableResource(
                 id = "reciter_shatri",
                 kind = ResourceKind.RECITER,
                 name = LocalizedText("أبو بكر الشاطري", "Abu Bakr Ash-Shatri"),
                 subtitle = LocalizedText("قالون عن نافع", "Qalun 'an Nafi'"),
-                sizeBytes = 705 * MB,
+                sizeBytes = 1667107237L,
             ),
 
             

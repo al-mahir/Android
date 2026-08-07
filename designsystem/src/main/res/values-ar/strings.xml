@@ -23,4 +23,10 @@
     <string name="bottom_nav_mushaf">المصحف</string>
     <string name="bottom_nav_bookmark">المفضلة</string>
     <string name="bottom_nav_profile">حسابي</string>
+
+    <string name="audio_player_select_reciter">اختر القارئ</string>
+    <string name="audio_player_prev">السابق</string>
+    <string name="audio_player_next">التالي</string>
+    <string name="audio_player_play">تشغيل</string>
+    <string name="audio_player_pause">إيقاف</string>
 </resources>

@@ -28,6 +28,9 @@ class MushafPreferencesRepositoryImpl(
     override suspend fun setFirstMushafLaunchCompleted(): Result<Unit> =
         resultOf { readerDataStore.setFirstMushafLaunchCompleted() }
 
+    override suspend fun setDownloadOverWifiOnly(enabled: Boolean): Result<Unit> =
+        resultOf { readerDataStore.setDownloadOverWifiOnly(enabled) }
+
     // ── RecitationSettingsRepository ──────────────────────────────────────
 
     override val settings: Flow<RecitationSettings> = recitationSettingsDataStore.settings

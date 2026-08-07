@@ -4,15 +4,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
+import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 
 data class ReciterItem(
@@ -28,7 +28,11 @@ fun ReciterPickerSheet(
     reciters: List<ReciterItem>,
     selectedId: Int?,
     onReciterSelected: (ReciterItem) -> Unit,
+    onDownloadClick: ((ReciterItem) -> Unit)? = null,
     onDismiss: () -> Unit,
+    title: String,
+    selectedContentDescription: String,
+    downloadContentDescription: String,
     modifier: Modifier = Modifier
 ) {
     ModalBottomSheet(
@@ -43,17 +47,17 @@ fun ReciterPickerSheet(
                 .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
         ) {
             Text(
-                text = "Select Reciter",
+                text = title,
                 style = Theme.typography.title.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(Theme.spacing.medium)
             )
-            
-            Divider(color = Theme.colors.outline)
-            
+
+            HorizontalDivider(color = Theme.colors.outline)
+
             LazyColumn {
                 items(reciters, key = { it.id }) { reciter ->
                     val isSelected = reciter.id == selectedId
-                    
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -63,7 +67,7 @@ fun ReciterPickerSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = reciter.nameArabic,
                                 style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
@@ -75,17 +79,30 @@ fun ReciterPickerSheet(
                                 color = Theme.colors.secondaryFont
                             )
                         }
-                        
-                        if (isSelected) {
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_check),
-                                contentDescription = "Selected",
-                                tint = Theme.colors.primary
-                            )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isSelected) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_check),
+                                    contentDescription = selectedContentDescription,
+                                    tint = Theme.colors.primary,
+                                    modifier = Modifier.padding(end = Theme.spacing.small)
+                                )
+                            }
+
+                            if (onDownloadClick != null) {
+                                IconButton(onClick = { onDownloadClick.invoke(reciter) }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_download),
+                                        contentDescription = downloadContentDescription,
+                                        tint = Theme.colors.primary
+                                    )
+                                }
+                            }
                         }
                     }
-                    
-                    Divider(color = Theme.colors.outline, modifier = Modifier.padding(start = Theme.spacing.medium))
+
+                    HorizontalDivider(color = Theme.colors.outline, modifier = Modifier.padding(start = Theme.spacing.medium))
                 }
             }
         }

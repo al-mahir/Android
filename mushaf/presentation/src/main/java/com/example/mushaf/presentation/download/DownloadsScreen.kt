@@ -14,8 +14,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,6 +32,7 @@ import com.example.mushaf.presentation.download.components.DownloadableItemCard
 import com.example.mushaf.presentation.download.components.resolve
 import com.example.mushaf.presentation.download.state.DownloadsIntent
 import com.example.mushaf.presentation.download.state.DownloadsUiState
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -41,6 +44,7 @@ import org.koin.core.parameter.parametersOf
 fun DownloadsScreen(
     kind: ResourceKind,
     onBack: () -> Unit,
+    onNavigateToSurahList: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     
@@ -51,12 +55,34 @@ fun DownloadsScreen(
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    DownloadsContent(
-        state = state,
-        onIntent = viewModel::onIntent,
-        onBack = onBack,
-        modifier = modifier,
-    )
+    val snackbarHostState = androidx.compose.runtime.remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effect) { effect ->
+        when (effect) {
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.ShowMessage -> {
+                val message = context.getString(effect.messageRes)
+                scope.launch { snackbarHostState.showSnackbar(message) }
+            }
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.NavigateToSurahList -> {
+                onNavigateToSurahList(effect.reciterId)
+            }
+        }
+    }
+
+    androidx.compose.material3.Scaffold(
+        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
+        containerColor = Theme.colors.backGround,
+        modifier = modifier
+    ) { padding ->
+        DownloadsContent(
+            state = state,
+            onIntent = viewModel::onIntent,
+            onBack = onBack,
+            modifier = Modifier.padding(padding),
+        )
+    }
 }
 
 @Composable
@@ -102,6 +128,7 @@ fun DownloadsContent(
                         onDownload = { onIntent(DownloadsIntent.DownloadClicked(resource.id)) },
                         onCancel = { onIntent(DownloadsIntent.CancelClicked(resource.id)) },
                         onDelete = { onIntent(DownloadsIntent.DeleteClicked(resource.id)) },
+                        onClick = { onIntent(DownloadsIntent.ItemClicked(resource.id)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -109,6 +136,32 @@ fun DownloadsContent(
                 item { Box(modifier = Modifier.height(BottomSpacing)) }
             }
         }
+    }
+
+    state.pendingDownloadOptions?.let { _ ->
+        ConfirmationDialog(
+            title = stringResource(R.string.download_dialog_title),
+            message = stringResource(R.string.download_dialog_message),
+            confirmLabel = stringResource(R.string.download_dialog_entire_quran),
+            dismissLabel = stringResource(R.string.download_dialog_select_surahs),
+            onConfirm = { onIntent(DownloadsIntent.DownloadOptionsFullQuran) },
+            onDismiss = { onIntent(DownloadsIntent.DownloadOptionsSurahs) },
+            onDismissRequest = { onIntent(DownloadsIntent.DownloadOptionsDismissed) },
+        )
+    }
+
+    state.pendingFullDownload?.let { target ->
+        val formattedSize = com.example.mushaf.presentation.download.components.rememberFormattedSize(target.sizeBytes)
+        ConfirmationDialog(
+            title = stringResource(R.string.downloads_full_quran_title),
+            message = stringResource(R.string.downloads_full_quran_message, target.name.resolve(), formattedSize),
+            confirmLabel = stringResource(R.string.downloads_action_download),
+            dismissLabel = stringResource(R.string.downloads_delete_cancel),
+            onConfirm = { onIntent(DownloadsIntent.DownloadFullConfirmed) },
+            onDismiss = { onIntent(DownloadsIntent.DownloadFullDismissed) },
+            confirmColor = Theme.colors.primary,
+            confirmContentColor = Theme.colors.onPrimary,
+        )
     }
 
     state.pendingDeletion?.let { target ->

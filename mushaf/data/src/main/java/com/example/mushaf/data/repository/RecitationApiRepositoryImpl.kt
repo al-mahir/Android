@@ -2,14 +2,9 @@ package com.example.mushaf.data.repository
 
 import android.util.Log
 import com.example.mushaf.data.MushafLog
-import com.example.mushaf.data.recitation.RecitationDataSource
-import com.example.mushaf.data.recitation.RecitationMapper
 import com.example.mushaf.data.recite.RecitationSchemaMapper
 import com.example.mushaf.data.recite.remote.AiServiceApi
-import com.example.mushaf.domain.model.AyahTiming
-import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.domain.model.recite.RecitationSchema
-import com.example.mushaf.domain.repository.RecitationRepository
 import com.example.mushaf.domain.repository.RecitationSchemaRepository
 import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
@@ -23,36 +18,11 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class RecitationApiRepositoryImpl(
-    private val dataSource: RecitationDataSource,
     private val api: AiServiceApi,
-) : RecitationRepository, RecitationSchemaRepository {
+) : RecitationSchemaRepository {
 
     private val schemaMutex = Mutex()
     private var cachedSchema: RecitationSchema? = null
-
-    // ── RecitationRepository ─────────────────────────────────────────────
-
-    override fun getReciters(): Flow<Result<List<Reciter>>> {
-        return dataSource.observeReciters()
-            .map { dtoList ->
-                val reciters = dtoList.map { RecitationMapper.toDomain(it) }
-                Result.Success(reciters) as Result<List<Reciter>>
-            }
-            .catch { e ->
-                emit(Result.Error(DomainError.NetworkError(e)))
-            }
-    }
-
-    override fun getTimingsForPage(reciterId: Int, pageNumber: Int): Flow<Result<List<AyahTiming>>> {
-        return dataSource.observeTimingsForPage(reciterId, pageNumber)
-            .map { dtoList ->
-                val timings = dtoList.map { RecitationMapper.toDomain(it) }
-                Result.Success(timings) as Result<List<AyahTiming>>
-            }
-            .catch { e ->
-                emit(Result.Error(DomainError.NetworkError(e)))
-            }
-    }
 
     // ── RecitationSchemaRepository ────────────────────────────────────────
 

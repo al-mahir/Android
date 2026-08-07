@@ -83,6 +83,7 @@ class MushafViewModel(
     private val saveRecitationSession: SaveRecitationSessionUseCase,
     private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
+    private val downloadRecitation: com.example.mushaf.domain.usecase.DownloadRecitationUseCase,
     private val localSpeechRecognizer: LocalSpeechRecognizer,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
     private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
@@ -350,6 +351,13 @@ class MushafViewModel(
                 }
             }
 
+            // Offline Downloads
+            is MushafIntent.DownloadRecitation -> {
+                viewModelScope.launch {
+                    downloadRecitation(intent.reciterId, intent.surahNumber)
+                }
+            }
+
             // Surah Picker
             MushafIntent.ShowSurahPicker -> _state.update { it.copy(showSurahPicker = true) }
             MushafIntent.HideSurahPicker -> _state.update { it.copy(showSurahPicker = false) }
@@ -382,7 +390,7 @@ class MushafViewModel(
             // User Guide
             MushafIntent.GuideNextStep -> {
                 val currentStep = _state.value.guideStep
-                if (currentStep < 6) { // 6 is the max step we will define
+                if (currentStep < 6) {
                     _state.update { it.copy(guideStep = currentStep + 1) }
                 } else {
                     viewModelScope.launch { setFirstMushafLaunchCompleted() }
@@ -1223,14 +1231,24 @@ class MushafViewModel(
         val isArabic = observeAppPreferences().first().language == com.iti.domain.settings.model.AppLanguage.ARABIC
         return timings.map { timing ->
             val audioUrl = timing.audioUrl
-            val finalUrl = if (audioUrl != null) {
-                if (audioUrl.startsWith("http")) audioUrl
-                else if (audioUrl.startsWith("//")) "https:$audioUrl"
-                else "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
-            } else {
-                val paddedS = timing.surahNumber.toString().padStart(3, '0')
-                val paddedA = timing.ayahNumber.toString().padStart(3, '0')
-                "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+            val finalUrl = when {
+                audioUrl.isNullOrBlank() -> {
+                    val paddedS = timing.surahNumber.toString().padStart(3, '0')
+                    val paddedA = timing.ayahNumber.toString().padStart(3, '0')
+                    "${reciter.audioBaseUrl}${paddedS}${paddedA}.mp3"
+                }
+                java.io.File(audioUrl).exists() -> {
+                    java.io.File(audioUrl).toURI().toString()
+                }
+                audioUrl.startsWith("http://") || audioUrl.startsWith("https://") || audioUrl.startsWith("file://") || audioUrl.startsWith("content://") -> {
+                    audioUrl
+                }
+                audioUrl.startsWith("//") -> {
+                    "https:$audioUrl"
+                }
+                else -> {
+                    "https://audio.qurancdn.com/${audioUrl.removePrefix("/")}"
+                }
             }
             
             val surah = com.example.mushaf.domain.model.SurahCatalog.all.getOrNull(timing.surahNumber - 1)

@@ -14,4 +14,6 @@ interface ReaderPreferencesRepository {
     suspend fun setLastPage(page: Int): Result<Unit>
 
     suspend fun setFirstMushafLaunchCompleted(): Result<Unit>
+    
+    suspend fun setDownloadOverWifiOnly(enabled: Boolean): Result<Unit>
 }

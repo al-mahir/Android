@@ -56,6 +56,9 @@ sealed interface MushafIntent {
     data object NextSurahAudio : MushafIntent
     data object PrevSurahAudio : MushafIntent
 
+    // Offline Downloads
+    data class DownloadRecitation(val reciterId: Int, val surahNumber: Int? = null) : MushafIntent
+
     // Tafsir
     data class LoadTafsir(val surah: Int, val ayah: Int) : MushafIntent
     data object DismissTafsir : MushafIntent

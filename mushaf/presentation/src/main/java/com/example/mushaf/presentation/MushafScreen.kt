@@ -21,11 +21,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -55,8 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.designsystem.components.mushaf.AudioPlayerBar
+import com.example.mushaf.presentation.download.components.resolve
 import com.example.designsystem.components.mushaf.ReciterItem
 import com.example.designsystem.components.mushaf.ReciterPickerSheet
 import com.example.designsystem.components.mushaf.SurahItem
@@ -107,6 +110,7 @@ fun MushafScreen(
     onBack: () -> Unit = {},
     onNavigateSearch: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onNavigateToSurahDownload: (Int) -> Unit = {},
     onSearchClick: () -> Unit = {},
     viewModel: MushafViewModel = koinViewModel(),
 ) {
@@ -134,7 +138,27 @@ fun MushafScreen(
     )
 
     var showReciterPicker by remember { mutableStateOf(false) }
+
     var topBarHeightPx by remember { mutableIntStateOf(0) }
+
+    val downloadsViewModel: com.example.mushaf.presentation.download.DownloadsViewModel = 
+        org.koin.androidx.compose.koinViewModel(
+            key = com.example.mushaf.domain.model.ResourceKind.RECITER.name,
+            parameters = { org.koin.core.parameter.parametersOf(com.example.mushaf.domain.model.ResourceKind.RECITER) }
+        )
+    val downloadsState by downloadsViewModel.state.collectAsStateWithLifecycle()
+
+    com.example.mushaf.presentation.core.mvi.ObserveEffect(downloadsViewModel.effect) { effect ->
+        when (effect) {
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.NavigateToSurahList -> {
+                showReciterPicker = false
+                effect.reciterId.toIntOrNull()?.let { onNavigateToSurahDownload(it) }
+            }
+            is com.example.mushaf.presentation.download.state.DownloadsEffect.ShowMessage -> {
+                android.widget.Toast.makeText(context, effect.messageRes, android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     var micPrompt by remember { mutableStateOf<MicPrompt?>(null) }
     var showCorrections by remember { mutableStateOf(false) }
@@ -314,7 +338,7 @@ fun MushafScreen(
             ) {
                 AudioPlayerBar(
                     isPlaying = state.audioState == AudioState.PLAYING,
-                    reciterName = state.currentReciter?.nameArabic ?: "",
+                    reciterName = state.currentReciter?.let { com.example.mushaf.domain.model.LocalizedText(arabic = it.nameArabic, english = it.name).resolve() } ?: "",
                     playbackSpeed = state.playbackSpeed,
                     onPlayPauseClick = { viewModel.onIntent(MushafIntent.PlayPauseAudio) },
                     onNextClick = { viewModel.onIntent(MushafIntent.NextSurahAudio) },
@@ -480,24 +504,71 @@ fun MushafScreen(
         
         // ── Reciter Picker sheet ────────────────────────────────────────────────
         if (showReciterPicker) {
-            val reciterItems = state.availableReciters.map {
-                ReciterItem(
-                    id = it.id,
-                    name = it.name,
-                    nameArabic = it.nameArabic,
-                    style = it.style.name.lowercase().replaceFirstChar { char -> char.uppercase() }
-                )
-            }
-            ReciterPickerSheet(
-                reciters = reciterItems,
+            com.example.mushaf.presentation.components.MushafReciterPickerSheet(
+                reciters = state.availableReciters,
+                downloadableResources = downloadsState.resources,
                 selectedId = state.currentReciter?.id,
-                onReciterSelected = { selectedItem ->
-                    val domainReciter = state.availableReciters.first { it.id == selectedItem.id }
+                onReciterSelected = { domainReciter ->
                     viewModel.onIntent(MushafIntent.SelectReciter(domainReciter))
                     showReciterPicker = false
                 },
-                onDismiss = { showReciterPicker = false }
+                onDownloadClick = { id ->
+                    downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadClicked(id))
+                },
+                onCancelClick = { id ->
+                    downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.CancelClicked(id))
+                },
+                onDeleteClick = { id ->
+                    downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DeleteClicked(id))
+                },
+                onDismiss = { showReciterPicker = false },
             )
+            
+            // ── Download Options Dialog (Entire Quran / Select Surahs) ──────────
+            downloadsState.pendingDownloadOptions?.let { _ ->
+                com.example.designsystem.components.dialog.ConfirmationDialog(
+                    title = stringResource(R.string.download_dialog_title),
+                    message = stringResource(R.string.download_dialog_message),
+                    confirmLabel = stringResource(R.string.download_dialog_entire_quran),
+                    dismissLabel = stringResource(R.string.download_dialog_select_surahs),
+                    onConfirm = {
+                        downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadOptionsFullQuran)
+                    },
+                    onDismiss = {
+                        downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadOptionsSurahs)
+                    },
+                    onDismissRequest = {
+                        downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadOptionsDismissed)
+                    }
+                )
+            }
+
+            // Re-use the pending full download and deletion dialogs from DownloadsScreen
+            downloadsState.pendingFullDownload?.let { target ->
+                val formattedSize = com.example.mushaf.presentation.download.components.rememberFormattedSize(target.sizeBytes)
+                com.example.designsystem.components.dialog.ConfirmationDialog(
+                    title = stringResource(R.string.downloads_full_quran_title),
+                    message = stringResource(R.string.downloads_full_quran_message, target.name.resolve(), formattedSize),
+                    confirmLabel = stringResource(R.string.downloads_action_download),
+                    dismissLabel = stringResource(R.string.downloads_delete_cancel),
+                    onConfirm = { downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadFullConfirmed) },
+                    onDismiss = { downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DownloadFullDismissed) },
+                    confirmColor = Theme.colors.primary,
+                    confirmContentColor = Theme.colors.onPrimary
+                )
+            }
+            downloadsState.pendingDeletion?.let { target ->
+                com.example.designsystem.components.dialog.ConfirmationDialog(
+                    title = stringResource(R.string.downloads_delete_title),
+                    message = stringResource(R.string.downloads_delete_message, target.name.resolve()),
+                    confirmLabel = stringResource(R.string.downloads_delete_confirm),
+                    dismissLabel = stringResource(R.string.downloads_delete_cancel),
+                    onConfirm = { downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DeleteConfirmed) },
+                    onDismiss = { downloadsViewModel.onIntent(com.example.mushaf.presentation.download.state.DownloadsIntent.DeleteDismissed) },
+                    confirmColor = Theme.colors.error,
+                    confirmContentColor = Theme.colors.onError
+                )
+            }
         }
 
         // ── Surah Picker sheet ──────────────────────────────────────────────────
@@ -544,8 +615,6 @@ fun MushafScreen(
                 onDismiss = { viewModel.onIntent(MushafIntent.DismissTafsir) },
                 onRetry = if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Error) {
                     {
-                        // Re-trigger last LoadTafsir. Error state carries surah/ayah via Loading that preceded it.
-                        // We use a simple approach: dismiss and ask user to long-press again.
                         viewModel.onIntent(MushafIntent.DismissTafsir)
                     }
                 } else null,
