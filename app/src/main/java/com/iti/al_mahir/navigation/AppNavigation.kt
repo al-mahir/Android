@@ -381,7 +381,10 @@ private fun AppNavHost(
                             )
                         }
 
-                        profileEntries(onBack = { backStack.removeLastOrNull() })
+                        profileEntries(
+                            onBack = { backStack.removeLastOrNull() },
+                            onNavigateToCheckout = { packageId -> backStack.add(ProfileRoute.Checkout(packageId)) },
+                        )
 
                         entry<SettingsRoute.Settings> {
                             SettingsScreen(
