@@ -144,6 +144,16 @@ private fun AppNavHost(
         backStack.add(root)
     }
 
+    /** Back from Mushaf pops to whatever was beneath it (e.g. a circle); only when Mushaf is
+     * the sole entry (bottom-nav tab root) does back fall through to the Home tab. */
+    fun popMushafOrRoot() {
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        } else {
+            selectTab(AppBottomNavDestination.Home)
+        }
+    }
+
     var showExitDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = backStack.size == 1) {
@@ -189,9 +199,7 @@ private fun AppNavHost(
 
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier = modifier.fillMaxSize(),
     ) {
         val showBanner =
             backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
@@ -205,14 +213,7 @@ private fun AppNavHost(
                 NavDisplay(
                     backStack = backStack,
                     modifier = Modifier.fillMaxSize(),
-                    onBack = {
-                        when {
-                            backStack.lastOrNull() is AppRoute.Mushaf ->
-                                selectTab(AppBottomNavDestination.Home)
-
-                            backStack.size > 1 -> backStack.removeLastOrNull()
-                        }
-                    },
+                    onBack = ::popMushafOrRoot,
                     entryProvider = entryProvider {
                         authEntries(
                             onNavigate = { route -> backStack.add(route) },
@@ -246,7 +247,9 @@ private fun AppNavHost(
                                 },
                                 onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                                 onOpenCircleList = { backStack.add(AppRoute.CircleList) },
-                                onOpenCircle = { circleId -> backStack.add(AppRoute.CircleDetails(circleId)) },
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
+                                },
                                 onOpenMeetingRequest = { sheikhId, sheikhName ->
                                     backStack.add(
                                         MeetingRequestRoute.SendMeetingRequest(
@@ -273,7 +276,7 @@ private fun AppNavHost(
                             MushafScreen(
                                 startPage = route.startPage,
                                 openInListenMode = route.openInListenMode,
-                                onBack = { selectTab(AppBottomNavDestination.Home) },
+                                onBack = ::popMushafOrRoot,
                                 onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                                 onSearchClick = {
                                     backStack.removeAll { it == AppRoute.Search }

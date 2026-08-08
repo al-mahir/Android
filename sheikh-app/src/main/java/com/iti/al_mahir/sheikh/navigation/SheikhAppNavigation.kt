@@ -142,9 +142,7 @@ private fun SheikhAppNavHost(
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier = modifier.fillMaxSize(),
     ) {
         NavDisplay(
             backStack = backStack,
