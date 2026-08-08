@@ -22,15 +22,20 @@ import kotlinx.coroutines.flow.flowOf
 class FakeCircleRepository(
     private val circles: List<Circle> = emptyList(),
     private val myCircles: List<Circle> = emptyList(),
+    private val privateCircles: List<Circle> = emptyList(),
     private val members: Map<String, List<CircleMember>> = emptyMap(),
     private val failPublic: Boolean = false,
     private val failMine: Boolean = false,
     private val failCircle: Boolean = false,
+    private val failLeave: Boolean = false,
     private val joinResult: (Circle) -> CircleJoinResult = { CircleJoinResult.Joined("membership-1") },
 ) : CircleRepository {
 
     private val rosterEvents = MutableStateFlow<List<CircleRosterEvent>>(emptyList())
     private val joinRequestEvents = MutableStateFlow<List<JoinRequestEvent>>(emptyList())
+
+    /** Circles the current user has joined; grows when [joinCircle] succeeds. */
+    private val joinedCircles = myCircles.toMutableList()
 
     fun emitRosterEvent(event: CircleRosterEvent) {
         rosterEvents.value = rosterEvents.value + event
@@ -44,20 +49,31 @@ class FakeCircleRepository(
         if (failPublic) Result.failure(BOOM) else Result.success(circles)
 
     override suspend fun getMyCircles(): Result<List<Circle>> =
-        if (failMine) Result.failure(BOOM) else Result.success(myCircles)
+        if (failMine) Result.failure(BOOM) else Result.success(joinedCircles)
 
     override suspend fun getCircle(circleId: String): Result<Circle> {
         if (failCircle) return Result.failure(BOOM)
-        return Result.success(circles.firstOrNull { it.id == circleId } ?: myCircles.first { it.id == circleId })
+        return Result.success(find(circleId))
     }
 
     override suspend fun createCircle(request: CreateCircleRequest): Result<Circle> =
         Result.failure(BOOM)
 
-    override suspend fun joinCircle(circleId: String, password: String?): CircleJoinResult =
-        joinResult(circles.firstOrNull { it.id == circleId } ?: myCircles.first { it.id == circleId })
+    override suspend fun joinCircle(circleId: String, password: String?): CircleJoinResult {
+        val result = joinResult(find(circleId))
+        if (result is CircleJoinResult.Joined && joinedCircles.none { it.id == circleId }) {
+            joinedCircles += find(circleId)
+        }
+        return result
+    }
 
     override suspend fun cancelJoinRequest(circleId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun leaveCircle(circleId: String): Result<Unit> {
+        if (failLeave) return Result.failure(BOOM)
+        joinedCircles.removeAll { it.id == circleId }
+        return Result.success(Unit)
+    }
 
     override suspend fun approveJoinRequest(circleId: String, userId: String): Result<Unit> =
         Result.success(Unit)
@@ -90,6 +106,11 @@ class FakeCircleRepository(
 
     override fun observePendingRequests(circleId: String): Flow<PendingJoinRequestEvent> =
         flowOf()
+
+    private fun find(circleId: String): Circle =
+        circles.firstOrNull { it.id == circleId }
+            ?: privateCircles.firstOrNull { it.id == circleId }
+            ?: joinedCircles.first { it.id == circleId }
 
     private companion object {
         val BOOM = IllegalStateException("boom")

@@ -115,6 +115,38 @@ class HomeViewModelTest {
         }
 
     @Test
+    fun `available circles are loaded and filtered to joinable statuses`() =
+        runTest(dispatcher) {
+            val completed = CIRCLE.copy(id = "circle-2", name = "مكتملة", status = CircleStatus.COMPLETED)
+            val viewModel = viewModel(
+                FakeAlmahirRepository(),
+                circleRepository = FakeCircleRepository(circles = listOf(CIRCLE, completed)),
+            )
+
+            testScheduler.advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertEquals(1, state.availableCircles.size)
+            assertEquals("circle-1", state.availableCircles.single().id)
+        }
+
+    @Test
+    fun `a public-circles failure does not surface as a page error`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel(
+                FakeAlmahirRepository(),
+                circleRepository = FakeCircleRepository(failPublic = true),
+            )
+
+            testScheduler.advanceUntilIdle()
+
+            val state = viewModel.state.value
+            assertFalse(state.isLoading)
+            assertFalse(state.hasError)
+            assertTrue(state.availableCircles.isEmpty())
+        }
+
+    @Test
     fun `continue reading intent emits navigation carrying the saved page`() =
         runTest(dispatcher) {
             val viewModel = viewModel(FakeAlmahirRepository())
@@ -126,15 +158,25 @@ class HomeViewModelTest {
         }
 
     @Test
-    fun `a circle click emits navigation carrying the circle id`() =
+    fun `see all circles intent emits navigation to the circle list`() =
         runTest(dispatcher) {
             val viewModel = viewModel(FakeAlmahirRepository())
             testScheduler.advanceUntilIdle()
 
-            viewModel.onIntent(HomeIntent.CircleClicked("circle-1"))
+            viewModel.onIntent(HomeIntent.SeeAllCirclesClicked)
 
-            assertEquals(HomeEffect.OpenCircle("circle-1"), viewModel.effect.first())
+            assertEquals(HomeEffect.OpenCircleList, viewModel.effect.first())
         }
+
+    @Test
+    fun `circle click emits navigation carrying the circle id`() = runTest(dispatcher) {
+        val viewModel = viewModel(FakeAlmahirRepository())
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(HomeIntent.CircleClicked("circle-1"))
+
+        assertEquals(HomeEffect.OpenCircle("circle-1"), viewModel.effect.first())
+    }
 
     private fun viewModel(
         repository: FakeAlmahirRepository,
