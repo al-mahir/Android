@@ -56,6 +56,16 @@ val aiServiceToken: String = run {
     fromLocal ?: (findProperty("almahir.aiToken") as String?) ?: ""
 }
 
+// Local dev servers (emulator loopback, LAN IP, or a plain "localhost" tajwid-serve) never have
+// a TLS cert - only a real hostname (ngrok, production) does. Without "localhost"/"127.0.0.1"
+// here, almahir.aiService=localhost:8100 was wrongly treated as secure, so the client tried WSS
+// against a plaintext server and every live-correction session failed until reconnects exhausted.
+val aiServiceIsLocal: Boolean =
+    aiServiceAuthority.contains("192.168") ||
+        aiServiceAuthority.contains("10.0.2.2") ||
+        aiServiceAuthority.contains("localhost") ||
+        aiServiceAuthority.contains("127.0.0.1")
+
 android {
     namespace = "com.example.mushaf.data"
     compileSdk {
@@ -70,7 +80,7 @@ android {
         buildConfigField("String", "AI_SERVICE_AUTHORITY", "\"$aiServiceAuthority\"")
         buildConfigField("String", "HF_ACCESS_TOKEN", "\"$hfAccessToken\"")
         buildConfigField("String", "AI_SERVICE_TOKEN", "\"$aiServiceToken\"")
-        buildConfigField("Boolean", "AI_SERVICE_SECURE", "${!aiServiceAuthority.contains("192.168") && !aiServiceAuthority.contains("10.0.2.2")}")
+        buildConfigField("Boolean", "AI_SERVICE_SECURE", "${!aiServiceIsLocal}")
     }
     buildFeatures {
         buildConfig = true
