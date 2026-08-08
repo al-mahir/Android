@@ -41,6 +41,7 @@ class AlmahirRepositoryImpl(
     private val sheikhDataSource: SheikhDataSource,
     private val circleDataSource: CircleDataSource,
     private val dao: RecitationSessionDao,
+    private val meetingStatusDao: com.iti.data.local.meeting.MeetingStatusDao,
     private val localDataSource: AlmahirLocalDataSource? = null,
     private val appPreferencesDataStore: AppPreferencesDataStore? = null,
     private val json: Json = SessionJson,
@@ -104,6 +105,14 @@ class AlmahirRepositoryImpl(
 
     override suspend fun removeBookmark(id: String): Result<Unit> =
         resultOf { localDataSource?.deleteBookmark(id) }
+
+    override fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>> =
+        meetingStatusDao.observeMeetingStatuses(userId).map { entities ->
+            entities.map { it.toDomain() }
+        }.asResult()
+
+    override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
+        resultOf { meetingStatusDao.insert(status.toEntity()) }
 
     // ── SheikhRepository ──────────────────────────────────────────────────
 
@@ -245,6 +254,20 @@ class AlmahirRepositoryImpl(
         sheikhId = sheikhId,
         note = note,
         createdAtEpochMillis = createdAtEpochMillis
+    )
+
+    private fun com.iti.domain.model.MeetingStatus.toEntity() = com.iti.data.local.meeting.MeetingStatusEntity(
+        id = id,
+        userId = userId,
+        meetingTime = meetingTime,
+        status = status
+    )
+
+    private fun com.iti.data.local.meeting.MeetingStatusEntity.toDomain() = com.iti.domain.model.MeetingStatus(
+        id = id,
+        userId = userId,
+        meetingTime = meetingTime,
+        status = status
     )
 }
 

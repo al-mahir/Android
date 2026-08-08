@@ -9,8 +9,12 @@ import com.iti.data.local.recitation.RecitationSessionEntity
 
 
 @Database(
-    entities = [RecitationSessionEntity::class, com.iti.data.local.bookmark.BookmarkEntity::class],
-    version = 2,
+    entities = [
+        RecitationSessionEntity::class, 
+        com.iti.data.local.bookmark.BookmarkEntity::class,
+        com.iti.data.local.meeting.MeetingStatusEntity::class
+    ],
+    version = 3,
     exportSchema = false,
 )
 abstract class AlmahirDatabase : RoomDatabase() {
@@ -18,6 +22,8 @@ abstract class AlmahirDatabase : RoomDatabase() {
     abstract fun recitationSessionDao(): RecitationSessionDao
 
     abstract fun bookmarkDao(): com.iti.data.local.bookmark.BookmarkDao
+
+    abstract fun meetingStatusDao(): com.iti.data.local.meeting.MeetingStatusDao
 
     companion object {
         private const val NAME = "almahir.db"
