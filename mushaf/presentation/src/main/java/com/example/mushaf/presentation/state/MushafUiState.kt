@@ -10,6 +10,8 @@ import com.example.mushaf.domain.model.ReadingMode
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.presentation.audio.AudioState
 
+import com.example.mushaf.presentation.muallem.MuallemSessionState
+
 data class MushafUiState(
     val currentPage: Int = MushafConstants.FIRST_PAGE,
     val pages: Map<Int, MushafPage> = emptyMap(),
@@ -65,6 +67,10 @@ data class MushafUiState(
     // Bookmarks
     val bookmarkedPages: Set<Int> = emptySet(),
     val bookmarkedAyahs: Set<Pair<Int, Int>> = emptySet(),
+
+    // Mu'allem session
+    val showMuallemSetup: Boolean = false,
+    val muallemSession: MuallemSessionState? = null,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
     val isCurrentPageBookmarked: Boolean get() = currentPage in bookmarkedPages
