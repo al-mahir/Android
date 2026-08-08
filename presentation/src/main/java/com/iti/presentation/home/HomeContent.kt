@@ -11,15 +11,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.presentation.R
-import com.iti.presentation.home.components.ActiveCircleRow
+import com.iti.presentation.circle.CurrentCircleCard
 import com.iti.presentation.home.components.AyahOfTheDayCard
+import com.iti.presentation.home.components.CirclesSummaryCard
 import com.iti.presentation.home.components.ContinueReadingCard
 import com.iti.presentation.home.components.HomeHeader
 import com.iti.presentation.home.components.HomeSkeleton
@@ -51,6 +54,11 @@ fun HomeContent(
         .background(Theme.colors.backGround)
 
     val gutter = Modifier.padding(horizontal = Theme.spacing.medium)
+
+    val joinedCircleIds = remember(state.myCircles) { state.myCircles.mapTo(mutableSetOf()) { it.id } }
+    val availableCount = remember(state.availableCircles, joinedCircleIds) {
+        state.availableCircles.count { it.id !in joinedCircleIds }
+    }
 
     when {
         state.hasError -> NetworkErrorScreen(
@@ -140,22 +148,37 @@ fun HomeContent(
                     }
                 }
 
-                // ── My circles ──────────────────────────────────────────────
-                if (state.myCircles.isNotEmpty() && !state.isOffline) {
-                    item(key = "circles-header") {
-                        SectionHeader(
-                            title = stringResource(R.string.home_section_my_circles),
-                            actionLabel = stringResource(R.string.home_see_all),
-                            onActionClick = onSeeAllCirclesClick,
-                            modifier = gutter,
-                        )
-                    }
-                    items(items = state.myCircles, key = { circle -> circle.id }) { circle ->
-                        ActiveCircleRow(
-                            circle = circle,
-                            onClick = { onCircleClick(circle.id) },
-                            modifier = gutter,
-                        )
+                // ── Circles ──────────────────────────────────────────────────
+                // A joined circle is featured as the "current circle"; otherwise the plain
+                // summary entry opens the full circle list.
+                if (!state.isOffline && (state.myCircles.isNotEmpty() || availableCount > 0)) {
+                    val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
+                        ?: state.myCircles.firstOrNull()
+                    if (current != null) {
+                        item(key = "circles-header") {
+                            SectionHeader(
+                                title = stringResource(R.string.home_circles_title),
+                                actionLabel = stringResource(R.string.home_see_all),
+                                onActionClick = onSeeAllCirclesClick,
+                                modifier = gutter,
+                            )
+                        }
+                        item(key = "current-circle") {
+                            CurrentCircleCard(
+                                circle = current,
+                                onClick = { onCircleClick(current.id) },
+                                modifier = gutter,
+                            )
+                        }
+                    } else {
+                        item(key = "circles-summary") {
+                            CirclesSummaryCard(
+                                joinedCount = state.myCircles.size,
+                                availableCount = availableCount,
+                                onClick = onSeeAllCirclesClick,
+                                modifier = gutter,
+                            )
+                        }
                     }
                 }
 

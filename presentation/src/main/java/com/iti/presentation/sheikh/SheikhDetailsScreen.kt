@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.button.PrimaryButton
@@ -43,6 +44,9 @@ import com.iti.presentation.sheikh.state.SheikhDetailsIntent
 import com.iti.presentation.sheikh.state.SheikhDetailsUiState
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
+
+/** Compact height of the app bar content (below the status bar) on this screen. */
+private val SheikhDetailsTopBarHeight: Dp = 64.dp
 
 @Composable
 fun SheikhDetailsScreen(
@@ -81,7 +85,7 @@ private fun SheikhDetailsContent(
     onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(Theme.colors.backGround),
@@ -89,20 +93,29 @@ private fun SheikhDetailsContent(
         BackTitleTopBar(
             title = state.sheikh?.name ?: stringResource(R.string.sheikh_details_title),
             onBackClick = onBack,
+            height = SheikhDetailsTopBarHeight,
+            extendsUnderStatusBar = true,
+            modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        when {
-            state.isLoading -> SheikhDetailsSkeleton()
-            state.isError || state.sheikh == null -> NetworkErrorScreen(
-                modifier = Modifier.fillMaxSize(),
-                onRetry = onRetry,
-            )
-            else -> SheikhDetailsBody(
-                sheikh = state.sheikh,
-                circles = state.circles,
-                onCircleClick = onCircleClick,
-                onRequestMeeting = { onRequestMeeting(state.sheikh.id, state.sheikh.name) },
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = SheikhDetailsTopBarHeight),
+        ) {
+            when {
+                state.isLoading -> SheikhDetailsSkeleton()
+                state.isError || state.sheikh == null -> NetworkErrorScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onRetry = onRetry,
+                )
+                else -> SheikhDetailsBody(
+                    sheikh = state.sheikh,
+                    circles = state.circles,
+                    onCircleClick = onCircleClick,
+                    onRequestMeeting = { onRequestMeeting(state.sheikh.id, state.sheikh.name) },
+                )
+            }
         }
     }
 }

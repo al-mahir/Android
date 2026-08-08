@@ -8,6 +8,7 @@ import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.presentation.R
@@ -140,9 +141,26 @@ class HomeViewModel(
         viewModelScope.launch {
             circleRepository.getMyCircles().fold(
                 onSuccess = { circles -> updateState { copy(myCircles = circles) } },
-                onFailure = { error ->
-                    android.util.Log.w("HomeViewModel", "getMyCircles failed", error)
+                onFailure = {
                     /* My circles are a section; a partial failure leaves it empty. */
+                },
+            )
+        }
+
+        viewModelScope.launch {
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(
+                            availableCircles = circles.filter { circle ->
+                                circle.status == CircleStatus.SCHEDULED ||
+                                    circle.status == CircleStatus.ONGOING
+                            },
+                        )
+                    }
+                },
+                onFailure = {
+                    /* Available circles are a section; a partial failure leaves it empty. */
                 },
             )
         }

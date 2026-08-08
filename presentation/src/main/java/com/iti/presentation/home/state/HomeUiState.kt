@@ -20,6 +20,7 @@ data class HomeUiState(
     val ayahOfTheDay: AyahOfTheDay? = null,
     val sheikhs: List<Sheikh> = emptyList(),
     val myCircles: List<Circle> = emptyList(),
+    val availableCircles: List<Circle> = emptyList(),
     val pendingMeetingRequest: PendingMeetingRequest? = null,
     val activeCall: ActiveCallRecord? = null,
     val isOffline: Boolean = false,
