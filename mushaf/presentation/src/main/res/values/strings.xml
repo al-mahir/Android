@@ -247,4 +247,20 @@
     <string name="tafsir_qurtubi">Tafsir Al-Qurtubi</string>
     <string name="tafsir_saadi">Tafsir As-Sa\'di</string>
     <string name="tafsir_muyassar">Al-Tafsir Al-Muyassar</string>
+
+    <!-- Mu'allem Mode -->
+    <string name="muallem_setup_title">Mu\'allem Practice Setup</string>
+    <string name="muallem_setup_surah_label">Select Surah</string>
+    <string name="muallem_setup_ayah_label">Starting Ayah</string>
+    <string name="muallem_setup_ayah_of">of %1$d</string>
+    <string name="muallem_setup_repeats_label">Number of Repeats</string>
+    <string name="muallem_setup_repeats_suffix">repeats</string>
+    <string name="muallem_setup_start">Start Session</string>
+
+    <string name="muallem_session_ayah_info">Surah %1$d, Ayah %2$d</string>
+    <string name="muallem_stop_session">Stop</string>
+    <string name="muallem_phase_sheikh_playing">Sheikh is reading…</string>
+    <string name="muallem_phase_user_recording">Repeat the Ayah • %1$d/%2$d</string>
+    <string name="muallem_phase_feedback">Accuracy: %1$d%%</string>
+    <string name="muallem_phase_feedback_done">Done</string>
 </resources>

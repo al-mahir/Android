@@ -38,7 +38,17 @@ object ArabicPhoneticMatcher {
 
     private const val MIN_PARTIAL_MATCH_LENGTH = 2
 
-    fun isMatch(spoken: String, expected: String): Boolean {
+    /**
+     * [strict] stops after the exact / phonetic-group / affix-strip tiers and skips the loose
+     * partial-containment, edit-distance and soundex fallbacks entirely. Added after a real-device
+     * finding: with a wide candidate window, those loose tiers matched 57 of 61 recognized tokens
+     * even when the tokens were garbled ASR output, since short/common Arabic words repeat
+     * constantly. [LocalCursorTracker] - which moves the cursor on *every* word, no
+     * consecutive-agreement check - always calls with `strict = true`; a caller doing its own
+     * multi-word confirmation before acting (e.g. a start-position lock) can afford the loose
+     * default.
+     */
+    fun isMatch(spoken: String, expected: String, strict: Boolean = false): Boolean {
         val a = ArabicTextNormalizer.normalize(spoken)
         val b = ArabicTextNormalizer.normalize(expected)
         if (a.isEmpty() || b.isEmpty()) return false
@@ -58,6 +68,8 @@ object ArabicPhoneticMatcher {
                 if (stripped == b || isPhoneticGroupMatch(stripped, b)) return true
             }
         }
+
+        if (strict) return false
 
         // One side spoken/expected as a partial word (a short recitation cut off by the VAD, or
         // an elongation ASR split into two tokens).

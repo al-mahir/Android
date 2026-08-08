@@ -9,11 +9,11 @@ package com.example.mushaf.domain.model.recite.local
  */
 object LocalRecitationCursor {
 
-    fun resolve(spokenWord: String, window: List<LocalWordEntry>, biasIndex: Int): Int? {
+    fun resolve(spokenWord: String, window: List<LocalWordEntry>, biasIndex: Int, strict: Boolean = false): Int? {
         var bestIndex: Int? = null
         var bestDistance = Int.MAX_VALUE
         window.forEachIndexed { index, entry ->
-            if (!ArabicPhoneticMatcher.isMatch(spokenWord, entry.plainText)) return@forEachIndexed
+            if (!ArabicPhoneticMatcher.isMatch(spokenWord, entry.plainText, strict)) return@forEachIndexed
             val distance = kotlin.math.abs(index - biasIndex)
             if (distance < bestDistance) {
                 bestDistance = distance

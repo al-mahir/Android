@@ -419,10 +419,10 @@ private fun AppNavHost(
                             onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
                                 val top = backStack.lastOrNull()
                                 val isCallAlreadyTop =
-                                    top is com.iti.meeting.presentation.navigation.MeetingRoute.Call && top.requestId == requestId
+                                    top is MeetingRoute.Call && top.requestId == requestId
                                 if (!isCallAlreadyTop && !isPhantomReplayOfEndedCall(requestId)) {
                                     backStack.add(
-                                        com.iti.meeting.presentation.navigation.MeetingRoute.Call(
+                                        MeetingRoute.Call(
                                             requestId,
                                             token,
                                             channelName,

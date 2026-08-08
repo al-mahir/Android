@@ -49,6 +49,7 @@ turbine = "1.2.1"
 navigation3Runtime = "1.1.4"
 agoraRtc = "4.3.0"
 kotlinxDatetime = "0.6.1"
+sherpaOnnx = "1.13.4"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -95,6 +96,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core" }
 ktor-client-android = { module = "io.ktor:ktor-client-android" }
 # The Android engine does not implement WebSockets; the live recitation socket needs OkHttp.
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp" }
+okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version = "4.12.0" }
 ktor-client-websockets = { module = "io.ktor:ktor-client-websockets" }
 # Test-only: an in-process stand-in for the AI service, so the protocol client is testable
 # without a GPU server on the other end.
@@ -160,6 +162,9 @@ media3-session = { group = "androidx.media3", name = "media3-session", version.r
 # meeting-kit (Agora RTC + kotlinx-datetime for expiresAt handling)
 agora-rtc-sdk = { module = "io.agora.rtc:full-sdk", version.ref = "agoraRtc" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+
+# On-device streaming ASR (local cursor-tracking path) - JitPack only, see settings.gradle.kts.
+sherpa-onnx = { module = "com.github.k2-fsa:sherpa-onnx", version.ref = "sherpaOnnx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

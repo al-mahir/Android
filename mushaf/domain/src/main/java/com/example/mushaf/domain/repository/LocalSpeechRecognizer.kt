@@ -1,27 +1,32 @@
 package com.example.mushaf.domain.repository
 
-import com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability
-import kotlinx.coroutines.flow.Flow
+import com.example.mushaf.domain.model.recite.AudioFrame
+import kotlinx.coroutines.flow.SharedFlow
 
 /**
- * On-device speech-to-text, kept as narrow a contract as the live pipeline needs: settled words,
- * not raw partial-result churn — the debounce (last word unchanged for ~450ms, or the engine
- * marks it final) happens behind this interface, mirroring the iOS build's `SpeechRecognizer`.
- *
- * This is the Phase 2 spike from
- * docs/features/06-taahud-local-recitation-tracking-plan.md — answering whether Android's
- * built-in recognizer is accurate enough on Quranic recitation to be worth wiring into the live
- * cursor for real, before committing to a heavier engine (sherpa-onnx + a Qur'an-tuned model).
+ * A streaming, settled-word-at-a-time local recognizer - deliberately shaped as "fed frames",
+ * not "owns its own mic session". `android.speech.SpeechRecognizer` used to fill this role via
+ * its own discrete start/stop sessions, which meant a second concurrent mic session and OS
+ * chimes on every restart (see docs/features/06-taahud-speechrecognizer-status.md). This
+ * contract is fed from whatever capture session is already open for the grading socket - one mic
+ * session, ever, for the whole feature.
  */
 interface LocalSpeechRecognizer {
 
-    fun availability(): SpeechRecognitionAvailability
+    /** True once the underlying model is ready to decode - see `AsrModelRepository`. Callers
+     * should still call [accept] opportunistically either way; it's a no-op until this is true. */
+    val isAvailable: Boolean
 
-    /**
-     * Starts listening and emits one settled word at a time until the collector cancels.
-     * Throws if [availability] is [SpeechRecognitionAvailability.UNAVAILABLE] — callers must
-     * check first, the same way [com.example.mushaf.domain.repository.LiveRecitationRepository]
-     * callers are expected to hold RECORD_AUDIO before calling.
-     */
-    fun listen(): Flow<String>
+    /** One settled word at a time, in reading order. Never a guess - see
+     * [com.example.mushaf.domain.model.recite.local.ArabicPhoneticMatcher] usage downstream for
+     * how a non-match is silently dropped rather than moving the cursor. */
+    val words: SharedFlow<String>
+
+    /** Feeds one frame of 16kHz mono PCM16 audio. Safe to call every frame, unconditionally -
+     * never throws or blocks the caller's session if the model isn't ready yet. */
+    suspend fun accept(frame: AudioFrame)
+
+    /** Clears in-progress decode state - call at the start/end of a live session so a new
+     * session never inherits a stale partial utterance from the previous one. */
+    fun reset()
 }

@@ -24,7 +24,9 @@ import com.example.mushaf.data.BuildConfig
 data class AiServiceConfig(
     val authority: String = DEFAULT_AUTHORITY,
      
-    val secure: Boolean = false,
+    val secure: Boolean = DEFAULT_SECURE,
+
+    val token: String = DEFAULT_TOKEN,
 ) {
     val httpBaseUrl: String get() = "${if (secure) "https" else "http"}://$authority"
 
@@ -40,6 +42,8 @@ data class AiServiceConfig(
 
  
         val DEFAULT_AUTHORITY: String = BuildConfig.AI_SERVICE_AUTHORITY
+        val DEFAULT_SECURE: Boolean = BuildConfig.AI_SERVICE_SECURE
+        val DEFAULT_TOKEN: String = BuildConfig.AI_SERVICE_TOKEN
 
         const val SESSION_PATH = "/ws/session"
     }
