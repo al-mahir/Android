@@ -1,6 +1,7 @@
 package com.example.mushaf.data.core.di
 
 import android.util.Log
+import com.example.mushaf.data.BuildConfig
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.engine.okhttp.OkHttp
@@ -23,13 +24,19 @@ private const val TAG = "AiServiceNet"
 
 val mushafNetworkModule = module {
     single(named(AI_SERVICE_CLIENT)) {
-        val token = com.example.mushaf.data.BuildConfig.AI_SERVICE_TOKEN
+        val token = BuildConfig.AI_SERVICE_TOKEN
+        val authority = BuildConfig.AI_SERVICE_AUTHORITY
+        val secure = BuildConfig.AI_SERVICE_SECURE
+        // Must match whichever backend AI_SERVICE_AUTHORITY actually points at (local dev
+        // server or the hosted ngrok tunnel) - a hardcoded ngrok Origin sent to a different
+        // backend is wrong and would fail Origin validation if that backend ever checks it.
+        val origin = "${if (secure) "https" else "http"}://$authority"
 
         // ── Diagnostic logs ──────────────────────────────────────────────────
         Log.i(TAG, "=== AI Service client init ===")
         Log.i(TAG, "  token blank? ${token.isBlank()} | length=${token.length}")
-        Log.i(TAG, "  authority   = ${com.example.mushaf.data.BuildConfig.AI_SERVICE_AUTHORITY}")
-        Log.i(TAG, "  secure      = ${com.example.mushaf.data.BuildConfig.AI_SERVICE_SECURE}")
+        Log.i(TAG, "  authority   = $authority")
+        Log.i(TAG, "  secure      = $secure")
         // ─────────────────────────────────────────────────────────────────────
 
         // Header-injection interceptor — logs every header we add so we can
@@ -38,7 +45,7 @@ val mushafNetworkModule = module {
             val original = chain.request()
             val req = original.newBuilder()
                 .addHeader("ngrok-skip-browser-warning", "true")
-                .addHeader("Origin", "https://qualm-mountable-cultivate.ngrok-free.dev")
+                .addHeader("Origin", origin)
                 .apply { if (token.isNotBlank()) addHeader("Authorization", "Bearer $token") }
                 .build()
 
