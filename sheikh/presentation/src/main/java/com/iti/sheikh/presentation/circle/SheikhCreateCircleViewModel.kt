@@ -15,7 +15,7 @@ import com.iti.sheikh.presentation.core.mvi.EffectPublisher
 import com.iti.sheikh.presentation.core.mvi.StateHolder
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlin.time.hours
+import kotlinx.datetime.Instant
 
 class SheikhCreateCircleViewModel(
     private val circleRepository: CircleRepository,
@@ -24,10 +24,11 @@ class SheikhCreateCircleViewModel(
     EffectPublisher<SheikhCreateCircleEffect> by DefaultEffectPublisher() {
 
     init {
+        val now = Clock.System.now().epochSeconds
         updateState {
             copy(
-                startDate = Clock.System.now().plus(1.hours).toString(),
-                endDate = Clock.System.now().plus(2.hours).toString(),
+                startDate = Instant.fromEpochSeconds(now + 3_600).toString(),
+                endDate = Instant.fromEpochSeconds(now + 7_200).toString(),
             )
         }
     }

@@ -184,6 +184,7 @@ private fun SheikhCircleManageContent(
             onDismiss = { pendingLifecycleAction = null },
         )
         null -> Unit
+        else -> Unit
     }
 }
 
@@ -376,8 +377,10 @@ private fun LifecycleActions(
             CircleStatus.COMPLETED, CircleStatus.CANCELLED -> {
                 BasicText(
                     text = stringResource(R.string.sheikh_circle_closed_note),
-                    style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
-                    textAlign = TextAlign.Center,
+                    style = Theme.typography.body.small.copy(
+                        color = Theme.colors.secondaryFont,
+                        textAlign = TextAlign.Center,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

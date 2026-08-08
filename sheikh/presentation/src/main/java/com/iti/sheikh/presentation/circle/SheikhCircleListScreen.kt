@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
@@ -34,6 +35,8 @@ import com.iti.sheikh.presentation.circle.state.SheikhCircleListIntent
 import com.iti.sheikh.presentation.circle.state.SheikhCircleListUiState
 import com.iti.sheikh.presentation.core.mvi.ObserveEffect
 import org.koin.androidx.compose.koinViewModel
+
+private val SheikhCircleListTopBarHeight = 64.dp
 
 @Composable
 fun SheikhCircleListScreen(
@@ -84,7 +87,7 @@ private fun SheikhCircleListContent(
             }
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
@@ -92,27 +95,36 @@ private fun SheikhCircleListContent(
             BackTitleTopBar(
                 title = stringResource(R.string.sheikh_circle_list_title),
                 onBackClick = onBack,
+                height = SheikhCircleListTopBarHeight,
+                extendsUnderStatusBar = true,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
 
-            when {
-                state.isLoading -> SheikhCircleListSkeleton()
-                state.isError -> NetworkErrorScreen(modifier = Modifier.fillMaxSize(), onRetry = onRetry)
-                state.circles.isEmpty() -> EmptyDataScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    title = stringResource(R.string.sheikh_circle_list_empty_title),
-                    description = stringResource(R.string.sheikh_circle_list_empty_description),
-                    actionButtonText = stringResource(R.string.sheikh_circle_list_create),
-                    onActionClick = onCreateCircle,
-                )
-                else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(state.circles, key = { it.id }) { circle ->
-                        SheikhCircleCard(
-                            circle = circle,
-                            onClick = { onCircleClick(circle.id) },
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                        )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = SheikhCircleListTopBarHeight),
+            ) {
+                when {
+                    state.isLoading -> SheikhCircleListSkeleton()
+                    state.isError -> NetworkErrorScreen(modifier = Modifier.fillMaxSize(), onRetry = onRetry)
+                    state.circles.isEmpty() -> EmptyDataScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        title = stringResource(R.string.sheikh_circle_list_empty_title),
+                        description = stringResource(R.string.sheikh_circle_list_empty_description),
+                        actionButtonText = stringResource(R.string.sheikh_circle_list_create),
+                        onActionClick = onCreateCircle,
+                    )
+                    else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.circles, key = { it.id }) { circle ->
+                            SheikhCircleCard(
+                                circle = circle,
+                                onClick = { onCircleClick(circle.id) },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                            )
+                        }
+                        item { Spacer(modifier = Modifier.height(80.dp)) }
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
                 }
             }
         }

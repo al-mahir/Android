@@ -227,14 +227,14 @@ private fun TypeSelector(
         modifier = modifier,
     ) {
         SelectorPill(
-            label = stringResource(R.string.sheikh_create_circle_type_public),
+            label = stringResource(R.string.sheikh_circle_type_public),
             icon = Icons.Outlined.Public,
             selected = selected == CircleType.PUBLIC,
             onClick = { onSelected(CircleType.PUBLIC) },
             modifier = Modifier.weight(1f),
         )
         SelectorPill(
-            label = stringResource(R.string.sheikh_create_circle_type_private),
+            label = stringResource(R.string.sheikh_circle_type_private),
             icon = Icons.Outlined.Lock,
             selected = selected == CircleType.PRIVATE,
             onClick = { onSelected(CircleType.PRIVATE) },
@@ -277,8 +277,10 @@ private fun SelectorGroup(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BasicText(
             text = label,
-            style = Theme.typography.body.small.copy(fontWeight = FontWeight.SemiBold),
-            color = Theme.colors.secondaryFont,
+            style = Theme.typography.body.small.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = Theme.colors.secondaryFont,
+            ),
         )
         Row(
             modifier = Modifier
@@ -294,10 +296,10 @@ private fun SelectorGroup(
 @Composable
 private fun SelectorPill(
     label: String,
-    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
 ) {
     Row(
         modifier = modifier
@@ -309,13 +311,15 @@ private fun SelectorPill(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (selected) Theme.colors.onPrimary else Theme.colors.secondaryFont,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(modifier = Modifier.size(6.dp))
+        icon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                tint = if (selected) Theme.colors.onPrimary else Theme.colors.secondaryFont,
+                modifier = Modifier.size(16.dp),
+            )
+            Spacer(modifier = Modifier.size(6.dp))
+        }
         BasicText(
             text = label,
             style = Theme.typography.body.small.copy(
