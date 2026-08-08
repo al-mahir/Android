@@ -30,6 +30,20 @@ val aiServiceAuthority: String = run {
     fromLocal ?: (findProperty("almahir.aiService") as String?) ?: "10.0.2.2:8100"
 }
 
+// Gated HF repo access for the on-device ASR model download (AsrModelRepositoryImpl) - never
+// checked into version control, same local.properties pattern as aiServiceAuthority above.
+val hfAccessToken: String = run {
+    val localProperties = rootProject.file("local.properties")
+    val fromLocal: String? = if (localProperties.exists()) {
+        val properties = Properties()
+        localProperties.inputStream().use { properties.load(it) }
+        properties.getProperty("almahir.hfToken")
+    } else {
+        null
+    }
+    fromLocal ?: (findProperty("almahir.hfToken") as String?) ?: ""
+}
+
 android {
     namespace = "com.example.mushaf.data"
     compileSdk {
@@ -42,6 +56,7 @@ android {
         minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "AI_SERVICE_AUTHORITY", "\"$aiServiceAuthority\"")
+        buildConfigField("String", "HF_ACCESS_TOKEN", "\"$hfAccessToken\"")
     }
     buildFeatures {
         buildConfig = true
@@ -96,6 +111,9 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    // On-device streaming ASR for the local cursor-tracking path (see recite/local/asr).
+    implementation(libs.sherpa.onnx)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

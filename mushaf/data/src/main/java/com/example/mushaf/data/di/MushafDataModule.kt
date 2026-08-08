@@ -13,6 +13,8 @@ import com.example.mushaf.data.prefs.RecitationSettingsDataStore
 import com.example.mushaf.data.recite.audio.AudioRecordPcmRecorder
 import com.example.mushaf.data.recite.audio.PcmRecorder
 import com.example.mushaf.data.recite.audio.WavDebugSink
+import com.example.mushaf.data.recite.local.asr.AsrModelRepositoryImpl
+import com.example.mushaf.data.recite.local.asr.ZipformerLocalSpeechRecognizer
 import com.example.mushaf.data.recite.remote.AiServiceApi
 import com.example.mushaf.data.recite.remote.AiServiceConfig
 import com.example.mushaf.data.recite.remote.LiveRecitationSocket
@@ -23,8 +25,10 @@ import com.example.mushaf.data.repository.ReadingProgressRepositoryImpl
 import com.example.mushaf.data.repository.RecitationApiRepositoryImpl
 import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
 import com.example.mushaf.data.repository.RecitationRepositoryImpl
+import com.example.mushaf.domain.repository.AsrModelRepository
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
 import com.example.mushaf.domain.repository.LiveRecitationRepository
+import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
@@ -85,7 +89,13 @@ val mushafDataModule = module {
     single { AiServiceConfig() }
     single { AiServiceApi(get(named(AI_SERVICE_CLIENT)), get()) }
     single { LiveRecitationSocket(get(named(AI_SERVICE_CLIENT)), get()) }
-    single<LiveRecitationRepository> { LiveRecitationRepositoryImpl(get(), get()) }
+
+    // On-device streaming ASR for the local cursor-tracking path (see recite/local/asr).
+    single { AsrModelRepositoryImpl(androidContext()) }
+    single<AsrModelRepository> { get<AsrModelRepositoryImpl>() }
+    single<LocalSpeechRecognizer> { ZipformerLocalSpeechRecognizer(get()) }
+
+    single<LiveRecitationRepository> { LiveRecitationRepositoryImpl(get(), get(), get(), get()) }
 
     // Recitation data source + repositories
     single { com.example.mushaf.data.recitation.remote.QuranApi(get(named(SEARCH_CLIENT))) }

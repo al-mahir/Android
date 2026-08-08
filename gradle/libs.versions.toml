@@ -49,6 +49,7 @@ turbine = "1.2.1"
 navigation3Runtime = "1.1.4"
 agoraRtc = "4.3.0"
 kotlinxDatetime = "0.6.1"
+sherpaOnnx = "1.13.4"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -160,6 +161,9 @@ media3-session = { group = "androidx.media3", name = "media3-session", version.r
 # meeting-kit (Agora RTC + kotlinx-datetime for expiresAt handling)
 agora-rtc-sdk = { module = "io.agora.rtc:full-sdk", version.ref = "agoraRtc" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+
+# On-device streaming ASR (local cursor-tracking path) - JitPack only, see settings.gradle.kts.
+sherpa-onnx = { module = "com.github.k2-fsa:sherpa-onnx", version.ref = "sherpaOnnx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

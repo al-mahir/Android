@@ -19,6 +19,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // sherpa-onnx (on-device streaming ASR) is only published via JitPack, not Maven Central.
+        maven("https://jitpack.io")
     }
 }
 
