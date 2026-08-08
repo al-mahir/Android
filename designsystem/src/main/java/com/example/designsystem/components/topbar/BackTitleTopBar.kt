@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 
@@ -24,10 +25,14 @@ fun BackTitleTopBar(
     iconStyle: TopBarIconStyle = TopBarIconStyle.CircularBackground(),
     decoration: (@Composable BoxScope.() -> Unit)? = null,
     end: (@Composable RowScope.() -> Unit)? = null,
+    height: Dp = TopBarHeight,
+    extendsUnderStatusBar: Boolean = true,
 ) {
     BaseTopBar(
         modifier = modifier,
         decoration = decoration,
+        height = height,
+        extendsUnderStatusBar = extendsUnderStatusBar,
         start = {
             TopBarIcon(
                 icon = backIcon,
