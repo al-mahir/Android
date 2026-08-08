@@ -1,5 +1,6 @@
 package com.iti.presentation.circle
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -36,12 +37,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.ButtonHeightCompact
+import com.example.designsystem.components.dialog.ConfirmationDialog
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.InSessionEffect
@@ -68,11 +71,14 @@ fun InSessionScreen(
     viewModel: InSessionViewModel = koinViewModel(parameters = { parametersOf(circleId) }),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             InSessionEffect.NavigateBack -> onBack()
             InSessionEffect.OpenMushaf -> onOpenMushaf()
+            is InSessionEffect.ShowMessage ->
+                Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -96,6 +102,7 @@ private fun InSessionContent(
     ) {
         SessionTopBar(
             surahName = state.circle?.name ?: "",
+            isLeaving = state.isLeaving,
             onLeave = { onIntent(InSessionIntent.Leave) },
         )
 
@@ -123,11 +130,26 @@ private fun InSessionContent(
             onIntent = onIntent,
         )
     }
+
+    if (state.isLeaveDialogVisible) {
+        ConfirmationDialog(
+            title = stringResource(R.string.circle_leave_title),
+            message = stringResource(R.string.circle_leave_message),
+            confirmLabel = stringResource(R.string.circle_leave_confirm),
+            dismissLabel = stringResource(R.string.circle_leave_cancel),
+            onConfirm = { onIntent(InSessionIntent.ConfirmLeave) },
+            onDismiss = { onIntent(InSessionIntent.DismissLeaveDialog) },
+            confirmColor = Theme.colors.error,
+            confirmContentColor = Theme.colors.onError,
+            isConfirmLoading = state.isLeaving,
+        )
+    }
 }
 
 @Composable
 private fun SessionTopBar(
     surahName: String,
+    isLeaving: Boolean,
     onLeave: () -> Unit,
 ) {
     Row(
@@ -140,6 +162,7 @@ private fun SessionTopBar(
         PrimaryButton(
             caption = stringResource(R.string.session_leave),
             onClick = onLeave,
+            isLoading = isLeaving,
             height = ButtonHeightCompact,
             modifier = Modifier.width(80.dp),
         )

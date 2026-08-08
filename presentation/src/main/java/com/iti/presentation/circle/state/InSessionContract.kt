@@ -1,5 +1,6 @@
 package com.iti.presentation.circle.state
 
+import androidx.annotation.StringRes
 import com.iti.meeting.domain.model.circle.Circle
 
 data class InSessionUiState(
@@ -9,6 +10,8 @@ data class InSessionUiState(
     val participants: List<SessionParticipant> = emptyList(),
     val unreadChatCount: Int = 0,
     val speakingParticipantId: String? = null,
+    val isLeaveDialogVisible: Boolean = false,
+    val isLeaving: Boolean = false,
 )
 
 data class SessionParticipant(
@@ -23,6 +26,8 @@ sealed interface InSessionIntent {
     data object ToggleMic : InSessionIntent
     data object ToggleRaiseHand : InSessionIntent
     data object Leave : InSessionIntent
+    data object ConfirmLeave : InSessionIntent
+    data object DismissLeaveDialog : InSessionIntent
     data object OpenChat : InSessionIntent
     data object OpenMushaf : InSessionIntent
 }
@@ -30,4 +35,5 @@ sealed interface InSessionIntent {
 sealed interface InSessionEffect {
     data object NavigateBack : InSessionEffect
     data object OpenMushaf : InSessionEffect
+    data class ShowMessage(@StringRes val messageRes: Int) : InSessionEffect
 }

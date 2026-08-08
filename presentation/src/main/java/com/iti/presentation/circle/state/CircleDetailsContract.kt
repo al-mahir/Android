@@ -18,14 +18,21 @@ data class CircleDetailsUiState(
     val passwordPromptVisible: Boolean = false,
     val password: String = "",
     val joinState: CircleJoinUiState = CircleJoinUiState.Idle,
+    val isMember: Boolean = false,
+    val isLeaveDialogVisible: Boolean = false,
+    val isLeaving: Boolean = false,
 )
 
 sealed interface CircleDetailsIntent {
     data object Retry : CircleDetailsIntent
     data object JoinClicked : CircleDetailsIntent
+    data object EnterClicked : CircleDetailsIntent
     data class PasswordChanged(val password: String) : CircleDetailsIntent
     data object SubmitJoin : CircleDetailsIntent
     data object DismissPasswordPrompt : CircleDetailsIntent
+    data object LeaveClicked : CircleDetailsIntent
+    data object ConfirmLeave : CircleDetailsIntent
+    data object DismissLeaveDialog : CircleDetailsIntent
 }
 
 sealed interface CircleDetailsEffect {

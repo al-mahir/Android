@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.button.SecondaryButton
+import com.example.designsystem.components.dialog.ConfirmationDialog
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.components.topbar.BackTitleTopBar
@@ -75,9 +77,13 @@ fun CircleDetailsScreen(
         state = state,
         onBack = onBack,
         onJoinClicked = { viewModel.onIntent(CircleDetailsIntent.JoinClicked) },
+        onEnterClicked = { viewModel.onIntent(CircleDetailsIntent.EnterClicked) },
         onPasswordChanged = { viewModel.onIntent(CircleDetailsIntent.PasswordChanged(it)) },
         onSubmitJoin = { viewModel.onIntent(CircleDetailsIntent.SubmitJoin) },
         onDismissPasswordPrompt = { viewModel.onIntent(CircleDetailsIntent.DismissPasswordPrompt) },
+        onLeaveClicked = { viewModel.onIntent(CircleDetailsIntent.LeaveClicked) },
+        onConfirmLeave = { viewModel.onIntent(CircleDetailsIntent.ConfirmLeave) },
+        onDismissLeaveDialog = { viewModel.onIntent(CircleDetailsIntent.DismissLeaveDialog) },
         onRetry = { viewModel.onIntent(CircleDetailsIntent.Retry) },
         modifier = modifier,
     )
@@ -88,9 +94,13 @@ private fun CircleDetailsContent(
     state: CircleDetailsUiState,
     onBack: () -> Unit,
     onJoinClicked: () -> Unit,
+    onEnterClicked: () -> Unit,
     onPasswordChanged: (String) -> Unit,
     onSubmitJoin: () -> Unit,
     onDismissPasswordPrompt: () -> Unit,
+    onLeaveClicked: () -> Unit,
+    onConfirmLeave: () -> Unit,
+    onDismissLeaveDialog: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -113,11 +123,27 @@ private fun CircleDetailsContent(
             else -> CircleDetailsBody(
                 state = state,
                 onJoinClicked = onJoinClicked,
+                onEnterClicked = onEnterClicked,
                 onPasswordChanged = onPasswordChanged,
                 onSubmitJoin = onSubmitJoin,
                 onDismissPasswordPrompt = onDismissPasswordPrompt,
+                onLeaveClicked = onLeaveClicked,
             )
         }
+    }
+
+    if (state.isLeaveDialogVisible) {
+        ConfirmationDialog(
+            title = stringResource(R.string.circle_leave_title),
+            message = stringResource(R.string.circle_leave_message),
+            confirmLabel = stringResource(R.string.circle_leave_confirm),
+            dismissLabel = stringResource(R.string.circle_leave_cancel),
+            onConfirm = onConfirmLeave,
+            onDismiss = onDismissLeaveDialog,
+            confirmColor = Theme.colors.error,
+            confirmContentColor = Theme.colors.onError,
+            isConfirmLoading = state.isLeaving,
+        )
     }
 }
 
@@ -125,9 +151,11 @@ private fun CircleDetailsContent(
 private fun CircleDetailsBody(
     state: CircleDetailsUiState,
     onJoinClicked: () -> Unit,
+    onEnterClicked: () -> Unit,
     onPasswordChanged: (String) -> Unit,
     onSubmitJoin: () -> Unit,
     onDismissPasswordPrompt: () -> Unit,
+    onLeaveClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val circle = state.circle ?: return
@@ -182,8 +210,22 @@ private fun CircleDetailsBody(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        when (state.joinState) {
-            is CircleJoinUiState.PendingApproval -> WaitingChip()
+        when {
+            state.isMember -> {
+                PrimaryButton(
+                    caption = stringResource(R.string.circle_enter),
+                    onClick = onEnterClicked,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                SecondaryButton(
+                    caption = stringResource(R.string.circle_leave),
+                    onClick = onLeaveClicked,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            state.joinState is CircleJoinUiState.PendingApproval -> WaitingChip()
             else -> {
                 PrimaryButton(
                     caption = stringResource(R.string.circle_join),

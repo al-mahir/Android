@@ -25,14 +25,36 @@ class CircleDetailsViewModel(
 
     init {
         load()
+        checkMembership()
     }
 
     fun onIntent(intent: CircleDetailsIntent) = when (intent) {
         CircleDetailsIntent.Retry -> load()
         CircleDetailsIntent.JoinClicked -> onJoinClicked()
+        CircleDetailsIntent.EnterClicked -> sendEffect(CircleDetailsEffect.OpenSession(circleId))
         is CircleDetailsIntent.PasswordChanged -> updateState { copy(password = intent.password) }
         CircleDetailsIntent.SubmitJoin -> join(currentState.password)
         CircleDetailsIntent.DismissPasswordPrompt -> updateState { copy(passwordPromptVisible = false, password = "") }
+        CircleDetailsIntent.LeaveClicked -> updateState { copy(isLeaveDialogVisible = true) }
+        CircleDetailsIntent.ConfirmLeave -> leaveCircle()
+        CircleDetailsIntent.DismissLeaveDialog -> updateState { copy(isLeaveDialogVisible = false) }
+    }
+
+    private fun leaveCircle() {
+        if (currentState.isLeaving) return
+        updateState { copy(isLeaving = true) }
+        viewModelScope.launch {
+            circleRepository.leaveCircle(circleId).fold(
+                onSuccess = {
+                    updateState { copy(isLeaving = false, isLeaveDialogVisible = false, isMember = false) }
+                    sendEffect(CircleDetailsEffect.ShowMessage(R.string.circle_leave_success))
+                },
+                onFailure = {
+                    updateState { copy(isLeaving = false, isLeaveDialogVisible = false) }
+                    sendEffect(CircleDetailsEffect.ShowMessage(R.string.circle_leave_error))
+                },
+            )
+        }
     }
 
     private fun load() {
@@ -43,6 +65,17 @@ class CircleDetailsViewModel(
                     updateState { copy(circle = circle, isLoading = false, isError = false) }
                 },
                 onFailure = { updateState { copy(isLoading = false, isError = true) } },
+            )
+        }
+    }
+
+    /** Marks the screen as already-joined so it offers "Enter Circle" instead of "Join".
+     * A membership-check failure leaves [CircleDetailsUiState.isMember] false. */
+    private fun checkMembership() {
+        viewModelScope.launch {
+            circleRepository.getMyCircles().fold(
+                onSuccess = { circles -> updateState { copy(isMember = circles.any { it.id == circleId }) } },
+                onFailure = { /* Optional; the join call below still guards against duplicates. */ },
             )
         }
     }
@@ -73,10 +106,16 @@ class CircleDetailsViewModel(
                 }
 
                 is CircleJoinResult.Error -> {
+                    if (result.error == CircleJoinError.ALREADY_MEMBER) {
+                        updateState { copy(joinState = CircleJoinUiState.Idle, isMember = true, passwordPromptVisible = false) }
+                        sendEffect(CircleDetailsEffect.ShowMessage(R.string.circle_join_error_already_member))
+                        return@launch
+                    }
                     val messageRes = when (result.error) {
                         CircleJoinError.CIRCLE_FULL -> R.string.circle_join_error_full
                         CircleJoinError.TIME_CONFLICT -> R.string.circle_join_error_conflict
                         CircleJoinError.INVALID_PASSWORD -> R.string.circle_join_error_password
+                        CircleJoinError.ALREADY_MEMBER -> R.string.circle_join_error_already_member
                         CircleJoinError.UNKNOWN -> R.string.circle_join_error_generic
                     }
                     updateState {

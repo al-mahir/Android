@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.iti.meeting.domain.model.circle.CircleMember
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
+import com.iti.presentation.R
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
 import com.iti.presentation.circle.state.InSessionUiState
@@ -32,9 +33,28 @@ class InSessionViewModel(
     fun onIntent(intent: InSessionIntent) = when (intent) {
         InSessionIntent.ToggleMic -> updateState { copy(isMicMuted = !isMicMuted) }
         InSessionIntent.ToggleRaiseHand -> updateState { copy(isHandRaised = !isHandRaised) }
-        InSessionIntent.Leave -> sendEffect(InSessionEffect.NavigateBack)
+        InSessionIntent.Leave -> updateState { copy(isLeaveDialogVisible = true) }
+        InSessionIntent.ConfirmLeave -> leaveCircle()
+        InSessionIntent.DismissLeaveDialog -> updateState { copy(isLeaveDialogVisible = false) }
         InSessionIntent.OpenChat -> updateState { copy(unreadChatCount = 0) }
         InSessionIntent.OpenMushaf -> sendEffect(InSessionEffect.OpenMushaf)
+    }
+
+    private fun leaveCircle() {
+        if (currentState.isLeaving) return
+        updateState { copy(isLeaving = true) }
+        viewModelScope.launch {
+            circleRepository.leaveCircle(circleId).fold(
+                onSuccess = {
+                    updateState { copy(isLeaving = false, isLeaveDialogVisible = false) }
+                    sendEffect(InSessionEffect.NavigateBack)
+                },
+                onFailure = {
+                    updateState { copy(isLeaving = false, isLeaveDialogVisible = false) }
+                    sendEffect(InSessionEffect.ShowMessage(R.string.circle_leave_error))
+                },
+            )
+        }
     }
 
     private fun observeCircle() {
