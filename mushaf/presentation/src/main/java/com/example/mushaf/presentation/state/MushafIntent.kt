@@ -74,4 +74,18 @@ sealed interface MushafIntent {
     // User Guide
     data object GuideNextStep : MushafIntent
     data object DismissGuide : MushafIntent
+
+    // Mu'allem mode
+    data object ShowMuallemSetup : MushafIntent
+    data object DismissMuallemSetup : MushafIntent
+    data class StartMuallemSession(
+        val surah: Int,
+        val startAyah: Int,
+        val endAyah: Int,
+        val repeatCount: Int,
+        val difficulty: com.example.mushaf.domain.model.recite.RecitationStrictness
+    ) : MushafIntent
+    data object StopMuallemSession : MushafIntent
+    /** Sent when the user taps the mic/done button while recording a Mu'allem repeat. */
+    data object MuallemRepeatDone : MushafIntent
 }

@@ -44,6 +44,18 @@ val hfAccessToken: String = run {
     fromLocal ?: (findProperty("almahir.hfToken") as String?) ?: ""
 }
 
+val aiServiceToken: String = run {
+    val localProperties = rootProject.file("local.properties")
+    val fromLocal: String? = if (localProperties.exists()) {
+        val properties = Properties()
+        localProperties.inputStream().use { properties.load(it) }
+        properties.getProperty("almahir.aiToken")
+    } else {
+        null
+    }
+    fromLocal ?: (findProperty("almahir.aiToken") as String?) ?: ""
+}
+
 android {
     namespace = "com.example.mushaf.data"
     compileSdk {
@@ -57,6 +69,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "AI_SERVICE_AUTHORITY", "\"$aiServiceAuthority\"")
         buildConfigField("String", "HF_ACCESS_TOKEN", "\"$hfAccessToken\"")
+        buildConfigField("String", "AI_SERVICE_TOKEN", "\"$aiServiceToken\"")
+        buildConfigField("Boolean", "AI_SERVICE_SECURE", "${!aiServiceAuthority.contains("192.168") && !aiServiceAuthority.contains("10.0.2.2")}")
     }
     buildFeatures {
         buildConfig = true
@@ -104,6 +118,7 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
     implementation(libs.ktor.client.websockets)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)

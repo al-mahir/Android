@@ -128,7 +128,7 @@ class LiveRecitationRepositoryTest {
         localSpeechRecognizer: LocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
     ) = LiveRecitationRepositoryImpl(
         capture = capture,
-        socket = LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}")),
+        socket = LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}", secure = false)),
         localSpeechRecognizer = localSpeechRecognizer,
         asrModelRepository = FakeAsrModelRepository(),
     )

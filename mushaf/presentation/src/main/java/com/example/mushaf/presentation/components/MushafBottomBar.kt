@@ -75,6 +75,9 @@ fun MushafBottomBar(
     onFinishSession: () -> Unit = {},
 
     gradingToggle: (@Composable () -> Unit)? = null,
+
+    /** Mu'allem session status bar, rendered above statusRow/gradingToggle. */
+    muallemBar: (@Composable () -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -89,6 +92,10 @@ fun MushafBottomBar(
                 .background(Theme.colors.surface.copy(alpha = 0.96f))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
+            muallemBar?.let { bar ->
+                Box(modifier = Modifier.padding(bottom = 8.dp)) { bar() }
+            }
+
             statusRow?.let { row ->
                 Box(modifier = Modifier.padding(bottom = 8.dp)) { row() }
             }

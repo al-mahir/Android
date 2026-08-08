@@ -241,4 +241,20 @@
     <string name="downloads_size_mb">%1$s ميجابايت</string>
 
     <string name="surah_number_name_format">%1$d. %2$s</string>
+
+    <!-- وضع المُعلِّم -->
+    <string name="muallem_setup_title">إعداد جلسة المُعلِّم</string>
+    <string name="muallem_setup_surah_label">اختر السورة</string>
+    <string name="muallem_setup_ayah_label">آية البداية</string>
+    <string name="muallem_setup_ayah_of">من %1$d</string>
+    <string name="muallem_setup_repeats_label">عدد التكرارات</string>
+    <string name="muallem_setup_repeats_suffix">تكرارات</string>
+    <string name="muallem_setup_start">ابدأ الجلسة</string>
+
+    <string name="muallem_session_ayah_info">سورة %1$d، آية %2$d</string>
+    <string name="muallem_stop_session">إيقاف</string>
+    <string name="muallem_phase_sheikh_playing">الشيخ يقرأ…</string>
+    <string name="muallem_phase_user_recording">ردّد الآية • %1$d/%2$d</string>
+    <string name="muallem_phase_feedback">الدقة: %1$d%%</string>
+    <string name="muallem_phase_feedback_done">تم</string>
 </resources>

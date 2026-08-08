@@ -80,6 +80,9 @@ import com.example.mushaf.presentation.components.MushafLoading
 import com.example.mushaf.presentation.components.MushafPageOverlay
 import com.example.mushaf.presentation.components.MushafPageView
 import com.example.mushaf.presentation.components.MushafTopBar
+import com.example.mushaf.presentation.muallem.MuallemPhase
+import com.example.mushaf.presentation.muallem.MuallemSessionBar
+import com.example.mushaf.presentation.muallem.MuallemSetupSheet
 import com.example.mushaf.presentation.recite.LiveSessionStatusRow
 import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionsUiMapper
@@ -367,9 +370,19 @@ fun MushafScreen(
                 micLevel = state.micLevel,
                 canFinishSession = state.isRecordingActive && state.liveCorrection.isActive,
                 onFinishSession = { viewModel.onIntent(MushafIntent.FinishAndStartNewSession) },
-                
-                
-                statusRow = if (state.mushafMode == MushafMode.RECITATION) {
+
+
+                muallemBar = state.muallemSession?.let { session ->
+                    {
+                        MuallemSessionBar(
+                            session = session,
+                            isConnecting = state.liveCorrection.isConnecting,
+                            isActive = state.liveCorrection.isActive,
+                            onStopSession = { viewModel.onIntent(MushafIntent.StopMuallemSession) },
+                        )
+                    }
+                },
+                statusRow = if (state.mushafMode == MushafMode.RECITATION || (state.mushafMode == MushafMode.MUALLEM && state.muallemSession?.isSessionActive == true)) {
                     {
                         LiveSessionStatusRow(
                             live = state.liveCorrection,
@@ -404,11 +417,14 @@ fun MushafScreen(
                 },
                 onToggleRecording = {
                     when {
-                        
+                        // In Mu'allem mode, mic button ends the current recording
+                        state.mushafMode == MushafMode.MUALLEM &&
+                            state.muallemSession?.phase is MuallemPhase.UserRecording -> {
+                            viewModel.onIntent(MushafIntent.MuallemRepeatDone)
+                        }
                         state.isRecordingActive -> viewModel.onIntent(MushafIntent.ToggleRecording)
                         context.hasRecordAudioPermission() ->
                             viewModel.onIntent(MushafIntent.ToggleRecording)
-                        
                         else -> micPrompt = MicPrompt.Preprompt
                     }
                 }
@@ -444,27 +460,44 @@ fun MushafScreen(
             }
         }
 
-        if (showCorrections) {
-            CorrectionsSheet(
-                title = stringResource(R.string.mushaf_corrections_title),
-                subtitle = state.liveCorrection.correctionsSubtitle(),
-                corrections = visibleCorrections.map { it.toCard() },
-                tabs = correctionTabs.map { it.toChip() },
-                selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
-                onTabSelected = { correctionTabIndex = it },
-                emptyMessage = stringResource(R.string.mushaf_corrections_empty),
-                practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
-                practiceFocus = state.liveCorrection.practiceFocus.map { it.label() },
-                onDismiss = { showCorrections = false },
-                onMistakeClick = { wordId ->
-                    
-                    
-                    viewModel.onIntent(MushafIntent.HighlightWord(wordId))
-                    viewModel.onIntent(MushafIntent.SelectMistake(wordId))
-                    showCorrections = false
-                },
-            )
+    var dismissedFeedbackRepeatIndex by remember { mutableIntStateOf(-1) }
+    val currentFeedbackRepeat = (state.muallemSession?.phase as? MuallemPhase.ShowingFeedback)?.repeatIndex ?: -1
+    val autoShowFeedback = state.mushafMode == MushafMode.MUALLEM &&
+            currentFeedbackRepeat != -1 &&
+            dismissedFeedbackRepeatIndex != currentFeedbackRepeat
+
+    if (showCorrections || autoShowFeedback) {
+        val sheetTitle = if (autoShowFeedback) {
+            "${stringResource(R.string.mushaf_corrections_title)} (تكرار $currentFeedbackRepeat من ${state.muallemSession?.repeatCount ?: 1})"
+        } else {
+            stringResource(R.string.mushaf_corrections_title)
         }
+        CorrectionsSheet(
+            title = sheetTitle,
+            subtitle = state.liveCorrection.correctionsSubtitle(),
+            corrections = visibleCorrections.map { it.toCard() },
+            tabs = correctionTabs.map { it.toChip() },
+            selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
+            onTabSelected = { correctionTabIndex = it },
+            emptyMessage = stringResource(R.string.mushaf_corrections_empty),
+            practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
+            practiceFocus = state.liveCorrection.practiceFocus.map { it.label() },
+            onDismiss = {
+                showCorrections = false
+                if (currentFeedbackRepeat != -1) {
+                    dismissedFeedbackRepeatIndex = currentFeedbackRepeat
+                }
+            },
+            onMistakeClick = { wordId ->
+                viewModel.onIntent(MushafIntent.HighlightWord(wordId))
+                viewModel.onIntent(MushafIntent.SelectMistake(wordId))
+                showCorrections = false
+                if (currentFeedbackRepeat != -1) {
+                    dismissedFeedbackRepeatIndex = currentFeedbackRepeat
+                }
+            },
+        )
+    }
 
         state.sessionSummary?.let { summary ->
             SessionSummarySheet(
@@ -597,6 +630,17 @@ fun MushafScreen(
         if (state.showTajweedLegend) {
             TajweedLegendSheet(
                 onDismiss = { viewModel.onIntent(MushafIntent.HideTajweedLegend) },
+            )
+        }
+
+        // ── Mu'allem Setup sheet ────────────────────────────────────────────────
+        if (state.showMuallemSetup) {
+            MuallemSetupSheet(
+                isOffline = state.isOffline,
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissMuallemSetup) },
+                onConfirm = { surah, startAyah, endAyah, repeatCount, difficulty ->
+                    viewModel.onIntent(MushafIntent.StartMuallemSession(surah, startAyah, endAyah, repeatCount, difficulty))
+                },
             )
         }
 
