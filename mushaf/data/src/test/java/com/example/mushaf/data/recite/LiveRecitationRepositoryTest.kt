@@ -12,6 +12,9 @@ import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.model.recite.SpeechGateConfig
+import com.example.mushaf.domain.model.recite.local.AsrModelState
+import com.example.mushaf.domain.repository.AsrModelRepository
+import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
 import com.iti.domain.core.Result
 import com.iti.domain.core.getOrNull
@@ -20,6 +23,10 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -86,23 +93,57 @@ class LiveRecitationRepositoryTest {
         }.map { Result.Success(it) }
     }
 
+    /** Emits [words] once accept() has been called at least once, then stays open - mirrors a
+     * real streaming recognizer, which never completes on its own. */
+    private class FakeLocalSpeechRecognizer(
+        override val isAvailable: Boolean = true,
+        private val scriptedWords: List<String> = emptyList(),
+        private val failure: Throwable? = null,
+    ) : LocalSpeechRecognizer {
+        private val _words = MutableSharedFlow<String>(extraBufferCapacity = 64)
+        override val words: SharedFlow<String> = _words.asSharedFlow()
+        private var emitted = false
+
+        override suspend fun accept(frame: com.example.mushaf.domain.model.recite.AudioFrame) {
+            failure?.let { throw it }
+            if (emitted) return
+            emitted = true
+            scriptedWords.forEach { _words.emit(it) }
+        }
+
+        override fun reset() {
+            emitted = false
+        }
+    }
+
+    private class FakeAsrModelRepository(
+        initial: AsrModelState = AsrModelState.Ready,
+    ) : AsrModelRepository {
+        override val state: StateFlow<AsrModelState> = MutableStateFlow(initial)
+        override fun ensureAvailable() = Unit
+    }
+
     private fun repositoryFor(
         capture: RecitationCaptureRepository,
+        localSpeechRecognizer: LocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
     ) = LiveRecitationRepositoryImpl(
         capture = capture,
         socket = LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}")),
+        localSpeechRecognizer = localSpeechRecognizer,
+        asrModelRepository = FakeAsrModelRepository(),
     )
 
     private suspend fun runSession(
         capture: RecitationCaptureRepository,
         config: LiveRecitationConfig = LiveRecitationConfig(start = RecitationCursor(1, 1)),
+        localSpeechRecognizer: LocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
         beforeFinish: suspend (MutableSharedFlow<RecitationControl>) -> Unit = {},
     ): List<LiveRecitationEvent> = withTimeout(TIMEOUT_MS) {
         val controls = MutableSharedFlow<RecitationControl>()
         val events = mutableListOf<LiveRecitationEvent>()
         coroutineScope {
             val session = launch {
-                repositoryFor(capture).session(config, controls).map { it.getOrNull()!! }.toList(events)
+                repositoryFor(capture, localSpeechRecognizer).session(config, controls).map { it.getOrNull()!! }.toList(events)
             }
             awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
             beforeFinish(controls)
@@ -221,6 +262,53 @@ class LiveRecitationRepositoryTest {
         val started = events.filterIsInstance<LiveRecitationEvent.Started>().single()
         assertEquals("real", started.engine)
         assertTrue("a silent engine substitution went unreported", started.engineSubstituted)
+    }
+
+    @Test
+    fun `local words from the recognizer arrive as LocalWord events`() = runBlocking {
+        service = FakeAiService().start()
+        val capture = FakeCapture(frameCount = 3)
+        val recognizer = FakeLocalSpeechRecognizer(scriptedWords = listOf("الله", "الرحمن"))
+        val controls = MutableSharedFlow<RecitationControl>()
+        val events = mutableListOf<LiveRecitationEvent>()
+        withTimeout(TIMEOUT_MS) {
+            coroutineScope {
+                val session = launch {
+                    repositoryFor(capture, recognizer).session(
+                        LiveRecitationConfig(start = RecitationCursor(1, 1)),
+                        controls,
+                    ).map { it.getOrNull()!! }.toList(events)
+                }
+                awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
+                awaitUntil("local words arrived") {
+                    events.count { it is LiveRecitationEvent.LocalWord } >= 2
+                }
+                controls.emit(RecitationControl.Finish)
+                session.join()
+            }
+        }
+
+        assertEquals(
+            listOf("الله", "الرحمن"),
+            events.filterIsInstance<LiveRecitationEvent.LocalWord>().map { it.word },
+        )
+    }
+
+    @Test
+    fun `a failing local recognizer does not fail the session`() = runBlocking {
+        service = FakeAiService().start()
+        val capture = FakeCapture(frameCount = 3)
+        val recognizer = FakeLocalSpeechRecognizer(failure = IllegalStateException("boom"))
+
+        val events = runSession(capture, localSpeechRecognizer = recognizer) {
+            awaitUntil("audio streamed") { service.binaryFrameCount.get() == 3 }
+        }
+
+        assertTrue(
+            "a broken recognizer must never produce a LocalWord event",
+            events.none { it is LiveRecitationEvent.LocalWord },
+        )
+        assertTrue("the session must survive a local recognizer failure", events.last() is LiveRecitationEvent.Finished)
     }
 
     @Test

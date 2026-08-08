@@ -260,6 +260,16 @@ class MushafReducerTest {
         val current: RecitationSettings get() = state.value
     }
 
+    private class FakeLocalWordCorpusRepository(
+        private val entries: List<com.example.mushaf.domain.model.recite.local.LocalWordEntry> = emptyList(),
+    ) : com.example.mushaf.domain.repository.LocalWordCorpusRepository {
+        override suspend fun wordsFrom(cursor: RecitationCursor, count: Int): Result<List<com.example.mushaf.domain.model.recite.local.LocalWordEntry>> {
+            val startIndex = entries.indexOfFirst { it.wordId == cursor.wordId }
+            if (startIndex < 0) return Result.Success(emptyList())
+            return Result.Success(entries.drop(startIndex).take(count))
+        }
+    }
+
     private class FakeAppPreferencesRepo : com.iti.domain.settings.repository.AppPreferencesRepository {
         override val preferences = MutableStateFlow(com.iti.domain.settings.model.AppPreferences())
         override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode) = Result.Success(Unit)
@@ -316,6 +326,7 @@ class MushafReducerTest {
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
+        localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
         appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepo(),
         connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
         almahirRepository: FakeAlmahirRepository = FakeAlmahirRepository(),
@@ -335,6 +346,7 @@ class MushafReducerTest {
             observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
             downloadRecitation = com.example.mushaf.domain.usecase.DownloadRecitationUseCase(recitationRepo),
+            localWordCorpusRepository = localWordCorpusRepository,
             observeAvailableTafsirBooks = com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(mushafRepo),
             manageTafsirDownload = com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(mushafRepo),
             observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(appPrefsRepo),

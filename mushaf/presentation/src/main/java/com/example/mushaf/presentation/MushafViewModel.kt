@@ -26,6 +26,8 @@ import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationSessionRecorder
 import com.example.mushaf.domain.model.recite.mergedWith
+import com.example.mushaf.domain.model.recite.local.LocalCursorTracker
+import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.presentation.state.ChunkOutcome
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 import com.example.mushaf.presentation.state.CaptureError
@@ -77,6 +79,7 @@ class MushafViewModel(
     private val observeRecitationSettings: ObserveRecitationSettingsUseCase,
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val downloadRecitation: com.example.mushaf.domain.usecase.DownloadRecitationUseCase,
+    private val localWordCorpusRepository: LocalWordCorpusRepository,
     private val observeAvailableTafsirBooks: com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase,
     private val manageTafsirDownload: com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase,
     private val observeAppPreferences: com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase,
@@ -113,6 +116,8 @@ class MushafViewModel(
      
     private var seekOnPageLoad: Int? = null
 
+    private val localCursorTracker = LocalCursorTracker()
+
     private var sessionStartedAtEpochMs = 0L
 
 
@@ -140,6 +145,14 @@ class MushafViewModel(
 
         const val MAX_RECONNECT_ATTEMPTS = 3
         const val RECONNECT_DELAY_MS = 1_000L
+
+        // Kept small on purpose: a wide window (e.g. a whole page, 100+ words) means almost any
+        // recognized token - even a garbled one - accidentally matches *something* in it, since
+        // short/common Arabic words repeat constantly. Confirmed on a real device in an earlier
+        // round of this feature: with a 127-word window, 57 of 61 recognized tokens matched
+        // something even under strict matching. A small window anchored at the last known-good
+        // position keeps the candidate set tight enough that a match is actually meaningful.
+        const val LOCAL_TRACKER_WINDOW_WORDS = 12
     }
 
     init {
@@ -706,6 +719,7 @@ class MushafViewModel(
 
     private fun beginServerSession(startCursor: RecitationCursor?) {
         lastCursor = startCursor
+        localCursorTracker.reset()
         sessionStartedAtEpochMs = System.currentTimeMillis()
         seedInitialHighlightForCurrentPage()
 
@@ -793,6 +807,8 @@ class MushafViewModel(
 
             is LiveRecitationEvent.Level -> updateMicLevel(event)
 
+            is LiveRecitationEvent.LocalWord -> updateLocalWord(event.word)
+
             is LiveRecitationEvent.Graded -> mergeChunk(event.chunk)
 
             LiveRecitationEvent.Finished -> {
@@ -850,6 +866,17 @@ class MushafViewModel(
         }
     }
 
+    /**
+     * A word locally recognized from the on-device streaming ASR (see [LiveRecitationEvent.LocalWord]).
+     * Structurally incapable of guessing: [LocalCursorTracker.offer] only ever returns a real
+     * window entry's word id or `null`, so a non-match is silently a no-op, never a fallback.
+     */
+    private fun updateLocalWord(word: String) {
+        val confirmed = localCursorTracker.offer(word)
+        Log.d(TAG, "Local word '$word' -> ${confirmed ?: "NO MATCH"}")
+        if (confirmed != null) _state.update { it.copy(highlightedWordId = confirmed) }
+    }
+
     private fun mergeChunk(chunk: RecitationChunk) {
         chunk.cursor?.let { lastCursor = it }
         Log.d(
@@ -858,6 +885,10 @@ class MushafViewModel(
                 "${chunk.mistakeWords.size} mistakes, cursor=${chunk.cursor?.wordId}",
         )
 
+        // The server cursor is authoritative - slide the local tracker's window to a fresh small
+        // span starting there, so local tracking never drifts onto a large, stale span after a
+        // correction (see seedLocalTrackerAround's doc for why the window must stay small).
+        chunk.cursor?.let(::seedLocalTrackerAround)
         advancePageIfRecitationMovedOn(chunk.cursor)
 
         _state.update { state ->
@@ -894,22 +925,23 @@ class MushafViewModel(
     }
 
 
-    /**
-     * Sets the initial highlight for a page load/session start - a known deterministic anchor
-     * (never a guess): [lastCursor] when it actually falls on the page now on screen
-     * (recitation-driven page-follow already updates [lastCursor] to a confirmed cursor before
-     * calling this, via [mergeChunk]/[advancePageIfRecitationMovedOn] - so it's already the right
-     * anchor there), or the new page's own first word otherwise (a manual page turn away from
-     * wherever the reciter last confirmed - continuing from a stale, off-screen cursor would
-     * anchor the highlight to content that isn't even displayed anymore). Superseded by the first
-     * server-confirmed chunk ([mergeChunk]) as soon as one arrives.
-     */
     private fun seedInitialHighlightForCurrentPage() {
         val pageWords = _state.value.wordsForCurrentPage()
         val anchor = lastCursor?.takeIf { cursor -> pageWords.any { it.id == cursor.wordId } }
             ?: startCursorForCurrentPage()
             ?: return
         _state.update { it.copy(highlightedWordId = anchor.wordId) }
+        seedLocalTrackerAround(anchor)
+    }
+
+
+    private fun seedLocalTrackerAround(anchor: RecitationCursor) {
+        viewModelScope.launch {
+            val window = localWordCorpusRepository.wordsFrom(anchor, LOCAL_TRACKER_WINDOW_WORDS).getOrNull()
+            Log.d(TAG, "seedLocalTrackerAround(${anchor.wordId}): window=${window?.size ?: "FETCH FAILED"}")
+            if (window == null) return@launch
+            localCursorTracker.setWindow(window, anchor.wordId)
+        }
     }
 
     private fun selectCandidate(position: RecitationCursor) {
@@ -1017,6 +1049,7 @@ class MushafViewModel(
         controlChannel?.close()
         controlChannel = null
         smoothedMicLevel = 0f
+        localCursorTracker.reset()
         sessionStartedAtEpochMs = 0L
         pendingRestart = null
         _state.update {
