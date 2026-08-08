@@ -13,7 +13,6 @@ import com.example.mushaf.data.prefs.RecitationSettingsDataStore
 import com.example.mushaf.data.recite.audio.AudioRecordPcmRecorder
 import com.example.mushaf.data.recite.audio.PcmRecorder
 import com.example.mushaf.data.recite.audio.WavDebugSink
-import com.example.mushaf.data.recite.local.AndroidOnDeviceSpeechRecognizer
 import com.example.mushaf.data.recite.remote.AiServiceApi
 import com.example.mushaf.data.recite.remote.AiServiceConfig
 import com.example.mushaf.data.recite.remote.LiveRecitationSocket
@@ -26,7 +25,6 @@ import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
 import com.example.mushaf.data.repository.RecitationRepositoryImpl
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
 import com.example.mushaf.domain.repository.LiveRecitationRepository
-import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
@@ -70,7 +68,6 @@ val mushafDataModule = module {
     single { MushafRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
     single<MushafRepository> { get<MushafRepositoryImpl>() }
     single<LocalWordCorpusRepository> { get<MushafRepositoryImpl>() }
-    single<LocalSpeechRecognizer> { AndroidOnDeviceSpeechRecognizer(androidContext()) }
     single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
 
     // Preferences — combined impl from develop
