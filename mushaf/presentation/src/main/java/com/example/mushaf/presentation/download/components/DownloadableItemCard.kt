@@ -43,6 +43,7 @@ fun DownloadableItemCard(
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val subtitle = resource.subtitle?.resolve()
@@ -53,6 +54,7 @@ fun DownloadableItemCard(
             .fillMaxWidth()
             .clip(Theme.shapes.large)
             .background(Theme.colors.surface)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),
@@ -115,13 +117,11 @@ private fun DownloadTrailing(
             )
 
             is DownloadState.Downloading -> {
-                
-                
                 Box(
                     modifier = Modifier
                         .size(Theme.size.iconMedium)
                         .clip(CircleShape)
-                        .clickable(onClick = onCancel)
+                        .clickable(onClick = onDownload)
                         .semantics { role = Role.Button },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -133,9 +133,9 @@ private fun DownloadTrailing(
                         modifier = Modifier.size(Theme.size.iconMedium),
                     )
                     Icon(
-                        painter = painterResource(DesignSystemR.drawable.ic_cancel),
-                        contentDescription = stringResource(R.string.downloads_action_cancel),
-                        tint = Theme.colors.hint,
+                        painter = painterResource(DesignSystemR.drawable.ic_download),
+                        contentDescription = stringResource(R.string.downloads_action_download),
+                        tint = Theme.colors.primary,
                         modifier = Modifier.size(Theme.size.iconSmall),
                     )
                 }

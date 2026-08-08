@@ -78,7 +78,7 @@ class RegisterViewModelTest {
 
         assertTrue(repository.logins.isEmpty())
         assertEquals(
-            RegisterEffect.ShowError(UiText.Dynamic("Email already in use")),
+            RegisterEffect.ShowError(UiText.Resource(R.string.auth_error_conflict)),
             viewModel.effect.first(),
         )
     }

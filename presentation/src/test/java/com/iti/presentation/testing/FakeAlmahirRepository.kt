@@ -11,6 +11,7 @@ import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
 import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
+import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
@@ -34,14 +35,14 @@ import kotlinx.coroutines.flow.map
 class FakeAlmahirRepository(
     private val user: User = USER,
     private val subscription: Subscription = FREE_SUBSCRIPTION,
+    private val packages: List<SubscriptionPackage> = emptyList(),
     private val sheikhs: List<Sheikh> = listOf(SHEIKH),
     initialCircles: List<StudyCircle> = listOf(CIRCLE),
     private val failSheikhs: Boolean = false,
     private val failSubscription: Boolean = false,
     private val failLogout: Boolean = false,
     private val failDeleteAccount: Boolean = false,
-    private val failRestore: Boolean = false,
-    private val restoreResult: Boolean = false,
+    private val failCancellation: Boolean = false,
 ) : AlmahirRepository, SheikhRepository, CircleRepository {
 
     val joined = mutableListOf<String>()
@@ -49,8 +50,7 @@ class FakeAlmahirRepository(
         private set
     var deletedAccount = false
         private set
-    var restoreCount = 0
-        private set
+    val cancellationRequests = mutableListOf<String>()
 
     private val circles = MutableStateFlow(initialCircles)
     private val bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
@@ -63,6 +63,14 @@ class FakeAlmahirRepository(
         if (failSubscription) Result.Error(BOOM) else Result.Success(subscription)
     )
 
+    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+        flowOf(Result.Success(packages))
+
+    override suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
+
+    override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
+        Result.Success(subscription)
+
     override fun observeLegalDocument(type: LegalDocumentType): Flow<Result<LegalDocument>> = flowOf(
         Result.Success(
             LegalDocument(
@@ -74,9 +82,9 @@ class FakeAlmahirRepository(
         )
     )
 
-    override suspend fun restorePurchases(): Result<Boolean> {
-        restoreCount++
-        return if (failRestore) Result.Error(BOOM) else Result.Success(restoreResult)
+    override suspend fun requestSubscriptionCancellation(message: String): Result<Unit> {
+        cancellationRequests += message
+        return if (failCancellation) Result.Error(BOOM) else Result.Success(Unit)
     }
 
     override suspend fun logout(): Result<Unit> {
@@ -186,35 +194,33 @@ class FakeAlmahirRepository(
         )
     }
 }
-
 class FakeAppPreferencesRepository(
-    initialUser: User? = FakeAlmahirRepository.USER,
+    initialUser: com.iti.domain.model.User? = FakeAlmahirRepository.USER,
 ) : com.iti.domain.settings.repository.AppPreferencesRepository {
-    private val state = MutableStateFlow(
+    private val state = kotlinx.coroutines.flow.MutableStateFlow(
         com.iti.domain.settings.model.AppPreferences(
             user = initialUser
         )
     )
-    override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = state
-    override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): Result<Unit> = Result.Success(Unit)
-    override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): Result<Unit> = Result.Success(Unit)
-    override suspend fun setRemindersEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-    override suspend fun setErrorSoundsEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-    override suspend fun setDataSaverEnabled(enabled: Boolean): Result<Unit> = Result.Success(Unit)
-    override suspend fun saveUser(user: User): Result<Unit> {
+    override val preferences: kotlinx.coroutines.flow.Flow<com.iti.domain.settings.model.AppPreferences> = state
+    override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setRemindersEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setErrorSoundsEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setDataSaverEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun saveUser(user: com.iti.domain.model.User): com.iti.domain.core.Result<Unit> {
         state.value = state.value.copy(user = user)
-        return Result.Success(Unit)
+        return com.iti.domain.core.Result.Success(Unit)
     }
-    override suspend fun clearUser(): Result<Unit> {
+    override suspend fun clearUser(): com.iti.domain.core.Result<Unit> {
         state.value = state.value.copy(user = null)
-        return Result.Success(Unit)
+        return com.iti.domain.core.Result.Success(Unit)
     }
 }
 
 class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
-    override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> =
-        flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+    override val status: kotlinx.coroutines.flow.Flow<com.iti.domain.connectivity.ConnectivityStatus> =
+        kotlinx.coroutines.flow.flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
     override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus =
         com.iti.domain.connectivity.ConnectivityStatus.Available
 }
-

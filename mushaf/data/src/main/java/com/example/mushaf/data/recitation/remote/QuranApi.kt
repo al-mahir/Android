@@ -17,4 +17,15 @@ class QuranApi(
             parameter("words", "true")
         }.body()
     }
+
+    suspend fun getVersesByChapter(
+        chapterNumber: Int,
+        reciterId: Int = 7
+    ): QuranApiVersesResponse {
+        return client.get("https://api.quran.com/api/v4/verses/by_chapter/$chapterNumber") {
+            parameter("audio", reciterId)
+            parameter("words", "true")
+            parameter("per_page", "300") // get all verses in chapter
+        }.body()
+    }
 }

@@ -115,12 +115,16 @@ class MushafReducerTest {
             return Result.Success(Unit)
         }
         override suspend fun setFirstMushafLaunchCompleted(): Result<Unit> = Result.Success(Unit)
+        override suspend fun setDownloadOverWifiOnly(enabled: Boolean): Result<Unit> = Result.Success(Unit)
     }
 
     private class FakeRecitationRepo : RecitationRepository {
         override fun getReciters(): Flow<Result<List<Reciter>>> = flowOf(Result.Success(emptyList()))
         override fun getTimingsForPage(reciterId: Int, pageNumber: Int): Flow<Result<List<AyahTiming>>> =
             flowOf(Result.Success(emptyList()))
+        override suspend fun downloadRecitation(reciterId: Int, surahNumber: Int?) = Unit
+        override fun cancelDownloadRecitation(reciterId: Int, surahNumber: Int?) = Unit
+        override fun observeDownloadProgress(reciterId: Int): Flow<List<com.example.mushaf.domain.model.DownloadStatus>> = flowOf(emptyList())
     }
 
     private class FakeAudioPlayer : AudioPlayer {
@@ -300,8 +304,14 @@ class MushafReducerTest {
         private val bookmarks = mutableMapOf<String, com.iti.domain.model.Bookmark>()
         override fun observeCurrentUser() = flowOf<Result<com.iti.domain.model.User>>()
         override fun observeSubscription() = flowOf<Result<com.iti.domain.model.Subscription>>()
+        override fun observeSubscriptionPackages() =
+            flowOf<Result<List<com.iti.domain.model.SubscriptionPackage>>>()
+        override suspend fun startFreeTrial(): Result<com.iti.domain.model.Subscription> =
+            Result.Success(com.iti.domain.model.Subscription(com.iti.domain.model.SubscriptionPlan.NONE, null))
+        override suspend fun selectSubscriptionPackage(packageId: String): Result<com.iti.domain.model.Subscription> =
+            Result.Success(com.iti.domain.model.Subscription(com.iti.domain.model.SubscriptionPlan.NONE, null))
         override fun observeLegalDocument(type: com.iti.domain.model.LegalDocumentType) = flowOf<Result<com.iti.domain.model.LegalDocument>>()
-        override suspend fun restorePurchases() = Result.Success(true)
+        override suspend fun requestSubscriptionCancellation(message: String) = Result.Success(Unit)
         override suspend fun logout() = Result.Success(Unit)
         override suspend fun deleteAccount() = Result.Success(Unit)
         override fun observeBookmarks(type: com.iti.domain.model.BookmarkType) =
@@ -323,11 +333,14 @@ class MushafReducerTest {
     private fun buildViewModel(
         prefs: FakePrefsRepo,
         mushafRepo: MushafRepository = FakeMushafRepo(),
+        recitationRepo: RecitationRepository = FakeRecitationRepo(),
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
         localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
         localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
+        appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepo(),
+        connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
         almahirRepository: FakeAlmahirRepository = FakeAlmahirRepository(),
     ): MushafViewModel {
         return MushafViewModel(
@@ -336,20 +349,21 @@ class MushafReducerTest {
             setTajweedEnabled = SetTajweedEnabledUseCase(prefs),
             setFirstMushafLaunchCompleted = com.example.mushaf.domain.usecase.SetFirstMushafLaunchCompletedUseCase(prefs),
             saveLastPage = SaveLastPageUseCase(prefs),
-            getReciters = GetRecitersUseCase(FakeRecitationRepo()),
-            getAyahTimings = GetAyahTimingsUseCase(FakeRecitationRepo()),
+            getReciters = GetRecitersUseCase(recitationRepo),
+            getAyahTimings = GetAyahTimingsUseCase(recitationRepo),
             getTafsirForAyah = com.example.mushaf.domain.usecase.GetTafsirForAyahUseCase(mushafRepo),
             playbackManager = FakeAudioPlayer(),
             startLiveRecitation = StartLiveRecitationUseCase(liveRepo),
             saveRecitationSession = SaveRecitationSessionUseCase(sessionRepo),
             observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
+            downloadRecitation = com.example.mushaf.domain.usecase.DownloadRecitationUseCase(recitationRepo),
             localSpeechRecognizer = localSpeechRecognizer,
             localWordCorpusRepository = localWordCorpusRepository,
             observeAvailableTafsirBooks = com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(mushafRepo),
             manageTafsirDownload = com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(mushafRepo),
-            observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(FakeAppPreferencesRepo()),
-            connectivityObserver = FakeConnectivityObserver(),
+            observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(appPrefsRepo),
+            connectivityObserver = connectivityObserver,
             toggleBookmarkUseCase = com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase(almahirRepository),
             observeBookmarks = com.iti.domain.usecase.bookmark.ObserveBookmarksUseCase(almahirRepository),
         )

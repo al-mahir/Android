@@ -27,6 +27,7 @@
     <string name="verses_count_format">%1$d آية</string>
     <string name="hizb_format">الحزب %1$d</string>
     <string name="page_format">صفحة %1$d</string>
+    <string name="surah_number_name_format">%1$d. %2$s</string>
     <string name="nav_home">الرئيسية</string>
     <string name="nav_mushaf">المصحف</string>
     <string name="nav_profile">حسابي</string>
@@ -102,6 +103,8 @@
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">Downloads</string>
+    <string name="settings_download_wifi_only">Download over Wi-Fi only</string>
+    <string name="settings_download_wifi_only_description">Prevent downloads from using mobile data</string>
 
     <string name="downloads_title_reciters">Reciters</string>
     <string name="downloads_title_tafseers">Tafsir</string>
@@ -120,8 +123,25 @@
     <string name="downloads_delete_confirm">Delete</string>
     <string name="downloads_delete_cancel">Cancel</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">Download Entire Quran?</string>
+    <string name="downloads_full_quran_message">You are about to download the entire Quran recitation for %1$s. This will require approximately %2$s of storage.</string>
+
     <!-- Errors -->
     <string name="downloads_error_generic">We could not load this list. Please try again.</string>
+
+    <!-- Reciter picker -->
+    <string name="reciter_picker_title">Select Reciter</string>
+    <string name="reciter_picker_cd_selected">Selected</string>
+    <string name="reciter_picker_cd_download">Download options</string>
+
+    <!-- Download options dialog -->
+    <string name="download_dialog_title">Download Recitation</string>
+    <string name="download_dialog_message">Do you want to download the entire Quran or select specific Surahs?</string>
+    <string name="download_dialog_entire_quran">Entire Quran</string>
+    <string name="download_dialog_select_surahs">Select Surahs</string>
+    <string name="downloads_size_gb">%1$s GB</string>
+    <string name="downloads_size_mb">%1$s MB</string>
 
     <!-- ===== Shared domain error messages ===== -->
     <string name="error_network">Network error. Please check your connection and try again.</string>

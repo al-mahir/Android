@@ -27,4 +27,18 @@
     <string name="meetingrequest_availability_busy_title">أنت مشغول</string>
     <string name="meetingrequest_availability_busy_subtitle">في لقاء حالياً.</string>
     <string name="meetingrequest_availability_busy_rejoin">الانضمام مجدداً</string>
+
+    <!-- Availability foreground service — persistent "online" status notification -->
+    <string name="sheikh_availability_notification_channel_online_name">حالة التواجد</string>
+    <string name="sheikh_availability_notification_online_title">أنت متصل الآن</string>
+    <string name="sheikh_availability_notification_online_subtitle">في انتظار طلبات اللقاءات</string>
+    <string name="sheikh_availability_notification_online_busy_subtitle">أنت في مكالمة الآن</string>
+    <string name="sheikh_availability_notification_go_offline">إنهاء التواجد</string>
+
+    <!-- Availability foreground service — ringing incoming-request notification -->
+    <string name="sheikh_availability_notification_channel_ringing_name">طلبات اللقاءات الواردة</string>
+    <string name="sheikh_availability_notification_incoming_title">%1$s يرغب في لقائك</string>
+    <string name="sheikh_availability_notification_incoming_text_generic">طلب لقاء فردي جديد</string>
+    <string name="sheikh_availability_notification_accept">قبول</string>
+    <string name="sheikh_availability_notification_decline">رفض</string>
 </resources>

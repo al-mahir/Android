@@ -193,8 +193,15 @@ private class FakeAppPreferencesRepository(
         return Result.Success(Unit)
     }
 
-    override suspend fun saveUser(user: User): Result<Unit> = Result.Success(Unit)
-    override suspend fun clearUser(): Result<Unit> = Result.Success(Unit)
+    override suspend fun saveUser(user: com.iti.domain.model.User): Result<Unit> {
+        state.value = state.value.copy(user = user)
+        return Result.Success(Unit)
+    }
+
+    override suspend fun clearUser(): Result<Unit> {
+        state.value = state.value.copy(user = null)
+        return Result.Success(Unit)
+    }
 }
 
 private class FakeRecordingsRepository : RecordingsRepository {

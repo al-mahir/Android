@@ -88,6 +88,8 @@
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">التنزيلات</string>
+    <string name="settings_download_wifi_only">التنزيل عبر شبكة Wi-Fi فقط</string>
+    <string name="settings_download_wifi_only_description">منع استخدام بيانات الهاتف المحمول أثناء التنزيل</string>
 
     <string name="downloads_title_reciters">القراء</string>
     <string name="downloads_title_tafseers">تفسير</string>
@@ -102,12 +104,16 @@
 
     <!-- Delete confirmation -->
     <string name="downloads_delete_title">حذف التنزيل؟</string>
-    <string name="downloads_delete_message">سيتم حذف %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
+    <string name="downloads_delete_message">سيتم إزالة %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
     <string name="downloads_delete_confirm">حذف</string>
     <string name="downloads_delete_cancel">إلغاء</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">تنزيل القرآن كاملًا؟</string>
+    <string name="downloads_full_quran_message">أنت على وشك تنزيل تلاوة القرآن كاملًا للشيخ %1$s. سيتطلب هذا حوالي %2$s من مساحة التخزين.</string>
+
     <!-- Errors -->
-    <string name="downloads_error_generic">تعذّر تحميل هذه القائمة. حاول مرة أخرى.</string>
+    <string name="downloads_error_generic">لم نتمكن من تحميل هذه القائمة. يرجى المحاولة مرة أخرى.</string>
 
     <!-- ===== Shared domain error messages ===== -->
     <string name="error_network">خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.</string>
@@ -220,4 +226,19 @@
     <string name="tafsir_qurtubi">تفسير القرطبي</string>
     <string name="tafsir_saadi">تفسير السعدي</string>
     <string name="tafsir_muyassar">التفسير الميسر</string>
+
+    <!-- Reciter picker -->
+    <string name="reciter_picker_title">اختر القارئ</string>
+    <string name="reciter_picker_cd_selected">محدد</string>
+    <string name="reciter_picker_cd_download">خيارات التحميل</string>
+
+    <!-- Download options dialog -->
+    <string name="download_dialog_title">تحميل التلاوة</string>
+    <string name="download_dialog_message">هل تريد تحميل القرآن كاملاً أو اختيار سور محددة؟</string>
+    <string name="download_dialog_entire_quran">القرآن كاملاً</string>
+    <string name="download_dialog_select_surahs">اختيار السور</string>
+    <string name="downloads_size_gb">%1$s جيجابايت</string>
+    <string name="downloads_size_mb">%1$s ميجابايت</string>
+
+    <string name="surah_number_name_format">%1$d. %2$s</string>
 </resources>

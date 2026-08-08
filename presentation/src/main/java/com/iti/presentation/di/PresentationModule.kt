@@ -13,8 +13,11 @@ import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhByIdUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
+import com.iti.domain.usecase.subscription.GetSubscriptionPackagesUseCase
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
-import com.iti.domain.usecase.subscription.RestorePurchasesUseCase
+import com.iti.domain.usecase.subscription.RequestSubscriptionCancellationUseCase
+import com.iti.domain.usecase.subscription.SelectSubscriptionPackageUseCase
+import com.iti.domain.usecase.subscription.StartFreeTrialUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.domain.usecase.settings.DeleteAllRecordingsUseCase
@@ -36,6 +39,8 @@ import com.iti.presentation.settings.SettingsViewModel
 import com.iti.presentation.sheikh.SheikhDetailsViewModel
 import com.iti.presentation.sheikh.SheikhListViewModel
 import com.iti.presentation.staticcontent.StaticContentViewModel
+import com.iti.presentation.subscription.PackagesViewModel
+import com.iti.presentation.subscription.SubscriptionDetailsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
@@ -47,7 +52,10 @@ val presentationModule = module {
     factory { GetReadingProgressUseCase(get()) }
     factory { GetAyahOfTheDayUseCase() }
     factory { GetSubscriptionUseCase(get()) }
-    factory { RestorePurchasesUseCase(get()) }
+    factory { GetSubscriptionPackagesUseCase(get()) }
+    factory { StartFreeTrialUseCase(get()) }
+    factory { SelectSubscriptionPackageUseCase(get()) }
+    factory { RequestSubscriptionCancellationUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
     factory { GetLegalDocumentUseCase(get()) }
 
@@ -96,6 +104,8 @@ val presentationModule = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
+    viewModel { PackagesViewModel(get(), get()) }
+    viewModel { SubscriptionDetailsViewModel(get(), get(), get()) }
     viewModel { (documentType: LegalDocumentType) ->
         StaticContentViewModel(documentType, get())
     }

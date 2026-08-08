@@ -26,4 +26,18 @@
     <string name="meetingrequest_availability_busy_title">You are Busy</string>
     <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
     <string name="meetingrequest_availability_busy_rejoin">Rejoin</string>
+
+    <!-- Availability foreground service — persistent "online" status notification -->
+    <string name="sheikh_availability_notification_channel_online_name">Availability status</string>
+    <string name="sheikh_availability_notification_online_title">You\'re Online</string>
+    <string name="sheikh_availability_notification_online_subtitle">Waiting for meeting requests</string>
+    <string name="sheikh_availability_notification_online_busy_subtitle">You\'re in a call</string>
+    <string name="sheikh_availability_notification_go_offline">Go Offline</string>
+
+    <!-- Availability foreground service — ringing incoming-request notification -->
+    <string name="sheikh_availability_notification_channel_ringing_name">Incoming meeting requests</string>
+    <string name="sheikh_availability_notification_incoming_title">%1$s wants to meet</string>
+    <string name="sheikh_availability_notification_incoming_text_generic">New 1:1 meeting request</string>
+    <string name="sheikh_availability_notification_accept">Accept</string>
+    <string name="sheikh_availability_notification_decline">Decline</string>
 </resources>

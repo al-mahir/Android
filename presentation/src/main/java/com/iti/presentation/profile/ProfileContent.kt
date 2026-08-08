@@ -35,7 +35,7 @@ import com.iti.presentation.profile.state.ProfileUiState
 fun ProfileContent(
     state: ProfileUiState,
     onPremiumClick: () -> Unit,
-    onRestorePurchasesClick: () -> Unit,
+    onMySubscriptionClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onDeleteAccountClick: () -> Unit,
     onMenuOptionClick: (ProfileMenuType) -> Unit,
@@ -93,9 +93,8 @@ fun ProfileContent(
                         if (!state.isOffline) {
                             AccountActionsBlock(
                                 isPremium = state.isPremium,
-                                isRestoringPurchases = state.isRestoringPurchases,
                                 onPremiumClick = onPremiumClick,
-                                onRestorePurchasesClick = onRestorePurchasesClick,
+                                onMySubscriptionClick = onMySubscriptionClick,
                                 onLogoutClick = onLogoutClick,
                                 modifier = gutter,
                             )
@@ -153,13 +152,13 @@ private val MenuEntries = listOf(
         type = ProfileMenuType.SESSIONS,
         titleRes = R.string.profile_menu_sessions,
         iconRes = DesignSystemR.drawable.ic_info,
-        showChevron = true,
+        showChevron = false,
     ),
     MenuEntry(
         type = ProfileMenuType.SETTINGS,
         titleRes = R.string.settings_title,
         iconRes = DesignSystemR.drawable.ic_settings,
-        showChevron = true,
+        showChevron = false,
     ),
     MenuEntry(
         type = ProfileMenuType.ABOUT,

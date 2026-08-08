@@ -6,6 +6,7 @@ import com.example.mushaf.data.core.di.mushafNetworkModule
 import com.example.mushaf.data.db.MushafAssetDataSource
 import com.example.mushaf.data.db.QuranMetadataDataSource
 import com.example.mushaf.data.db.QuranTextDataSource
+import com.example.mushaf.data.download.DownloadableResourceRepositoryImpl
 import com.example.mushaf.data.download.FakeDownloadableResourceRepository
 import com.example.mushaf.data.prefs.ReaderPreferencesDataStore
 import com.example.mushaf.data.prefs.RecitationSettingsDataStore
@@ -22,6 +23,7 @@ import com.example.mushaf.data.repository.MushafRepositoryImpl
 import com.example.mushaf.data.repository.ReadingProgressRepositoryImpl
 import com.example.mushaf.data.repository.RecitationApiRepositoryImpl
 import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
+import com.example.mushaf.data.repository.RecitationRepositoryImpl
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
 import com.example.mushaf.domain.repository.LiveRecitationRepository
 import com.example.mushaf.domain.repository.LocalSpeechRecognizer
@@ -54,18 +56,30 @@ val mushafDataModule = module {
     single { com.example.mushaf.data.search.remote.SearchApi(get(named(SEARCH_CLIENT))) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
 
+    // Room DB for offline recitation storage
+    single {
+        androidx.room.Room.databaseBuilder(
+            androidContext(),
+            com.example.mushaf.data.recitation.local.RecitationDatabase::class.java,
+            "recitation_v1.db"
+        ).fallbackToDestructiveMigration().build()
+    }
+    single { get<com.example.mushaf.data.recitation.local.RecitationDatabase>().recitationDao() }
+
+    // Mushaf repository — multi-interface binding (from develop)
     single { MushafRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
     single<MushafRepository> { get<MushafRepositoryImpl>() }
     single<LocalWordCorpusRepository> { get<MushafRepositoryImpl>() }
     single<LocalSpeechRecognizer> { AndroidOnDeviceSpeechRecognizer(androidContext()) }
     single<ReadingProgressRepository> { ReadingProgressRepositoryImpl(get()) }
 
+    // Preferences — combined impl from develop
     single { RecitationSettingsDataStore(androidContext()) }
     single { MushafPreferencesRepositoryImpl(get(), get()) }
     single<ReaderPreferencesRepository> { get<MushafPreferencesRepositoryImpl>() }
     single<RecitationSettingsRepository> { get<MushafPreferencesRepositoryImpl>() }
 
-    single<DownloadableResourceRepository> { FakeDownloadableResourceRepository() }
+    single<DownloadableResourceRepository> { DownloadableResourceRepositoryImpl(get(), get(), get(), androidContext()) }
 
     single<PcmRecorder> { AudioRecordPcmRecorder() }
     single { WavDebugSink(androidContext()) }
@@ -76,11 +90,17 @@ val mushafDataModule = module {
     single { LiveRecitationSocket(get(named(AI_SERVICE_CLIENT)), get()) }
     single<LiveRecitationRepository> { LiveRecitationRepositoryImpl(get(), get()) }
 
+    // Recitation data source + repositories
     single { com.example.mushaf.data.recitation.remote.QuranApi(get(named(SEARCH_CLIENT))) }
     single<com.example.mushaf.data.recitation.RecitationDataSource> {
         com.example.mushaf.data.recitation.remote.RecitationRemoteDataSourceImpl(get())
     }
-    single { RecitationApiRepositoryImpl(get(), get()) }
-    single<RecitationRepository> { get<RecitationApiRepositoryImpl>() }
+    // RecitationApiRepositoryImpl — provides RecitationSchemaRepository
+    single { RecitationApiRepositoryImpl(get()) }
     single<RecitationSchemaRepository> { get<RecitationApiRepositoryImpl>() }
+    // RecitationRepositoryImpl — offline-capable, provides RecitationRepository
+    // Uses Room DAO for offline fallback + download scheduling via WorkManager
+    single<RecitationRepository> {
+        RecitationRepositoryImpl(get(), get(), get(), androidContext(), get())
+    }
 }

@@ -57,6 +57,23 @@ class AudioPlaybackService : MediaSessionService() {
         })
     }
 
+    /**
+     * On Android 12+, `Context.startForegroundService()` requires `startForeground()` to be
+     * called within ~5s or the system kills the process with a `RemoteServiceException`. Media3
+     * calls `startForeground()` for us reactively once the player has something to actually play
+     * — but the OS can start this service (e.g. a Bluetooth/media-button "play" event trying to
+     * resume a session after the process was killed) with no media loaded at all, so that never
+     * happens. Bail out immediately in that case instead of leaving the service started-but-not-
+     * foregrounded until the OS's timeout fires.
+     */
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val result = super.onStartCommand(intent, flags, startId)
+        if (mediaSession?.player?.mediaItemCount == 0) {
+            stopSelf()
+        }
+        return result
+    }
+
     override fun onDestroy() {
         mediaSession?.run {
             player.release()

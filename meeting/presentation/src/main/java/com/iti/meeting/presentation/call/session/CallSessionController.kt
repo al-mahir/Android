@@ -7,7 +7,7 @@ import com.iti.meeting.domain.model.ActiveCallRecord
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.MeetingRequestEvent
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
-import com.iti.meeting.presentation.call.CallUiState
+import com.iti.meeting.presentation.call.state.CallUiState
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
 import com.iti.meeting.presentation.core.mvi.StateHolder
 import io.agora.rtc2.Constants
@@ -252,13 +252,26 @@ class CallSessionController(
        fun endCall() {
         val id = currentState.requestId
         if (id != null) scope.launch {
-            repository.endMeeting(id)
+            endMeetingReliably(id)
             repository.clearActiveCall()
         }
         releaseEngine()
         eventsJob?.cancel()
         eventsJob = null
         updateCallState { if (this is CallUiState.Ended) this else CallUiState.Ended }
+    }
+
+       private suspend fun endMeetingReliably(id: String) {
+        repository.endMeeting(id)
+            .onSuccess { Log.d(TAG, "endCall: endMeeting($id) SUCCESS") }
+            .onFailure { error ->
+                Log.w(TAG, "endCall: endMeeting($id) failed, retrying once", error)
+                repository.endMeeting(id)
+                    .onSuccess { Log.d(TAG, "endCall: endMeeting($id) retry SUCCESS") }
+                    .onFailure {
+                        Log.e(TAG, "endCall: endMeeting($id) failed again — backend was never told this call ended, sheikh may be stuck BUSY server-side", it)
+                    }
+            }
     }
 
       private fun persistActiveCall() {

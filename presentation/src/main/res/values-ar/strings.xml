@@ -126,13 +126,86 @@
 
     <!-- Account actions -->
     <string name="profile_buy_premium">اشترِ الماهر Premium</string>
-    <string name="profile_restore_purchases">استعادة المشتريات</string>
-    <string name="profile_restoring_purchases">جارٍ الاستعادة…</string>
     <string name="profile_logout">تسجيل الخروج</string>
 
-    <string name="profile_restore_succeeded">تمت استعادة مشترياتك.</string>
-    <string name="profile_restore_nothing_found">لم يتم العثور على مشتريات سابقة.</string>
-    <string name="profile_restore_failed">تعذّرت استعادة المشتريات. حاول مرة أخرى.</string>
+    <!-- Packages / checkout -->
+    <string name="packages_title">اختر باقتك</string>
+    <string name="packages_recommended_badge">الأكثر طلبًا</string>
+    <string name="packages_price_period_month">/شهريًا</string>
+    <string name="packages_select_button">اختر الباقة</string>
+    <string name="packages_selecting_button">جارٍ الاختيار…</string>
+    <string name="packages_start_trial_cta">ابدأ تجربة مجانية لمدة 7 أيام</string>
+    <string name="packages_starting_trial">جارٍ بدء التجربة…</string>
+    <string name="packages_error_generic">تعذّر تحميل الباقات. حاول مرة أخرى.</string>
+    <string name="packages_purchase_succeeded">أصبحت الآن مشتركًا في الماهر Premium!</string>
+    <string name="packages_purchase_failed">حدث خطأ ما. حاول مرة أخرى.</string>
+    <string name="packages_trial_started">بدأت تجربتك المجانية!</string>
+
+    <!-- Checkout -->
+    <string name="checkout_title">الدفع</string>
+    <string name="checkout_secured_by_paymob">مؤمَّن بواسطة Paymob</string>
+    <string name="checkout_reciter_pass_eyebrow">اشتراك القارئ</string>
+    <string name="checkout_price_period_month">/ شهريًا</string>
+    <string name="checkout_purchasing_as_pattern">الشراء باسم %1$s</string>
+    <string name="checkout_tab_wallet">محفظة إلكترونية</string>
+    <string name="checkout_tab_card">بطاقة ائتمان/خصم</string>
+    <string name="checkout_select_payment_method">اختر طريقة الدفع</string>
+    <string name="checkout_wallet_vodafone_cash">فودافون كاش</string>
+    <string name="checkout_wallet_orange_cash">أورانج كاش</string>
+    <string name="checkout_wallet_etisalat_cash">اتصالات e&amp; money</string>
+    <string name="checkout_wallet_we_pay">وي باي</string>
+    <string name="checkout_wallet_hint_pattern">ادفع من محفظة %1$s</string>
+    <string name="checkout_wallet_number_label">رقم المحفظة الإلكترونية</string>
+    <string name="checkout_wallet_number_hint">مثال: 01012345678</string>
+    <string name="checkout_security_note">تتم معالجة دفعتك بأمان. نحن لا نخزّن بيانات محفظتك أبدًا.</string>
+    <string name="checkout_pay_button_pattern">ادفع %1$s</string>
+    <string name="checkout_select_card_brand">اختر نوع البطاقة</string>
+    <string name="checkout_card_visa">فيزا</string>
+    <string name="checkout_card_mastercard">ماستركارد</string>
+    <string name="checkout_card_details_title">بيانات البطاقة</string>
+    <string name="checkout_card_number_label">رقم البطاقة</string>
+    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
+    <string name="checkout_expiry_label">تاريخ الانتهاء</string>
+    <string name="checkout_expiry_hint">شهر/سنة</string>
+    <string name="checkout_cvv_label">رمز التحقق CVV</string>
+    <string name="checkout_cvv_hint">123</string>
+    <string name="checkout_cardholder_name_label">اسم حامل البطاقة</string>
+    <string name="checkout_cardholder_name_hint">الاسم كما هو على البطاقة</string>
+    <string name="checkout_load_error">تعذّر تحميل هذه الباقة. حاول مرة أخرى.</string>
+    <string name="checkout_error_intention_failed">تعذّر بدء عملية الدفع. حاول مرة أخرى.</string>
+    <string name="checkout_payment_success">تم الدفع بنجاح — اشتراكك أصبح مفعّلًا!</string>
+    <string name="checkout_payment_failed">فشلت عملية الدفع. حاول مرة أخرى.</string>
+    <string name="checkout_payment_pending">جارٍ معالجة دفعتك. سنُعلمك فور تأكيدها.</string>
+    <string name="checkout_error_wallet_number_invalid">أدخل رقم موبايل مصري صحيح</string>
+    <string name="checkout_error_wallet_prefix_vodafone">أدخل رقم محفظة فودافون كاش</string>
+    <string name="checkout_error_wallet_prefix_orange">أدخل رقم محفظة أورانج كاش</string>
+    <string name="checkout_error_wallet_prefix_etisalat">أدخل رقم محفظة اتصالات e&amp; money</string>
+    <string name="checkout_error_wallet_prefix_we">أدخل رقم محفظة وي باي</string>
+    <string name="checkout_error_card_number_invalid">أدخل رقم بطاقة صحيح</string>
+    <string name="checkout_error_card_brand_mismatch">هذه البطاقة لا تطابق النوع المختار</string>
+    <string name="checkout_error_expiry_invalid">أدخل تاريخ انتهاء صحيحًا وغير منتهٍ</string>
+    <string name="checkout_error_cvv_invalid">أدخل رمز CVV صحيحًا</string>
+    <string name="checkout_error_cardholder_name_required">أدخل الاسم كما هو على البطاقة</string>
+
+    <!-- My subscription -->
+    <string name="subscription_details_title">اشتراكي</string>
+    <string name="subscription_details_plan_label">الباقة</string>
+    <string name="subscription_details_price_label">السعر</string>
+    <string name="subscription_details_renews_label">تاريخ التجديد</string>
+    <string name="subscription_details_features_label">ما يشمله الاشتراك</string>
+    <string name="subscription_details_error_generic">تعذّر تحميل بيانات اشتراكك. حاول مرة أخرى.</string>
+    <string name="subscription_details_return_button">استرجاع اشتراكي</string>
+
+    <!-- Return-subscription support sheet -->
+    <string name="subscription_cancellation_sheet_title">تواصل مع الدعم</string>
+    <string name="subscription_cancellation_sheet_description">أخبرنا لماذا ترغب باسترجاع اشتراكك، وسيتواصل معك فريق الدعم.</string>
+    <string name="subscription_cancellation_message_hint">اكتب رسالتك…</string>
+    <string name="subscription_cancellation_send_button">إرسال الرسالة</string>
+    <string name="subscription_cancellation_sending">جارٍ الإرسال…</string>
+    <string name="subscription_cancellation_sent_title">تم إرسال الرسالة</string>
+    <string name="subscription_cancellation_sent_description">تم إرسال رسالتك. سنرسل لك بريدًا إلكترونيًا بالنتيجة.</string>
+    <string name="subscription_cancellation_done_button">تم</string>
+    <string name="subscription_cancellation_error">تعذّر إرسال رسالتك. حاول مرة أخرى.</string>
 
     <!-- Social channels (accessibility labels) -->
     <string name="profile_social_github">جيت هَب</string>
@@ -143,6 +216,7 @@
     <string name="profile_social_instagram">إنستغرام</string>
 
     <!-- Menu -->
+    <string name="profile_menu_my_subscription">اشتراكي</string>
     <string name="profile_menu_about">عن الماهر</string>
     <string name="profile_menu_feature_request">طلب خاصية جديدة</string>
     <string name="profile_menu_help_center">مركز المساعدة</string>
