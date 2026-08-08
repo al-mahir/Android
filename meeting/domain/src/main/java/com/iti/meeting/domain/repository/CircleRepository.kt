@@ -39,6 +39,7 @@ interface CircleRepository {
     suspend fun createCircle(request: CreateCircleRequest): Result<Circle>
     suspend fun joinCircle(circleId: String, password: String? = null): CircleJoinResult
     suspend fun cancelJoinRequest(circleId: String): Result<Unit>
+    suspend fun leaveCircle(circleId: String): Result<Unit>
     suspend fun approveJoinRequest(circleId: String, userId: String): Result<Unit>
     suspend fun rejectJoinRequest(circleId: String, userId: String): Result<Unit>
     suspend fun getPendingRequests(circleId: String): Result<List<PendingJoinRequest>>

@@ -22,6 +22,7 @@ import io.ktor.http.contentType
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
 class CircleApi(private val httpClient: HttpClient) {
@@ -95,16 +96,22 @@ private suspend fun <T> HttpResponse.decodeBody(serializer: KSerializer<T>): T {
     return MeetingKitJson.decodeFromString(serializer, text)
 }
 
-/** Decodes a list from a raw array, an envelope, or an object wrapping a single array field
- * (e.g. `{"content": [...]}`, `{"circles": [...]}`). */
+/** Decodes a list from a raw array, an envelope, or a Spring Page envelope wrapping the list
+ * under `data.content` (the backend's paginated shape), e.g. `{"content": [...]}`. */
 private suspend fun <T> HttpResponse.decodeList(serializer: KSerializer<T>): List<T> {
     val text = bodyAsText()
     val listSerializer = ListSerializer(serializer)
+    // {success, data: [...]}
     runCatching { MeetingKitJson.decodeFromString(ApiEnvelope.serializer(listSerializer), text) }
         .getOrNull()?.data?.let { return it }
+    // raw array at the top level: [...]
     runCatching { MeetingKitJson.decodeFromString(listSerializer, text) }.getOrNull()?.let { return it }
+    // {success, data: {content: [...]}} (paged) or a bare object wrapping an array field
     val json = runCatching { MeetingKitJson.parseToJsonElement(text).jsonObject }.getOrNull()
-    val arrayElement = json?.values?.firstOrNull { it is JsonArray } ?: return emptyList()
-    return runCatching { MeetingKitJson.decodeFromJsonElement(listSerializer, arrayElement) }
+        ?: return emptyList()
+    val content = (json["data"] as? JsonObject)?.get("content") as? JsonArray
+        ?: json.values.firstOrNull { it is JsonArray } as? JsonArray
+        ?: return emptyList()
+    return runCatching { MeetingKitJson.decodeFromJsonElement(listSerializer, content) }
         .getOrDefault(emptyList())
 }

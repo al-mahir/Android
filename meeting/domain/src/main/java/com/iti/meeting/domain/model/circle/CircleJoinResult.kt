@@ -4,6 +4,7 @@ enum class CircleJoinError {
     CIRCLE_FULL,
     TIME_CONFLICT,
     INVALID_PASSWORD,
+    ALREADY_MEMBER,
     UNKNOWN,
 }
 

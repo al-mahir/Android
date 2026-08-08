@@ -22,8 +22,10 @@ data class JoinCircleRequestDto(val password: String? = null)
 
 @Serializable
 data class CircleDto(
-    val id: String,
-    val name: String,
+    val id: String = "",
+    val name: String = "",
+    val circleId: String = "",
+    val title: String = "",
     val startDate: String = "",
     val endDate: String? = null,
     val type: String = "PUBLIC",
@@ -31,6 +33,7 @@ data class CircleDto(
     val requiresApproval: Boolean = false,
     val maxParticipants: Int = 10,
     val currentMembers: Int = 0,
+    val memberCount: Int = 0,
     val host: CircleMemberDto? = null,
 )
 

@@ -67,10 +67,12 @@ class CircleRepositoryImpl(
                 val body = runCatching {
                     MeetingKitJson.decodeFromString(CircleErrorResponseDto.serializer(), e.response.bodyAsText())
                 }.getOrNull()
-                val error = when (body?.error?.uppercase()) {
-                    "CIRCLE_FULL" -> CircleJoinError.CIRCLE_FULL
-                    "TIME_CONFLICT", "TIME_OVERLAP" -> CircleJoinError.TIME_CONFLICT
-                    "INVALID_PASSWORD", "BAD_PASSWORD" -> CircleJoinError.INVALID_PASSWORD
+                val error = when {
+                    body?.error?.uppercase().orEmpty().contains("ALREADY") ||
+                        body?.error?.uppercase().orEmpty().contains("EXISTS") -> CircleJoinError.ALREADY_MEMBER
+                    body?.error?.uppercase() == "CIRCLE_FULL" -> CircleJoinError.CIRCLE_FULL
+                    body?.error?.uppercase() in setOf("TIME_CONFLICT", "TIME_OVERLAP") -> CircleJoinError.TIME_CONFLICT
+                    body?.error?.uppercase() in setOf("INVALID_PASSWORD", "BAD_PASSWORD") -> CircleJoinError.INVALID_PASSWORD
                     else -> CircleJoinError.UNKNOWN
                 }
                 CircleJoinResult.Error(error, body?.message ?: "Join failed")
@@ -86,6 +88,9 @@ class CircleRepositoryImpl(
     }
 
     override suspend fun cancelJoinRequest(circleId: String): Result<Unit> =
+        runCatching { api.leaveCircle(circleId) }
+
+    override suspend fun leaveCircle(circleId: String): Result<Unit> =
         runCatching { api.leaveCircle(circleId) }
 
     override suspend fun approveJoinRequest(circleId: String, userId: String): Result<Unit> =
@@ -175,15 +180,15 @@ private fun decodeId(payload: JsonElement): String? =
         ?: runCatching { MeetingKitJson.decodeFromJsonElement<String>(payload) }.getOrNull()
 
 private fun CircleDto.toDomain(): Circle = Circle(
-    id = id,
-    name = name,
+    id = id.ifBlank { circleId },
+    name = name.ifBlank { title },
     startDate = startDate,
     endDate = endDate,
     type = runCatching { CircleType.valueOf(type) }.getOrDefault(CircleType.PUBLIC),
     status = runCatching { CircleStatus.valueOf(status) }.getOrDefault(CircleStatus.SCHEDULED),
     requiresApproval = requiresApproval,
     maxParticipants = maxParticipants,
-    currentMembers = currentMembers,
+    currentMembers = currentMembers.takeIf { it > 0 } ?: memberCount,
     host = host?.toDomain(),
 )
 
