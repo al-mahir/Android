@@ -58,4 +58,24 @@ class ArabicPhoneticMatcherTest {
         assertFalse(ArabicPhoneticMatcher.isMatch("", "احمد"))
         assertFalse(ArabicPhoneticMatcher.isMatch("احمد", ""))
     }
+
+    @Test
+    fun `strict mode still allows the exact, phonetic-group and affix tiers`() {
+        assertTrue(ArabicPhoneticMatcher.isMatch("أحمد", "احمد", strict = true))
+        assertTrue(ArabicPhoneticMatcher.isMatch("سراط", "صراط", strict = true))
+        assertTrue(ArabicPhoneticMatcher.isMatch("والحمد", "الحمد", strict = true))
+        assertTrue(ArabicPhoneticMatcher.isMatch("كتابها", "كتاب", strict = true))
+    }
+
+    @Test
+    fun `strict mode rejects matches that only the loose fallback tiers would allow`() {
+        // Only reachable via partial-containment in loose mode - "بسم" is one character longer
+        // than "بس" but that doesn't trigger the phonetic-group skip tolerance (no mismatched
+        // character to trigger a skip; it just runs out of "بس" first), so this is genuinely
+        // loose-only.
+        assertFalse(ArabicPhoneticMatcher.isMatch("بس", "بسم", strict = true))
+        // Only reachable via edit-distance in loose mode - "ن" and "م" aren't in the same
+        // phonetic group, so same-length comparison can't rescue this one either.
+        assertFalse(ArabicPhoneticMatcher.isMatch("الرحين", "الرحيم", strict = true))
+    }
 }

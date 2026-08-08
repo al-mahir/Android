@@ -260,30 +260,6 @@ class MushafReducerTest {
         val current: RecitationSettings get() = state.value
     }
 
-    private class FakeLocalSpeechRecognizer(
-        private val availabilityValue: com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability =
-            com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.UNAVAILABLE,
-        private val scriptedWords: List<String> = emptyList(),
-    ) : com.example.mushaf.domain.repository.LocalSpeechRecognizer {
-        override fun availability() = availabilityValue
-        override fun listen(): Flow<String> = kotlinx.coroutines.flow.flow {
-            scriptedWords.forEach { emit(it) }
-            // Real recognizers never complete on their own; a script that runs out without a
-            // lock should time out like a real "nothing matched" session, not end the flow.
-            kotlinx.coroutines.awaitCancellation()
-        }
-    }
-
-    private class FakeLocalWordCorpusRepository(
-        private val entries: List<com.example.mushaf.domain.model.recite.local.LocalWordEntry> = emptyList(),
-    ) : com.example.mushaf.domain.repository.LocalWordCorpusRepository {
-        override suspend fun wordsFrom(cursor: RecitationCursor, count: Int): Result<List<com.example.mushaf.domain.model.recite.local.LocalWordEntry>> {
-            val startIndex = entries.indexOfFirst { it.wordId == cursor.wordId }
-            if (startIndex < 0) return Result.Success(emptyList())
-            return Result.Success(entries.drop(startIndex).take(count))
-        }
-    }
-
     private class FakeAppPreferencesRepo : com.iti.domain.settings.repository.AppPreferencesRepository {
         override val preferences = MutableStateFlow(com.iti.domain.settings.model.AppPreferences())
         override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode) = Result.Success(Unit)
@@ -328,6 +304,9 @@ class MushafReducerTest {
             bookmarks.remove(id)
             return Result.Success(Unit)
         }
+        override fun observeMeetingStatuses(userId: String) =
+            flowOf<Result<List<com.iti.domain.model.MeetingStatus>>>(Result.Success(emptyList()))
+        override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus) = Result.Success(Unit)
     }
 
     private fun buildViewModel(
@@ -337,8 +316,6 @@ class MushafReducerTest {
         liveRepo: FakeLiveRepo = FakeLiveRepo(),
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
-        localSpeechRecognizer: FakeLocalSpeechRecognizer = FakeLocalSpeechRecognizer(),
-        localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
         appPrefsRepo: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepo(),
         connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
         almahirRepository: FakeAlmahirRepository = FakeAlmahirRepository(),
@@ -358,8 +335,6 @@ class MushafReducerTest {
             observeRecitationSettings = ObserveRecitationSettingsUseCase(settingsRepo),
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
             downloadRecitation = com.example.mushaf.domain.usecase.DownloadRecitationUseCase(recitationRepo),
-            localSpeechRecognizer = localSpeechRecognizer,
-            localWordCorpusRepository = localWordCorpusRepository,
             observeAvailableTafsirBooks = com.example.mushaf.domain.usecase.ObserveAvailableTafsirBooksUseCase(mushafRepo),
             manageTafsirDownload = com.example.mushaf.domain.usecase.ManageTafsirDownloadUseCase(mushafRepo),
             observeAppPreferences = com.iti.domain.usecase.settings.ObserveAppPreferencesUseCase(appPrefsRepo),
@@ -461,7 +436,24 @@ class MushafReducerTest {
         assertTrue(true)
     }
 
-    
+    @Test
+    fun `speech level events never move the highlight without a confirmed word`() = runTest(dispatcher) {
+        val live = startedSession(
+            LiveRecitationEvent.Level(amplitude = 0.6f, isSpeaking = true),
+            LiveRecitationEvent.Level(amplitude = 0.6f, isSpeaking = true),
+            LiveRecitationEvent.Level(amplitude = 0f, isSpeaking = false),
+        )
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertNull(
+            "a timing guess moved the highlight without any confirmed word",
+            vm.state.value.highlightedWordId,
+        )
+    }
 
     private fun recitingViewModel(liveRepo: FakeLiveRepo): MushafViewModel {
         val vm = buildViewModel(FakePrefsRepo(ReaderPreferences(lastPage = 1)), liveRepo = liveRepo)
@@ -787,106 +779,7 @@ class MushafReducerTest {
 
 
     @Test
-    fun `the session starts immediately at the top of the page, never delayed by detection`() = runTest(dispatcher) {
-        val live = startedSession()
-        val vm = buildViewModel(
-            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
-            mushafRepo = WordedMushafRepo(),
-            liveRepo = live,
-            localSpeechRecognizer = FakeLocalSpeechRecognizer(
-                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
-                scriptedWords = listOf("الله", "الرحمن"),
-            ),
-            localWordCorpusRepository = FakeLocalWordCorpusRepository(
-                listOf(
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
-                ),
-            ),
-        )
-        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
-        advanceUntilIdle()
-
-        vm.onIntent(MushafIntent.ToggleRecording)
-        advanceUntilIdle()
-
-        assertEquals(
-            "grading must start at the top of the page immediately - nothing the reciter says " +
-                "before detection locks may go ungraded",
-            RecitationCursor.fromWordId("5:1:1"),
-            live.lastConfig?.start,
-        )
-    }
-
-    @Test
-    fun `local detection re-points the already-running session via seek, no tap required`() = runTest(dispatcher) {
-        val live = startedSession()
-        val vm = buildViewModel(
-            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
-            mushafRepo = WordedMushafRepo(),
-            liveRepo = live,
-            localSpeechRecognizer = FakeLocalSpeechRecognizer(
-                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
-                scriptedWords = listOf("الله", "الرحمن"),
-            ),
-            localWordCorpusRepository = FakeLocalWordCorpusRepository(
-                listOf(
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
-                ),
-            ),
-        )
-        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
-        advanceUntilIdle()
-
-        vm.onIntent(MushafIntent.ToggleRecording)
-        advanceUntilIdle()
-
-        assertTrue(
-            "detection should have re-pointed the running session at the word it locked onto",
-            live.received.contains(RecitationControl.Seek(RecitationCursor.fromWordId("5:1:2")!!)),
-        )
-        assertEquals(
-            "the highlight should jump to the detected word as soon as it locks, without " +
-                "waiting for the server to confirm it",
-            "5:1:2",
-            vm.state.value.highlightedWordId,
-        )
-    }
-
-    @Test
-    fun `if local detection times out without a lock, the running session is left alone`() = runTest(dispatcher) {
-        val live = startedSession()
-        val vm = buildViewModel(
-            FakePrefsRepo(ReaderPreferences(lastPage = 5)),
-            mushafRepo = WordedMushafRepo(),
-            liveRepo = live,
-            localSpeechRecognizer = FakeLocalSpeechRecognizer(
-                availabilityValue = com.example.mushaf.domain.model.recite.local.SpeechRecognitionAvailability.ON_DEVICE,
-                scriptedWords = listOf("شجرة"),
-            ),
-            localWordCorpusRepository = FakeLocalWordCorpusRepository(
-                listOf(
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:1", "بسم"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:2", "الله"),
-                    com.example.mushaf.domain.model.recite.local.LocalWordEntry("5:1:3", "الرحمن"),
-                ),
-            ),
-        )
-        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
-        advanceUntilIdle()
-
-        vm.onIntent(MushafIntent.ToggleRecording)
-        advanceUntilIdle()
-
-        assertEquals(RecitationCursor.fromWordId("5:1:1"), live.lastConfig?.start)
-        assertTrue("no lock should mean no seek", live.received.none { it is RecitationControl.Seek })
-    }
-
-    @Test
-    fun `when no local recognizer is available, the session starts at the top of the page immediately`() = runTest(dispatcher) {
+    fun `the session starts immediately at the top of the page`() = runTest(dispatcher) {
         val live = startedSession()
         val vm = buildViewModel(
             FakePrefsRepo(ReaderPreferences(lastPage = 5)),
@@ -1211,9 +1104,6 @@ class MushafReducerTest {
 
     @Test
     fun `turning to a prefetched page still re-points the reading cursor`() = runTest(dispatcher) {
-        
-        
-        
         val vm = buildViewModel(
             FakePrefsRepo(ReaderPreferences(lastPage = 5)),
             mushafRepo = WordedMushafRepo(),
@@ -1223,7 +1113,7 @@ class MushafReducerTest {
         advanceUntilIdle()
         vm.onIntent(MushafIntent.ToggleRecording)
         advanceUntilIdle()
-        
+
         assertTrue(vm.state.value.pages.containsKey(6))
 
         vm.onIntent(MushafIntent.LoadPage(6))
@@ -1234,8 +1124,8 @@ class MushafReducerTest {
         assertTrue(
             "the cursor is still on the previous page: $highlighted",
             highlighted!!.startsWith("6:"),
-        )
-    }
+            )
+        }
 
     @Test
     fun `a page turn outside a session leaves no reading cursor`() = runTest(dispatcher) {

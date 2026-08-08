@@ -36,10 +36,6 @@ import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-
-
- 
 class LiveRecitationRepositoryTest {
 
     private lateinit var service: FakeAiService
@@ -56,14 +52,12 @@ class LiveRecitationRepositoryTest {
         if (::service.isInitialized) service.stop()
     }
 
-     
     private class FakeCapture(
         private val frameCount: Int,
         private val isSpeech: Boolean = true,
     ) : RecitationCaptureRepository {
         val isCapturing = AtomicBoolean(false)
 
-         
         @Volatile
         var releasedAt: Long = 0
 
@@ -92,18 +86,13 @@ class LiveRecitationRepositoryTest {
         }.map { Result.Success(it) }
     }
 
-    private fun repositoryFor(capture: RecitationCaptureRepository) = LiveRecitationRepositoryImpl(
+    private fun repositoryFor(
+        capture: RecitationCaptureRepository,
+    ) = LiveRecitationRepositoryImpl(
         capture = capture,
         socket = LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}")),
     )
 
-    
-
-
-
-
-
- 
     private suspend fun runSession(
         capture: RecitationCaptureRepository,
         config: LiveRecitationConfig = LiveRecitationConfig(start = RecitationCursor(1, 1)),
@@ -115,8 +104,6 @@ class LiveRecitationRepositoryTest {
             val session = launch {
                 repositoryFor(capture).session(config, controls).map { it.getOrNull()!! }.toList(events)
             }
-            
-            
             awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
             beforeFinish(controls)
             controls.emit(RecitationControl.Finish)
@@ -125,7 +112,6 @@ class LiveRecitationRepositoryTest {
         events
     }
 
-     
     private suspend fun awaitUntil(what: String, condition: () -> Boolean) {
         val deadline = System.currentTimeMillis() + AWAIT_MS
         while (System.currentTimeMillis() < deadline) {
@@ -195,18 +181,13 @@ class LiveRecitationRepositoryTest {
     fun `forwarded silence reaches the server without reporting as speech`() = runBlocking {
         service = FakeAiService().start()
 
-        
-        
         val capture = FakeCapture(frameCount = 3, isSpeech = false)
         val events = runSession(capture) {
             awaitUntil("audio streamed") { service.binaryFrameCount.get() == 3 }
         }
 
-        
         assertEquals(3, service.binaryFrameCount.get())
 
-        
-        
         val levels = events.filterIsInstance<LiveRecitationEvent.Level>()
         assertTrue("no level events were emitted at all", levels.isNotEmpty())
         assertTrue(
@@ -244,9 +225,6 @@ class LiveRecitationRepositoryTest {
 
     @Test
     fun `stopping before the handshake lands ends cleanly without opening the microphone`() = runBlocking {
-        
-        
-        
         service = FakeAiService().start()
         val capture = FakeCapture(frameCount = 3)
         val controls = MutableSharedFlow<RecitationControl>(replay = 1)
@@ -266,8 +244,6 @@ class LiveRecitationRepositoryTest {
 
     private companion object {
         const val TIMEOUT_MS = 15_000L
-
-         
         const val AWAIT_MS = 5_000L
     }
 }

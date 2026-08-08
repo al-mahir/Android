@@ -28,13 +28,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-
-
-
-
-
- 
 class LiveRecitationRepositoryImpl(
     private val capture: RecitationCaptureRepository,
     private val socket: LiveRecitationSocket,
@@ -45,18 +38,8 @@ class LiveRecitationRepositoryImpl(
         config: LiveRecitationConfig,
         controls: Flow<RecitationControl>,
     ): Flow<Result<LiveRecitationEvent>> = channelFlow {
-        
-        
         val commands = Channel<LiveSessionCommand>(Channel.BUFFERED)
-
-        
-        
-        
         var audioJob: Job? = null
-
-        
-        
-        
         val finishing = AtomicBoolean(false)
 
         val controlJob = launch {
@@ -72,8 +55,6 @@ class LiveRecitationRepositoryImpl(
 
                     RecitationControl.Finish -> {
                         finishing.set(true)
-                        
-                        
                         audioJob?.cancelAndJoin()
                         commands.send(LiveSessionCommand.End)
                         commands.close()
@@ -97,12 +78,6 @@ class LiveRecitationRepositoryImpl(
         }
     }.asResult()
 
-    
-
-
-
-
- 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private suspend fun ProducerScope<LiveRecitationEvent>.streamCaptureInto(
         commands: SendChannel<LiveSessionCommand>,
@@ -118,8 +93,7 @@ class LiveRecitationRepositoryImpl(
                     send(LiveRecitationEvent.Level(event.frame.rms(), isSpeaking = event.isSpeech))
                 }
 
-                SpeechEvent.SpeechEnded ->
-                    send(LiveRecitationEvent.Level(amplitude = 0f, isSpeaking = false))
+                SpeechEvent.SpeechEnded -> send(LiveRecitationEvent.Level(amplitude = 0f, isSpeaking = false))
             }
         }
     }

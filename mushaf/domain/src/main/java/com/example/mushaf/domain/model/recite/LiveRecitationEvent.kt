@@ -27,10 +27,10 @@ sealed interface LiveRecitationEvent {
  
     data class Level(val amplitude: Float, val isSpeaking: Boolean) : LiveRecitationEvent
 
-     
+
     data class Graded(val chunk: RecitationChunk) : LiveRecitationEvent
 
-     
+
     data object Finished : LiveRecitationEvent
 }
 
