@@ -3,9 +3,11 @@ package com.iti.meeting.data.realtime
 import com.iti.domain.auth.MeetingAuthTokenProvider
 import com.iti.meeting.data.remote.MeetingWsDestinations
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.ResponseException
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketSession
 import io.ktor.websocket.close
@@ -91,11 +93,22 @@ class StompClient(
         while (scope.isActive) {
             val isReconnect = attempt > 0
             val connectedDurationMs = runCatching { openSession(isReconnect) }
-                .onFailure { android.util.Log.e("StompClient", "Connection failed to wsUrl: $wsUrl", it) }
+                .onFailure { failure ->
+                    android.util.Log.e("StompClient", "Connection failed to wsUrl: $wsUrl", failure)
+                    refreshTokenIfHandshakeWasRejected(failure)
+                }
                 .getOrDefault(0L)
             attempt = if (connectedDurationMs >= STABLE_CONNECTION_MS) 0 else attempt + 1
             if (attempt > 0) delay(backoffFor(attempt - 1))
         }
+    }
+
+
+    private suspend fun refreshTokenIfHandshakeWasRejected(failure: Throwable) {
+        val status = (failure as? ResponseException)?.response?.status ?: return
+        if (status != HttpStatusCode.Unauthorized && status != HttpStatusCode.Forbidden) return
+        android.util.Log.d("StompClient", "Handshake rejected with $status — refreshing the token")
+        tokenProvider.refreshToken(rejectedToken = tokenProvider.currentToken())
     }
 
     private suspend fun openSession(isReconnect: Boolean): Long {

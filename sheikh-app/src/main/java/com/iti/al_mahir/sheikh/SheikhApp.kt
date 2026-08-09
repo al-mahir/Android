@@ -37,18 +37,6 @@ class SheikhApp : Application() {
                             enableHttpLogging = com.iti.al_mahir.sheikh.BuildConfig.DEBUG
                         ) 
                     }
-                    single<com.iti.domain.auth.MeetingAuthTokenProvider> {
-                        val tokenStore = org.koin.core.context.GlobalContext.get().get<TokenStore>()
-                        val refresher = com.iti.data.core.token.TokenRefresher(
-                            tokenStore = tokenStore,
-                            refreshEndpoint = com.iti.data.core.network.AlmahirApi.Auth.Sheikh.REFRESH,
-                        )
-                        object : com.iti.domain.auth.MeetingAuthTokenProvider {
-                            override suspend fun currentToken(): String? = tokenStore.getTokens()?.accessToken
-                            override suspend fun refreshToken(): String? = refresher.refresh()?.accessToken
-                            override suspend fun onAuthenticationExpired() = tokenStore.clear()
-                        }
-                    }
                     single<com.iti.domain.auth.MeetingCurrentUserProvider> {
                         com.iti.domain.auth.MeetingCurrentUserProvider {
                             org.koin.core.context.GlobalContext.get().get<TokenStore>().getUserId()
