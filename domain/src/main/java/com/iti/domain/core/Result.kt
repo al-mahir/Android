@@ -45,12 +45,11 @@ fun <T> Result<T>.getOrNull(): T? = when (this) {
     is Result.Error -> null
 }
 
-/**
- * Runs [block], catching any [Throwable] (other than [CancellationException], which must keep
- * propagating so structured concurrency still works) and mapping it through [mapError] into a
- * [Result.Error]. Centralizes the try/catch/map-to-DomainError shape repeated across repository
- * implementations.
- */
+inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> = when (this) {
+    is Result.Success -> transform(data)
+    is Result.Error -> this
+}
+
 /**
  * Wraps each successfully-emitted value in [Result.Success] and turns any upstream exception
  * (other than [CancellationException]) into a single terminal [Result.Error] via [mapError],

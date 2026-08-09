@@ -5,6 +5,7 @@ import com.iti.data.core.network.dto.ApiResponse
 import com.iti.data.core.network.dto.RefreshTokenRequest
 import com.iti.data.user.auth.remote.FilePart
 import com.iti.data.user.auth.remote.dto.AuthDataDto
+import com.iti.data.user.auth.remote.dto.ChangePasswordRequest
 import com.iti.data.user.auth.remote.dto.GoogleAuthRequest
 import com.iti.data.user.auth.remote.dto.LoginRequest
 import com.iti.data.user.auth.remote.dto.LogoutRequest
@@ -24,7 +25,7 @@ import kotlinx.serialization.json.Json
 
 /**
  * Same wire shapes as [com.iti.data.user.auth.remote.AuthRemoteDataSource] (identical request/
- * response DTOs, reused as-is) — only the sheikh-namespaced paths differ.
+ * response DTOs, reused as-is) — only the sheikh-namespaced endpoints differ.
  */
 class SheikhAuthRemoteDataSource(
     private val client: HttpClient,
@@ -68,6 +69,18 @@ class SheikhAuthRemoteDataSource(
 
     suspend fun logout(request: LogoutRequest): ApiResponse<Unit> =
         postJson(AlmahirApi.Auth.LOGOUT, request)
+
+    suspend fun verifyEmail(email: String): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.verifyEmail(email)).body()
+
+    suspend fun verifyOtp(otp: String, email: String): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.verifyOtp(otp, email)).body()
+
+    suspend fun changePassword(email: String, request: ChangePasswordRequest): ApiResponse<Unit> =
+        client.post(AlmahirApi.Auth.ForgotPassword.changePassword(email)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
 
     private suspend inline fun <reified B : Any, reified R> postJson(
         path: String,

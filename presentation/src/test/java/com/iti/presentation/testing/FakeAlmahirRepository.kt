@@ -194,3 +194,33 @@ class FakeAlmahirRepository(
         )
     }
 }
+class FakeAppPreferencesRepository(
+    initialUser: com.iti.domain.model.User? = FakeAlmahirRepository.USER,
+) : com.iti.domain.settings.repository.AppPreferencesRepository {
+    private val state = kotlinx.coroutines.flow.MutableStateFlow(
+        com.iti.domain.settings.model.AppPreferences(
+            user = initialUser
+        )
+    )
+    override val preferences: kotlinx.coroutines.flow.Flow<com.iti.domain.settings.model.AppPreferences> = state
+    override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setRemindersEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setErrorSoundsEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun setDataSaverEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    override suspend fun saveUser(user: com.iti.domain.model.User): com.iti.domain.core.Result<Unit> {
+        state.value = state.value.copy(user = user)
+        return com.iti.domain.core.Result.Success(Unit)
+    }
+    override suspend fun clearUser(): com.iti.domain.core.Result<Unit> {
+        state.value = state.value.copy(user = null)
+        return com.iti.domain.core.Result.Success(Unit)
+    }
+}
+
+class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
+    override val status: kotlinx.coroutines.flow.Flow<com.iti.domain.connectivity.ConnectivityStatus> =
+        kotlinx.coroutines.flow.flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+    override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus =
+        com.iti.domain.connectivity.ConnectivityStatus.Available
+}

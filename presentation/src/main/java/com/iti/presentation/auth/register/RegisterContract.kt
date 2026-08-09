@@ -43,5 +43,8 @@ sealed class RegisterEffect {
 
     data class NavigateToLogin(val message: UiText) : RegisterEffect()
 
+    /** Registration succeeded — verify email before signing in. */
+    data class NavigateToOtpVerify(val email: String, val password: String) : RegisterEffect()
+
     data class ShowError(val message: UiText) : RegisterEffect()
 }

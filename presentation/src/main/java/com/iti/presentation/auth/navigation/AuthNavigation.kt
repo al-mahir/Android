@@ -25,6 +25,10 @@ import com.iti.presentation.auth.register.RegisterEffect
 import com.iti.presentation.auth.register.RegisterIntent
 import com.iti.presentation.auth.register.RegisterScreen
 import com.iti.presentation.auth.register.RegisterViewModel
+import com.iti.presentation.auth.resetpassword.ResetPasswordEffect
+import com.iti.presentation.auth.resetpassword.ResetPasswordIntent
+import com.iti.presentation.auth.resetpassword.ResetPasswordScreen
+import com.iti.presentation.auth.resetpassword.ResetPasswordViewModel
 import com.iti.presentation.core.mvi.ObserveEffect
 import com.iti.presentation.core.platform.GoogleIdTokenProvider
 import com.iti.presentation.core.platform.GoogleIdTokenResult
@@ -134,6 +138,17 @@ fun EntryProviderScope<NavKey>.authEntries(
                     onBack()
                 }
 
+                // AUTH-09: email verification required after registration.
+                is RegisterEffect.NavigateToOtpVerify -> {
+                    PendingCredentials.stash(effect.password)
+                    onNavigate(
+                        AuthRoute.OtpVerify(
+                            email = effect.email,
+                            flow = com.iti.presentation.auth.otp.OtpFlow.EMAIL_VERIFICATION,
+                        )
+                    )
+                }
+
                 is RegisterEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
@@ -173,23 +188,53 @@ fun EntryProviderScope<NavKey>.authEntries(
         val state by viewModel.state.collectAsStateWithLifecycle()
         val context = LocalContext.current
 
-        // Seed the ViewModel with the address the code was sent to.
-        LaunchedEffect(route.email) {
-            viewModel.onIntent(OtpIntent.InitEmail(route.email))
+        // Seed the ViewModel with the address the code was sent to and the flow type.
+        LaunchedEffect(route.email, route.flow) {
+            viewModel.onIntent(OtpIntent.InitEmail(route.email, route.flow))
+            // Pass stashed credentials for auto-login after email verification.
+            PendingCredentials.consume()?.let { viewModel.setCredentials(it) }
         }
 
         ObserveEffect(viewModel.effect) { effect ->
             when (effect) {
-                is OtpEffect.NavigateToLogin -> onNavigate(AuthRoute.Login)
-                is OtpEffect.NavigateToHome -> onAuthenticated()
+                is OtpEffect.NavigateToResetPassword -> onNavigate(AuthRoute.ResetPassword(effect.email))
+                is OtpEffect.NavigateToLogin -> {
+                    onShowMessage(effect.message.resolve(context))
+                    onNavigate(AuthRoute.Login)
+                }
                 is OtpEffect.NavigateBack -> onBack()
                 is OtpEffect.ShowError -> onShowMessage(effect.message.resolve(context))
             }
         }
 
         OtpScreen(
+            state = if (state.email.isBlank() && route.email.isNotBlank()) state.copy(email = route.email) else state,
+            onIntent = viewModel::onIntent,
+        )
+    }
+
+    entry<AuthRoute.ResetPassword> { route ->
+        val viewModel: ResetPasswordViewModel = koinViewModel()
+        val state by viewModel.state.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+
+        LaunchedEffect(route.email) {
+            viewModel.onIntent(ResetPasswordIntent.InitEmail(route.email))
+        }
+
+        ObserveEffect(viewModel.effect) { effect ->
+            when (effect) {
+                is ResetPasswordEffect.NavigateToLogin -> onNavigate(AuthRoute.Login)
+                is ResetPasswordEffect.ShowSuccess -> onShowMessage(effect.message.resolve(context))
+                is ResetPasswordEffect.ShowError -> onShowMessage(effect.message.resolve(context))
+                is ResetPasswordEffect.NavigateBack -> onBack()
+            }
+        }
+
+        ResetPasswordScreen(
             state = state,
             onIntent = viewModel::onIntent,
+            onNavigateBack = onBack,
         )
     }
 }

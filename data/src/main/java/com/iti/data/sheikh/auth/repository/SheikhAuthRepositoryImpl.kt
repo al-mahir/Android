@@ -10,6 +10,7 @@ import com.iti.data.core.token.isLoggedIn
 import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.data.sheikh.auth.remote.SheikhAuthRemoteDataSource
 import com.iti.data.user.auth.remote.dto.AuthDataDto
+import com.iti.data.user.auth.remote.dto.ChangePasswordRequest
 import com.iti.data.user.auth.remote.dto.GoogleAuthRequest
 import com.iti.data.user.auth.remote.dto.LoginRequest
 import com.iti.data.user.auth.remote.dto.LogoutRequest
@@ -60,16 +61,13 @@ class SheikhAuthRepositoryImpl(
             )
         },
         onSuccess = { dto ->
-            val user = dto.toDomain()
-            tokenStore.saveUserId(user.id)
-            appPreferencesDataStore.saveUser(user.toAppPreferencesUser())
-            user
+            dto.toDomain()
         },
     )
 
     override suspend fun login(email: String, password: String): Result<AuthData> = apiCall(
         request = { remoteDataSource.login(LoginRequest(email, password)) },
-        onSuccess = { it.persistThenMap() },
+        onSuccess = { it.persistThenMap(fallbackEmail = email) },
     )
 
     override suspend fun loginWithGoogle(idToken: String): Result<AuthData> = apiCall(
@@ -102,28 +100,40 @@ class SheikhAuthRepositoryImpl(
         }
     }
 
-    // No sheikh forgot/reset-password endpoints exist yet.
     override suspend fun forgotPassword(email: String): Result<Unit> =
-        Result.Error(DomainError.ServerError(NOT_IMPLEMENTED))
+        apiCallForUnit { remoteDataSource.verifyEmail(email) }
 
-    override suspend fun resetPassword(token: String, newPassword: String): Result<Unit> =
-        Result.Error(DomainError.ServerError(NOT_IMPLEMENTED))
+    override suspend fun verifyOtp(email: String, otp: String): Result<Unit> =
+        apiCallForUnit { remoteDataSource.verifyOtp(otp, email) }
+
+    override suspend fun resetPassword(email: String, newPassword: String): Result<Unit> =
+        apiCallForUnit {
+            remoteDataSource.changePassword(
+                email = email,
+                request = ChangePasswordRequest(password = newPassword, confirmPassword = newPassword)
+            )
+        }
 
     override suspend fun getProfile(): Result<User> =
         Result.Error(DomainError.ServerError(NOT_IMPLEMENTED))
 
-    // The backend exposes no OTP endpoint yet; the UI flow is unblocked with a local stub —
-    // matches the student AuthRepositoryImpl's stub.
-    override suspend fun verifyOtp(email: String, otp: String): Result<Unit> = Result.Success(Unit)
-
-    private suspend fun AuthDataDto.persistThenMap(): AuthData {
-        val tokens = AuthTokens(accessToken.orEmpty(), refreshToken.orEmpty())
-        if (tokens.accessToken.isNotBlank() && tokens.refreshToken.isNotBlank()) {
+    private suspend fun AuthDataDto.persistThenMap(fallbackEmail: String? = null): AuthData {
+        val effectiveAccessToken = accessToken ?: token.orEmpty()
+        val effectiveRefreshToken = refreshToken.orEmpty()
+        val tokens = AuthTokens(effectiveAccessToken, effectiveRefreshToken)
+        if (tokens.accessToken.isNotBlank()) {
             tokenStore.save(TokenPair(tokens.accessToken, tokens.refreshToken))
         }
-        val domainUser = user.toDomain()
-        tokenStore.saveUserId(domainUser.id)
-        appPreferencesDataStore.saveUser(domainUser.toAppPreferencesUser())
+
+        val domainUser = resolveDomainUser(fallbackEmail)
+        if (domainUser.id.isNotBlank()) {
+            tokenStore.saveUserId(domainUser.id)
+        }
+
+        val appUser = resolveAppPreferencesUser(fallbackEmail)
+        // Clear previous user data before saving new user data to prevent stale data leaks
+        appPreferencesDataStore.clearUser()
+        appPreferencesDataStore.saveUser(appUser)
 
         return AuthData(
             tokens = tokens,
@@ -132,14 +142,104 @@ class SheikhAuthRepositoryImpl(
         )
     }
 
-    private fun User.toAppPreferencesUser() = com.iti.domain.model.User(
-        id = id,
-        displayName = "$firstName $lastName".trim(),
-        initials = "${firstName.firstOrNull() ?: ""}${lastName.firstOrNull() ?: ""}".uppercase(),
-        avatarUrl = profilePictureUrl,
-        email = email,
-        joinedAtEpochMillis = System.currentTimeMillis(),
-    )
+    private fun AuthDataDto.resolveDomainUser(fallbackEmail: String? = null): User {
+        val nested = this.user
+        val resolvedId = nested?.id?.ifBlank { null }
+            ?: nested?.mongoId?.ifBlank { null }
+            ?: this.id?.ifBlank { null }
+            ?: this.mongoId?.ifBlank { null }
+            ?: ""
+
+        val resolvedUsername = nested?.username
+            ?: this.username
+            ?: ""
+
+        val resolvedFirstName = nested?.firstName
+            ?: this.firstName
+            ?: ""
+
+        val resolvedLastName = nested?.lastName
+            ?: this.lastName
+            ?: ""
+
+        val resolvedEmail = nested?.email
+            ?: this.email
+            ?: fallbackEmail
+            ?: ""
+
+        val resolvedPhone = nested?.phoneNumber
+            ?: nested?.snakePhoneNumber
+            ?: this.phoneNumber
+
+        val resolvedPic = nested?.profilePictureUrl
+            ?: nested?.avatarUrl
+            ?: nested?.snakeAvatarUrl
+            ?: this.profilePictureUrl
+            ?: this.avatarUrl
+
+        val resolvedRoles = if (nested != null && nested.roles.isNotEmpty()) {
+            nested.roles
+        } else {
+            this.roles
+        }
+
+        return User(
+            id = resolvedId,
+            username = resolvedUsername,
+            firstName = resolvedFirstName,
+            lastName = resolvedLastName,
+            email = resolvedEmail,
+            phoneNumber = resolvedPhone,
+            profilePictureUrl = resolvedPic,
+            provider = nested?.provider,
+            roles = resolvedRoles,
+        )
+    }
+
+    private fun AuthDataDto.resolveAppPreferencesUser(fallbackEmail: String? = null): com.iti.domain.model.User {
+        val domainUser = resolveDomainUser(fallbackEmail)
+        val nested = this.user
+
+        val rawDisplayName = nested?.displayName
+            ?: nested?.snakeDisplayName
+            ?: nested?.name
+            ?: this.displayName
+            ?: this.snakeDisplayName
+            ?: this.name
+
+        val displayName = when {
+            !rawDisplayName.isNullOrBlank() -> rawDisplayName.trim()
+            domainUser.firstName.isNotBlank() || domainUser.lastName.isNotBlank() ->
+                "${domainUser.firstName} ${domainUser.lastName}".trim()
+            domainUser.username.isNotBlank() -> domainUser.username
+            domainUser.email.isNotBlank() -> domainUser.email.substringBefore('@')
+            !fallbackEmail.isNullOrBlank() -> fallbackEmail.substringBefore('@')
+            else -> ""
+        }
+
+        val initials = when {
+            domainUser.firstName.isNotBlank() && domainUser.lastName.isNotBlank() ->
+                "${domainUser.firstName.first()}${domainUser.lastName.first()}".uppercase()
+            displayName.isNotBlank() -> {
+                val parts = displayName.split(" ").filter { it.isNotBlank() }
+                if (parts.size >= 2) {
+                    "${parts[0].first()}${parts[1].first()}".uppercase()
+                } else {
+                    displayName.take(2).uppercase()
+                }
+            }
+            else -> ""
+        }
+
+        return com.iti.domain.model.User(
+            id = domainUser.id,
+            displayName = displayName,
+            initials = initials,
+            avatarUrl = domainUser.profilePictureUrl,
+            email = domainUser.email,
+            joinedAtEpochMillis = System.currentTimeMillis(),
+        )
+    }
 
     private suspend fun <T, R> apiCall(
         request: suspend () -> ApiResponse<T>,
@@ -148,7 +248,7 @@ class SheikhAuthRepositoryImpl(
         val response = request()
         val payload = response.data
         when {
-            !response.success -> Result.Error(response.toDomainError())
+            !response.isSuccessful -> Result.Error(response.toDomainError())
             payload == null -> Result.Error(DomainError.ServerError(response.message ?: EMPTY_PAYLOAD))
             else -> Result.Success(onSuccess(payload))
         }
@@ -158,14 +258,25 @@ class SheikhAuthRepositoryImpl(
         Result.Error(throwable.toDomainError())
     }
 
+    private suspend fun apiCallForUnit(
+        request: suspend () -> ApiResponse<Unit>,
+    ): Result<Unit> = try {
+        val response = request()
+        if (response.isSuccessful) Result.Success(Unit) else Result.Error(response.toDomainError())
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (throwable: Throwable) {
+        Result.Error(throwable.toDomainError())
+    }
+
     private fun UserDto?.toDomain(): User = User(
-        id = this?.id.orEmpty(),
+        id = this?.id?.ifBlank { null } ?: this?.mongoId.orEmpty(),
         username = this?.username.orEmpty(),
         firstName = this?.firstName.orEmpty(),
         lastName = this?.lastName.orEmpty(),
         email = this?.email.orEmpty(),
-        phoneNumber = this?.phoneNumber,
-        profilePictureUrl = this?.profilePictureUrl,
+        phoneNumber = this?.phoneNumber ?: this?.snakePhoneNumber,
+        profilePictureUrl = this?.profilePictureUrl ?: this?.avatarUrl ?: this?.snakeAvatarUrl,
         provider = this?.provider,
         roles = this?.roles.orEmpty(),
     )
@@ -173,6 +284,6 @@ class SheikhAuthRepositoryImpl(
     private companion object {
         const val EMPTY_PAYLOAD = "The server returned an empty response."
         const val NO_ACTIVE_SESSION = "No active session."
-        const val NOT_IMPLEMENTED = "This isn't available for sheikh accounts yet."
+        const val NOT_IMPLEMENTED = "Profile endpoint is not available yet."
     }
 }

@@ -7,6 +7,7 @@ object AuthField {
     const val LAST_NAME = "lastName"
     const val EMAIL = "email"
     const val PASSWORD = "password"
+    const val CONFIRM_PASSWORD = "confirmPassword"
     const val PHONE_NUMBER = "phoneNumber"
     const val OTP = "otp"
 }
@@ -19,5 +20,6 @@ object AuthValidationCode {
     const val WEAK_PASSWORD = "weak_password"
     const val INVALID_PHONE_NUMBER = "invalid_phone_number"
     const val INVALID_OTP = "invalid_otp"
+    const val PASSWORD_MISMATCH = "password_mismatch"
 }
 

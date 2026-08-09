@@ -5,14 +5,13 @@ import com.iti.domain.core.DomainError
 import com.iti.presentation.R
 import com.example.designsystem.text.UiText
 
-
 internal fun DomainError.toUiText(): UiText = when (this) {
     is DomainError.ValidationError -> message.toUiText(R.string.auth_error_validation)
-    is DomainError.ConflictError -> UiText.Resource(R.string.auth_error_conflict)
-    is DomainError.Unauthorized -> UiText.Resource(R.string.auth_error_invalid_credentials)
-    is DomainError.ServerError -> UiText.Resource(R.string.error_generic)
+    is DomainError.ConflictError -> message.toUiText(R.string.auth_error_conflict)
+    is DomainError.Unauthorized -> message.toUiText(R.string.auth_error_invalid_credentials)
+    is DomainError.ServerError -> message.toUiText(R.string.error_generic)
     is DomainError.NetworkError -> UiText.Resource(R.string.error_network)
-    is DomainError.NotFound -> UiText.Resource(R.string.error_generic)
+    is DomainError.NotFound -> message.toUiText(R.string.error_generic)
     is DomainError.Unknown -> UiText.Resource(R.string.error_generic)
 }
 
@@ -31,4 +30,5 @@ private val VALIDATION_CODE_STRINGS = mapOf(
     AuthValidationCode.WEAK_PASSWORD to R.string.auth_error_weak_password,
     AuthValidationCode.INVALID_PHONE_NUMBER to R.string.auth_error_invalid_phone_number,
     AuthValidationCode.INVALID_OTP to R.string.auth_error_invalid_otp,
+    AuthValidationCode.PASSWORD_MISMATCH to R.string.auth_error_password_mismatch,
 )

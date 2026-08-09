@@ -75,11 +75,15 @@ class AlmahirRepositoryImpl(
     override suspend fun logout(): Result<Unit> = resultOf {
         dataSource.logout()
         appPreferencesDataStore?.clearUser()
+        dao.deleteAll()
+        localDataSource?.clearAll()
     }
 
     override suspend fun deleteAccount(): Result<Unit> = resultOf {
         dataSource.deleteAccount()
         appPreferencesDataStore?.clearUser()
+        dao.deleteAll()
+        localDataSource?.clearAll()
     }
 
     override fun observeBookmarks(type: com.iti.domain.model.BookmarkType): Flow<Result<List<com.iti.domain.model.Bookmark>>> =

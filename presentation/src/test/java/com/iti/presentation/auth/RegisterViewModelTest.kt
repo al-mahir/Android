@@ -36,32 +36,18 @@ class RegisterViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `a new account is signed in straight away and lands on home`() = runTest(dispatcher) {
+    fun `a new account navigates to OTP email verification`() = runTest(dispatcher) {
         val repository = FakeAuthRepository()
         val viewModel = viewModel(repository)
 
         viewModel.submitValidForm()
         testScheduler.advanceUntilIdle()
 
-        // Registration returns no tokens, so the session comes from the follow-up sign-in.
         assertEquals(listOf(EMAIL), repository.registrations)
-        assertEquals(listOf(EMAIL), repository.logins)
-        assertEquals(RegisterEffect.NavigateToHome, viewModel.effect.first())
-    }
-
-    @Test
-    fun `an account that cannot be signed in sends the user to login`() = runTest(dispatcher) {
-        val repository = FakeAuthRepository(loginResult = FakeAuthRepository.failure())
-        val viewModel = viewModel(repository)
-
-        viewModel.submitValidForm()
-        testScheduler.advanceUntilIdle()
-
-        assertEquals(listOf(EMAIL), repository.registrations)
+        // No auto-login — goes to OTP first (AUTH-09).
+        assertTrue(repository.logins.isEmpty())
         assertEquals(
-            RegisterEffect.NavigateToLogin(
-                UiText.Resource(R.string.auth_error_registered_sign_in_failed)
-            ),
+            RegisterEffect.NavigateToOtpVerify(EMAIL, PASSWORD),
             viewModel.effect.first(),
         )
     }

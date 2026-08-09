@@ -134,13 +134,13 @@ class HomeViewModelTest {
 
     private fun viewModel(
         repository: FakeAlmahirRepository,
+        appPreferencesRepo: com.iti.presentation.testing.FakeAppPreferencesRepository = com.iti.presentation.testing.FakeAppPreferencesRepository(),
+        connectivityObserver: com.iti.presentation.testing.FakeConnectivityObserver = com.iti.presentation.testing.FakeConnectivityObserver(),
+        meetingRepository: FakeMeetingRepository = FakeMeetingRepository(),
         lastPage: Int = 298,
         failReadingProgress: Boolean = false,
-        appPreferencesRepository: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepository(),
-        connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
-        meetingRepository: com.iti.meeting.domain.repository.MeetingRepository = FakeMeetingRepository(),
     ) = HomeViewModel(
-        getCurrentUser = GetCurrentUserUseCase(appPreferencesRepository),
+        getCurrentUser = GetCurrentUserUseCase(appPreferencesRepo),
         getReadingProgress = GetReadingProgressUseCase(
             FakeReadingProgressRepository(lastPage, failReadingProgress),
         ),
@@ -151,25 +151,6 @@ class HomeViewModelTest {
         connectivityObserver = connectivityObserver,
         meetingRepository = meetingRepository,
     )
-
-    private class FakeAppPreferencesRepository(
-        user: com.iti.domain.model.User = FakeAlmahirRepository.USER
-    ) : com.iti.domain.settings.repository.AppPreferencesRepository {
-        val state = kotlinx.coroutines.flow.MutableStateFlow(com.iti.domain.settings.model.AppPreferences(user = user))
-        override val preferences: Flow<com.iti.domain.settings.model.AppPreferences> = state
-        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun setRemindersEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun setErrorSoundsEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun setDataSaverEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun saveUser(user: com.iti.domain.model.User): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-        override suspend fun clearUser(): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
-    }
-
-    private class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
-        override val status: Flow<com.iti.domain.connectivity.ConnectivityStatus> = flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
-        override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus = com.iti.domain.connectivity.ConnectivityStatus.Available
-    }
 
     private class FakeMeetingRepository : com.iti.meeting.domain.repository.MeetingRepository {
         override val reconnected: Flow<Unit> = flowOf()

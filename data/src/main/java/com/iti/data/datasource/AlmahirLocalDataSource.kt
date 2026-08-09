@@ -17,6 +17,8 @@ interface AlmahirLocalDataSource {
     suspend fun upsertBookmark(bookmark: BookmarkEntity)
 
     suspend fun deleteBookmark(id: String)
+
+    suspend fun clearAll()
 }
 
 class AlmahirLocalDataSourceImpl(
@@ -40,4 +42,7 @@ class AlmahirLocalDataSourceImpl(
 
     override suspend fun deleteBookmark(id: String) =
         bookmarkDao.delete(id)
+
+    override suspend fun clearAll() =
+        bookmarkDao.deleteAll()
 }

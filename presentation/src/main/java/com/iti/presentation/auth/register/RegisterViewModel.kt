@@ -68,22 +68,14 @@ class RegisterViewModel(
                 phoneNumber = currentState.phoneNumber.trim(),
             )
 
-            if (registration is Result.Error) {
-                updateState { copy(isLoading = false) }
-                handleDomainError(registration.error)
-                return@launch
-            }
-
-            val signIn = loginUseCase(email, password)
             updateState { copy(isLoading = false) }
 
-            when (signIn) {
-                is Result.Success -> sendEffect(RegisterEffect.NavigateToHome)
-                is Result.Error -> sendEffect(
-                    RegisterEffect.NavigateToLogin(
-                        UiText.Resource(R.string.auth_error_registered_sign_in_failed)
-                    )
-                )
+            when (registration) {
+                is Result.Error -> handleDomainError(registration.error)
+                is Result.Success -> {
+                    // AUTH-09: navigate to OTP email verification before signing in.
+                    sendEffect(RegisterEffect.NavigateToOtpVerify(email, password))
+                }
             }
         }
     }

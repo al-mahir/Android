@@ -41,7 +41,7 @@ class ForgotPasswordViewModel(
         viewModelScope.launch {
             when (val result = forgotPasswordUseCase(email)) {
                 is Result.Success -> {
-                    updateState { copy(isLoading = false, isSuccess = true) }
+                    updateState { copy(isLoading = false) }
                     // Navigate to OTP verify
                     sendEffect(ForgotPasswordEffect.NavigateToOtpVerify(email))
                 }

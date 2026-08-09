@@ -101,7 +101,7 @@ private fun AppNavHost(
     onActionHandled: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val backStack = remember { mutableStateListOf(startDestination) }
+    val backStack = remember(startDestination) { mutableStateListOf(startDestination) }
     val context = LocalContext.current
     val callController: CallSessionController = koinInject()
 

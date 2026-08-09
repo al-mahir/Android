@@ -1,6 +1,7 @@
 package com.iti.presentation.settings
 
 import com.iti.domain.core.Result
+import com.iti.domain.model.User
 import com.iti.domain.settings.model.AppLanguage
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.ThemeMode
