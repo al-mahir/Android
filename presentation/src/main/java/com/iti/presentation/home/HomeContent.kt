@@ -21,6 +21,7 @@ import com.iti.presentation.R
 import com.iti.presentation.home.components.ActiveCircleRow
 import com.iti.presentation.home.components.AyahOfTheDayCard
 import com.iti.presentation.home.components.ContinueReadingCard
+import com.iti.presentation.home.components.ExamCtaCard
 import com.iti.presentation.home.components.HomeHeader
 import com.iti.presentation.home.components.HomeSkeleton
 import com.iti.presentation.home.components.OngoingCallCard
@@ -39,6 +40,7 @@ fun HomeContent(
     onSeeAllCirclesClick: () -> Unit,
     onSheikhClick: (String) -> Unit,
     onJoinCircleClick: (String) -> Unit,
+    onStartExamClick: () -> Unit,
     onRetryClick: () -> Unit,
     onViewPendingMeetingClick: () -> Unit = {},
     onCancelPendingMeetingClick: () -> Unit = {},
@@ -112,6 +114,14 @@ fun HomeContent(
                             modifier = gutter,
                         )
                     }
+                }
+
+                // ── Exam CTA ──────────────────────────────────────────────────
+                item(key = "exam-cta") {
+                    ExamCtaCard(
+                        onClick = onStartExamClick,
+                        modifier = gutter
+                    )
                 }
 
                 // ── Sheikhs ─────────────────────────────────────────────────

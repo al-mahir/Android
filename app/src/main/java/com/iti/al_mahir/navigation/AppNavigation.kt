@@ -43,6 +43,7 @@ import org.koin.compose.koinInject
 import com.iti.presentation.circle.CircleListScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
+
 import com.iti.presentation.home.HomeScreen
 import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
 import com.iti.presentation.profile.ProfileScreen
@@ -67,6 +68,11 @@ sealed interface AppRoute : NavKey {
     data object CircleList : AppRoute
     data class JoiningCircle(val circleId: String) : AppRoute
     data class InSession(val circleId: String) : AppRoute
+
+    // Exam routes
+    data class ExamSetup(val initialScope: com.iti.domain.model.exam.ExamScope? = null) : AppRoute
+    data class ExamSession(val scope: com.iti.domain.model.exam.ExamScope, val questionCount: Int, val linesPerQuestion: Int) : AppRoute
+    data class ExamSummary(val summaryId: String) : AppRoute
 }
 
 @Composable
@@ -182,6 +188,8 @@ private fun AppNavHost(
         }
     }
 
+
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -255,6 +263,7 @@ private fun AppNavHost(
                                         )
                                     )
                                 },
+                                onOpenExamSetup = { backStack.add(AppRoute.ExamSetup()) }
                             )
                         }
 
@@ -446,6 +455,49 @@ private fun AppNavHost(
                                 }
                             },
                         )
+
+                        entry<AppRoute.ExamSetup> { route ->
+                            com.iti.presentation.exam.setup.ExamSetupScreen(
+                                viewModel = org.koin.compose.viewmodel.koinViewModel(
+                                    parameters = { org.koin.core.parameter.parametersOf(route.initialScope) }
+                                ),
+                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateToSession = { scope, count, lines ->
+                                    backStack.add(AppRoute.ExamSession(scope, count, lines))
+                                },
+                                onNavigateToSummary = { summaryId ->
+                                    backStack.add(AppRoute.ExamSummary(summaryId))
+                                }
+                            )
+                        }
+
+                        entry<AppRoute.ExamSession> { route ->
+                            com.iti.presentation.exam.session.ExamSessionScreen(
+                                viewModel = org.koin.compose.viewmodel.koinViewModel(
+                                    key = "exam_session_${route.scope}_${route.questionCount}_${route.linesPerQuestion}_${System.nanoTime()}",
+                                    parameters = { org.koin.core.parameter.parametersOf(route.scope, route.questionCount, route.linesPerQuestion) }
+                                ),
+                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateToSummary = { summaryId ->
+                                    backStack.removeLastOrNull()
+                                    backStack.add(AppRoute.ExamSummary(summaryId))
+                                }
+                            )
+                        }
+
+                        entry<AppRoute.ExamSummary> { route ->
+                            com.iti.presentation.exam.summary.ExamSummaryScreen(
+                                summaryId = route.summaryId,
+                                viewModel = org.koin.compose.viewmodel.koinViewModel(
+                                    parameters = { org.koin.core.parameter.parametersOf(route.summaryId) }
+                                ),
+                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateToSetup = { initialScope ->
+                                    backStack.removeLastOrNull()
+                                    backStack.add(AppRoute.ExamSetup(initialScope))
+                                }
+                            )
+                        }
                     },
                 )
             }

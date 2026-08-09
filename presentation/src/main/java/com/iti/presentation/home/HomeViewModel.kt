@@ -66,6 +66,7 @@ class HomeViewModel(
             HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
             HomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
             HomeIntent.DismissActiveCallClicked -> dismissActiveCall()
+            HomeIntent.StartExamClicked -> sendEffect(HomeEffect.OpenExamSetup)
         }
     }
 
