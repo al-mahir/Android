@@ -45,13 +45,15 @@ class ReciteSettingsViewModel(
 
     fun onIntent(intent: ReciteSettingsIntent) {
         when (intent) {
-            is ReciteSettingsIntent.SelectEngine -> persist { copy(engine = intent.key) }
+            // Engine and practice mode are one setting seen from two screens, so each entry
+            // point moves both - see RecitationSettings.withEngine.
+            is ReciteSettingsIntent.SelectEngine -> persist { withEngine(intent.key) }
 
             is ReciteSettingsIntent.SelectStrictness ->
                 persist { copy(strictness = intent.strictness) }
 
             is ReciteSettingsIntent.SetTajweedGrading ->
-                persist { copy(tajweedGradingEnabled = intent.enabled) }
+                persist { withTajweedGrading(intent.enabled) }
 
             is ReciteSettingsIntent.ToggleRule -> persist {
                 val current = gradedRules ?: schema?.rules?.map { it.key }?.toSet() ?: emptySet()
@@ -116,12 +118,12 @@ class ReciteSettingsViewModel(
         engines = loaded?.engines.orEmpty().map { engine ->
             EngineOptionUi(
                 key = engine.key,
-                isSelected = stored.engine?.let { it == engine.key } ?: engine.isDefault,
+                isSelected = engine.key == stored.wireEngine,
                 correctsRecitation = engine.correctsRecitation,
             )
         },
         strictness = stored.strictness,
-        tajweedGradingEnabled = stored.tajweedGradingEnabled,
+        tajweedGradingEnabled = stored.gradesTajweed,
         rules = loaded?.rules.orEmpty(),
         selectedRules = stored.gradedRules,
         moshafFields = loaded?.moshafFields.orEmpty(),

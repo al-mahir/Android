@@ -18,7 +18,26 @@ data class MushafUiState(
     val pages: Map<Int, MushafPage> = emptyMap(),
     val failedPages: Set<Int> = emptySet(),
     val isTajweedEnabled: Boolean = true,
+    /**
+     * The word the page actually paints. During a live session it is whichever of
+     * [confirmedWordId] and [predictedWordId] is further along; outside one it is driven directly
+     * by playback, the memorisation veil or a tap.
+     */
     val highlightedWordId: String? = null,
+    /**
+     * Where the server says the reciter is. Ground truth: grading, mistake marks and page turns
+     * all follow this and never [predictedWordId].
+     */
+    val confirmedWordId: String? = null,
+    /**
+     * Where the on-device model thinks the reciter is, always at or ahead of [confirmedWordId].
+     *
+     * Kept separate from the confirmed cursor rather than folded into one field, because a single
+     * field means every arriving chunk overwrites a prediction that has legitimately run ahead of
+     * it — the highlight snaps backwards a word or two on every server reply, which reads as
+     * stutter and is worse than not predicting at all.
+     */
+    val predictedWordId: String? = null,
     val pageCount: Int = MushafConstants.LAST_PAGE,
     val isFollowAlongActive: Boolean = false,
     val mushafMode: MushafMode = MushafMode.READING,
@@ -33,9 +52,12 @@ data class MushafUiState(
     val isSpeechDetected: Boolean = false,
     val captureError: CaptureError? = null,
 
+    /**
+     * The practice mode, and with it the engine: tajwīd grading needs the correcting engine, and
+     * memorisation-only runs the follow-along one. One value, reachable from the on-page toggle
+     * and from Recite Settings alike — see [com.example.mushaf.domain.model.recite.RecitationSettings.withTajweedGrading].
+     */
     val isTajweedGradingEnabled: Boolean = true,
-
-    val canGradeTajweed: Boolean = true,
 
     val liveCorrection: LiveCorrectionUiState = LiveCorrectionUiState(),
      

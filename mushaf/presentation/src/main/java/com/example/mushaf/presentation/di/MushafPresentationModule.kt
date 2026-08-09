@@ -111,6 +111,7 @@ val mushafPresentationModule = module {
             updateRecitationSettings = get(),
             downloadRecitation = get(),
             localWordCorpusRepository = get(),
+            referencePhonemeRepository = get(),
             observeAvailableTafsirBooks = get(),
             manageTafsirDownload = get(),
             observeAppPreferences = get(),

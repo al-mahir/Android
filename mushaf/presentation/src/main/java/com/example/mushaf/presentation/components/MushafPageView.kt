@@ -1,14 +1,23 @@
 package com.example.mushaf.presentation.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -43,6 +52,8 @@ import com.example.mushaf.presentation.font.PageFontProvider
 import com.example.mushaf.presentation.font.rememberPageFontFamily
 import com.example.mushaf.presentation.font.rememberSurahNameFontFamily
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
@@ -153,6 +164,21 @@ fun MushafPageView(
             )
         }
 
+        // A word still under the memorisation veil gets no highlight: the box alone would give
+        // away a position the veil exists to withhold, and the on-device cursor deliberately does
+        // not reveal anything on its own.
+        val highlightTarget = remember(tokens, highlightedWordId, areAyahsHidden, revealedWordIds) {
+            tokens.firstOrNull { it.wordId != null && it.wordId == highlightedWordId }
+                ?.takeIf { !areAyahsHidden || it.wordId in revealedWordIds }
+                ?.let { token ->
+                    Rect(
+                        offset = Offset(token.left, token.top),
+                        size = Size(token.layout.size.width.toFloat(), token.layout.size.height.toFloat()),
+                    )
+                }
+        }
+        val highlight = rememberSlidingHighlight(highlightTarget, slotHeightPx)
+
         Canvas(modifier = Modifier
             .fillMaxSize()
             .pointerInput(tokens) {
@@ -194,7 +220,16 @@ fun MushafPageView(
                 )
             }
         ) {
-            val highlighted = highlightedWordId
+            // Drawn before the glyphs, and once for the whole page rather than per token: the
+            // highlight is now a single animated rectangle that travels, not a property of
+            // whichever token happens to be current.
+            if (highlight.isPlaced && highlight.alpha.value > 0f) {
+                drawRect(
+                    color = highlightColor.copy(alpha = highlightColor.alpha * highlight.alpha.value),
+                    topLeft = Offset(highlight.left.value, highlight.top.value),
+                    size = Size(highlight.width.value, highlight.height.value),
+                )
+            }
             tokens.forEach { token ->
                 val isAyahWord = token.wordId != null
                 val isVisible = when {
@@ -212,19 +247,6 @@ fun MushafPageView(
                 }
 
                 val mark = token.wordId?.let(wordMarks::get)
-
-                if (token.wordId != null && token.wordId == highlighted) {
-                    drawRect(
-                        color = highlightColor,
-                        topLeft = Offset(token.left, token.top),
-                        size = Size(
-                            token.layout.size.width.toFloat(),
-                            token.layout.size.height.toFloat(),
-                        ),
-                    )
-                }
-
-
 
                 val glyphColor = when (mark) {
                     RecitationWordMark.MISTAKE -> mistakeColor
@@ -246,6 +268,75 @@ fun MushafPageView(
 
 
  
+/**
+ * The animated position of the reading highlight.
+ *
+ * Held as [Animatable]s rather than derived per frame so the values can be read inside the
+ * [Canvas] draw lambda: that keeps a moving highlight in the draw phase, instead of recomposing
+ * the whole page — including its text measurement — sixty times a second.
+ */
+@Stable
+private class SlidingHighlight {
+    val left = Animatable(0f)
+    val top = Animatable(0f)
+    val width = Animatable(0f)
+    val height = Animatable(0f)
+    val alpha = Animatable(0f)
+
+    /** False until the highlight has a real position, so it never animates in from the origin. */
+    var isPlaced by mutableStateOf(false)
+}
+
+/**
+ * Slides the highlight from word to word.
+ *
+ * Only *along a line*. A move to another line has no path worth travelling — sliding diagonally
+ * would drag the highlight across words the reciter never said, and across the whole page on a
+ * line wrap — so those snap, as do first appearances and page turns. [lineHeightPx] is what
+ * separates the two cases: anything landing more than half a line away is a different line.
+ */
+@Composable
+private fun rememberSlidingHighlight(target: Rect?, lineHeightPx: Float): SlidingHighlight {
+    val highlight = remember { SlidingHighlight() }
+
+    LaunchedEffect(target, lineHeightPx) {
+        if (target == null) {
+            highlight.alpha.animateTo(0f, tween(HIGHLIGHT_FADE_MS))
+            highlight.isPlaced = false
+            return@LaunchedEffect
+        }
+
+        val slides = highlight.isPlaced &&
+            kotlin.math.abs(target.top - highlight.top.value) < lineHeightPx / 2f
+        if (slides) {
+            coroutineScope {
+                launch { highlight.left.animateTo(target.left, HIGHLIGHT_MOVE_SPEC) }
+                launch { highlight.top.animateTo(target.top, HIGHLIGHT_MOVE_SPEC) }
+                launch { highlight.width.animateTo(target.width, HIGHLIGHT_MOVE_SPEC) }
+                launch { highlight.height.animateTo(target.height, HIGHLIGHT_MOVE_SPEC) }
+            }
+        } else {
+            highlight.left.snapTo(target.left)
+            highlight.top.snapTo(target.top)
+            highlight.width.snapTo(target.width)
+            highlight.height.snapTo(target.height)
+            highlight.isPlaced = true
+            highlight.alpha.animateTo(1f, tween(HIGHLIGHT_FADE_MS))
+        }
+    }
+
+    return highlight
+}
+
+/** Fast enough to stay under the reciter rather than trail them, damped enough not to overshoot
+ * into the neighbouring word — an overshoot on a word-sized target reads as the wrong word being
+ * highlighted for a frame or two. */
+private val HIGHLIGHT_MOVE_SPEC = spring<Float>(
+    dampingRatio = Spring.DampingRatioNoBouncy,
+    stiffness = Spring.StiffnessMediumLow,
+)
+private const val HIGHLIGHT_FADE_MS = 140
+
 private fun DrawScope.drawMarkUnderline(
     token: PageToken,
     mark: RecitationWordMark?,

@@ -25,8 +25,11 @@ import com.example.mushaf.domain.model.recite.RecitationCursor
 import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationSessionRecorder
 import com.example.mushaf.domain.model.recite.mergedWith
-import com.example.mushaf.domain.model.recite.local.LocalCursorTracker
+import com.example.mushaf.domain.model.recite.RecitationWordOrder
+import com.example.mushaf.domain.model.recite.local.LocalTranscript
+import com.example.mushaf.domain.model.recite.local.PhonemeCursorTracker
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
+import com.example.mushaf.domain.repository.ReferencePhonemeRepository
 import com.example.mushaf.presentation.state.ChunkOutcome
 import com.example.mushaf.presentation.state.LiveCorrectionUiState
 import com.example.mushaf.presentation.state.CaptureError
@@ -92,6 +95,7 @@ class MushafViewModel(
     private val updateRecitationSettings: UpdateRecitationSettingsUseCase,
     private val downloadRecitation: DownloadRecitationUseCase,
     private val localWordCorpusRepository: LocalWordCorpusRepository,
+    private val referencePhonemeRepository: ReferencePhonemeRepository,
     private val observeAvailableTafsirBooks: ObserveAvailableTafsirBooksUseCase,
     private val manageTafsirDownload: ManageTafsirDownloadUseCase,
     private val observeAppPreferences: ObserveAppPreferencesUseCase,
@@ -136,7 +140,7 @@ class MushafViewModel(
 
     private var seekOnPageLoad: Int? = null
 
-    private val localCursorTracker = LocalCursorTracker()
+    private val localCursorTracker = PhonemeCursorTracker()
 
     private var sessionStartedAtEpochMs = 0L
 
@@ -248,10 +252,7 @@ class MushafViewModel(
             .onEach { settings ->
                 recitationSettings = settings
                 _state.update {
-                    it.copy(
-                        isTajweedGradingEnabled = settings.tajweedGradingEnabled,
-                        canGradeTajweed = settings.engineCanGradeTajweed,
-                    )
+                    it.copy(isTajweedGradingEnabled = settings.gradesTajweed)
                 }
             }
             .launchIn(viewModelScope)
@@ -586,6 +587,8 @@ class MushafViewModel(
 
 
                 highlightedWordId = if (wasLive) it.highlightedWordId else null,
+                confirmedWordId = if (wasLive) it.confirmedWordId else null,
+                predictedWordId = if (wasLive) it.predictedWordId else null,
                 // Only a real page change re-hides the text; a redundant load of the page we are
                 // already on must not wipe what the reader has revealed.
                 revealedWordIds = if (samePage) it.revealedWordIds else emptySet(),
@@ -682,6 +685,8 @@ class MushafViewModel(
             it.copy(
                 mushafMode = mode,
                 highlightedWordId = null,
+                confirmedWordId = null,
+                predictedWordId = null,
                 revealedWordIds = emptySet(),
                 captureError = null,
             )
@@ -705,6 +710,8 @@ class MushafViewModel(
                 areAyahsVisible = !wasVisible,
                 revealedWordIds = emptySet(),
                 highlightedWordId = null,
+                confirmedWordId = null,
+                predictedWordId = null,
             )
         }
     }
@@ -882,7 +889,7 @@ class MushafViewModel(
 
             is LiveRecitationEvent.Level -> updateMicLevel(event)
 
-            is LiveRecitationEvent.LocalWord -> updateLocalWord(event.word)
+            is LiveRecitationEvent.LocalPhonemes -> updateLocalCursor(event.transcript)
 
             is LiveRecitationEvent.Graded -> mergeChunk(event.chunk)
 
@@ -905,6 +912,8 @@ class MushafViewModel(
                         micLevel = 0f,
                         isSpeechDetected = false,
                         highlightedWordId = null,
+                        confirmedWordId = null,
+                        predictedWordId = null,
 
 
 
@@ -942,23 +951,34 @@ class MushafViewModel(
     }
 
     /**
-     * A word locally recognized from the on-device streaming ASR (see [LiveRecitationEvent.LocalWord]).
-     * Structurally incapable of guessing: [LocalCursorTracker.offer] only ever returns a real
-     * window entry's word id or `null`, so a non-match is silently a no-op, never a fallback.
+     * The on-device model's running phoneme transcript (see [LiveRecitationEvent.LocalPhonemes]),
+     * arriving roughly every 100ms.
+     *
+     * This is the *only* thing that moves the highlight between server chunks, and it is
+     * deliberately narrow in what it may do: it advances [MushafUiState.predictedWordId], and
+     * nothing else. It does not reveal words under the memorisation veil (an unconfirmed guess
+     * must not uncover text the reciter may not have reached), does not turn the page, and never
+     * feeds grading. It also only ever moves *forward* — a prediction that lands behind where the
+     * highlight already is means the aligner is out of step, and the server cursor will resolve it
+     * within a chunk or two.
      */
-    private fun updateLocalWord(word: String) {
-        val confirmed = localCursorTracker.offer(word)
-        Log.d(TAG, "Local word '$word' -> ${confirmed ?: "NO MATCH"}")
-        if (confirmed != null) updateWordHighlight(confirmed)
+    private fun updateLocalCursor(transcript: LocalTranscript) {
+        val predicted = localCursorTracker.offer(transcript.phonemes) ?: return
+        val state = _state.value
+        if (!state.isRecordingActive) return
+        if (!RecitationWordOrder.isAfter(predicted, state.highlightedWordId)) return
+
+        Log.d(TAG, "Local cursor -> $predicted (confirmed: ${state.confirmedWordId})")
+        _state.update { it.copy(highlightedWordId = predicted, predictedWordId = predicted) }
     }
 
     private fun mergeChunk(chunk: RecitationChunk) {
         chunk.cursor?.let { lastCursor = it }
 
         // The server cursor is authoritative - slide the local tracker's window to a fresh small
-        // span starting there, so local tracking never drifts onto a large, stale span after a
-        // correction (see seedLocalTrackerAround's doc for why the window must stay small).
-        chunk.cursor?.let(::seedLocalTrackerAround)
+        // span starting just past it, so local tracking never drifts onto a large, stale span
+        // after a correction (see LOCAL_TRACKER_WINDOW_WORDS for why the window must stay small).
+        chunk.cursor?.let { seedLocalTracker(it.copy(wordIndex = it.wordIndex + 1)) }
 
         if (chunk.mistakeWords.isEmpty()) {
             Log.d(TAG, "API RESPONSE (Standard) - NO MISTAKES \u2705 | Words: ${chunk.words.joinToString { it.wordId }} | Cursor: ${chunk.cursor?.wordId}")
@@ -969,18 +989,23 @@ class MushafViewModel(
 
         _state.update { state ->
             val live = state.liveCorrection
+            val confirmed = chunk.cursor?.wordId ?: state.confirmedWordId
+            // The prediction survives only while it is still ahead of the server. Once the server
+            // catches up to or passes it, it was either right (and adds nothing) or wrong (and
+            // must go), so either way the confirmed cursor takes over and the prediction restarts
+            // from there.
+            val predictionStillLeads = RecitationWordOrder.isAfter(state.predictedWordId, confirmed)
+            val predicted = if (predictionStillLeads) state.predictedWordId else confirmed
             state.copy(
-                highlightedWordId = chunk.cursor?.wordId ?: state.highlightedWordId,
+                highlightedWordId = predicted ?: state.highlightedWordId,
+                confirmedWordId = confirmed,
+                predictedWordId = predicted,
                 liveCorrection = live.copy(
                     wordFeedback = live.wordFeedback.mergedWith(chunk),
                     candidates = (chunk.match as? RecitationMatch.Ambiguous)?.candidates.orEmpty(),
                     nonVerse = chunk.nonVerse,
                     lastOutcome = chunk.match.toOutcome(),
                     cursor = chunk.cursor ?: live.cursor,
-                    // Keep the last chunk that actually carried phonemes: a silent or unmatched
-                    // chunk should not blank out what the reciter was just shown.
-                    predictedPhonemes = chunk.predictedPhonemes ?: live.predictedPhonemes,
-                    referencePhonemes = chunk.referencePhonemes ?: live.referencePhonemes,
                 ),
             ).revealing(chunk.cursor?.wordId)
         }
@@ -1010,17 +1035,33 @@ class MushafViewModel(
         val anchor = lastCursor?.takeIf { cursor -> pageWords.any { it.id == cursor.wordId } }
             ?: startCursorForCurrentPage()
             ?: return
-        _state.update { it.copy(highlightedWordId = anchor.wordId) }
-        seedLocalTrackerAround(anchor)
+        _state.update {
+            it.copy(
+                highlightedWordId = anchor.wordId,
+                confirmedWordId = anchor.wordId,
+                predictedWordId = anchor.wordId,
+            )
+        }
+        seedLocalTracker(anchor)
     }
 
 
-    private fun seedLocalTrackerAround(anchor: RecitationCursor) {
+    /**
+     * Re-anchors the on-device tracker on the phonemes expected from [firstExpected] onwards.
+     *
+     * Callers pass the first word the reciter has *not* said yet, which is the seed cursor itself
+     * when a session or page starts, but the word *after* a graded chunk's cursor — that one
+     * reports the last word already recited, and a window that began there would have the tracker
+     * waiting to hear something that is over.
+     */
+    private fun seedLocalTracker(firstExpected: RecitationCursor) {
         viewModelScope.launch {
-            val window = localWordCorpusRepository.wordsFrom(anchor, LOCAL_TRACKER_WINDOW_WORDS).getOrNull()
-            Log.d(TAG, "seedLocalTrackerAround(${anchor.wordId}): window=${window?.size ?: "FETCH FAILED"}")
+            val window = referencePhonemeRepository
+                .unitsFrom(firstExpected, LOCAL_TRACKER_WINDOW_WORDS)
+                .getOrNull()
+            Log.d(TAG, "seedLocalTracker(${firstExpected.wordId}): units=${window?.size ?: "FETCH FAILED"}")
             if (window == null) return@launch
-            localCursorTracker.setWindow(window, anchor.wordId)
+            localCursorTracker.setWindow(window)
         }
     }
 
@@ -1049,12 +1090,17 @@ class MushafViewModel(
 
 
 
+    /**
+     * The on-page practice-mode toggle. A shortcut into the same stored setting the engine picker
+     * in Recite Settings writes, not a second setting: [RecitationSettings.withTajweedGrading]
+     * moves the engine with it, so "memorisation only" actually switches to the follow-along
+     * engine instead of leaving the tajwīd engine running with its rules muted.
+     */
     private fun setTajweedGrading(enabled: Boolean) {
         val current = recitationSettings
-        if (current.tajweedGradingEnabled == enabled) return
+        if (current.gradesTajweed == enabled && current.engineCanGradeTajweed == enabled) return
 
-        val updated = current.copy(tajweedGradingEnabled = enabled)
-
+        val updated = current.withTajweedGrading(enabled)
 
         recitationSettings = updated
         _state.update { it.copy(isTajweedGradingEnabled = enabled) }
@@ -1069,7 +1115,7 @@ class MushafViewModel(
             state.mushafMode == MushafMode.RECITATION &&
             state.liveCorrection.isActive
         ) {
-            Log.d(TAG, "Tajwid grading -> $enabled; reopening the session at ${lastCursor?.wordId}")
+            Log.d(TAG, "Practice mode -> ${updated.wireEngine}; reopening the session at ${lastCursor?.wordId}")
             pendingRestart = SessionRestart.SETTINGS
             finishLiveCorrection()
         }
@@ -1141,6 +1187,8 @@ class MushafViewModel(
                 micLevel = 0f,
                 isSpeechDetected = false,
                 highlightedWordId = null,
+                confirmedWordId = null,
+                predictedWordId = null,
                 liveCorrection = LiveCorrectionUiState(),
             )
         }
@@ -1510,13 +1558,11 @@ class MushafViewModel(
 
     private suspend fun resolveMuallemAyahWordCount(session: MuallemSessionState): Int? {
         ayahWordCountFromPages(session)?.let { return it }
-        val start = RecitationCursor(session.surah, session.currentAyah, 0)
-        val words = localWordCorpusRepository.wordsFrom(start, 512).getOrNull().orEmpty()
-        val count = words.count { entry ->
-            val cursor = RecitationCursor.fromWordId(entry.wordId) ?: return@count false
-            cursor.sura == session.surah && cursor.aya == session.currentAyah
-        }
-        return count.takeIf { it > 0 }
+        val words = localWordCorpusRepository
+            .wordsForAyah(session.surah, session.currentAyah)
+            .getOrNull()
+            .orEmpty()
+        return words.size.takeIf { it > 0 }
     }
 
     private fun ayahWordCountFromPages(session: MuallemSessionState): Int? {
@@ -1578,7 +1624,7 @@ class MushafViewModel(
             }
             // Mu'allem highlights only from graded chunks, same as free recitation - see the
             // matching comment in updateMicLevel.
-            is LiveRecitationEvent.LocalWord -> Unit
+            is LiveRecitationEvent.LocalPhonemes -> Unit
             is LiveRecitationEvent.Graded -> {
                 val now = System.currentTimeMillis()
                 val latency = if (muallemSpeechStartTime > 0L) now - muallemSpeechStartTime else 0L

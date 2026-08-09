@@ -86,7 +86,6 @@ import com.example.mushaf.presentation.recite.LiveSessionStatusRow
 import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionsUiMapper
 import com.example.mushaf.presentation.recite.correctionsSubtitle
-import com.example.mushaf.presentation.recite.phonemesCard
 import com.example.mushaf.presentation.recite.label
 import com.example.mushaf.presentation.recite.toChip
 import com.example.mushaf.presentation.recite.breakdown
@@ -411,7 +410,6 @@ fun MushafScreen(
                     {
                         GradingModeToggle(
                             tajweedGradingEnabled = state.isTajweedGradingEnabled,
-                            enabled = state.canGradeTajweed,
                             onSelect = { enabled ->
                                 viewModel.onIntent(MushafIntent.SetTajweedGrading(enabled))
                             },
@@ -490,7 +488,6 @@ fun MushafScreen(
             corrections = visibleCorrections.map { it.toCard() },
             tabs = correctionTabs.map { it.toChip() },
             selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
-            phonemes = state.liveCorrection.phonemesCard(),
             onTabSelected = { correctionTabIndex = it },
             emptyMessage = stringResource(R.string.mushaf_corrections_empty),
             practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
