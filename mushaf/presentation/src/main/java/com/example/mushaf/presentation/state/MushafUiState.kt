@@ -10,6 +10,7 @@ import com.example.mushaf.domain.model.ReadingMode
 import com.example.mushaf.domain.model.Reciter
 import com.example.mushaf.presentation.audio.AudioState
 
+import com.example.mushaf.presentation.muallem.MuallemPhase
 import com.example.mushaf.presentation.muallem.MuallemSessionState
 
 data class MushafUiState(
@@ -73,6 +74,20 @@ data class MushafUiState(
     val muallemSession: MuallemSessionState? = null,
 ) {
     val readingMode: ReadingMode get() = ReadingMode.from(isTajweedEnabled)
+
+    /**
+     * Whether the mic button is the user's to press.
+     *
+     * In Mu'allem the session drives the mic: it opens by itself when the sheikh's recitation ends
+     * and closes when the repeat is done. A tap outside that window — while the sheikh is reciting,
+     * during the feedback pause, or before a session exists — would open a second, unmanaged
+     * capture and desync the whole flow, so the button is inert there. (Re-tapping the Mu'allem
+     * tab is the way back to the setup sheet when no session is running.)
+     */
+    val isMicEnabled: Boolean
+        get() = mushafMode != MushafMode.MUALLEM ||
+                muallemSession?.phase is MuallemPhase.UserRecording
+
     val isCurrentPageBookmarked: Boolean get() = currentPage in bookmarkedPages
     val page: MushafPage? get() = pages[currentPage]
     val isLoading: Boolean get() = currentPage !in pages && currentPage !in failedPages
