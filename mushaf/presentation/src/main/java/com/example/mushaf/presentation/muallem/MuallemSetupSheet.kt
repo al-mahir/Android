@@ -38,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.core.designsystem.locale.rememberLocaleLocals
 import com.example.designsystem.R as DesignsystemR
 import com.example.designsystem.components.bottomsheet.AppBottomSheet
 import com.example.designsystem.components.button.PrimaryButton
@@ -97,7 +98,10 @@ fun MuallemSetupSheet(
                         .background(if (isOffline) Theme.colors.error else Theme.colors.success)
                 )
                 BasicText(
-                    text = if (isOffline) "Disconnected" else "Connected",
+                    text = stringResource(
+                        if (isOffline) R.string.muallem_status_disconnected
+                        else R.string.muallem_status_connected,
+                    ),
                     style = Theme.typography.body.small.copy(
                         color = if (isOffline) Theme.colors.error else Theme.colors.success
                     )
@@ -171,7 +175,7 @@ fun MuallemSetupSheet(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 BasicText(
-                    text = "آية البداية",
+                    text = stringResource(R.string.muallem_setup_ayah_label),
                     style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
                 )
                 Spacer(Modifier.height(Theme.spacing.extraSmall))
@@ -187,7 +191,7 @@ fun MuallemSetupSheet(
             
             Column(modifier = Modifier.weight(1f)) {
                 BasicText(
-                    text = "آية النهاية",
+                    text = stringResource(R.string.muallem_setup_end_ayah_label),
                     style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
                 )
                 Spacer(Modifier.height(Theme.spacing.extraSmall))
@@ -204,17 +208,17 @@ fun MuallemSetupSheet(
 
         // ── Difficulty ───────────────────────────────────────────────────────
         BasicText(
-            text = "مستوى الصعوبة",
+            text = stringResource(R.string.muallem_setup_difficulty_label),
             style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
         )
         Spacer(Modifier.height(Theme.spacing.extraSmall))
-        
+
         val difficulties = listOf(
-            RecitationStrictness.LENIENT to "متساهل",
-            RecitationStrictness.NORMAL to "عادي",
-            RecitationStrictness.STRICT to "صارم"
+            RecitationStrictness.LENIENT to stringResource(R.string.muallem_difficulty_lenient),
+            RecitationStrictness.NORMAL to stringResource(R.string.muallem_difficulty_normal),
+            RecitationStrictness.STRICT to stringResource(R.string.muallem_difficulty_strict),
         )
-        
+
         TabSelector(
             tabs = difficulties.map { it.second },
             selectedIndex = difficulties.indexOfFirst { it.first == selectedDifficulty }.coerceAtLeast(0),
@@ -263,6 +267,10 @@ private fun AyahDropdownMenu(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // DropdownMenu renders in its own Popup window, which resets the localized context installed
+    // at the app root — without this the menu items resolve in the system locale.
+    val localeLocals = rememberLocaleLocals()
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,7 +282,7 @@ private fun AyahDropdownMenu(
         contentAlignment = Alignment.Center
     ) {
         BasicText(
-            text = "الآية $selectedValue",
+            text = stringResource(R.string.muallem_ayah_number, selectedValue),
             style = Theme.typography.body.medium.copy(color = Theme.colors.primaryFont)
         )
 
@@ -283,19 +291,21 @@ private fun AyahDropdownMenu(
             onDismissRequest = { expanded = false },
             modifier = Modifier.background(Theme.colors.surface).height(300.dp)
         ) {
-            for (i in minAyah..maxAyah) {
-                DropdownMenuItem(
-                    text = { 
-                        Text(
-                            text = "الآية $i", 
-                            color = if (i == selectedValue) Theme.colors.primary else Theme.colors.primaryFont 
-                        ) 
-                    },
-                    onClick = {
-                        onValueChange(i)
-                        expanded = false
-                    }
-                )
+            localeLocals.Provide {
+                for (i in minAyah..maxAyah) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(R.string.muallem_ayah_number, i),
+                                color = if (i == selectedValue) Theme.colors.primary else Theme.colors.primaryFont
+                            )
+                        },
+                        onClick = {
+                            onValueChange(i)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
