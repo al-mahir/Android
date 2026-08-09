@@ -42,12 +42,13 @@ class AsrModelRepositoryImpl(
     private val modelDir = File(context.filesDir, "asr_models/quran_phoneme_zipformer").apply { mkdirs() }
     private val modelFile = File(modelDir, MODEL_FILE_NAME)
     private val tokensFile = File(modelDir, TOKENS_FILE_NAME)
+    private val phonemeReferenceFile = File(modelDir, PHONEME_REFERENCE_FILE_NAME)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var downloadJob: Job? = null
 
     init {
-        if (modelFile.exists() && tokensFile.exists()) {
+        if (modelFile.exists() && tokensFile.exists() && phonemeReferenceFile.exists()) {
             _state.value = AsrModelState.Ready
         }
     }
@@ -58,11 +59,21 @@ class AsrModelRepositoryImpl(
     /** The tokens file, once [state] is [AsrModelState.Ready] - null otherwise. */
     fun tokensFileOrNull(): File? = tokensFile.takeIf { state.value is AsrModelState.Ready }
 
+    /**
+     * The per-ayah reference pronunciation table, once [state] is [AsrModelState.Ready].
+     *
+     * Downloaded rather than bundled, and from the same repo as the weights on purpose: it is the
+     * *same phonetizer's* output as the model's training targets, so the two sides of a comparison
+     * can't drift apart. Reimplementing the phonetizer (a Python-only package) in Kotlin was the
+     * alternative, with no ground truth available on-device to check it against.
+     */
+    fun phonemeReferenceFileOrNull(): File? = phonemeReferenceFile.takeIf { state.value is AsrModelState.Ready }
+
     override fun ensureAvailable() {
         if (_state.value is AsrModelState.Ready) return
         if (downloadJob?.isActive == true) return
         downloadJob = scope.launch {
-            runCatching { downloadBoth() }
+            runCatching { downloadAll() }
                 .onSuccess { _state.value = AsrModelState.Ready }
                 .onFailure { error ->
                     Log.w(MushafLog.TAG, "ASR model download failed", error)
@@ -71,13 +82,14 @@ class AsrModelRepositoryImpl(
         }
     }
 
-    private suspend fun downloadBoth() = withContext(Dispatchers.IO) {
+    private suspend fun downloadAll() = withContext(Dispatchers.IO) {
         _state.value = AsrModelState.Downloading(0f)
-        // The model is ~28,000x the size of tokens.txt - reporting progress purely off the
-        // model download and treating tokens.txt as a negligible tail step is accurate enough
-        // without the complexity of tracking two byte counters against a shared total.
+        // The model is ~93% of the total bytes - reporting progress purely off it and treating the
+        // two small files as negligible tail steps is accurate enough without the complexity of
+        // tracking three byte counters against a shared total.
         downloadTo(MODEL_URL, modelFile) { progress -> _state.value = AsrModelState.Downloading(progress) }
         downloadTo(TOKENS_URL, tokensFile) { }
+        downloadTo(PHONEME_REFERENCE_URL, phonemeReferenceFile) { }
     }
 
     private fun downloadTo(url: String, destination: File, onProgress: (Float) -> Unit) {
@@ -149,6 +161,9 @@ class AsrModelRepositoryImpl(
             "https://huggingface.co/Muno459/zipformer_p-quran/resolve/main/$MODEL_FILE_NAME"
         const val TOKENS_URL =
             "https://huggingface.co/Muno459/zipformer_p-quran/resolve/main/$TOKENS_FILE_NAME"
+        const val PHONEME_REFERENCE_FILE_NAME = "ordered_quran_phonemes.json"
+        const val PHONEME_REFERENCE_URL =
+            "https://huggingface.co/Muno459/zipformer_p-quran/resolve/main/$PHONEME_REFERENCE_FILE_NAME"
         const val HF_HOST = "https://huggingface.co/"
         const val CONNECT_TIMEOUT_MS = 15_000
         const val READ_TIMEOUT_MS = 60_000

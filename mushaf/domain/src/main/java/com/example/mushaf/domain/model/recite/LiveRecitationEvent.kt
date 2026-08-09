@@ -1,6 +1,8 @@
 package com.example.mushaf.domain.model.recite
 
- 
+import com.example.mushaf.domain.model.recite.local.LocalTranscript
+
+
 sealed interface LiveRecitationEvent {
 
     
@@ -30,7 +32,12 @@ sealed interface LiveRecitationEvent {
 
     data class Graded(val chunk: RecitationChunk) : LiveRecitationEvent
 
-    data class LocalWord(val word: String) : LiveRecitationEvent
+    /**
+     * The on-device model's running phoneme transcript, forwarded roughly every 100ms. Advisory
+     * only: it moves the predicted highlight and nothing else — grading, mistake marks and page
+     * turns all stay driven by [Graded].
+     */
+    data class LocalPhonemes(val transcript: LocalTranscript) : LiveRecitationEvent
 
 
     data object Finished : LiveRecitationEvent

@@ -19,7 +19,18 @@ data class RecitationEngineSpec(
     companion object {
         const val FOLLOW_ALONG_ONLY_ENGINE = "zipformer"
 
+        /** The engine that grades tajwīd as well as memorisation. */
+        const val CORRECTING_ENGINE = "real"
+
         fun corrects(engineKey: String?): Boolean = engineKey != FOLLOW_ALONG_ONLY_ENGINE
+
+        /**
+         * The engine a given practice mode needs. "Memorisation only" is not merely tajwīd grading
+         * switched off — it is a different engine, and leaving the choice unsent let the server
+         * pick its own default for both modes.
+         */
+        fun forTajweedGrading(enabled: Boolean): String =
+            if (enabled) CORRECTING_ENGINE else FOLLOW_ALONG_ONLY_ENGINE
     }
 }
 
