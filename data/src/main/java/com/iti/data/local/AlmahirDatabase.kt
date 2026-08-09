@@ -4,17 +4,20 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.iti.data.local.exam.ExamSummaryDao
+import com.iti.data.local.exam.ExamSummaryEntity
 import com.iti.data.local.recitation.RecitationSessionDao
 import com.iti.data.local.recitation.RecitationSessionEntity
 
 
 @Database(
     entities = [
-        RecitationSessionEntity::class, 
+        RecitationSessionEntity::class,
         com.iti.data.local.bookmark.BookmarkEntity::class,
+        ExamSummaryEntity::class,
         com.iti.data.local.meeting.MeetingStatusEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class AlmahirDatabase : RoomDatabase() {
@@ -24,6 +27,8 @@ abstract class AlmahirDatabase : RoomDatabase() {
     abstract fun bookmarkDao(): com.iti.data.local.bookmark.BookmarkDao
 
     abstract fun meetingStatusDao(): com.iti.data.local.meeting.MeetingStatusDao
+
+    abstract fun examSummaryDao(): ExamSummaryDao
 
     companion object {
         private const val NAME = "almahir.db"

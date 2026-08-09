@@ -27,6 +27,10 @@ android {
         }
         val baseUrl = localProperties.getProperty("baseUrl", "http://10.0.2.2:8080")
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        val aiServiceHost = localProperties.getProperty("almahir.aiService", "qualm-mountable-cultivate.ngrok-free.dev")
+        buildConfigField("String", "AI_SERVICE_HOST", "\"$aiServiceHost\"")
+        val aiToken = localProperties.getProperty("almahir.aiToken", "")
+        buildConfigField("String", "AI_SERVICE_TOKEN", "\"$aiToken\"")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
