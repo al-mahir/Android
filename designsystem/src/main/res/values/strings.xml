@@ -23,6 +23,7 @@
     <string name="bottom_nav_mushaf">Mushaf</string>
     <string name="bottom_nav_bookmark">Bookmarks</string>
     <string name="bottom_nav_profile">Profile</string>
+    <string name="bottom_nav_reservations">Reservations</string>
 
     <string name="audio_player_select_reciter">Select Reciter</string>
     <string name="audio_player_prev">Previous</string>

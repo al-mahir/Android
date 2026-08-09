@@ -23,6 +23,7 @@
     <string name="bottom_nav_mushaf">المصحف</string>
     <string name="bottom_nav_bookmark">المفضلة</string>
     <string name="bottom_nav_profile">حسابي</string>
+    <string name="bottom_nav_reservations">الحجوزات</string>
 
     <string name="audio_player_select_reciter">اختر القارئ</string>
     <string name="audio_player_prev">السابق</string>
