@@ -14,8 +14,10 @@ data class CircleListUiState(
     val isLoading: Boolean = true,
     val isError: Boolean = false,
     val joinSheetVisible: Boolean = false,
+    val joinByToken: Boolean = false,
     val joinCircleId: String = "",
     val joinPassword: String = "",
+    val joinToken: String = "",
     val isJoining: Boolean = false,
     @StringRes val joinErrorRes: Int? = null,
 ) {
@@ -32,9 +34,15 @@ sealed interface CircleListIntent {
     data object JoinPrivateClicked : CircleListIntent
     data class JoinCircleIdChanged(val circleId: String) : CircleListIntent
     data class JoinPasswordChanged(val password: String) : CircleListIntent
+    data class JoinTokenChanged(val token: String) : CircleListIntent
     data object SubmitJoinPrivate : CircleListIntent
+    data object SubmitJoinViaToken : CircleListIntent
+    /** Toggle between ID+password and invite-token join modes. */
+    data class JoinModeChanged(val byToken: Boolean) : CircleListIntent
     data object DismissJoinPrivate : CircleListIntent
     data object Retry : CircleListIntent
+    /** Re-fetches joined circles (e.g. after leaving one and returning to the list). */
+    data object Refresh : CircleListIntent
 }
 
 sealed interface CircleListEffect {

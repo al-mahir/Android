@@ -21,6 +21,7 @@ data class CircleDetailsUiState(
     val isMember: Boolean = false,
     val isLeaveDialogVisible: Boolean = false,
     val isLeaving: Boolean = false,
+    val showLeftSuccess: Boolean = false,
 )
 
 sealed interface CircleDetailsIntent {
@@ -33,6 +34,7 @@ sealed interface CircleDetailsIntent {
     data object LeaveClicked : CircleDetailsIntent
     data object ConfirmLeave : CircleDetailsIntent
     data object DismissLeaveDialog : CircleDetailsIntent
+    data object DismissLeftSuccess : CircleDetailsIntent
 }
 
 sealed interface CircleDetailsEffect {

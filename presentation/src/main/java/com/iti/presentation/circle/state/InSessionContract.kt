@@ -12,6 +12,7 @@ data class InSessionUiState(
     val speakingParticipantId: String? = null,
     val isLeaveDialogVisible: Boolean = false,
     val isLeaving: Boolean = false,
+    val isHost: Boolean = false,
 )
 
 data class SessionParticipant(

@@ -21,6 +21,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,10 +59,17 @@ fun CircleListScreen(
     onOpenCircle: (String) -> Unit,
     onOpenCreateCircle: () -> Unit,
     modifier: Modifier = Modifier,
+    /** True while this screen is the top back-stack entry — flips false→true when the user
+     * returns here (e.g. after leaving a circle), triggering a joined-circles refresh. */
+    refreshKey: Boolean = true,
     viewModel: CircleListViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    LaunchedEffect(refreshKey) {
+        if (refreshKey) viewModel.onIntent(CircleListIntent.Refresh)
+    }
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
@@ -84,7 +92,10 @@ fun CircleListScreen(
         onJoinPrivateClick = { viewModel.onIntent(CircleListIntent.JoinPrivateClicked) },
         onJoinCircleIdChanged = { viewModel.onIntent(CircleListIntent.JoinCircleIdChanged(it)) },
         onJoinPasswordChanged = { viewModel.onIntent(CircleListIntent.JoinPasswordChanged(it)) },
+        onJoinTokenChanged = { viewModel.onIntent(CircleListIntent.JoinTokenChanged(it)) },
+        onJoinModeChanged = { viewModel.onIntent(CircleListIntent.JoinModeChanged(it)) },
         onSubmitJoin = { viewModel.onIntent(CircleListIntent.SubmitJoinPrivate) },
+        onSubmitJoinViaToken = { viewModel.onIntent(CircleListIntent.SubmitJoinViaToken) },
         onDismissJoinSheet = { viewModel.onIntent(CircleListIntent.DismissJoinPrivate) },
         modifier = modifier,
     )
@@ -102,7 +113,10 @@ private fun CircleListContent(
     onJoinPrivateClick: () -> Unit,
     onJoinCircleIdChanged: (String) -> Unit,
     onJoinPasswordChanged: (String) -> Unit,
+    onJoinTokenChanged: (String) -> Unit,
+    onJoinModeChanged: (Boolean) -> Unit,
     onSubmitJoin: () -> Unit,
+    onSubmitJoinViaToken: () -> Unit,
     onDismissJoinSheet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -220,7 +234,10 @@ private fun CircleListContent(
             state = state,
             onCircleIdChanged = onJoinCircleIdChanged,
             onPasswordChanged = onJoinPasswordChanged,
+            onTokenChanged = onJoinTokenChanged,
+            onModeChanged = onJoinModeChanged,
             onSubmit = onSubmitJoin,
+            onSubmitViaToken = onSubmitJoinViaToken,
             onDismiss = onDismissJoinSheet,
         )
     }
@@ -231,7 +248,10 @@ private fun JoinPrivateCircleSheet(
     state: CircleListUiState,
     onCircleIdChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
+    onTokenChanged: (String) -> Unit,
+    onModeChanged: (Boolean) -> Unit,
     onSubmit: () -> Unit,
+    onSubmitViaToken: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
@@ -240,40 +260,80 @@ private fun JoinPrivateCircleSheet(
             text = stringResource(R.string.circle_join_private_sheet_title),
             style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont),
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        TextField(
-            text = state.joinCircleId,
-            onTextChange = onCircleIdChanged,
-            hint = stringResource(R.string.circle_join_id_hint),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            isError = state.joinErrorRes == R.string.circle_join_id_required,
-            modifier = Modifier.fillMaxWidth(),
-        )
         Spacer(modifier = Modifier.height(12.dp))
-        TextField(
-            text = state.joinPassword,
-            onTextChange = onPasswordChanged,
-            hint = stringResource(R.string.circle_password_hint),
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            modifier = Modifier.fillMaxWidth(),
+
+        // Mode toggle: By ID vs By Invite Link
+        FilterChips(
+            options = listOf(
+                false to stringResource(R.string.circle_join_mode_by_id),
+                true to stringResource(R.string.circle_join_via_link),
+            ),
+            selectedValue = state.joinByToken,
+            onValueSelected = onModeChanged,
         )
-        state.joinErrorRes?.let { errorRes ->
-            Spacer(modifier = Modifier.height(8.dp))
-            BasicText(
-                text = stringResource(errorRes),
-                style = Theme.typography.body.small.copy(color = Theme.colors.error),
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (!state.joinByToken) {
+            // ── By ID + password ──────────────────────────────────────────
+            TextField(
+                text = state.joinCircleId,
+                onTextChange = onCircleIdChanged,
+                hint = stringResource(R.string.circle_join_id_hint),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                isError = state.joinErrorRes == R.string.circle_join_id_required,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            TextField(
+                text = state.joinPassword,
+                onTextChange = onPasswordChanged,
+                hint = stringResource(R.string.circle_password_hint),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            state.joinErrorRes?.let { errorRes ->
+                Spacer(modifier = Modifier.height(8.dp))
+                BasicText(
+                    text = stringResource(errorRes),
+                    style = Theme.typography.body.small.copy(color = Theme.colors.error),
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            PrimaryButton(
+                caption = stringResource(R.string.circle_join_confirm),
+                onClick = onSubmit,
+                isLoading = state.isJoining,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            // ── By invite token / link ────────────────────────────────────
+            TextField(
+                text = state.joinToken,
+                onTextChange = onTokenChanged,
+                hint = stringResource(R.string.circle_join_token_hint),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                isError = state.joinErrorRes == R.string.circle_join_token_required,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            state.joinErrorRes?.let { errorRes ->
+                Spacer(modifier = Modifier.height(8.dp))
+                BasicText(
+                    text = stringResource(errorRes),
+                    style = Theme.typography.body.small.copy(color = Theme.colors.error),
+                )
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            PrimaryButton(
+                caption = stringResource(R.string.circle_join_confirm),
+                onClick = onSubmitViaToken,
+                isLoading = state.isJoining,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
-        Spacer(modifier = Modifier.height(20.dp))
-        PrimaryButton(
-            caption = stringResource(R.string.circle_join_confirm),
-            onClick = onSubmit,
-            isLoading = state.isJoining,
-            modifier = Modifier.fillMaxWidth(),
-        )
         Spacer(modifier = Modifier.height(8.dp))
         SecondaryButton(
             caption = stringResource(R.string.circle_join_cancel),

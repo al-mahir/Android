@@ -53,6 +53,20 @@ class CircleDetailsViewModelTest {
     }
 
     @Test
+    fun `an owner of a private circle is detected as a member`() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            circleRepository = FakeCircleRepository(
+                circles = listOf(CIRCLE),
+                privateCircles = listOf(CIRCLE),
+            ),
+        )
+
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isMember)
+    }
+
+    @Test
     fun `a membership-check failure leaves the screen joinable`() = runTest(dispatcher) {
         val viewModel = viewModel(circleRepository = FakeCircleRepository(circles = listOf(CIRCLE), failMine = true))
 
@@ -112,7 +126,7 @@ class CircleDetailsViewModelTest {
     }
 
     @Test
-    fun `confirming leave removes membership and reports success`() = runTest(dispatcher) {
+    fun `confirming leave removes membership and shows the success popup`() = runTest(dispatcher) {
         val viewModel = viewModel(circleRepository = FakeCircleRepository(circles = listOf(CIRCLE), myCircles = listOf(CIRCLE)))
         testScheduler.advanceUntilIdle()
 
@@ -123,10 +137,21 @@ class CircleDetailsViewModelTest {
         assertFalse(viewModel.state.value.isMember)
         assertFalse(viewModel.state.value.isLeaveDialogVisible)
         assertFalse(viewModel.state.value.isLeaving)
-        assertEquals(
-            CircleDetailsEffect.ShowMessage(com.iti.presentation.R.string.circle_leave_success),
-            viewModel.effect.first(),
-        )
+        assertTrue(viewModel.state.value.showLeftSuccess)
+    }
+
+    @Test
+    fun `dismissing the left-success popup navigates back`() = runTest(dispatcher) {
+        val viewModel = viewModel(circleRepository = FakeCircleRepository(circles = listOf(CIRCLE), myCircles = listOf(CIRCLE)))
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(CircleDetailsIntent.LeaveClicked)
+        viewModel.onIntent(CircleDetailsIntent.ConfirmLeave)
+        testScheduler.advanceUntilIdle()
+        viewModel.onIntent(CircleDetailsIntent.DismissLeftSuccess)
+
+        assertFalse(viewModel.state.value.showLeftSuccess)
+        assertEquals(CircleDetailsEffect.NavigateBack, viewModel.effect.first())
     }
 
     @Test

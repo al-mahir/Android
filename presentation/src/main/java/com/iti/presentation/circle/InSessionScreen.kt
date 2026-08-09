@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.activity.compose.BackHandler
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.ButtonHeightCompact
 import com.example.designsystem.components.dialog.ConfirmationDialog
@@ -53,6 +54,7 @@ import com.iti.presentation.circle.state.InSessionUiState
 import com.iti.presentation.circle.state.SessionParticipant
 import com.iti.presentation.core.mvi.ObserveEffect
 import com.iti.presentation.sheikh.SheikhInitialsAvatar
+import com.iti.meeting.domain.model.circle.CircleStatus
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -100,6 +102,10 @@ private fun InSessionContent(
             .fillMaxSize()
             .background(SessionBackground),
     ) {
+        BackHandler {
+            onIntent(InSessionIntent.Leave)
+        }
+        
         SessionTopBar(
             surahName = state.circle?.name ?: "",
             isLeaving = state.isLeaving,
@@ -132,10 +138,27 @@ private fun InSessionContent(
     }
 
     if (state.isLeaveDialogVisible) {
+        val isScheduled = state.circle?.status == CircleStatus.SCHEDULED
+        val titleRes = if (state.isHost) {
+            if (isScheduled) R.string.circle_cancel_title else R.string.circle_end_title
+        } else {
+            R.string.circle_leave_title
+        }
+        val messageRes = if (state.isHost) {
+            if (isScheduled) R.string.circle_cancel_message else R.string.circle_end_message
+        } else {
+            R.string.circle_leave_message
+        }
+        val confirmRes = if (state.isHost) {
+            if (isScheduled) R.string.circle_cancel_confirm else R.string.circle_end_confirm
+        } else {
+            R.string.circle_leave_confirm
+        }
+        
         ConfirmationDialog(
-            title = stringResource(R.string.circle_leave_title),
-            message = stringResource(R.string.circle_leave_message),
-            confirmLabel = stringResource(R.string.circle_leave_confirm),
+            title = stringResource(titleRes),
+            message = stringResource(messageRes),
+            confirmLabel = stringResource(confirmRes),
             dismissLabel = stringResource(R.string.circle_leave_cancel),
             onConfirm = { onIntent(InSessionIntent.ConfirmLeave) },
             onDismiss = { onIntent(InSessionIntent.DismissLeaveDialog) },

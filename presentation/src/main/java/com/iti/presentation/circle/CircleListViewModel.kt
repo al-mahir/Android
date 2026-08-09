@@ -40,9 +40,13 @@ class CircleListViewModel(
             copy(joinCircleId = intent.circleId, joinErrorRes = null)
         }
         is CircleListIntent.JoinPasswordChanged -> updateState { copy(joinPassword = intent.password) }
+        is CircleListIntent.JoinTokenChanged -> updateState { copy(joinToken = intent.token, joinErrorRes = null) }
+        is CircleListIntent.JoinModeChanged -> updateState { copy(joinByToken = intent.byToken, joinErrorRes = null) }
         CircleListIntent.SubmitJoinPrivate -> submitJoin()
+        CircleListIntent.SubmitJoinViaToken -> submitJoinViaToken()
         CircleListIntent.DismissJoinPrivate -> updateState { closeJoinSheet() }
         CircleListIntent.Retry -> load()
+        CircleListIntent.Refresh -> loadMyCircles()
     }
 
     private fun load() {
@@ -136,6 +140,41 @@ class CircleListViewModel(
         }
     }
 
+    private fun submitJoinViaToken() {
+        if (currentState.isJoining) return
+        val token = currentState.joinToken.trim()
+        if (token.isBlank()) {
+            updateState { copy(joinErrorRes = R.string.circle_join_token_required) }
+            return
+        }
+
+        updateState { copy(isJoining = true, joinErrorRes = null) }
+        viewModelScope.launch {
+            when (val result = circleRepository.joinCircleViaToken(token)) {
+                is CircleJoinResult.Joined -> {
+                    updateState { closeJoinSheet() }
+                    sendEffect(CircleListEffect.ShowMessage(R.string.circle_join_success))
+                    loadMyCircles()
+                }
+
+                is CircleJoinResult.PendingApproval -> {
+                    updateState { closeJoinSheet() }
+                    sendEffect(CircleListEffect.ShowMessage(R.string.circle_join_request_sent))
+                }
+
+                is CircleJoinResult.Error -> {
+                    if (result.error == CircleJoinError.ALREADY_MEMBER) {
+                        updateState { closeJoinSheet() }
+                        loadMyCircles()
+                        sendEffect(CircleListEffect.ShowMessage(R.string.circle_join_error_already_member))
+                    } else {
+                        updateState { copy(isJoining = false, joinErrorRes = result.error.messageRes()) }
+                    }
+                }
+            }
+        }
+    }
+
     private fun CircleJoinError.messageRes(): Int = when (this) {
         CircleJoinError.CIRCLE_FULL -> R.string.circle_join_error_full
         CircleJoinError.TIME_CONFLICT -> R.string.circle_join_error_conflict
@@ -161,8 +200,10 @@ private fun buildFilteredList(
 
 private fun CircleListUiState.closeJoinSheet() = copy(
     joinSheetVisible = false,
+    joinByToken = false,
     joinCircleId = "",
     joinPassword = "",
+    joinToken = "",
     isJoining = false,
     joinErrorRes = null,
 )

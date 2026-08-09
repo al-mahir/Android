@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -193,6 +194,25 @@ class CircleListViewModelTest {
         assertFalse(state.joinSheetVisible)
         assertTrue(state.filteredCircles.any { it.id == "private-1" })
         assertTrue("private-1" in state.joinedCircleIds)
+    }
+
+    @Test
+    fun `refresh drops a circle left from another screen`() = runTest(dispatcher) {
+        val private = CIRCLE.copy(id = "private-1", name = "حلقة خاصة", type = CircleType.PRIVATE)
+        val repository = FakeCircleRepository(myCircles = listOf(private))
+        val viewModel = viewModel(repository)
+        testScheduler.advanceUntilIdle()
+
+        assertTrue("private-1" in viewModel.state.value.joinedCircleIds)
+        assertEquals("private-1", viewModel.state.value.currentCircle?.id)
+
+        // The details screen leaves the circle through the shared repository.
+        repository.leaveCircle("private-1")
+        viewModel.onIntent(CircleListIntent.Refresh)
+        testScheduler.advanceUntilIdle()
+
+        assertFalse("private-1" in viewModel.state.value.joinedCircleIds)
+        assertNull(viewModel.state.value.currentCircle)
     }
 
     @Test

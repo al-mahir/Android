@@ -7,6 +7,7 @@ import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.meeting.domain.model.circle.CircleToken
 import com.iti.meeting.domain.model.circle.CreateCircleRequest
 import com.iti.meeting.domain.model.circle.PendingJoinRequest
+import com.iti.meeting.domain.model.circle.UpdateCircleRequest
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
 import com.iti.meeting.domain.repository.JoinRequestEvent
@@ -51,6 +52,12 @@ class FakeCircleRepository(
     override suspend fun getMyCircles(): Result<List<Circle>> =
         if (failMine) Result.failure(BOOM) else Result.success(joinedCircles)
 
+    override suspend fun getMyPrivateCircles(status: CircleStatus?): Result<List<Circle>> =
+        Result.success(privateCircles.filter { status == null || it.status == status })
+
+    override suspend fun getCircleHistory(): Result<List<Circle>> =
+        Result.success(emptyList())
+
     override suspend fun getCircle(circleId: String): Result<Circle> {
         if (failCircle) return Result.failure(BOOM)
         return Result.success(find(circleId))
@@ -59,11 +66,19 @@ class FakeCircleRepository(
     override suspend fun createCircle(request: CreateCircleRequest): Result<Circle> =
         Result.failure(BOOM)
 
+    override suspend fun updateCircle(circleId: String, request: UpdateCircleRequest): Result<Circle> =
+        Result.success(find(circleId))
+
     override suspend fun joinCircle(circleId: String, password: String?): CircleJoinResult {
         val result = joinResult(find(circleId))
         if (result is CircleJoinResult.Joined && joinedCircles.none { it.id == circleId }) {
             joinedCircles += find(circleId)
         }
+        return result
+    }
+
+    override suspend fun joinCircleViaToken(token: String): CircleJoinResult {
+        val result = CircleJoinResult.Joined("membership-token-1")
         return result
     }
 

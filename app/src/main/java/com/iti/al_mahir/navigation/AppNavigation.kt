@@ -371,6 +371,7 @@ private fun AppNavHost(
                                     backStack.add(AppRoute.CircleDetails(circleId))
                                 },
                                 onOpenCreateCircle = { backStack.add(AppRoute.CreateCircle) },
+                                refreshKey = backStack.lastOrNull() == AppRoute.CircleList,
                             )
                         }
 
@@ -379,7 +380,7 @@ private fun AppNavHost(
                                 onBack = { backStack.removeLastOrNull() },
                                 onCircleCreated = { circleId ->
                                     backStack.removeLastOrNull()
-                                    backStack.add(AppRoute.InSession(circleId))
+                                    backStack.add(AppRoute.CircleDetails(circleId))
                                 },
                             )
                         }

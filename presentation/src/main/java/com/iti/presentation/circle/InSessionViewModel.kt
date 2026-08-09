@@ -3,6 +3,7 @@ package com.iti.presentation.circle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.meeting.domain.model.circle.CircleMember
+import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
 import com.iti.presentation.R
@@ -14,6 +15,7 @@ import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
+import com.iti.domain.auth.MeetingCurrentUserProvider
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -21,6 +23,7 @@ import kotlinx.coroutines.launch
 class InSessionViewModel(
     private val circleId: String,
     private val circleRepository: CircleRepository,
+    private val currentUserProvider: MeetingCurrentUserProvider,
 ) : ViewModel(),
     StateHolder<InSessionUiState> by DefaultStateHolder(InSessionUiState()),
     EffectPublisher<InSessionEffect> by DefaultEffectPublisher() {
@@ -42,9 +45,21 @@ class InSessionViewModel(
 
     private fun leaveCircle() {
         if (currentState.isLeaving) return
+        val isHost = currentState.isHost
+        val status = currentState.circle?.status
         updateState { copy(isLeaving = true) }
         viewModelScope.launch {
-            circleRepository.leaveCircle(circleId).fold(
+            val result = if (isHost) {
+                if (status == CircleStatus.SCHEDULED) {
+                    circleRepository.cancelCircle(circleId)
+                } else {
+                    circleRepository.endCircle(circleId)
+                }
+            } else {
+                circleRepository.leaveCircle(circleId)
+            }
+
+            result.fold(
                 onSuccess = {
                     updateState { copy(isLeaving = false, isLeaveDialogVisible = false) }
                     sendEffect(InSessionEffect.NavigateBack)
@@ -59,8 +74,12 @@ class InSessionViewModel(
 
     private fun observeCircle() {
         viewModelScope.launch {
+            val currentUserId = currentUserProvider.currentUserId()
             circleRepository.getCircle(circleId).fold(
-                onSuccess = { circle -> updateState { copy(circle = circle) } },
+                onSuccess = { circle ->
+                    val isHost = circle.ownerId == currentUserId || circle.host?.userId == currentUserId
+                    updateState { copy(circle = circle, isHost = isHost) }
+                },
                 onFailure = { /* keep last known circle; roster still renders */ },
             )
         }

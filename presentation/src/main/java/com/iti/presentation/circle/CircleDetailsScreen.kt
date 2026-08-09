@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.designsystem.components.button.ButtonHeightCompact
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.dialog.ConfirmationDialog
@@ -84,6 +90,7 @@ fun CircleDetailsScreen(
         onLeaveClicked = { viewModel.onIntent(CircleDetailsIntent.LeaveClicked) },
         onConfirmLeave = { viewModel.onIntent(CircleDetailsIntent.ConfirmLeave) },
         onDismissLeaveDialog = { viewModel.onIntent(CircleDetailsIntent.DismissLeaveDialog) },
+        onDoneLeft = { viewModel.onIntent(CircleDetailsIntent.DismissLeftSuccess) },
         onRetry = { viewModel.onIntent(CircleDetailsIntent.Retry) },
         modifier = modifier,
     )
@@ -101,6 +108,7 @@ private fun CircleDetailsContent(
     onLeaveClicked: () -> Unit,
     onConfirmLeave: () -> Unit,
     onDismissLeaveDialog: () -> Unit,
+    onDoneLeft: () -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -145,6 +153,70 @@ private fun CircleDetailsContent(
             isConfirmLoading = state.isLeaving,
         )
     }
+
+    if (state.showLeftSuccess) {
+        LeftCircleDialog(onDone = onDoneLeft)
+    }
+}
+
+/** Success popup shown after leaving a circle — its Done button exits the circle screen. */
+@Composable
+private fun LeftCircleDialog(
+    onDone: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDone,
+        containerColor = Theme.colors.surface,
+        shape = Theme.shapes.extraLarge,
+        title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(Theme.size.iconContainer)
+                        .clip(CircleShape)
+                        .background(Theme.colors.success.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = null,
+                        tint = Theme.colors.success,
+                        modifier = Modifier.size(Theme.size.iconLarge),
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.circle_leave_success_title),
+                    style = Theme.typography.title.copy(
+                        color = Theme.colors.primaryFont,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
+        },
+        text = {
+            Text(
+                text = stringResource(R.string.circle_leave_success_message),
+                style = Theme.typography.body.medium.copy(
+                    color = Theme.colors.secondaryFont,
+                    textAlign = TextAlign.Center,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            PrimaryButton(
+                caption = stringResource(R.string.circle_leave_success_done),
+                onClick = onDone,
+                height = ButtonHeightCompact,
+                shape = Theme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+    )
 }
 
 @Composable

@@ -328,6 +328,11 @@
     <string name="circle_join_cancel">إلغاء</string>
     <string name="circle_join_success">انضممت إلى الحلقة.</string>
     <string name="circle_join_request_sent">تم إرسال طلب الانضمام. في انتظار موافقة المضيف.</string>
+    <!-- رابط الدعوة -->
+    <string name="circle_join_mode_by_id">بالرقم</string>
+    <string name="circle_join_via_link">برابط الدعوة</string>
+    <string name="circle_join_token_hint">الصق رمز الدعوة هنا</string>
+    <string name="circle_join_token_required">أدخل رمز الدعوة</string>
 
     <!-- ===== مغادرة الحلقة ===== -->
     <string name="circle_leave">مغادرة الحلقة</string>
@@ -335,21 +340,62 @@
     <string name="circle_leave_message">سيتم إخراجك من الحلقة وجلساتها.</string>
     <string name="circle_leave_confirm">مغادرة</string>
     <string name="circle_leave_cancel">إلغاء</string>
-    <string name="circle_leave_success">غادرت الحلقة.</string>
-    <string name="circle_leave_error">تعذّر مغادرة الحلقة. حاول مرة أخرى.</string>
+    
+    <string name="circle_end_title">إنهاء الحلقة؟</string>
+    <string name="circle_end_message">سيؤدي هذا إلى إنهاء الحلقة لجميع المشاركين.</string>
+    <string name="circle_end_confirm">إنهاء الحلقة</string>
+    <string name="circle_end_error">تعذّر إنهاء الحلقة. يرجى المحاولة مرة أخرى.</string>
 
+    <string name="circle_cancel_title">إلغاء الحلقة؟</string>
+    <string name="circle_cancel_message">سيؤدي هذا إلى إلغاء الحلقة بالكامل.</string>
+    <string name="circle_cancel_confirm">إلغاء الحلقة</string>
+    <string name="circle_cancel_error">تعذّر إلغاء الحلقة. يرجى المحاولة مرة أخرى.</string>
+
+    <string name="circle_leave_success">غادرت الحلقة.</string>
+    <string name="circle_leave_success_title">غادرت الحلقة</string>
+    <string name="circle_leave_success_message">لم تعد عضوًا في هذه الحلقة.</string>
+    <string name="circle_leave_success_done">تم</string>
+    <string name="circle_leave_error">تعذّر مغادرة الحلقة. حاول مرة أخرى.</string>
+    
     <!-- ===== Create Circle ===== -->
     <string name="create_circle_title">إنشاء حلقة</string>
-    <string name="create_circle_subtitle">Create Circle</string>
+    <string name="create_circle_subtitle">أنشئ حلقة دراستك الخاصة</string>
     <string name="create_circle_user_role_note">كمستخدم عادي، يمكنك إنشاء حلقات خاصة فقط. يمكن للشيوخ المعتمدين إنشاء حلقات عامة.</string>
-    <string name="create_circle_title_hint">عنوان الحلقة (مثال: مراجعة الفجر اليومية)</string>
-    <string name="create_circle_goals_hint">أهداف الحلقة ووصفها…</string>
-    <string name="create_circle_password_hint">كود الوصول للحلقة (مثال: A7B29X)</string>
+    <string name="create_circle_details_section">تفاصيل الحلقة</string>
+    <string name="create_circle_title_label">عنوان الحلقة</string>
+    <string name="create_circle_title_hint">مثال: مراجعة الفجر اليومية</string>
+    <string name="create_circle_goals_label">الأهداف والوصف</string>
+    <string name="create_circle_goals_hint">على ماذا ستركّز هذه الحلقة؟</string>
+    <string name="create_circle_start_date_label">تاريخ ووقت البدء</string>
+    <string name="create_circle_start_date_hint">مثال: 2026-08-10T18:00:00Z</string>
+    <string name="create_circle_end_date_label">تاريخ ووقت الانتهاء</string>
+    <string name="create_circle_end_date_hint">يجب أن يكون بعد تاريخ البدء</string>
+    <string name="create_circle_error_start_date">يجب أن يكون تاريخ البدء في المستقبل.</string>
+    <string name="create_circle_error_end_date">يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.</string>
+    <string name="create_circle_password_label">كود الوصول</string>
+    <string name="create_circle_password_hint">مثال: A7B29X</string>
     <string name="create_circle_privacy_label">الخصوصية</string>
-    <string name="create_circle_privacy_private">خاصة (بالكود فقط)</string>
-    <string name="create_circle_privacy_public">عامة (للشيخ فقط)</string>
+    <string name="create_circle_privacy_private">خاصة</string>
+    <string name="create_circle_privacy_private_desc">ينضم الأعضاء عبر كود وصول تشاركه.</string>
+    <string name="create_circle_privacy_public">عامة</string>
+    <string name="create_circle_privacy_public_desc">يمكن لأي شخص الانضمام إلى الحلقة.</string>
+    <string name="create_circle_privacy_public_badge">للشيخ فقط</string>
     <string name="create_circle_cta">إنشاء وإنشاء رابط</string>
     <string name="create_circle_error_generic">تعذّر إنشاء الحلقة. حاول مرة أخرى.</string>
+    <string name="create_circle_error_title_required">أدخل عنوان الحلقة.</string>
+    <string name="create_circle_error_password_required">الحلقات الخاصة تتطلب كود وصول.</string>
+    <string name="create_circle_success_title">تم إنشاء الحلقة!</string>
+    <string name="create_circle_success_message">شارك هذه التفاصيل مع الأعضاء ليتمكنوا من الانضمام.</string>
+    <string name="create_circle_success_session_label">معرّف الجلسة</string>
+    <string name="create_circle_success_password_label">كلمة المرور</string>
+    <string name="create_circle_success_token_label">رمز الدعوة</string>
+    <string name="create_circle_success_done">تم</string>
+    <string name="create_circle_copied">تم النسخ!</string>
+    <string name="create_circle_copy">نسخ</string>
+    <string name="create_circle_date_next">التالي</string>
+    <string name="create_circle_time_done">تم</string>
+    <string name="create_circle_time_label">اختر الوقت</string>
+    <string name="create_circle_cancel">إلغاء</string>
 
     <!-- ===== Joining Circle ===== -->
     <string name="joining_circle_title">الانضمام للحلقة</string>
@@ -358,7 +404,6 @@
     <string name="joining_circle_cancel">إلغاء الطلب</string>
     <string name="joining_circle_rejected">تم رفض طلبك من قبل المضيف.</string>
     <string name="joining_circle_wait_failed">تعذّر الوصول إلى الحلقة. حاول مرة أخرى.</string>
-
     <!-- ===== In Session ===== -->
     <string name="session_leave">مغادرة</string>
     <string name="session_host_speaking">المضيف · يتحدث</string>

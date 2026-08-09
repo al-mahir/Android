@@ -38,6 +38,10 @@ class CircleDetailsViewModel(
         CircleDetailsIntent.LeaveClicked -> updateState { copy(isLeaveDialogVisible = true) }
         CircleDetailsIntent.ConfirmLeave -> leaveCircle()
         CircleDetailsIntent.DismissLeaveDialog -> updateState { copy(isLeaveDialogVisible = false) }
+        CircleDetailsIntent.DismissLeftSuccess -> {
+            updateState { copy(showLeftSuccess = false) }
+            sendEffect(CircleDetailsEffect.NavigateBack)
+        }
     }
 
     private fun leaveCircle() {
@@ -46,8 +50,14 @@ class CircleDetailsViewModel(
         viewModelScope.launch {
             circleRepository.leaveCircle(circleId).fold(
                 onSuccess = {
-                    updateState { copy(isLeaving = false, isLeaveDialogVisible = false, isMember = false) }
-                    sendEffect(CircleDetailsEffect.ShowMessage(R.string.circle_leave_success))
+                    updateState {
+                        copy(
+                            isLeaving = false,
+                            isLeaveDialogVisible = false,
+                            isMember = false,
+                            showLeftSuccess = true,
+                        )
+                    }
                 },
                 onFailure = {
                     updateState { copy(isLeaving = false, isLeaveDialogVisible = false) }
@@ -70,13 +80,14 @@ class CircleDetailsViewModel(
     }
 
     /** Marks the screen as already-joined so it offers "Enter Circle" instead of "Join".
+     * Checks both joined circles and private circles the user owns (a creator's own private
+     * circle is only listed by [com.iti.meeting.domain.repository.CircleRepository.getMyPrivateCircles]).
      * A membership-check failure leaves [CircleDetailsUiState.isMember] false. */
     private fun checkMembership() {
         viewModelScope.launch {
-            circleRepository.getMyCircles().fold(
-                onSuccess = { circles -> updateState { copy(isMember = circles.any { it.id == circleId }) } },
-                onFailure = { /* Optional; the join call below still guards against duplicates. */ },
-            )
+            val joined = circleRepository.getMyCircles().getOrDefault(emptyList())
+            val ownedPrivate = circleRepository.getMyPrivateCircles().getOrDefault(emptyList())
+            updateState { copy(isMember = (joined + ownedPrivate).any { it.id == circleId }) }
         }
     }
 

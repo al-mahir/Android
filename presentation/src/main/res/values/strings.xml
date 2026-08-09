@@ -326,28 +326,75 @@
     <string name="circle_join_cancel">Cancel</string>
     <string name="circle_join_success">You joined the circle.</string>
     <string name="circle_join_request_sent">Join request sent. Waiting for host approval.</string>
+    <!-- Token / invite-link join -->
+    <string name="circle_join_mode_by_id">By ID</string>
+    <string name="circle_join_via_link">By Invite Link</string>
+    <string name="circle_join_token_hint">Paste your invite token here</string>
+    <string name="circle_join_token_required">Enter an invite token</string>
 
     <!-- ===== Leave Circle ===== -->
     <string name="circle_leave">Leave Circle</string>
     <string name="circle_leave_title">Leave this circle?</string>
-    <string name="circle_leave_message">You will be removed from the circle and its sessions.</string>
+    <string name="circle_leave_message">You can join again later if the circle is still active.</string>
     <string name="circle_leave_confirm">Leave</string>
     <string name="circle_leave_cancel">Cancel</string>
-    <string name="circle_leave_success">You left the circle.</string>
     <string name="circle_leave_error">Couldn\'t leave the circle. Please try again.</string>
+    <string name="circle_leave_action_failed">Something went wrong. Please try again.</string>
+
+    <string name="circle_end_title">End Circle?</string>
+    <string name="circle_end_message">This will end the circle for all participants.</string>
+    <string name="circle_end_confirm">End Circle</string>
+    <string name="circle_end_error">Couldn\'t end the circle. Please try again.</string>
+
+    <string name="circle_cancel_title">Cancel Circle?</string>
+    <string name="circle_cancel_message">This will cancel the circle completely.</string>
+    <string name="circle_cancel_confirm">Cancel Circle</string>
+    <string name="circle_cancel_error">Couldn\'t cancel the circle. Please try again.</string>
+
+    <string name="circle_leave_success">You left the circle.</string>
+    <string name="circle_leave_success_title">You left the circle</string>
+    <string name="circle_leave_success_message">You are no longer a member of this circle.</string>
+    <string name="circle_leave_success_done">Done</string>
 
     <!-- ===== Create Circle ===== -->
-    <string name="create_circle_title">إنشاء حلقة</string>
-    <string name="create_circle_subtitle">Create Circle</string>
-    <string name="create_circle_user_role_note">كمستخدم عادي، يمكنك إنشاء حلقات خاصة فقط. يمكن للشيوخ المعتمدين إنشاء حلقات عامة.</string>
-    <string name="create_circle_title_hint">Circle title (e.g. Daily Fajr Revision)</string>
-    <string name="create_circle_goals_hint">Circle goals and description…</string>
-    <string name="create_circle_password_hint">Circle access code (e.g. A7B29X)</string>
-    <string name="create_circle_privacy_label">PRIVACY</string>
-    <string name="create_circle_privacy_private">Private (Code Only)</string>
-    <string name="create_circle_privacy_public">Public (Sheikh Only)</string>
+    <string name="create_circle_title">Create Circle</string>
+    <string name="create_circle_subtitle">Start your private study circle</string>
+    <string name="create_circle_user_role_note">As a regular user you can create private circles only. Verified sheikhs can create public circles.</string>
+    <string name="create_circle_details_section">Circle details</string>
+    <string name="create_circle_title_label">Circle title</string>
+    <string name="create_circle_title_hint">e.g. Daily Fajr Revision</string>
+    <string name="create_circle_goals_label">Goals &amp; description</string>
+    <string name="create_circle_goals_hint">What will this circle focus on?</string>
+    <string name="create_circle_start_date_label">Start date &amp; time</string>
+    <string name="create_circle_start_date_hint">e.g. 2026-08-10T18:00:00Z</string>
+    <string name="create_circle_end_date_label">End date &amp; time</string>
+    <string name="create_circle_end_date_hint">Must be after the start date</string>
+    <string name="create_circle_error_start_date">Start date must be in the future.</string>
+    <string name="create_circle_error_end_date">End date must be after the start date.</string>
+    <string name="create_circle_password_label">Access code</string>
+    <string name="create_circle_password_hint">e.g. A7B29X</string>
+    <string name="create_circle_privacy_label">Privacy</string>
+    <string name="create_circle_privacy_private">Private</string>
+    <string name="create_circle_privacy_private_desc">Members join with an access code you share.</string>
+    <string name="create_circle_privacy_public">Public</string>
+    <string name="create_circle_privacy_public_desc">Anyone can join the circle.</string>
+    <string name="create_circle_privacy_public_badge">Sheikh only</string>
     <string name="create_circle_cta">Create &amp; Generate Link</string>
     <string name="create_circle_error_generic">Couldn\'t create the circle. Please try again.</string>
+    <string name="create_circle_error_title_required">Enter a circle title.</string>
+    <string name="create_circle_error_password_required">Private circles need an access code.</string>
+    <string name="create_circle_success_title">Circle created!</string>
+    <string name="create_circle_success_message">Share these details with members so they can join.</string>
+    <string name="create_circle_success_session_label">Session ID</string>
+    <string name="create_circle_success_password_label">Password</string>
+    <string name="create_circle_success_token_label">Invite code</string>
+    <string name="create_circle_success_done">Done</string>
+    <string name="create_circle_copied">Copied!</string>
+    <string name="create_circle_copy">Copy</string>
+    <string name="create_circle_date_next">Next</string>
+    <string name="create_circle_time_done">Done</string>
+    <string name="create_circle_time_label">Select time</string>
+    <string name="create_circle_cancel">Cancel</string>
 
     <!-- ===== Joining Circle ===== -->
     <string name="joining_circle_title">Joining Circle</string>
