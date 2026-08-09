@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.MushafMode
@@ -41,9 +43,13 @@ fun MushafModeSelector(
                 label = mode.label(),
                 selected = mode == selectedMode,
                 onClick = { onModeSelected(mode) },
-                modifier = Modifier.onGloballyPositioned { coords ->
-                    onTabPositioned?.invoke(mode, coords)
-                }
+                // Equal weights: the selector is width-constrained by the bottom bar, so tabs
+                // share whatever is left instead of pushing the neighbouring controls out.
+                modifier = Modifier
+                    .weight(1f)
+                    .onGloballyPositioned { coords ->
+                        onTabPositioned?.invoke(mode, coords)
+                    }
             )
         }
     }
@@ -71,13 +77,16 @@ private fun ModeTab(
             .clip(RoundedCornerShape(18.dp))
             .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             style = Theme.typography.body.small,
             color = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
     }
 }
