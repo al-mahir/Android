@@ -4,6 +4,7 @@ import android.Manifest
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.example.mushaf.data.MushafLog
@@ -50,18 +51,21 @@ class AudioRecordPcmRecorder : PcmRecorder {
             Log.d(TAG, "Capture started: 16kHz mono PCM16, buffer=$bufferBytes bytes, source=VOICE_RECOGNITION")
 
             var startSample = 0L
+            val startedAtMs = SystemClock.elapsedRealtime()
+            var lastDriftLogAtMs = startedAtMs
             val buffer = ShortArray(RecitationAudioFormat.FRAME_SAMPLES)
             while (true) {
                 currentCoroutineContext().ensureActive()
                 val read = recorder.read(buffer, 0, buffer.size)
                 when {
                     read > 0 -> {
-                        
-                        
+
+
                         emit(AudioFrame(samples = buffer.copyOf(read), startSample = startSample))
                         startSample += read
+                        lastDriftLogAtMs = warnIfDrifting(startSample, startedAtMs, lastDriftLogAtMs)
                     }
-                    read == 0 -> Unit 
+                    read == 0 -> Unit
                     else -> error("AudioRecord.read failed with ${readErrorName(read)}")
                 }
             }
@@ -76,7 +80,19 @@ class AudioRecordPcmRecorder : PcmRecorder {
     
 
 
- 
+
+    private fun warnIfDrifting(capturedSamples: Long, startedAtMs: Long, lastLogAtMs: Long): Long {
+        val now = SystemClock.elapsedRealtime()
+        val driftMs = (now - startedAtMs) - RecitationAudioFormat.durationMsOf(capturedSamples)
+        if (driftMs < CAPTURE_DRIFT_WARN_MS || now - lastLogAtMs < DRIFT_LOG_INTERVAL_MS) return lastLogAtMs
+        Log.w(
+            TAG,
+            "LATENCY capture is ${driftMs}ms behind real time - frames are being read late because " +
+                "the consumer is slow. Everything downstream, grading included, is that far stale.",
+        )
+        return now
+    }
+
     private fun resolveBufferSizeBytes(): Int {
         val minimum = AudioRecord.getMinBufferSize(
             RecitationAudioFormat.SAMPLE_RATE_HZ,
@@ -98,6 +114,9 @@ class AudioRecordPcmRecorder : PcmRecorder {
 
     private companion object {
         const val TAG = MushafLog.TAG
-        const val FRAME_BUFFER_MULTIPLE = 4
+        const val FRAME_BUFFER_MULTIPLE = 8
+
+        const val CAPTURE_DRIFT_WARN_MS = 150L
+        const val DRIFT_LOG_INTERVAL_MS = 1_000L
     }
 }
