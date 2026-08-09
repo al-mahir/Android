@@ -2,6 +2,9 @@ package com.iti.sheikh.presentation.circle
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.model.circle.CircleType
+import com.iti.meeting.domain.model.circle.UpdateCircleRequest
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
 import com.iti.meeting.domain.repository.PendingJoinRequestEvent
@@ -35,6 +38,12 @@ class SheikhCircleManageViewModel(
         SheikhCircleManageIntent.StartClicked -> start()
         SheikhCircleManageIntent.EndClicked -> end()
         SheikhCircleManageIntent.CancelClicked -> cancel()
+        SheikhCircleManageIntent.EditClicked -> openEdit()
+        is SheikhCircleManageIntent.EditNameChanged -> updateState { copy(editName = intent.name) }
+        is SheikhCircleManageIntent.EditStartDateChanged -> updateState { copy(editStartDate = intent.date) }
+        is SheikhCircleManageIntent.EditEndDateChanged -> updateState { copy(editEndDate = intent.date) }
+        SheikhCircleManageIntent.SubmitEdit -> submitEdit()
+        SheikhCircleManageIntent.DismissEdit -> updateState { copy(isEditDialogVisible = false) }
     }
 
     private fun load() {
@@ -51,6 +60,16 @@ class SheikhCircleManageViewModel(
                     isLoading = false,
                     isError = circle.isFailure,
                 )
+            }
+            // If this is a PRIVATE circle with an invite token, surface it to the sheikh.
+            val loaded = circle.getOrNull()
+            if (loaded != null &&
+                loaded.type == CircleType.PRIVATE &&
+                loaded.status == CircleStatus.SCHEDULED
+            ) {
+                loaded.inviteToken?.takeIf { it.isNotBlank() }?.let { token ->
+                    sendEffect(SheikhCircleManageEffect.ShowInviteToken(token, loaded.name))
+                }
             }
         }
     }
@@ -185,6 +204,47 @@ class SheikhCircleManageViewModel(
                 onFailure = {
                     updateState { copy(actionInProgress = false) }
                     sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                },
+            )
+        }
+    }
+
+    private fun openEdit() {
+        val circle = currentState.circle ?: return
+        updateState {
+            copy(
+                isEditDialogVisible = true,
+                editName = circle.name,
+                editStartDate = circle.startDate,
+                editEndDate = circle.endDate.orEmpty(),
+            )
+        }
+    }
+
+    private fun submitEdit() {
+        if (currentState.actionInProgress) return
+        val state = currentState
+        if (state.editName.isBlank()) {
+            sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_create_circle_error_name))
+            return
+        }
+        updateState { copy(actionInProgress = true, isEditDialogVisible = false) }
+        viewModelScope.launch {
+            circleRepository.updateCircle(
+                circleId,
+                UpdateCircleRequest(
+                    name = state.editName.trim().ifBlank { null },
+                    startDate = state.editStartDate.trim().ifBlank { null },
+                    endDate = state.editEndDate.trim().ifBlank { null },
+                ),
+            ).fold(
+                onSuccess = { updated ->
+                    updateState { copy(actionInProgress = false, circle = updated) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_edit_saved))
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_edit_error))
                 },
             )
         }

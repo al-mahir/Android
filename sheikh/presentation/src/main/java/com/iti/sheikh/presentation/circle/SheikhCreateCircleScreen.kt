@@ -1,10 +1,14 @@
 package com.iti.sheikh.presentation.circle
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,23 +25,50 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.designsystem.components.button.ButtonHeightCompact
 import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
@@ -48,6 +79,13 @@ import com.iti.sheikh.presentation.circle.state.SheikhCreateCircleIntent
 import com.iti.sheikh.presentation.circle.state.SheikhCreateCircleUiState
 import com.iti.sheikh.presentation.core.mvi.ObserveEffect
 import org.koin.androidx.compose.koinViewModel
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun SheikhCreateCircleScreen(
@@ -58,12 +96,15 @@ fun SheikhCreateCircleScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var pendingInviteToken by remember { mutableStateOf<Triple<String, String, String>?>(null) }
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is SheikhCreateCircleEffect.CircleCreated -> onCircleCreated(effect.circleId)
             is SheikhCreateCircleEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
+            is SheikhCreateCircleEffect.ShowInviteToken ->
+                pendingInviteToken = Triple(effect.token, effect.circleName, effect.circleId)
         }
     }
 
@@ -80,6 +121,17 @@ fun SheikhCreateCircleScreen(
         onSubmit = { viewModel.onIntent(SheikhCreateCircleIntent.Submit) },
         modifier = modifier,
     )
+
+    pendingInviteToken?.let { (token, name, circleId) ->
+        CreateInviteTokenDialog(
+            circleName = name,
+            token = token,
+            onDismiss = {
+                pendingInviteToken = null
+                onCircleCreated(circleId)
+            },
+        )
+    }
 }
 
 @Composable
@@ -153,21 +205,20 @@ private fun SheikhCreateCircleContent(
                 )
             }
 
-            CircleTextField(
-                value = state.startDate,
-                onValueChange = onStartDateChanged,
+            SheikhScheduleDateField(
                 title = stringResource(R.string.sheikh_create_circle_start_date_label),
+                value = state.startDate,
                 hint = stringResource(R.string.sheikh_create_circle_date_hint),
-                singleLine = true,
                 isError = state.errorMessageRes == R.string.sheikh_create_circle_error_start_date,
+                onValueChange = onStartDateChanged,
             )
 
-            CircleTextField(
-                value = state.endDate,
-                onValueChange = onEndDateChanged,
+            SheikhScheduleDateField(
                 title = stringResource(R.string.sheikh_create_circle_end_date_label),
+                value = state.endDate,
                 hint = stringResource(R.string.sheikh_create_circle_date_hint),
-                singleLine = true,
+                isError = false,
+                onValueChange = onEndDateChanged,
             )
 
             state.errorMessageRes?.let { messageRes ->
@@ -329,3 +380,305 @@ private fun SelectorPill(
         )
     }
 }
+
+/** Success popup after creating a circle — shows the invite token to share. */
+@Composable
+private fun CreateInviteTokenDialog(
+    circleName: String,
+    token: String,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val tokenLabel = stringResource(R.string.sheikh_circle_invite_token_title)
+
+    fun copyToClipboard() {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText(tokenLabel, token))
+        Toast.makeText(context, R.string.sheikh_circle_invite_token_copied, Toast.LENGTH_SHORT).show()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Theme.colors.surface,
+        shape = Theme.shapes.extraLarge,
+        title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(Theme.size.iconContainer)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(Theme.colors.success.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = null,
+                        tint = Theme.colors.success,
+                        modifier = Modifier.size(Theme.size.iconLarge),
+                    )
+                }
+                BasicText(
+                    text = stringResource(R.string.sheikh_circle_invite_token_title),
+                    style = Theme.typography.title.copy(
+                        color = Theme.colors.primaryFont,
+                        textAlign = TextAlign.Center,
+                    ),
+                )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                BasicText(
+                    text = circleName,
+                    style = Theme.typography.body.medium.copy(
+                        color = Theme.colors.secondaryFont,
+                        textAlign = TextAlign.Center,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Theme.colors.border),
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    BasicText(
+                        text = stringResource(R.string.sheikh_circle_invite_token_copy),
+                        style = Theme.typography.body.small.copy(
+                            color = Theme.colors.secondaryFont,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(Theme.shapes.medium)
+                            .background(Theme.colors.backGround)
+                            .border(1.dp, Theme.colors.border, Theme.shapes.medium)
+                            .padding(start = Theme.spacing.medium, top = 6.dp, bottom = 6.dp, end = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        BasicText(
+                            text = token,
+                            style = Theme.typography.body.medium.copy(
+                                color = Theme.colors.primaryFont,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            modifier = Modifier.weight(1f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        IconButton(onClick = ::copyToClipboard) {
+                            Icon(
+                                imageVector = Icons.Outlined.ContentCopy,
+                                contentDescription = stringResource(R.string.sheikh_circle_invite_token_copy),
+                                tint = Theme.colors.primary,
+                                modifier = Modifier.size(Theme.size.iconSemiMedium),
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                caption = stringResource(R.string.sheikh_circle_confirm_dismiss),
+                onClick = onDismiss,
+                height = ButtonHeightCompact,
+                shape = Theme.shapes.medium,
+            )
+        },
+    )
+}
+
+/**
+ * Read-only date &amp; time field. Tapping it opens a Material 3 date picker followed by a
+ * time picker; the chosen local value is stored back as an ISO-8601 UTC string.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SheikhScheduleDateField(
+    title: String,
+    value: String,
+    hint: String,
+    isError: Boolean,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var pendingDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    val current = remember(value) {
+        runCatching { Instant.parse(value).atZone(ZoneId.systemDefault()).toLocalDateTime() }
+            .getOrNull()
+    }
+
+    val locale = LocalConfiguration.current.locales[0]
+    val displayFormatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(locale)
+    }
+    val displayText = current?.let(displayFormatter::format) ?: value
+
+    TextField(
+        text = displayText,
+        onTextChange = {},
+        modifier = modifier.fillMaxWidth(),
+        title = title,
+        hint = hint,
+        isError = isError,
+        singleLine = true,
+        readOnly = true,
+        trailingIcon = rememberVectorPainter(Icons.Outlined.CalendarMonth),
+        onClickTrailingIcon = { showDatePicker = true },
+    )
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = (current?.toLocalDate() ?: LocalDate.now().plusDays(1))
+                .toEpochMillis(),
+        )
+        MaterialTheme(colorScheme = brandMaterialColorScheme()) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val millis = datePickerState.selectedDateMillis
+                            if (millis != null) {
+                                pendingDate = millis.toLocalDate()
+                                showDatePicker = false
+                                showTimePicker = true
+                            }
+                        },
+                    ) {
+                        Text(
+                            text = stringResource(R.string.sheikh_create_circle_date_next),
+                            color = Theme.colors.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text(
+                            text = stringResource(R.string.sheikh_create_circle_cancel),
+                            color = Theme.colors.secondaryFont,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                },
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+    }
+
+    if (showTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = current?.hour ?: 9,
+            initialMinute = current?.minute ?: 0,
+            is24Hour = true,
+        )
+        MaterialTheme(colorScheme = brandMaterialColorScheme()) {
+            TimePickerDialog(
+                onDismissRequest = { showTimePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val date = pendingDate ?: current?.toLocalDate() ?: LocalDate.now().plusDays(1)
+                            val local = LocalDateTime.of(
+                                date,
+                                LocalTime.of(timePickerState.hour, timePickerState.minute),
+                            )
+                            onValueChange(local.atZone(ZoneId.systemDefault()).toInstant().toString())
+                            showTimePicker = false
+                        },
+                    ) {
+                        Text(
+                            text = stringResource(R.string.sheikh_create_circle_time_done),
+                            color = Theme.colors.primary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                },
+                title = {
+                    BasicText(
+                        text = stringResource(R.string.sheikh_create_circle_time_label),
+                        style = Theme.typography.body.medium.copy(
+                            color = Theme.colors.primaryFont,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, top = 16.dp, end = 24.dp),
+                    )
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) {
+                        Text(
+                            text = stringResource(R.string.sheikh_create_circle_cancel),
+                            color = Theme.colors.secondaryFont,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                },
+            ) {
+                TimePicker(state = timePickerState)
+            }
+        }
+    }
+}
+
+/** Material 3 color scheme mapped from the app's brand tokens (light or dark as active). */
+@Composable
+private fun brandMaterialColorScheme(): androidx.compose.material3.ColorScheme {
+    val c = Theme.colors
+    val dark = c.backGround.luminance() < 0.5f
+    return if (dark) {
+        darkColorScheme(
+            primary = c.primary,
+            onPrimary = c.onPrimary,
+            primaryContainer = c.primaryContainer,
+            onPrimaryContainer = c.onPrimaryContainer,
+            secondary = c.secondary,
+            onSecondary = c.onSecondary,
+            background = c.backGround,
+            surface = c.surface,
+            onSurface = c.primaryFont,
+            surfaceVariant = c.surfaceVariant,
+            onSurfaceVariant = c.secondaryFont,
+            error = c.error,
+            onError = c.onError,
+            outline = c.outline,
+        )
+    } else {
+        lightColorScheme(
+            primary = c.primary,
+            onPrimary = c.onPrimary,
+            primaryContainer = c.primaryContainer,
+            onPrimaryContainer = c.onPrimaryContainer,
+            secondary = c.secondary,
+            onSecondary = c.onSecondary,
+            background = c.backGround,
+            surface = c.surface,
+            onSurface = c.primaryFont,
+            surfaceVariant = c.surfaceVariant,
+            onSurfaceVariant = c.secondaryFont,
+            error = c.error,
+            onError = c.onError,
+            outline = c.outline,
+        )
+    }
+}
+
+private fun LocalDate.toEpochMillis(): Long =
+    atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+private fun Long.toLocalDate(): LocalDate =
+    Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()

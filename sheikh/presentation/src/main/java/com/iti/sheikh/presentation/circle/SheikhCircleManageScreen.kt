@@ -1,6 +1,10 @@
 package com.iti.sheikh.presentation.circle
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +21,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +47,7 @@ import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.dialog.ConfirmationDialog
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
 import com.iti.meeting.domain.model.circle.Circle
@@ -62,11 +73,14 @@ fun SheikhCircleManageScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var pendingInviteToken by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is SheikhCircleManageEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
+            is SheikhCircleManageEffect.ShowInviteToken ->
+                pendingInviteToken = effect.token to effect.circleName
         }
     }
 
@@ -80,8 +94,22 @@ fun SheikhCircleManageScreen(
         onStart = { viewModel.onIntent(SheikhCircleManageIntent.StartClicked) },
         onEnd = { viewModel.onIntent(SheikhCircleManageIntent.EndClicked) },
         onCancel = { viewModel.onIntent(SheikhCircleManageIntent.CancelClicked) },
+        onEdit = { viewModel.onIntent(SheikhCircleManageIntent.EditClicked) },
+        onEditNameChanged = { viewModel.onIntent(SheikhCircleManageIntent.EditNameChanged(it)) },
+        onEditStartDateChanged = { viewModel.onIntent(SheikhCircleManageIntent.EditStartDateChanged(it)) },
+        onEditEndDateChanged = { viewModel.onIntent(SheikhCircleManageIntent.EditEndDateChanged(it)) },
+        onSubmitEdit = { viewModel.onIntent(SheikhCircleManageIntent.SubmitEdit) },
+        onDismissEdit = { viewModel.onIntent(SheikhCircleManageIntent.DismissEdit) },
         modifier = modifier,
     )
+
+    pendingInviteToken?.let { (token, name) ->
+        InviteTokenDialog(
+            circleName = name,
+            token = token,
+            onDismiss = { pendingInviteToken = null },
+        )
+    }
 }
 
 @Composable
@@ -95,6 +123,12 @@ private fun SheikhCircleManageContent(
     onStart: () -> Unit,
     onEnd: () -> Unit,
     onCancel: () -> Unit,
+    onEdit: () -> Unit,
+    onEditNameChanged: (String) -> Unit,
+    onEditStartDateChanged: (String) -> Unit,
+    onEditEndDateChanged: (String) -> Unit,
+    onSubmitEdit: () -> Unit,
+    onDismissEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingLifecycleAction by remember { mutableStateOf<SheikhCircleManageIntent?>(null) }
@@ -107,6 +141,18 @@ private fun SheikhCircleManageContent(
         BackTitleTopBar(
             title = state.circle?.name ?: stringResource(R.string.sheikh_circle_manage_title),
             onBackClick = onBack,
+            end = {
+                // Show edit button only for SCHEDULED circles
+                if (state.circle?.status == CircleStatus.SCHEDULED) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = stringResource(R.string.sheikh_circle_edit),
+                            tint = Theme.colors.primaryFont,
+                        )
+                    }
+                }
+            },
         )
 
         when {
@@ -185,6 +231,20 @@ private fun SheikhCircleManageContent(
         )
         null -> Unit
         else -> Unit
+    }
+
+    // Edit-circle dialog
+    if (state.isEditDialogVisible) {
+        EditCircleDialog(
+            name = state.editName,
+            startDate = state.editStartDate,
+            endDate = state.editEndDate,
+            onNameChanged = onEditNameChanged,
+            onStartDateChanged = onEditStartDateChanged,
+            onEndDateChanged = onEditEndDateChanged,
+            onSubmit = onSubmitEdit,
+            onDismiss = onDismissEdit,
+        )
     }
 }
 
@@ -437,4 +497,133 @@ private fun ManageSkeleton(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
+}
+
+@Composable
+private fun EditCircleDialog(
+    name: String,
+    startDate: String,
+    endDate: String,
+    onNameChanged: (String) -> Unit,
+    onStartDateChanged: (String) -> Unit,
+    onEndDateChanged: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Theme.colors.surface,
+        title = {
+            BasicText(
+                text = stringResource(R.string.sheikh_circle_edit_title),
+                style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont),
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextField(
+                    text = name,
+                    onTextChange = onNameChanged,
+                    title = stringResource(R.string.sheikh_circle_edit_name_label),
+                    hint = stringResource(R.string.sheikh_create_circle_name_hint),
+                    singleLine = true,
+                )
+                TextField(
+                    text = startDate,
+                    onTextChange = onStartDateChanged,
+                    title = stringResource(R.string.sheikh_circle_edit_start_date),
+                    hint = stringResource(R.string.sheikh_create_circle_date_hint),
+                    singleLine = true,
+                )
+                TextField(
+                    text = endDate,
+                    onTextChange = onEndDateChanged,
+                    title = stringResource(R.string.sheikh_circle_edit_end_date),
+                    hint = stringResource(R.string.sheikh_create_circle_date_hint),
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                caption = stringResource(R.string.sheikh_circle_edit_save),
+                onClick = onSubmit,
+                height = ButtonHeightCompact,
+                shape = Theme.shapes.medium,
+            )
+        },
+        dismissButton = {
+            SecondaryButton(
+                caption = stringResource(R.string.sheikh_circle_confirm_dismiss),
+                onClick = onDismiss,
+                height = ButtonHeightCompact,
+                shape = Theme.shapes.medium,
+            )
+        },
+    )
+}
+
+@Composable
+private fun InviteTokenDialog(
+    circleName: String,
+    token: String,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Theme.colors.surface,
+        title = {
+            BasicText(
+                text = stringResource(R.string.sheikh_circle_invite_token_title),
+                style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont),
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BasicText(
+                    text = circleName,
+                    style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Theme.colors.backGround)
+                        .padding(Theme.spacing.small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BasicText(
+                        text = token,
+                        style = Theme.typography.body.small.copy(color = Theme.colors.primaryFont),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("invite_token", token))
+                            Toast.makeText(context, R.string.sheikh_circle_invite_token_copied, Toast.LENGTH_SHORT).show()
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ContentCopy,
+                            contentDescription = stringResource(R.string.sheikh_circle_invite_token_copy),
+                            tint = Theme.colors.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            PrimaryButton(
+                caption = stringResource(R.string.sheikh_circle_confirm_dismiss),
+                onClick = onDismiss,
+                height = ButtonHeightCompact,
+                shape = Theme.shapes.medium,
+            )
+        },
+    )
 }

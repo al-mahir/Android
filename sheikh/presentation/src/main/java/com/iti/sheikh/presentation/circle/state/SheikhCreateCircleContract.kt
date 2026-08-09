@@ -29,4 +29,6 @@ sealed interface SheikhCreateCircleIntent {
 sealed interface SheikhCreateCircleEffect {
     data class CircleCreated(val circleId: String) : SheikhCreateCircleEffect
     data class ShowMessage(@StringRes val messageRes: Int) : SheikhCreateCircleEffect
+    /** Fired immediately after creating a PRIVATE circle before navigating to manage. */
+    data class ShowInviteToken(val token: String, val circleName: String, val circleId: String) : SheikhCreateCircleEffect
 }

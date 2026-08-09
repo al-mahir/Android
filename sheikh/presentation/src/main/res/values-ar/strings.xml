@@ -66,6 +66,10 @@
     <string name="sheikh_create_circle_error_capacity">أدخل سعة لا تقل عن 1.</string>
     <string name="sheikh_create_circle_error_password">الحلقات الخاصة تتطلب كلمة مرور.</string>
     <string name="sheikh_create_circle_error_generic">تعذّر إنشاء الحلقة. حاول مرة أخرى.</string>
+    <string name="sheikh_create_circle_date_next">التالي</string>
+    <string name="sheikh_create_circle_time_done">تم</string>
+    <string name="sheikh_create_circle_time_label">اختر الوقت</string>
+    <string name="sheikh_create_circle_cancel">إلغاء</string>
 
     <!-- Circles — manage -->
     <string name="sheikh_circle_manage_title">الحلقة</string>
@@ -94,4 +98,20 @@
     <string name="sheikh_circle_cancelled">تم إلغاء الحلقة.</string>
     <string name="sheikh_circle_request_approved">تمت الموافقة على الطلب.</string>
     <string name="sheikh_circle_action_failed">حدث خطأ ما. حاول مرة أخرى.</string>
+
+    <!-- ===== تعديل الحلقة ===== -->
+    <string name="sheikh_circle_edit">تعديل الحلقة</string>
+    <string name="sheikh_circle_edit_title">تعديل الحلقة</string>
+    <string name="sheikh_circle_edit_name_label">اسم الحلقة</string>
+    <string name="sheikh_circle_edit_start_date">تاريخ البدء (ISO-8601)</string>
+    <string name="sheikh_circle_edit_end_date">تاريخ الانتهاء (ISO-8601)</string>
+    <string name="sheikh_circle_edit_save">حفظ التغييرات</string>
+    <string name="sheikh_circle_edit_saved">تم تحديث الحلقة بنجاح.</string>
+    <string name="sheikh_circle_edit_error">تعذّر تحديث الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== رابط الدعوة ===== -->
+    <string name="sheikh_circle_invite_token_title">مشاركة رابط الدعوة</string>
+    <string name="sheikh_circle_invite_token_copy">نسخ الرمز</string>
+    <string name="sheikh_circle_invite_token_copied">تم نسخ رمز الدعوة!</string>
+    <string name="sheikh_circle_invite_token_share">مشاركة</string>
 </resources>

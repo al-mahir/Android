@@ -77,7 +77,12 @@ class SheikhCreateCircleViewModel(
             ).fold(
                 onSuccess = { circle ->
                     updateState { copy(isSubmitting = false) }
-                    sendEffect(SheikhCreateCircleEffect.CircleCreated(circle.id))
+                    val token = circle.inviteToken?.takeIf { it.isNotBlank() }
+                    if (circle.type == CircleType.PRIVATE && token != null) {
+                        sendEffect(SheikhCreateCircleEffect.ShowInviteToken(token, circle.name, circle.id))
+                    } else {
+                        sendEffect(SheikhCreateCircleEffect.CircleCreated(circle.id))
+                    }
                 },
                 onFailure = {
                     updateState { copy(isSubmitting = false) }
