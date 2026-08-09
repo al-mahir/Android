@@ -9,10 +9,12 @@ import com.iti.meeting.data.remote.dto.CreateCircleRequestDto
 import com.iti.meeting.data.remote.dto.JoinCircleRequestDto
 import com.iti.meeting.data.remote.dto.JoinCircleResponseDto
 import com.iti.meeting.data.remote.dto.PendingJoinRequestDto
+import com.iti.meeting.data.remote.dto.UpdateCircleRequestDto
 import io.ktor.client.HttpClient
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -35,6 +37,14 @@ class CircleApi(private val httpClient: HttpClient) {
     suspend fun getMyCircles(): List<CircleDto> =
         httpClient.get(Circles.MINE).decodeList(CircleDto.serializer())
 
+    suspend fun getMyPrivateCircles(status: String? = null): List<CircleDto> =
+        httpClient.get(Circles.MINE_PRIVATE) {
+            if (status != null) parameter("status", status)
+        }.decodeList(CircleDto.serializer())
+
+    suspend fun getCircleHistory(): List<CircleDto> =
+        httpClient.get(Circles.HISTORY).decodeList(CircleDto.serializer())
+
     suspend fun getCircle(circleId: String): CircleDto =
         httpClient.get(Circles.byId(circleId)).decodeBody(CircleDto.serializer())
 
@@ -44,11 +54,20 @@ class CircleApi(private val httpClient: HttpClient) {
             setBody(request)
         }.decodeBody(CircleDto.serializer())
 
+    suspend fun updateCircle(circleId: String, request: UpdateCircleRequestDto): CircleDto =
+        httpClient.patch(Circles.byId(circleId)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.decodeBody(CircleDto.serializer())
+
     suspend fun joinCircle(circleId: String, password: String?): JoinCircleResponseDto =
         httpClient.post(Circles.join(circleId)) {
             contentType(ContentType.Application.Json)
             setBody(JoinCircleRequestDto(password))
         }.decodeBody(JoinCircleResponseDto.serializer())
+
+    suspend fun joinViaToken(token: String): JoinCircleResponseDto =
+        httpClient.post(Circles.joinViaToken(token)).decodeBody(JoinCircleResponseDto.serializer())
 
     suspend fun startCircle(circleId: String): CircleDto =
         httpClient.post(Circles.start(circleId)).decodeBody(CircleDto.serializer())

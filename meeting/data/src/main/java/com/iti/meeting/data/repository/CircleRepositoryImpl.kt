@@ -10,6 +10,7 @@ import com.iti.meeting.domain.model.circle.CircleJoinError
 import com.iti.meeting.domain.model.circle.CircleJoinResult
 import com.iti.meeting.domain.model.circle.CreateCircleRequest
 import com.iti.meeting.domain.model.circle.PendingJoinRequest
+import com.iti.meeting.domain.model.circle.UpdateCircleRequest
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
 import com.iti.meeting.domain.repository.JoinRequestEvent
@@ -23,6 +24,7 @@ import com.iti.meeting.data.remote.dto.CircleTokenDto
 import com.iti.meeting.data.remote.dto.CircleMemberDto
 import com.iti.meeting.data.remote.dto.PendingJoinRequestDto
 import com.iti.meeting.data.remote.dto.RejectReasonDto
+import com.iti.meeting.data.remote.dto.UpdateCircleRequestDto
 import com.iti.meeting.data.realtime.SocketEventEnvelope
 import com.iti.meeting.data.realtime.StompClient
 import io.ktor.client.plugins.ClientRequestException
@@ -47,11 +49,29 @@ class CircleRepositoryImpl(
     override suspend fun getMyCircles(): Result<List<Circle>> =
         runCatching { api.getMyCircles().map { it.toDomain() } }
 
+    override suspend fun getMyPrivateCircles(status: CircleStatus?): Result<List<Circle>> =
+        runCatching { api.getMyPrivateCircles(status?.name).map { it.toDomain() } }
+
+    override suspend fun getCircleHistory(): Result<List<Circle>> =
+        runCatching { api.getCircleHistory().map { it.toDomain() } }
+
     override suspend fun getCircle(circleId: String): Result<Circle> =
         runCatching { api.getCircle(circleId).toDomain() }
 
     override suspend fun createCircle(request: CreateCircleRequest): Result<Circle> =
         runCatching { api.createCircle(request.toDto()).toDomain() }
+
+    override suspend fun updateCircle(circleId: String, request: UpdateCircleRequest): Result<Circle> =
+        runCatching {
+            api.updateCircle(
+                circleId,
+                UpdateCircleRequestDto(
+                    name = request.name,
+                    startDate = request.startDate,
+                    endDate = request.endDate,
+                ),
+            ).toDomain()
+        }
 
     override suspend fun joinCircle(circleId: String, password: String?): CircleJoinResult = try {
         val response = api.joinCircle(circleId, password)
@@ -62,29 +82,23 @@ class CircleRepositoryImpl(
             CircleJoinResult.Joined(response.membershipId)
         }
     } catch (e: ClientRequestException) {
-        when (e.response.status) {
-            HttpStatusCode.Conflict -> {
-                val body = runCatching {
-                    MeetingKitJson.decodeFromString(CircleErrorResponseDto.serializer(), e.response.bodyAsText())
-                }.getOrNull()
-                val error = when {
-                    body?.error?.uppercase().orEmpty().contains("ALREADY") ||
-                        body?.error?.uppercase().orEmpty().contains("EXISTS") -> CircleJoinError.ALREADY_MEMBER
-                    body?.error?.uppercase() == "CIRCLE_FULL" -> CircleJoinError.CIRCLE_FULL
-                    body?.error?.uppercase() in setOf("TIME_CONFLICT", "TIME_OVERLAP") -> CircleJoinError.TIME_CONFLICT
-                    body?.error?.uppercase() in setOf("INVALID_PASSWORD", "BAD_PASSWORD") -> CircleJoinError.INVALID_PASSWORD
-                    else -> CircleJoinError.UNKNOWN
-                }
-                CircleJoinResult.Error(error, body?.message ?: "Join failed")
-            }
-            HttpStatusCode.BadRequest -> CircleJoinResult.Error(
-                CircleJoinError.INVALID_PASSWORD,
-                "Invalid password",
-            )
-            else -> CircleJoinResult.Error(CircleJoinError.UNKNOWN, e.message ?: "Join failed")
-        }
+        mapJoinError(e)
     } catch (e: Exception) {
         CircleJoinResult.Error(CircleJoinError.UNKNOWN, e.message ?: "Join failed")
+    }
+
+    override suspend fun joinCircleViaToken(token: String): CircleJoinResult = try {
+        val response = api.joinViaToken(token)
+        val status = response.status.orEmpty().uppercase()
+        if (status.contains("PENDING")) {
+            CircleJoinResult.PendingApproval(response.membershipId)
+        } else {
+            CircleJoinResult.Joined(response.membershipId)
+        }
+    } catch (e: ClientRequestException) {
+        mapJoinError(e)
+    } catch (e: Exception) {
+        CircleJoinResult.Error(CircleJoinError.UNKNOWN, e.message ?: "Join via token failed")
     }
 
     override suspend fun cancelJoinRequest(circleId: String): Result<Unit> =
@@ -169,6 +183,27 @@ class CircleRepositoryImpl(
             }
 }
 
+private suspend fun mapJoinError(e: ClientRequestException): CircleJoinResult.Error {
+    return when (e.response.status) {
+        HttpStatusCode.Conflict -> {
+            val body = runCatching {
+                MeetingKitJson.decodeFromString(CircleErrorResponseDto.serializer(), e.response.bodyAsText())
+            }.getOrNull()
+            val error = when {
+                body?.error?.uppercase().orEmpty().contains("ALREADY") ||
+                    body?.error?.uppercase().orEmpty().contains("EXISTS") -> CircleJoinError.ALREADY_MEMBER
+                body?.error?.uppercase() == "CIRCLE_FULL" -> CircleJoinError.CIRCLE_FULL
+                body?.error?.uppercase() in setOf("TIME_CONFLICT", "TIME_OVERLAP") -> CircleJoinError.TIME_CONFLICT
+                body?.error?.uppercase() in setOf("INVALID_PASSWORD", "BAD_PASSWORD") -> CircleJoinError.INVALID_PASSWORD
+                else -> CircleJoinError.UNKNOWN
+            }
+            CircleJoinResult.Error(error, body?.message ?: "Join failed")
+        }
+        HttpStatusCode.BadRequest -> CircleJoinResult.Error(CircleJoinError.INVALID_PASSWORD, "Invalid password")
+        else -> CircleJoinResult.Error(CircleJoinError.UNKNOWN, e.message ?: "Join failed")
+    }
+}
+
 private fun decodeEnvelope(body: String): SocketEventEnvelope? =
     runCatching { MeetingKitJson.decodeFromString(SocketEventEnvelope.serializer(), body) }.getOrNull()
 
@@ -190,24 +225,35 @@ private fun CircleDto.toDomain(): Circle = Circle(
     maxParticipants = maxParticipants,
     currentMembers = currentMembers.takeIf { it > 0 } ?: memberCount,
     host = host?.toDomain(),
+    ownerId = ownerId,
+    channelName = channelName,
+    inviteToken = inviteToken,
 )
+
+/** Resolves the best display name: prefers Swagger `username` → falls back to legacy `displayName`. */
+private fun CircleMemberDto.resolvedName(): String =
+    username.ifBlank { displayName }.ifBlank { userId }.ifBlank { id }
 
 private fun CircleMemberDto.toDomain(): CircleMember = CircleMember(
     id = id,
-    userId = userId,
-    displayName = displayName.ifBlank { userId },
-    initials = initials.ifBlank { displayName.firstOrNull()?.toString() ?: "" },
+    userId = userId.ifBlank { id },
+    displayName = resolvedName(),
+    initials = initials.ifBlank { resolvedName().firstOrNull()?.toString() ?: "" },
     avatarUrl = avatarUrl,
     role = runCatching { CircleMemberRole.valueOf(role) }.getOrDefault(CircleMemberRole.MEMBER),
 )
 
+/** Resolves the best display name for a pending request: prefers `username` → `displayName`. */
+private fun PendingJoinRequestDto.resolvedName(): String =
+    username.ifBlank { displayName }.ifBlank { userId }
+
 private fun PendingJoinRequestDto.toDomain(): PendingJoinRequest = PendingJoinRequest(
     membershipId = membershipId,
     userId = userId,
-    displayName = displayName.ifBlank { userId },
-    initials = initials.ifBlank { displayName.firstOrNull()?.toString() ?: "" },
+    displayName = resolvedName(),
+    initials = initials.ifBlank { resolvedName().firstOrNull()?.toString() ?: "" },
     avatarUrl = avatarUrl,
-    joinedAt = joinedAt,
+    joinedAt = requestedAt.ifBlank { joinedAt },
 )
 
 private fun com.iti.meeting.data.remote.dto.CircleTokenDto.toDomain(): CircleToken = CircleToken(

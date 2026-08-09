@@ -42,6 +42,15 @@ object MeetingEndpoints {
 
         /** `GET /api/circles/mine` — active circles the current user is a member of. */
         const val MINE = "$BASE/mine"
+
+        /** `GET /api/circles/mine/private` — PRIVATE circles owned by the current user (with invite tokens). */
+        const val MINE_PRIVATE = "$BASE/mine/private"
+
+        /** `GET /api/circles/history` — all circles the user has ever been a member of. */
+        const val HISTORY = "$BASE/history"
+
+        /** `POST /api/circles/join/{token}` — join a PRIVATE circle via its invite token. */
+        fun joinViaToken(token: String) = "$BASE/join/$token"
     }
 
     object Sheikh {

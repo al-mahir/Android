@@ -7,6 +7,7 @@ import com.iti.meeting.domain.model.circle.CircleToken
 import com.iti.meeting.domain.model.circle.CircleJoinResult
 import com.iti.meeting.domain.model.circle.CreateCircleRequest
 import com.iti.meeting.domain.model.circle.PendingJoinRequest
+import com.iti.meeting.domain.model.circle.UpdateCircleRequest
 import kotlinx.coroutines.flow.Flow
 
 /** Lifecycle/roster events on `/topic/circles/{circleId}` — see [CircleRepository.observeCircleEvents]. */
@@ -35,9 +36,13 @@ sealed interface PendingJoinRequestEvent {
 interface CircleRepository {
     suspend fun getPublicCircles(status: CircleStatus? = null): Result<List<Circle>>
     suspend fun getMyCircles(): Result<List<Circle>>
+    suspend fun getMyPrivateCircles(status: CircleStatus? = null): Result<List<Circle>>
+    suspend fun getCircleHistory(): Result<List<Circle>>
     suspend fun getCircle(circleId: String): Result<Circle>
     suspend fun createCircle(request: CreateCircleRequest): Result<Circle>
+    suspend fun updateCircle(circleId: String, request: UpdateCircleRequest): Result<Circle>
     suspend fun joinCircle(circleId: String, password: String? = null): CircleJoinResult
+    suspend fun joinCircleViaToken(token: String): CircleJoinResult
     suspend fun cancelJoinRequest(circleId: String): Result<Unit>
     suspend fun leaveCircle(circleId: String): Result<Unit>
     suspend fun approveJoinRequest(circleId: String, userId: String): Result<Unit>

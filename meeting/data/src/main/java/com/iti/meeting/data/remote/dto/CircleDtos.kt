@@ -17,6 +17,14 @@ data class CreateCircleRequestDto(
     val password: String? = null,
 )
 
+/** `PATCH /api/circles/{circleId}` — only non-null fields are updated. */
+@Serializable
+data class UpdateCircleRequestDto(
+    val name: String? = null,
+    val startDate: String? = null,
+    val endDate: String? = null,
+)
+
 @Serializable
 data class JoinCircleRequestDto(val password: String? = null)
 
@@ -35,16 +43,32 @@ data class CircleDto(
     val currentMembers: Int = 0,
     val memberCount: Int = 0,
     val host: CircleMemberDto? = null,
+    /** Agora channel name — present in most response shapes. */
+    val channelName: String? = null,
+    /** UUID of the user who created the circle. */
+    val ownerId: String? = null,
+    /** Returned for PRIVATE circles owned by the caller; used to build invite links. */
+    val inviteToken: String? = null,
 )
 
+/** Active member response — Swagger: `{id, username, status, joinedAt}`.
+ * Legacy shapes may use `displayName`/`initials`/`role`; both are accepted. */
 @Serializable
 data class CircleMemberDto(
-    val id: String,
-    val userId: String,
+    val id: String = "",
+    /** Caller-visible username (Swagger: `username`). */
+    val username: String = "",
+    /** Legacy display name, kept for back-compat with earlier response revisions. */
     val displayName: String = "",
     val initials: String = "",
     val avatarUrl: String? = null,
     val role: String = "MEMBER",
+    /** Membership status, e.g. `ACTIVE`. */
+    val status: String = "ACTIVE",
+    /** ISO-8601 timestamp when the user was admitted to the circle. */
+    val joinedAt: String = "",
+    /** Legacy userId field; some shapes embed the UUID under this key. */
+    val userId: String = "",
 )
 
 /** The `joinCircle` success body — the membership object, keyed by `membershipId`. */
@@ -55,14 +79,21 @@ data class JoinCircleResponseDto(
     val message: String? = null,
 )
 
-/** `GET /api/circles/{circleId}/pending-requests` item and the `CIRCLE_JOIN_REQUEST_RECEIVED` payload. */
+/** `GET /api/circles/{circleId}/pending-requests` item and the `CIRCLE_JOIN_REQUEST_RECEIVED` payload.
+ * Swagger: `{userId, username, requestedAt}`. Legacy shapes may use `displayName`/`joinedAt`. */
 @Serializable
 data class PendingJoinRequestDto(
-    val membershipId: String,
-    val userId: String,
+    val membershipId: String = "",
+    val userId: String = "",
+    /** Caller-visible username (Swagger: `username`). */
+    val username: String = "",
+    /** Legacy display name, kept for back-compat. */
     val displayName: String = "",
     val initials: String = "",
     val avatarUrl: String? = null,
+    /** Swagger field name for the request timestamp. */
+    val requestedAt: String = "",
+    /** Legacy field name — kept for back-compat. */
     val joinedAt: String = "",
 )
 
