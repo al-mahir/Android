@@ -15,7 +15,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
@@ -87,6 +86,7 @@ import com.example.mushaf.presentation.recite.LiveSessionStatusRow
 import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionsUiMapper
 import com.example.mushaf.presentation.recite.correctionsSubtitle
+import com.example.mushaf.presentation.recite.phonemesCard
 import com.example.mushaf.presentation.recite.label
 import com.example.mushaf.presentation.recite.toChip
 import com.example.mushaf.presentation.recite.breakdown
@@ -331,8 +331,12 @@ fun MushafScreen(
                 .onGloballyPositioned { topBarHeightPx = it.size.height },
         )
 
+        var bottomBarHeightPx by remember { mutableIntStateOf(0) }
+
         Column(
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onGloballyPositioned { bottomBarHeightPx = it.size.height },
         ) {
             AnimatedVisibility(
                 visible = state.mushafMode == MushafMode.LISTEN && state.areBarsVisible,
@@ -363,6 +367,7 @@ fun MushafScreen(
                 mushafMode = state.mushafMode,
                 areAyahsVisible = state.areAyahsVisible,
                 isRecordingActive = state.isRecordingActive,
+                isMicEnabled = state.isMicEnabled,
                 onToggleAyahVisibility = { viewModel.onIntent(MushafIntent.ToggleAyahVisibility) },
                 onRevealNextWord = { viewModel.onIntent(MushafIntent.RevealNextWord) },
                 onRevealNextAyah = { viewModel.onIntent(MushafIntent.RevealNextAyah) },
@@ -432,18 +437,20 @@ fun MushafScreen(
         }
 
         // ── Tajweed Legend FAB ──────────────────────────────────────────────────
+        // Ride on the measured bar height: the bar grows and shrinks with the audio player, the
+        // status row, the grading toggle and the reveal actions, so a fixed offset would overlap.
+        val bottomBarHeight = with(LocalDensity.current) { bottomBarHeightPx.toDp() }
         val fabBottomPadding by animateDpAsState(
-            targetValue = if (state.mushafMode == MushafMode.LISTEN) 144.dp else 80.dp,
+            targetValue = bottomBarHeight + 12.dp,
             label = "fabBottomPadding"
         )
-        
+
         AnimatedVisibility(
             visible = state.areBarsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .navigationBarsPadding()
                 .padding(end = 16.dp, bottom = fabBottomPadding),
         ) {
             FloatingActionButton(
@@ -455,7 +462,7 @@ fun MushafScreen(
             ) {
                 Icon(
                     painter = androidx.compose.ui.res.painterResource(com.example.designsystem.R.drawable.ic_palette),
-                    contentDescription = "دليل ألوان التجويد",
+                    contentDescription = stringResource(R.string.mushaf_cd_tajweed_legend),
                 )
             }
         }
@@ -468,7 +475,12 @@ fun MushafScreen(
 
     if (showCorrections || autoShowFeedback) {
         val sheetTitle = if (autoShowFeedback) {
-            "${stringResource(R.string.mushaf_corrections_title)} (تكرار $currentFeedbackRepeat من ${state.muallemSession?.repeatCount ?: 1})"
+            stringResource(
+                R.string.muallem_feedback_repeat_title,
+                stringResource(R.string.mushaf_corrections_title),
+                currentFeedbackRepeat,
+                state.muallemSession?.repeatCount ?: 1,
+            )
         } else {
             stringResource(R.string.mushaf_corrections_title)
         }
@@ -478,6 +490,7 @@ fun MushafScreen(
             corrections = visibleCorrections.map { it.toCard() },
             tabs = correctionTabs.map { it.toChip() },
             selectedTabIndex = correctionTabs.indexOf(selectedTab).coerceAtLeast(0),
+            phonemes = state.liveCorrection.phonemesCard(),
             onTabSelected = { correctionTabIndex = it },
             emptyMessage = stringResource(R.string.mushaf_corrections_empty),
             practiceTitle = stringResource(R.string.mushaf_practice_focus_title),
