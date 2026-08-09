@@ -41,7 +41,41 @@ class DownloadsViewModel(
 
     fun onIntent(intent: DownloadsIntent) {
         when (intent) {
-            is DownloadsIntent.DownloadClicked -> viewModelScope.launch { startDownload(intent.id) }
+            is DownloadsIntent.DownloadClicked -> {
+                if (kind == ResourceKind.RECITER) {
+                    val resource = currentState.resources.firstOrNull { it.id == intent.id }
+                    if (resource != null) {
+                        updateState { copy(pendingDownloadOptions = resource) }
+                    }
+                } else {
+                    viewModelScope.launch { startDownload(intent.id) }
+                }
+            }
+            DownloadsIntent.DownloadOptionsFullQuran -> {
+                val target = currentState.pendingDownloadOptions ?: return
+                updateState { copy(pendingDownloadOptions = null, pendingFullDownload = target) }
+            }
+            DownloadsIntent.DownloadOptionsSurahs -> {
+                val target = currentState.pendingDownloadOptions ?: return
+                updateState { copy(pendingDownloadOptions = null) }
+                sendEffect(DownloadsEffect.NavigateToSurahList(target.id))
+            }
+            DownloadsIntent.DownloadOptionsDismissed -> {
+                updateState { copy(pendingDownloadOptions = null) }
+            }
+            DownloadsIntent.DownloadFullConfirmed -> {
+                val target = currentState.pendingFullDownload ?: return
+                updateState { copy(pendingFullDownload = null) }
+                viewModelScope.launch { startDownload(target.id) }
+            }
+            DownloadsIntent.DownloadFullDismissed -> {
+                updateState { copy(pendingFullDownload = null) }
+            }
+            is DownloadsIntent.ItemClicked -> {
+                if (kind == ResourceKind.RECITER) {
+                    sendEffect(DownloadsEffect.NavigateToSurahList(intent.id))
+                }
+            }
             is DownloadsIntent.CancelClicked -> viewModelScope.launch { cancelDownload(intent.id) }
             is DownloadsIntent.DeleteClicked -> confirmDeletion(intent.id)
             DownloadsIntent.DeleteConfirmed -> performDeletion()

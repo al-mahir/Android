@@ -1,8 +1,6 @@
-package com.iti.meeting.presentation.call
+package com.iti.meeting.presentation.call.state
 
 sealed interface CallUiState {
-    /** No call in progress — the state `CallSessionController` starts in and returns to once a
-     * call is torn down. `CallScreen` never composes while this is current in normal operation. */
     data object Idle : CallUiState
     data object Connecting : CallUiState
     data class InCall(
@@ -10,13 +8,12 @@ sealed interface CallUiState {
         val isMicEnabled: Boolean = false,
         val isCameraEnabled: Boolean = false,
         val isSpeakerEnabled: Boolean = true,
-        // Assumed on until an explicit mute event says otherwise - Agora doesn't report remote
-        // track state until the first onUserMuteAudio/onUserMuteVideo callback fires.
         val isRemoteMicEnabled: Boolean = true,
         val isRemoteCameraEnabled: Boolean = true,
         val callDurationSeconds: Long = 0L,
         val isReconnecting: Boolean = false,
     ) : CallUiState
+
     data object Ended : CallUiState
     data class Error(val message: String) : CallUiState
 }

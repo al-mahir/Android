@@ -46,7 +46,7 @@ class LiveRecitationSocketTest {
     }
 
     private fun socketFor(service: FakeAiService) =
-        LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}"))
+        LiveRecitationSocket(client, AiServiceConfig(authority = "localhost:${service.port}", secure = false))
 
     private fun audioFrames(count: Int): List<LiveSessionCommand.Audio> = List(count) { index ->
         LiveSessionCommand.Audio(

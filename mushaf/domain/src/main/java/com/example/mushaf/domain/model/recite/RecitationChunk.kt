@@ -24,6 +24,10 @@ sealed interface RecitationMatch {
         val text: String?,
         val start: RecitationCursor?,
         val end: RecitationCursor?,
+        /** Phonemes the model heard across the whole matched passage. */
+        val predictedPhonemes: String? = null,
+        /** Phonemes the passage should have produced. */
+        val referencePhonemes: String? = null,
     ) : RecitationMatch
 
     
@@ -54,7 +58,16 @@ data class RecitationChunk(
     val cursor: RecitationCursor?,
     val forcedCut: Boolean,
     val nonVerse: List<NonVerseSegment>,
+    /** What the model heard for this chunk, whether or not the passage was identified. */
+    val heardPhonemes: String? = null,
 ) {
+    /** Heard against expected for the matched passage, when the chunk matched one. */
+    val predictedPhonemes: String?
+        get() = (match as? RecitationMatch.Matched)?.predictedPhonemes ?: heardPhonemes
+
+    val referencePhonemes: String?
+        get() = (match as? RecitationMatch.Matched)?.referencePhonemes
+
      
     val words: List<RecitationWordFeedback>
         get() = (match as? RecitationMatch.Matched)?.words.orEmpty()

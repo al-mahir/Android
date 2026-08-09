@@ -70,7 +70,10 @@ fun InSessionScreen(
     onBack: () -> Unit,
     onOpenMushaf: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: InSessionViewModel = koinViewModel(parameters = { parametersOf(circleId) }),
+    viewModel: InSessionViewModel = koinViewModel(
+        key = circleId,
+        parameters = { parametersOf(circleId) },
+    ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

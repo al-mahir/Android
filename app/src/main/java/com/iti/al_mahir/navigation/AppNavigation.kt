@@ -196,8 +196,6 @@ private fun AppNavHost(
         }
     }
 
-
-
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -239,11 +237,7 @@ private fun AppNavHost(
                                     backStack.add(AppRoute.Mushaf(startPage = page))
                                 },
                                 onOpenSheikh = { sheikhId ->
-                                    backStack.add(
-                                        AppRoute.SheikhDetails(
-                                            sheikhId
-                                        )
-                                    )
+                                    backStack.add(AppRoute.SheikhDetails(sheikhId))
                                 },
                                 onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                                 onOpenCircleList = { backStack.add(AppRoute.CircleList) },
@@ -281,6 +275,9 @@ private fun AppNavHost(
                                 onSearchClick = {
                                     backStack.removeAll { it == AppRoute.Search }
                                     backStack.add(AppRoute.Search)
+                                },
+                                onNavigateToSurahDownload = { reciterId ->
+                                    backStack.add(DownloadsRoute.SurahDownload(reciterId))
                                 },
                             )
                         }
@@ -419,7 +416,10 @@ private fun AppNavHost(
                             )
                         }
 
-                        profileEntries(onBack = { backStack.removeLastOrNull() })
+                        profileEntries(
+                            onBack = { backStack.removeLastOrNull() },
+                            onNavigateToCheckout = { packageId -> backStack.add(ProfileRoute.Checkout(packageId)) },
+                        )
 
                         entry<SettingsRoute.Settings> {
                             SettingsScreen(
@@ -440,7 +440,12 @@ private fun AppNavHost(
                             )
                         }
 
-                        downloadsEntries(onBack = { backStack.removeLastOrNull() })
+                        downloadsEntries(
+                            onBack = { backStack.removeLastOrNull() },
+                            onNavigateToSurahList = { reciterId ->
+                                backStack.add(com.example.mushaf.presentation.download.navigation.DownloadsRoute.SurahDownload(reciterId))
+                            }
+                        )
 
                         reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
 
@@ -449,10 +454,10 @@ private fun AppNavHost(
                             onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
                                 val top = backStack.lastOrNull()
                                 val isCallAlreadyTop =
-                                    top is com.iti.meeting.presentation.navigation.MeetingRoute.Call && top.requestId == requestId
+                                    top is MeetingRoute.Call && top.requestId == requestId
                                 if (!isCallAlreadyTop && !isPhantomReplayOfEndedCall(requestId)) {
                                     backStack.add(
-                                        com.iti.meeting.presentation.navigation.MeetingRoute.Call(
+                                        MeetingRoute.Call(
                                             requestId,
                                             token,
                                             channelName,
@@ -499,5 +504,3 @@ private fun List<NavKey>.selectedDestination(): AppBottomNavDestination? =
         AppRoute.Profile -> AppBottomNavDestination.Profile
         else -> null
     }
-
-

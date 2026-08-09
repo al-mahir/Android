@@ -36,8 +36,9 @@ val almahirDataModule = module {
     single { AlmahirDatabase.create(androidContext()) }
     single { get<AlmahirDatabase>().recitationSessionDao() }
     single { get<AlmahirDatabase>().bookmarkDao() }
+    single { get<AlmahirDatabase>().meetingStatusDao() }
     single<AlmahirLocalDataSource> { AlmahirLocalDataSourceImpl(get()) }
-    single { AlmahirRepositoryImpl(get(), get(), get(), get(), get()) }
+    single { AlmahirRepositoryImpl(get(), get(), get(), get(), get(), get()) }
     single<AlmahirRepository> { get<AlmahirRepositoryImpl>() }
     single<SheikhRepository> { get<AlmahirRepositoryImpl>() }
     single<RecitationSessionRepository> { get<AlmahirRepositoryImpl>() }

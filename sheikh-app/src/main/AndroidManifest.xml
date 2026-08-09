@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <uses-feature
         android:name="android.hardware.microphone"
@@ -45,6 +48,12 @@
         <service
             android:name="com.iti.meeting.presentation.call.session.CallForegroundService"
             android:foregroundServiceType="microphone|camera"
+            android:stopWithTask="false"
+            android:exported="false" />
+
+        <service
+            android:name="com.iti.sheikh.presentation.availability.service.SheikhAvailabilityForegroundService"
+            android:foregroundServiceType="dataSync"
             android:stopWithTask="false"
             android:exported="false" />
     </application>

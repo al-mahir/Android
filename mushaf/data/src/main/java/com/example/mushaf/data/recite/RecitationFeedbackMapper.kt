@@ -19,6 +19,7 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationMistake
 import com.example.mushaf.domain.model.recite.RecitationWordFeedback
 import com.example.mushaf.domain.model.recite.RecitationWordStatus
+import com.example.mushaf.domain.model.recite.SifaComparison
 import com.example.mushaf.domain.model.recite.SpeechErrorType
 import com.example.mushaf.domain.model.recite.TajweedRuleReference
 import kotlinx.serialization.json.JsonPrimitive
@@ -59,6 +60,7 @@ object RecitationFeedbackMapper {
         cursor = envelope.cursor?.toCursor(),
         forcedCut = envelope.forcedCut,
         nonVerse = envelope.feedback?.nonVerse.orEmpty().map(::toNonVerseSegment),
+        heardPhonemes = envelope.phonemes?.takeIf { it.isNotBlank() },
     )
 
     private fun FeedbackDto.toMatch(): RecitationMatch = when (status.lowercase()) {
@@ -67,6 +69,8 @@ object RecitationFeedbackMapper {
             text = uthmaniText,
             start = span?.toCursor(),
             end = end?.toCursor(),
+            predictedPhonemes = predictedPhonemes?.takeIf { it.isNotBlank() },
+            referencePhonemes = referencePhonemes?.takeIf { it.isNotBlank() },
         )
 
         STATUS_AMBIGUOUS -> RecitationMatch.Ambiguous(candidates.map { it.toCandidate() })
@@ -110,7 +114,37 @@ object RecitationFeedbackMapper {
         actualLength = predictedLen,
         rules = tajweedRules.map { it.toRuleReference() },
         confidence = confidence,
+        sifa = toSifaComparison(),
     )
+
+    /**
+     * On the `sifa` channel the phoneme fields carry `attribute=value` tokens
+     * (`shidda_or_rakhawa=shadeed`) rather than phonemes. Parse them apart here, where the wire
+     * format is already known, so the UI never has to show a raw token to a reciter.
+     *
+     * Returns null for any other channel, and for a `sifa` finding whose tokens do not parse —
+     * the caller then falls back to rendering the fields as-is rather than inventing a reading.
+     */
+    private fun WordErrorDto.toSifaComparison(): SifaComparison? {
+        if (!errorType.equals(CHANNEL_SIFA, ignoreCase = true)) return null
+        val expected = expectedPh?.toSifaToken()
+        val actual = predictedPh?.toSifaToken()
+        val key = expected?.first ?: actual?.first ?: return null
+        return SifaComparison(
+            attributeKey = key,
+            expectedValue = expected?.second,
+            actualValue = actual?.second,
+        )
+    }
+
+    /** `"shidda_or_rakhawa=shadeed"` to `("shidda_or_rakhawa", "shadeed")`, or null if malformed. */
+    private fun String.toSifaToken(): Pair<String, String>? {
+        val separator = indexOf('=')
+        if (separator <= 0 || separator == lastIndex) return null
+        val key = substring(0, separator).trim()
+        val value = substring(separator + 1).trim()
+        return if (key.isEmpty() || value.isEmpty()) null else key to value
+    }
 
     private fun toCategory(raw: String): MistakeCategory = when (raw.lowercase()) {
         "normal" -> MistakeCategory.MEMORIZATION
@@ -155,4 +189,5 @@ object RecitationFeedbackMapper {
 
     private const val STATUS_OK = "ok"
     private const val STATUS_AMBIGUOUS = "ambiguous"
+    private const val CHANNEL_SIFA = "sifa"
 }

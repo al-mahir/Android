@@ -42,4 +42,8 @@ interface AlmahirRepository {
     suspend fun addBookmark(bookmark: Bookmark): Result<Unit>
 
     suspend fun removeBookmark(id: String): Result<Unit>
+
+    fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>>
+
+    suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit>
 }

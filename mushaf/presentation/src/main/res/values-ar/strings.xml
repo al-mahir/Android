@@ -14,14 +14,31 @@
     <string name="mushaf_tajweed_label">التجويد</string>
     <string name="mushaf_tajweed_on">تلوين التجويد مُفعّل</string>
     <string name="mushaf_tajweed_off">تلوين التجويد مُعطّل</string>
+    <string name="mushaf_cd_tajweed_legend">دليل ألوان التجويد</string>
 
     <!-- Follow-along (highlighting) -->
     <string name="mushaf_follow_along_start">بدء المتابعة</string>
     <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
 
-    <!-- Top bar -->
+    <!-- Search / browse screens -->
     <string name="search_hint">ابحث عن سورة أو آية…</string>
     <string name="search_meaning_offline">البحث بالمعنى يحتاج إلى اتصال بالإنترنت.</string>
+    <string name="revelation_meccan">مكية</string>
+    <string name="revelation_medinan">مدنية</string>
+    <string name="verses_count_format">%1$d آية</string>
+    <string name="hizb_format">الحزب %1$d</string>
+    <string name="page_format">صفحة %1$d</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_mushaf">المصحف</string>
+    <string name="nav_profile">حسابي</string>
+    <string name="last_read">آخر قراءة</string>
+    <!-- %1$s الاسم العربي للسورة، %2$s الاسم الإنجليزي (غير مستخدم في العربية) -->
+    <string name="last_read_surah_name">%1$s</string>
+    <string name="ayah_and_page_format">آية %1$d · صفحة %2$d</string>
+    <!-- %1$s الاسم العربي للسورة، %2$s الاسم الإنجليزي (غير مستخدم)، %3$d رقم الآية -->
+    <string name="ayah_title_format">%1$s - آية %3$d</string>
+
+    <!-- Top bar -->
     <string name="mushaf_juz_label">الجزء %1$d</string>
     <string name="mushaf_hizb_label">الحزب %1$d</string>
 
@@ -42,6 +59,8 @@
     <string name="mushaf_cd_show_ayahs">إظهار الآيات</string>
     <string name="mushaf_cd_next_word">الكشف عن الكلمة التالية</string>
     <string name="mushaf_cd_next_ayah">الكشف عن الآية التالية</string>
+    <string name="mushaf_reveal_next_word">كلمة تالية</string>
+    <string name="mushaf_reveal_next_ayah">آية تالية</string>
 
     <!-- Bottom bar — mic -->
     <string name="mushaf_cd_start_recording">بدء التسجيل</string>
@@ -84,10 +103,61 @@
     <string name="mushaf_correction_tajweed">خطأ في التجويد</string>
     <string name="mushaf_correction_generic">خطأ</string>
     <string name="mushaf_correction_detail">%1$s: المتوقع %2$d، قرأت %3$d</string>
+    <!-- أسطر تفاصيل كل ملاحظة. لا يُعرض إلا ما أرسله المحرك. -->
+    <string name="mushaf_correction_rule">الحكم: %1$s</string>
+    <string name="mushaf_correction_length">المتوقع %1$d، قرأت %2$d</string>
+    <string name="mushaf_correction_phonemes">المتوقع «%1$s»، ونطقت «%2$s»</string>
+    <string name="mushaf_correction_phonemes_expected">المتوقع «%1$s»</string>
+    <string name="mushaf_correction_phonemes_heard">نطقت «%1$s»</string>
+    <string name="mushaf_correction_confidence">نسبة الثقة %1$d%%</string>
+    <string name="mushaf_correction_sifa">%1$s: المتوقع %2$s، ونطقتها %3$s</string>
+    <string name="mushaf_correction_sifa_expected">%1$s: المتوقع %2$s</string>
+    <string name="mushaf_correction_sifa_heard">%1$s: نطقتها %2$s</string>
+
+    <!--
+      مفردات الصفات. يرسل المحرك رموزًا بصيغة attribute=value على قناة الصفات، وهذه أسماؤها.
+      يجري البحث عنها باسم المورد (mushaf_sifa_attr_<key> / mushaf_sifa_value_<token>)، فإضافة
+      رمز جديد لا تحتاج إلى تعديل الكود. الرمز غير المعروف يُعرض كما ورد.
+      مفاتيح الصفات وأسماؤها العربية من GET /tajweed-rules.
+    -->
+    <string name="mushaf_sifa_attr_hams_or_jahr">الهمس والجهر</string>
+    <string name="mushaf_sifa_attr_shidda_or_rakhawa">الشدة والرخاوة</string>
+    <string name="mushaf_sifa_attr_tafkheem_or_taqeeq">التفخيم والترقيق</string>
+    <string name="mushaf_sifa_attr_itbaq">الإطباق</string>
+    <string name="mushaf_sifa_attr_safeer">الصفير</string>
+    <string name="mushaf_sifa_attr_qalqla">القلقلة</string>
+    <string name="mushaf_sifa_attr_tikraar">التكرار</string>
+    <string name="mushaf_sifa_attr_tafashie">التفشي</string>
+    <string name="mushaf_sifa_attr_istitala">الاستطالة</string>
+    <string name="mushaf_sifa_attr_ghonna">الغنة</string>
+
+    <string name="mushaf_sifa_value_hams">مهموسة</string>
+    <string name="mushaf_sifa_value_jahr">مجهورة</string>
+    <string name="mushaf_sifa_value_shadeed">شديدة</string>
+    <string name="mushaf_sifa_value_rikhw">رخوة</string>
+    <string name="mushaf_sifa_value_between">بينية</string>
+    <string name="mushaf_sifa_value_mofakham">مفخّمة</string>
+    <string name="mushaf_sifa_value_moraqaq">مرقّقة</string>
+    <string name="mushaf_sifa_value_motbaq">مطبقة</string>
+    <string name="mushaf_sifa_value_monfateh">منفتحة</string>
+    <string name="mushaf_sifa_value_safeer">بصفير</string>
+    <string name="mushaf_sifa_value_no_safeer">بلا صفير</string>
+    <string name="mushaf_sifa_value_qalqla">بقلقلة</string>
+    <string name="mushaf_sifa_value_not_qalqla">بلا قلقلة</string>
+    <string name="mushaf_sifa_value_mokarar">مكرّرة</string>
+    <string name="mushaf_sifa_value_not_mokarar">غير مكرّرة</string>
+    <string name="mushaf_sifa_value_motafashie">متفشّية</string>
+    <string name="mushaf_sifa_value_not_motafashie">غير متفشّية</string>
+    <string name="mushaf_sifa_value_mostateel">مستطيلة</string>
+    <string name="mushaf_sifa_value_not_mostateel">غير مستطيلة</string>
+    <string name="mushaf_sifa_value_maghnoon">بغنة</string>
+    <string name="mushaf_sifa_value_not_maghnoon">بلا غنة</string>
     <string name="mushaf_live_ambiguous">يرد هذا الموضع في أكثر من مكان. أيّها تتلو؟</string>
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">التنزيلات</string>
+    <string name="settings_download_wifi_only">التنزيل عبر شبكة Wi-Fi فقط</string>
+    <string name="settings_download_wifi_only_description">منع استخدام بيانات الهاتف المحمول أثناء التنزيل</string>
 
     <string name="downloads_title_reciters">القراء</string>
     <string name="downloads_title_tafseers">تفسير</string>
@@ -102,12 +172,16 @@
 
     <!-- Delete confirmation -->
     <string name="downloads_delete_title">حذف التنزيل؟</string>
-    <string name="downloads_delete_message">سيتم حذف %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
+    <string name="downloads_delete_message">سيتم إزالة %1$s من هذا الجهاز. يمكنك تنزيله مرة أخرى لاحقًا.</string>
     <string name="downloads_delete_confirm">حذف</string>
     <string name="downloads_delete_cancel">إلغاء</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">تنزيل القرآن كاملًا؟</string>
+    <string name="downloads_full_quran_message">أنت على وشك تنزيل تلاوة القرآن كاملًا للشيخ %1$s. سيتطلب هذا حوالي %2$s من مساحة التخزين.</string>
+
     <!-- Errors -->
-    <string name="downloads_error_generic">تعذّر تحميل هذه القائمة. حاول مرة أخرى.</string>
+    <string name="downloads_error_generic">لم نتمكن من تحميل هذه القائمة. يرجى المحاولة مرة أخرى.</string>
 
     <!-- ===== Shared domain error messages ===== -->
     <string name="error_network">خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.</string>
@@ -235,4 +309,48 @@
     <string name="ayah_note_save">حفظ</string>
     <string name="ayah_note_delete">حذف الملاحظة</string>
     <string name="ayah_copied_to_clipboard">تم نسخ الآية إلى الحافظة</string>
+    <!-- Reciter picker -->
+    <string name="reciter_picker_title">اختر القارئ</string>
+    <string name="reciter_picker_cd_selected">محدد</string>
+    <string name="reciter_picker_cd_download">خيارات التحميل</string>
+
+    <!-- Download options dialog -->
+    <string name="download_dialog_title">تحميل التلاوة</string>
+    <string name="download_dialog_message">هل تريد تحميل القرآن كاملاً أو اختيار سور محددة؟</string>
+    <string name="download_dialog_entire_quran">القرآن كاملاً</string>
+    <string name="download_dialog_select_surahs">اختيار السور</string>
+    <string name="downloads_size_gb">%1$s جيجابايت</string>
+    <string name="downloads_size_mb">%1$s ميجابايت</string>
+
+    <string name="surah_number_name_format">%1$d. %2$s</string>
+
+    <!-- وضع المُعلِّم -->
+    <string name="muallem_setup_title">إعداد جلسة المُعلِّم</string>
+    <string name="muallem_setup_surah_label">اختر السورة</string>
+    <string name="muallem_setup_ayah_label">آية البداية</string>
+    <string name="muallem_setup_end_ayah_label">آية النهاية</string>
+    <string name="muallem_setup_ayah_of">من %1$d</string>
+    <string name="muallem_ayah_number">الآية %1$d</string>
+    <string name="muallem_setup_difficulty_label">مستوى الصعوبة</string>
+    <string name="muallem_difficulty_lenient">متساهل</string>
+    <string name="muallem_difficulty_normal">عادي</string>
+    <string name="muallem_difficulty_strict">صارم</string>
+    <string name="muallem_setup_repeats_label">عدد التكرارات</string>
+    <string name="muallem_setup_repeats_suffix">تكرارات</string>
+    <string name="muallem_setup_start">ابدأ الجلسة</string>
+
+    <string name="muallem_session_ayah_info">سورة %1$d، آية %2$d</string>
+    <string name="muallem_stop_session">إيقاف</string>
+    <string name="muallem_phase_sheikh_playing">الشيخ يقرأ…</string>
+    <string name="muallem_phase_user_recording">ردّد الآية • %1$d/%2$d</string>
+    <string name="muallem_phase_feedback">الدقة: %1$d%%</string>
+    <string name="muallem_phase_feedback_done">تم</string>
+
+    <!-- المُعلِّم — حالة الاتصال المباشر -->
+    <string name="muallem_status_connecting">جارٍ الاتصال…</string>
+    <string name="muallem_status_connected">متصل</string>
+    <string name="muallem_status_disconnected">غير متصل</string>
+
+    <!-- المُعلِّم — عنوان ورقة ملاحظات التكرار: %1$s هو عنوان الورقة -->
+    <string name="muallem_feedback_repeat_title">%1$s (تكرار %2$d من %3$d)</string>
 </resources>

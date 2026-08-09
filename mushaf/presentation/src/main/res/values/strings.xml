@@ -1,39 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Page navigation -->
-    <string name="mushaf_page_indicator">صفحة %1$d / %2$d</string>
+    <string name="mushaf_page_indicator">Page %1$d / %2$d</string>
 
     <!-- Loading / error states -->
-    <string name="mushaf_loading">جارٍ تحميل الصفحة…</string>
-    <string name="mushaf_error_title">تعذّر تحميل هذه الصفحة</string>
-    <string name="mushaf_error_message">حدث خطأ أثناء فتح المصحف.</string>
-    <string name="mushaf_retry">إعادة المحاولة</string>
+    <string name="mushaf_loading">Loading page…</string>
+    <string name="mushaf_error_title">Couldn\'t load this page</string>
+    <string name="mushaf_error_message">Something went wrong while opening the Mushaf.</string>
+    <string name="mushaf_retry">Retry</string>
     <string name="mushaf_offline_mode_not_available">This mode requires an internet connection.</string>
 
     <!-- Tajweed toggle -->
-    <string name="mushaf_tajweed_label">التجويد</string>
-    <string name="mushaf_tajweed_on">تلوين التجويد مُفعّل</string>
-    <string name="mushaf_tajweed_off">تلوين التجويد مُعطّل</string>
+    <string name="mushaf_tajweed_label">Tajweed</string>
+    <string name="mushaf_tajweed_on">Tajweed coloring on</string>
+    <string name="mushaf_tajweed_off">Tajweed coloring off</string>
+    <string name="mushaf_cd_tajweed_legend">Tajweed colour guide</string>
 
     <!-- Follow-along (highlighting) -->
-    <string name="mushaf_follow_along_start">بدء المتابعة</string>
-    <string name="mushaf_follow_along_stop">إيقاف المتابعة</string>
+    <string name="mushaf_follow_along_start">Start follow-along</string>
+    <string name="mushaf_follow_along_stop">Stop follow-along</string>
 
     <!-- Search Screen -->
-    <string name="search_hint">ابحث عن سورة أو آية…</string>
+    <string name="search_hint">Search Surah or Ayah…</string>
     <string name="search_meaning_offline">Meaning search requires an internet connection.</string>
-    <string name="revelation_meccan">مكية</string>
-    <string name="revelation_medinan">مدنية</string>
-    <string name="verses_count_format">%1$d آية</string>
-    <string name="hizb_format">الحزب %1$d</string>
-    <string name="page_format">صفحة %1$d</string>
-    <string name="nav_home">الرئيسية</string>
-    <string name="nav_mushaf">المصحف</string>
-    <string name="nav_profile">حسابي</string>
-    <string name="last_read">آخر قراءة</string>
-    <string name="last_read_surah_name">%1$s</string>
-    <string name="ayah_and_page_format">آية %1$d · صفحة %2$d</string>
-    <string name="ayah_title_format">%1$s - آية %3$d</string>
+    <string name="revelation_meccan">Meccan</string>
+    <string name="revelation_medinan">Medinan</string>
+    <string name="verses_count_format">%1$d Verses</string>
+    <string name="hizb_format">Hizb %1$d</string>
+    <string name="page_format">Page %1$d</string>
+    <string name="surah_number_name_format">%1$d. %2$s</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_mushaf">Mushaf</string>
+    <string name="nav_profile">Profile</string>
+    <string name="last_read">LAST READ</string>
+    <!-- %1$s Arabic surah name, %2$s English surah name -->
+    <string name="last_read_surah_name">%1$s (%2$s)</string>
+    <string name="ayah_and_page_format">Ayah %1$d · Page %2$d</string>
+    <!-- %1$s Arabic surah name, %2$s English surah name, %3$d ayah number -->
+    <string name="ayah_title_format">%1$s (%2$s) - Ayah %3$d</string>
 
     <!-- Top bar -->
     <string name="mushaf_juz_label">Juz %1$d</string>
@@ -56,6 +60,8 @@
     <string name="mushaf_cd_show_ayahs">Show ayahs</string>
     <string name="mushaf_cd_next_word">Reveal next word</string>
     <string name="mushaf_cd_next_ayah">Reveal next ayah</string>
+    <string name="mushaf_reveal_next_word">Next word</string>
+    <string name="mushaf_reveal_next_ayah">Next ayah</string>
 
     <!-- Bottom bar — mic -->
     <string name="mushaf_cd_start_recording">Start recording</string>
@@ -98,10 +104,62 @@
     <string name="mushaf_correction_tajweed">Tajweed mistake</string>
     <string name="mushaf_correction_generic">Mistake</string>
     <string name="mushaf_correction_detail">%1$s: expected %2$d, you held %3$d</string>
+    <!-- Per-finding detail lines. Only the ones the engine reported are shown. -->
+    <string name="mushaf_correction_rule">Rule: %1$s</string>
+    <string name="mushaf_correction_length">Expected %1$d, you held %2$d</string>
+    <string name="mushaf_correction_phonemes">Expected “%1$s”, you said “%2$s”</string>
+    <string name="mushaf_correction_phonemes_expected">Expected “%1$s”</string>
+    <string name="mushaf_correction_phonemes_heard">You said “%1$s”</string>
+    <string name="mushaf_correction_confidence">Confidence %1$d%%</string>
+    <string name="mushaf_correction_sifa">%1$s: expected %2$s, you said %3$s</string>
+    <string name="mushaf_correction_sifa_expected">%1$s: expected %2$s</string>
+    <string name="mushaf_correction_sifa_heard">%1$s: you said %2$s</string>
+
+    <!--
+      Ṣifāt vocabulary. The engine sends `attribute=value` tokens on the sifa channel; these
+      name both halves. Looked up by resource name (mushaf_sifa_attr_<key> /
+      mushaf_sifa_value_<token>), so a new token the engine starts sending only needs a string
+      added here — no code change. An unmapped token falls back to the raw token.
+      Attribute keys and Arabic names come from GET /tajweed-rules.
+    -->
+    <string name="mushaf_sifa_attr_hams_or_jahr">Hams / Jahr</string>
+    <string name="mushaf_sifa_attr_shidda_or_rakhawa">Shidda / Rakhawa</string>
+    <string name="mushaf_sifa_attr_tafkheem_or_taqeeq">Tafkheem / Tarqeeq</string>
+    <string name="mushaf_sifa_attr_itbaq">Itbaq</string>
+    <string name="mushaf_sifa_attr_safeer">Safeer</string>
+    <string name="mushaf_sifa_attr_qalqla">Qalqalah</string>
+    <string name="mushaf_sifa_attr_tikraar">Tikraar</string>
+    <string name="mushaf_sifa_attr_tafashie">Tafashie</string>
+    <string name="mushaf_sifa_attr_istitala">Istitala</string>
+    <string name="mushaf_sifa_attr_ghonna">Ghonna</string>
+
+    <string name="mushaf_sifa_value_hams">whispered (hams)</string>
+    <string name="mushaf_sifa_value_jahr">voiced (jahr)</string>
+    <string name="mushaf_sifa_value_shadeed">plosive (shadeed)</string>
+    <string name="mushaf_sifa_value_rikhw">continuant (rikhw)</string>
+    <string name="mushaf_sifa_value_between">in between</string>
+    <string name="mushaf_sifa_value_mofakham">heavy (mufakhkham)</string>
+    <string name="mushaf_sifa_value_moraqaq">light (muraqqaq)</string>
+    <string name="mushaf_sifa_value_motbaq">covered (mutbaq)</string>
+    <string name="mushaf_sifa_value_monfateh">open (munfatih)</string>
+    <string name="mushaf_sifa_value_safeer">with safeer</string>
+    <string name="mushaf_sifa_value_no_safeer">without safeer</string>
+    <string name="mushaf_sifa_value_qalqla">with qalqalah</string>
+    <string name="mushaf_sifa_value_not_qalqla">without qalqalah</string>
+    <string name="mushaf_sifa_value_mokarar">trilled (mukarrar)</string>
+    <string name="mushaf_sifa_value_not_mokarar">not trilled</string>
+    <string name="mushaf_sifa_value_motafashie">spread (mutafashshi)</string>
+    <string name="mushaf_sifa_value_not_motafashie">not spread</string>
+    <string name="mushaf_sifa_value_mostateel">elongated (mustatil)</string>
+    <string name="mushaf_sifa_value_not_mostateel">not elongated</string>
+    <string name="mushaf_sifa_value_maghnoon">with ghunnah</string>
+    <string name="mushaf_sifa_value_not_maghnoon">without ghunnah</string>
     <string name="mushaf_live_ambiguous">This passage appears in more than one place. Which are you reciting?</string>
 
     <!-- ===== Downloads (settings section + screens) ===== -->
     <string name="settings_section_downloads">Downloads</string>
+    <string name="settings_download_wifi_only">Download over Wi-Fi only</string>
+    <string name="settings_download_wifi_only_description">Prevent downloads from using mobile data</string>
 
     <string name="downloads_title_reciters">Reciters</string>
     <string name="downloads_title_tafseers">Tafsir</string>
@@ -120,8 +178,25 @@
     <string name="downloads_delete_confirm">Delete</string>
     <string name="downloads_delete_cancel">Cancel</string>
 
+    <!-- Full Quran Download confirmation -->
+    <string name="downloads_full_quran_title">Download Entire Quran?</string>
+    <string name="downloads_full_quran_message">You are about to download the entire Quran recitation for %1$s. This will require approximately %2$s of storage.</string>
+
     <!-- Errors -->
     <string name="downloads_error_generic">We could not load this list. Please try again.</string>
+
+    <!-- Reciter picker -->
+    <string name="reciter_picker_title">Select Reciter</string>
+    <string name="reciter_picker_cd_selected">Selected</string>
+    <string name="reciter_picker_cd_download">Download options</string>
+
+    <!-- Download options dialog -->
+    <string name="download_dialog_title">Download Recitation</string>
+    <string name="download_dialog_message">Do you want to download the entire Quran or select specific Surahs?</string>
+    <string name="download_dialog_entire_quran">Entire Quran</string>
+    <string name="download_dialog_select_surahs">Select Surahs</string>
+    <string name="downloads_size_gb">%1$s GB</string>
+    <string name="downloads_size_mb">%1$s MB</string>
 
     <!-- ===== Shared domain error messages ===== -->
     <string name="error_network">Network error. Please check your connection and try again.</string>
@@ -242,4 +317,33 @@
     <string name="ayah_note_save">Save</string>
     <string name="ayah_note_delete">Delete note</string>
     <string name="ayah_copied_to_clipboard">Ayah copied to clipboard</string>
+    <!-- Mu'allem Mode -->
+    <string name="muallem_setup_title">Mu\'allem Practice Setup</string>
+    <string name="muallem_setup_surah_label">Select Surah</string>
+    <string name="muallem_setup_ayah_label">Starting Ayah</string>
+    <string name="muallem_setup_end_ayah_label">Ending Ayah</string>
+    <string name="muallem_setup_ayah_of">of %1$d</string>
+    <string name="muallem_ayah_number">Ayah %1$d</string>
+    <string name="muallem_setup_difficulty_label">Difficulty</string>
+    <string name="muallem_difficulty_lenient">Lenient</string>
+    <string name="muallem_difficulty_normal">Normal</string>
+    <string name="muallem_difficulty_strict">Strict</string>
+    <string name="muallem_setup_repeats_label">Number of Repeats</string>
+    <string name="muallem_setup_repeats_suffix">repeats</string>
+    <string name="muallem_setup_start">Start Session</string>
+
+    <string name="muallem_session_ayah_info">Surah %1$d, Ayah %2$d</string>
+    <string name="muallem_stop_session">Stop</string>
+    <string name="muallem_phase_sheikh_playing">Sheikh is reading…</string>
+    <string name="muallem_phase_user_recording">Repeat the Ayah • %1$d/%2$d</string>
+    <string name="muallem_phase_feedback">Accuracy: %1$d%%</string>
+    <string name="muallem_phase_feedback_done">Done</string>
+
+    <!-- Mu'allem — live connection status -->
+    <string name="muallem_status_connecting">Connecting…</string>
+    <string name="muallem_status_connected">Connected</string>
+    <string name="muallem_status_disconnected">Disconnected</string>
+
+    <!-- Mu'allem — per-repeat feedback sheet title: %1$s is the sheet title -->
+    <string name="muallem_feedback_repeat_title">%1$s (repeat %2$d of %3$d)</string>
 </resources>

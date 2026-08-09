@@ -55,7 +55,10 @@ fun SheikhDetailsScreen(
     onOpenCircle: (String) -> Unit,
     onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SheikhDetailsViewModel = koinViewModel(parameters = { parametersOf(sheikhId) }),
+    viewModel: SheikhDetailsViewModel = koinViewModel(
+        key = sheikhId,
+        parameters = { parametersOf(sheikhId) },
+    ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

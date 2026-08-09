@@ -35,8 +35,11 @@ object CorrectionFilter {
     fun tabsFor(corrections: List<AyahCorrectionUi>): List<CorrectionTab> {
         if (corrections.isEmpty()) return emptyList()
 
+        // Counted per finding, not per word: a word flagged for both tashkīl and tajwīd is one
+        // entry under each channel, and the totals then match what each tab actually lists.
         val counts = corrections
             .flatMap { it.mistakes }
+            .flatMap { it.findings }
             .groupingBy { it.category }
             .eachCount()
 
@@ -68,7 +71,12 @@ object CorrectionFilter {
     ): List<AyahCorrectionUi> {
         if (category == null) return corrections
         return corrections.mapNotNull { correction ->
-            val matching = correction.mistakes.filter { it.category == category }
+            // Narrow to the matching findings too, so a word kept for its tajwīd error does not
+            // also display its unrelated tashkīl one while the tajwīd tab is selected.
+            val matching = correction.mistakes.mapNotNull { mistake ->
+                val findings = mistake.findings.filter { it.category == category }
+                if (findings.isEmpty()) null else mistake.copy(findings = findings)
+            }
             if (matching.isEmpty()) null else correction.copy(mistakes = matching)
         }
     }

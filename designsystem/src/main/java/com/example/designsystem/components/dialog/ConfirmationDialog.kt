@@ -29,13 +29,18 @@ fun ConfirmationDialog(
     dismissLabel: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onDismissRequest: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     confirmColor: Color = Theme.colors.primary,
     confirmContentColor: Color = Theme.colors.onPrimary,
     isConfirmLoading: Boolean = false,
 ) {
     Dialog(
-        onDismissRequest = { if (!isConfirmLoading) onDismiss() },
+        onDismissRequest = { 
+            if (!isConfirmLoading) {
+                if (onDismissRequest != null) onDismissRequest() else onDismiss()
+            }
+        },
         properties = DialogProperties(
             dismissOnBackPress = !isConfirmLoading,
             dismissOnClickOutside = !isConfirmLoading,

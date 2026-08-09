@@ -56,6 +56,7 @@ import com.example.designsystem.theme.Theme
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
 import com.iti.meeting.presentation.agora.AgoraLocalVideo
 import com.iti.meeting.presentation.agora.AgoraRemoteVideo
+import com.iti.meeting.presentation.call.state.CallUiState
 import org.koin.androidx.compose.koinViewModel
 
 private val CallBackground = Color(0xFF121317)
@@ -72,7 +73,7 @@ fun CallScreen(
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
-    LaunchedEffect(requestId) { viewModel.prepareForRequest(requestId) }
+    remember(requestId) { viewModel.prepareForRequest(requestId) }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

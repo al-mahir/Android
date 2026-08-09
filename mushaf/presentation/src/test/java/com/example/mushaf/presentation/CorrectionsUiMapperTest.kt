@@ -141,7 +141,7 @@ class CorrectionsUiMapperTest {
                         mistakes = listOf(mistake(category = category, speechErrorType = type)),
                     ),
                 ),
-            ).single().mistakes.single().labelRes
+            ).single().mistakes.single().findings.single().labelRes
 
         assertEquals(
             R.string.mushaf_correction_extra_words,
@@ -189,10 +189,10 @@ class CorrectionsUiMapperTest {
             ),
         )
 
-        val detail = corrections.single().mistakes.single().detail!!
-        assertEquals("المد الطبيعي", detail.ruleName)
-        assertEquals(2, detail.expectedLength)
-        assertEquals(3, detail.actualLength)
+        val finding = corrections.single().mistakes.single().findings.single()
+        assertEquals("المد الطبيعي", finding.rules.single().nameArabic)
+        assertEquals(2, finding.expectedLength)
+        assertEquals(3, finding.actualLength)
     }
 
     @Test
@@ -214,7 +214,9 @@ class CorrectionsUiMapperTest {
             ),
         )
 
-        assertNull(corrections.single().mistakes.single().detail)
+        val finding = corrections.single().mistakes.single().findings.single()
+        assertNull("a length was invented for a rule that reported none", finding.expectedLength)
+        assertNull("a length was invented for a rule that reported none", finding.actualLength)
     }
 
     @Test
@@ -253,8 +255,8 @@ class CorrectionsUiMapperTest {
         assertEquals(2, card.mistakes.size)
         assertEquals(listOf("first", "third"), card.mistakes.map { it.word })
         
-        assertEquals(R.string.mushaf_correction_extra_words, card.mistakes[0].labelRes)
-        assertEquals(R.string.mushaf_correction_tashkeel, card.mistakes[1].labelRes)
+        assertEquals(R.string.mushaf_correction_extra_words, card.mistakes[0].findings.single().labelRes)
+        assertEquals(R.string.mushaf_correction_tashkeel, card.mistakes[1].findings.single().labelRes)
         
         assertEquals(listOf("1:1:1", "1:1:3"), card.mistakes.map { it.wordId })
     }

@@ -195,19 +195,33 @@ class ProfileViewModelTest {
     private fun viewModel(
         repository: AlmahirRepository,
         authRepository: FakeAuthRepository = FakeAuthRepository(),
+        appPreferencesRepository: com.iti.domain.settings.repository.AppPreferencesRepository = FakeAppPreferencesRepository(),
+        connectivityObserver: com.iti.domain.connectivity.ConnectivityObserver = FakeConnectivityObserver(),
     ) = ProfileViewModel(
-        getCurrentUser = GetCurrentUserUseCase(
-            FakeAppPreferencesRepository(AppPreferences(user = FakeAlmahirRepository.USER)),
-        ),
+        getCurrentUser = GetCurrentUserUseCase(appPreferencesRepository),
         getSubscription = GetSubscriptionUseCase(repository),
         logout = LogoutUseCase(authRepository),
         deleteAccount = DeleteAccountUseCase(repository),
-        connectivityObserver = StubConnectivityObserver,
+        connectivityObserver = connectivityObserver,
     )
 
-    private object StubConnectivityObserver : ConnectivityObserver {
-        override val status: Flow<ConnectivityStatus> = flowOf(ConnectivityStatus.Available)
-        override fun currentStatus(): ConnectivityStatus = ConnectivityStatus.Available
+    private class FakeAppPreferencesRepository(
+        user: com.iti.domain.model.User = FakeAlmahirRepository.USER
+    ) : com.iti.domain.settings.repository.AppPreferencesRepository {
+        val state = kotlinx.coroutines.flow.MutableStateFlow(com.iti.domain.settings.model.AppPreferences(user = user))
+        override val preferences: kotlinx.coroutines.flow.Flow<com.iti.domain.settings.model.AppPreferences> = state
+        override suspend fun setThemeMode(mode: com.iti.domain.settings.model.ThemeMode): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setLanguage(language: com.iti.domain.settings.model.AppLanguage): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setRemindersEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setErrorSoundsEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun setDataSaverEnabled(enabled: Boolean): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun saveUser(user: com.iti.domain.model.User): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+        override suspend fun clearUser(): com.iti.domain.core.Result<Unit> = com.iti.domain.core.Result.Success(Unit)
+    }
+
+    private class FakeConnectivityObserver : com.iti.domain.connectivity.ConnectivityObserver {
+        override val status: kotlinx.coroutines.flow.Flow<com.iti.domain.connectivity.ConnectivityStatus> = kotlinx.coroutines.flow.flowOf(com.iti.domain.connectivity.ConnectivityStatus.Available)
+        override fun currentStatus(): com.iti.domain.connectivity.ConnectivityStatus = com.iti.domain.connectivity.ConnectivityStatus.Available
     }
 }
 

@@ -83,7 +83,7 @@ class LoginViewModelTest {
 
             assertNull(viewModel.state.value.emailError)
             assertEquals(
-                LoginEffect.ShowError(UiText.Dynamic("Invalid credentials")),
+                LoginEffect.ShowError(UiText.Resource(R.string.auth_error_invalid_credentials)),
                 viewModel.effect.first(),
             )
         }

@@ -47,7 +47,7 @@ import java.net.Socket
 class LiveServerSmokeTest {
 
     private lateinit var client: HttpClient
-    private val config = AiServiceConfig(authority = AUTHORITY)
+    private val config = AiServiceConfig(authority = AUTHORITY, secure = false)
 
     @Before
     fun setUp() {

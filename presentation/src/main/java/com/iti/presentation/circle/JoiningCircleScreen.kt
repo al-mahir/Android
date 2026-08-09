@@ -54,7 +54,10 @@ fun JoiningCircleScreen(
     onBack: () -> Unit,
     onNavigateToSession: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: JoiningCircleViewModel = koinViewModel(parameters = { parametersOf(circleId, membershipId) }),
+    viewModel: JoiningCircleViewModel = koinViewModel(
+        key = circleId,
+        parameters = { parametersOf(circleId, membershipId) },
+    ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current

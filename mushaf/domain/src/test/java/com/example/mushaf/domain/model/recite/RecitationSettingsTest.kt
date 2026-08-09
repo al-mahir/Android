@@ -52,8 +52,37 @@ class RecitationSettingsTest {
     }
 
     @Test
-    fun `no stored engine means the server default, which does correct`() {
-        assertTrue(RecitationSettings(engine = null).engineCanGradeTajweed)
+    fun `nothing stored still names an engine, chosen by the practice mode`() {
+        // Leaving this null was letting the server pick its own default for both practice modes.
+        assertEquals("real", RecitationSettings(tajweedGradingEnabled = true).wireEngine)
+        assertEquals("zipformer", RecitationSettings(tajweedGradingEnabled = false).wireEngine)
+        assertEquals("real", RecitationSettings().toConfig(from = null).engine)
+    }
+
+    @Test
+    fun `switching practice mode switches the engine with it`() {
+        val hifzOnly = RecitationSettings().withTajweedGrading(false)
+        assertEquals("zipformer", hifzOnly.engine)
+        assertFalse(hifzOnly.gradesTajweed)
+
+        val withTajweed = hifzOnly.withTajweedGrading(true)
+        assertEquals("real", withTajweed.engine)
+        assertTrue(withTajweed.gradesTajweed)
+    }
+
+    @Test
+    fun `switching engine switches the practice mode with it`() {
+        assertFalse(RecitationSettings().withEngine("zipformer").gradesTajweed)
+        assertTrue(RecitationSettings().withEngine("real").gradesTajweed)
+    }
+
+    @Test
+    fun `an engine that cannot grade tajwid overrules a stale grading flag`() {
+        // Settings persisted before the two were written together can hold this pair.
+        val stale = RecitationSettings(engine = "zipformer", tajweedGradingEnabled = true)
+
+        assertFalse("the engine has the last word", stale.gradesTajweed)
+        assertEquals(emptySet<String>(), stale.wireRules)
     }
 
     @Test

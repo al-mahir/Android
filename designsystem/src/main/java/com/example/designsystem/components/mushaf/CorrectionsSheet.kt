@@ -8,7 +8,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,11 +41,27 @@ data class CorrectionWordUi(
 )
 
 
+/**
+ * A mistaken word and every finding reported against it.
+ *
+ * [findings] is a list because one word can fail on several channels at once; rendering only the
+ * first would tell the reciter their madd was short while staying silent about the vowel they
+ * also missed.
+ */
 data class CorrectionMistakeUi(
     val wordId: String,
     val word: String,
+    val findings: List<CorrectionFindingUi>,
+)
+
+/**
+ * One finding: what kind of mistake it was, plus whatever the engine could say about it — the
+ * tajwīd rule, the expected against the actual length, the expected against the heard phonemes,
+ * its confidence. [details] is already localized and ordered; the sheet just lists it.
+ */
+data class CorrectionFindingUi(
     val label: String,
-    val detail: String? = null,
+    val details: List<String> = emptyList(),
 )
 
 
@@ -58,7 +76,6 @@ data class CorrectionCardUi(
     val words: List<CorrectionWordUi>,
     val mistakes: List<CorrectionMistakeUi>,
 )
-
 
 @Composable
 fun CorrectionsSheet(
@@ -175,6 +192,8 @@ internal fun CorrectionsList(
             items(corrections, key = { it.id }) { correction ->
                 CorrectionCard(correction = correction, onMistakeClick = onMistakeClick)
             }
+
+            // Last, because it explains the gradings above rather than replacing them.
         }
     }
 }
@@ -210,6 +229,7 @@ private fun PracticeFocusCard(title: String, focus: List<String>) {
         }
     }
 }
+
 
 /**
  * A filter chip.
@@ -328,15 +348,27 @@ private fun MistakeRow(
                     fontWeight = FontWeight.Bold,
                 ),
             )
-            BasicText(
-                text = mistake.label,
-                style = Theme.typography.body.small.copy(color = Theme.colors.primaryFont),
-            )
-            mistake.detail?.let { detail ->
+
+            mistake.findings.forEachIndexed { index, finding ->
+                // Findings after the first get a little air, so two errors on one word read as
+                // two things rather than one run-on paragraph.
+                if (index > 0) Spacer(Modifier.height(Theme.spacing.extraSmall))
+
                 BasicText(
-                    text = detail,
-                    style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
+                    text = finding.label,
+                    style = Theme.typography.body.small.copy(
+                        color = Theme.colors.primaryFont,
+                        fontWeight = FontWeight.Medium,
+                    ),
                 )
+                finding.details.forEach { detail ->
+                    BasicText(
+                        text = detail,
+                        style = Theme.typography.body.small.copy(
+                            color = Theme.colors.secondaryFont,
+                        ),
+                    )
+                }
             }
         }
     }

@@ -32,6 +32,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.core.designsystem.locale.isArabicLocale
+import com.example.mushaf.domain.model.SurahCatalog
 import com.example.designsystem.components.button.ButtonHeightCompact
 import com.example.designsystem.components.button.ButtonIconPosition
 import com.example.designsystem.components.button.PrimaryButton
@@ -43,14 +45,6 @@ import com.iti.domain.model.ReadingProgress
 private val CardShape = RoundedCornerShape(20.dp)
 private val CardImageHeight = 200.dp
 private const val SupportingAlpha = 0.65f
-
-@Composable
-private fun ReadingProgress.surahNameLocalized(): String {
-    val language = LocalConfiguration.current.locales[0].language
-    return if (language == "ar") surahNameAr else surahNameEn
-}
-
-
 
 @Composable
 fun ContinueReadingCard(
@@ -96,9 +90,20 @@ fun ContinueReadingCard(
                     vertical = Theme.spacing.medium,
                 ),
         ) {
-            // Surah name
+            // Surah name — the domain hands us the surah *number*; the localized name comes from
+            // the catalog so the card follows the in-app language instead of always showing English.
+            val isArabic = isArabicLocale()
+            val surahName = remember(progress.surahNumber, isArabic, progress.surahName) {
+                val surah = SurahCatalog.all.firstOrNull { it.number == progress.surahNumber }
+                when {
+                    surah == null -> progress.surahName
+                    isArabic -> surah.nameArabic
+                    else -> surah.nameEnglish
+                }
+            }
+
             BasicText(
-                text = progress.surahNameLocalized(),
+                text = surahName,
                 style = Theme.typography.title.copy(
                     color = Theme.colors.primaryFont,
                     fontWeight = FontWeight.Bold,

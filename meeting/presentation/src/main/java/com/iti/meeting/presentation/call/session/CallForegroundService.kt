@@ -20,7 +20,7 @@ import androidx.core.app.Person
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.iti.meeting.presentation.R
-import com.iti.meeting.presentation.call.CallUiState
+import com.iti.meeting.presentation.call.state.CallUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,7 +46,7 @@ class CallForegroundService : Service() {
         observeJob = controller.state
             .onEach { session ->
                 if (session.isLive) {
-                    notifySafely(buildNotification(session))
+                notifySafely(buildNotification(session))
                 } else {
                     stopSelfGracefully()
                 }

@@ -37,6 +37,7 @@ class AlmahirRepositoryImpl(
     private val dataSource: AlmahirDataSource,
     private val sheikhDataSource: SheikhDataSource,
     private val dao: RecitationSessionDao,
+    private val meetingStatusDao: com.iti.data.local.meeting.MeetingStatusDao,
     private val localDataSource: AlmahirLocalDataSource,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val json: Json = SessionJson,
@@ -78,28 +79,36 @@ class AlmahirRepositoryImpl(
     }
 
     override fun observeBookmarks(type: com.iti.domain.model.BookmarkType): Flow<Result<List<com.iti.domain.model.Bookmark>>> =
-        localDataSource.observeBookmarksByType(type.name).map { entities ->
+        localDataSource?.observeBookmarksByType(type.name)?.map { entities ->
             entities.map { it.toDomain() }
-        }.asResult()
+        }?.asResult() ?: kotlinx.coroutines.flow.flowOf(Result.Success(emptyList()))
 
     override fun observeAllBookmarks(): Flow<Result<List<com.iti.domain.model.Bookmark>>> =
-        localDataSource.observeAllBookmarks().map { entities ->
+        localDataSource?.observeAllBookmarks()?.map { entities ->
             entities.map { it.toDomain() }
-        }.asResult()
+        }?.asResult() ?: kotlinx.coroutines.flow.flowOf(Result.Success(emptyList()))
 
     override suspend fun getBookmarks(type: com.iti.domain.model.BookmarkType): Result<List<com.iti.domain.model.Bookmark>> = resultOf {
-        localDataSource.getBookmarksByType(type.name).map { it.toDomain() }
+        localDataSource?.getBookmarksByType(type.name)?.map { it.toDomain() } ?: emptyList()
     }
 
     override suspend fun getBookmark(id: String): Result<com.iti.domain.model.Bookmark?> = resultOf {
-        localDataSource.getBookmarkById(id)?.toDomain()
+        localDataSource?.getBookmarkById(id)?.toDomain()
     }
 
     override suspend fun addBookmark(bookmark: com.iti.domain.model.Bookmark): Result<Unit> =
-        resultOf { localDataSource.upsertBookmark(bookmark.toEntity()) }
+        resultOf { localDataSource?.upsertBookmark(bookmark.toEntity()) }
 
     override suspend fun removeBookmark(id: String): Result<Unit> =
-        resultOf { localDataSource.deleteBookmark(id) }
+        resultOf { localDataSource?.deleteBookmark(id) }
+
+    override fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>> =
+        meetingStatusDao.observeMeetingStatuses(userId).map { entities ->
+            entities.map { it.toDomain() }
+        }.asResult()
+
+    override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
+        resultOf { meetingStatusDao.insert(status.toEntity()) }
 
     // ── SheikhRepository ──────────────────────────────────────────────────
 
@@ -225,6 +234,20 @@ class AlmahirRepositoryImpl(
         sheikhId = sheikhId,
         note = note,
         createdAtEpochMillis = createdAtEpochMillis
+    )
+
+    private fun com.iti.domain.model.MeetingStatus.toEntity() = com.iti.data.local.meeting.MeetingStatusEntity(
+        id = id,
+        userId = userId,
+        meetingTime = meetingTime,
+        status = status
+    )
+
+    private fun com.iti.data.local.meeting.MeetingStatusEntity.toDomain() = com.iti.domain.model.MeetingStatus(
+        id = id,
+        userId = userId,
+        meetingTime = meetingTime,
+        status = status
     )
 }
 

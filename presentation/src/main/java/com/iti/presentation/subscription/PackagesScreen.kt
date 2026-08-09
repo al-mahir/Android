@@ -14,6 +14,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun PackagesScreen(
     onBack: () -> Unit,
+    onNavigateToCheckout: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PackagesViewModel = koinViewModel(),
 ) {
@@ -23,6 +24,7 @@ fun PackagesScreen(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             PackagesEffect.PurchaseCompleted -> onBack()
+            is PackagesEffect.NavigateToCheckout -> onNavigateToCheckout(effect.packageId)
             is PackagesEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }

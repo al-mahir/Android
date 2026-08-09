@@ -24,8 +24,8 @@ class GetReadingProgressUseCase(
         val estimatedAyah = (fraction * surah.verseCount).toInt().coerceIn(1, surah.verseCount)
 
         ReadingProgress(
-            surahNameAr = SurahNames.nameOf(surahNumber).orEmpty(),
-            surahNameEn = surah.nameEn,
+            surahNumber = surahNumber,
+            surahName = surah.nameEn,
             ayahNumber = estimatedAyah,              // Estimated based on page progress
             pageNumber = page,
             juzNumber = juzForPage(page),

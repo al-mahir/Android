@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.text.HtmlCompat
+import com.example.core.designsystem.locale.rememberLocaleLocals
 import com.example.designsystem.text.asString
 import com.example.designsystem.theme.Theme
 import com.example.mushaf.domain.model.DownloadFailure
@@ -65,6 +66,8 @@ fun TafsirBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     var showSelection by remember { mutableStateOf(false) }
+    // ModalBottomSheet renders in its own window, which resets the localized context.
+    val localeLocals = rememberLocaleLocals()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -76,35 +79,37 @@ fun TafsirBottomSheet(
         },
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp, top = 8.dp),
-        ) {
-            AnimatedVisibility(visible = showSelection, enter = fadeIn(), exit = fadeOut()) {
-                TafsirSelectionList(
-                    books = availableBooks,
-                    selectedKey = selectedKey,
-                    onChangeTafsir = {
-                        onChangeTafsir(it)
-                        showSelection = false
-                    },
-                    onDownloadTafsir = onDownloadTafsir,
-                    onDeleteTafsir = onDeleteTafsir,
-                    onBack = { showSelection = false },
-                )
-            }
+        localeLocals.Provide {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp, top = 8.dp),
+            ) {
+                AnimatedVisibility(visible = showSelection, enter = fadeIn(), exit = fadeOut()) {
+                    TafsirSelectionList(
+                        books = availableBooks,
+                        selectedKey = selectedKey,
+                        onChangeTafsir = {
+                            onChangeTafsir(it)
+                            showSelection = false
+                        },
+                        onDownloadTafsir = onDownloadTafsir,
+                        onDeleteTafsir = onDeleteTafsir,
+                        onBack = { showSelection = false },
+                    )
+                }
 
-            AnimatedVisibility(visible = !showSelection, enter = fadeIn(), exit = fadeOut()) {
-                TafsirContent(
-                    tafsirState = tafsirState,
-                    selectedKey = selectedKey,
-                    isAyahBookmarked = isAyahBookmarked,
-                    onRetry = onRetry,
-                    onBadgeClick = { showSelection = true },
-                    onBookmarkAyah = onBookmarkAyah,
-                )
+                AnimatedVisibility(visible = !showSelection, enter = fadeIn(), exit = fadeOut()) {
+                    TafsirContent(
+                        tafsirState = tafsirState,
+                        selectedKey = selectedKey,
+                        isAyahBookmarked = isAyahBookmarked,
+                        onRetry = onRetry,
+                        onBadgeClick = { showSelection = true },
+                        onBookmarkAyah = onBookmarkAyah,
+                    )
+                }
             }
         }
     }
