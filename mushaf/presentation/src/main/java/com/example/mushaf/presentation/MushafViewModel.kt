@@ -77,6 +77,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.math.roundToInt
 
 class MushafViewModel(
     private val getPage: GetPageUseCase,
@@ -162,6 +163,7 @@ class MushafViewModel(
         const val MIC_LEVEL_SMOOTHING = 0.3f
 
         const val MIC_LEVEL_GAIN = 4f
+        const val MIC_LEVEL_STEPS = 20
 
         const val CAPTURE_LOG_INTERVAL_MS = 1_000L
 
@@ -170,13 +172,7 @@ class MushafViewModel(
         const val MAX_RECONNECT_ATTEMPTS = 3
         const val RECONNECT_DELAY_MS = 1_000L
 
-        // Kept small on purpose: a wide window (e.g. a whole page, 100+ words) means almost any
-        // recognized token - even a garbled one - accidentally matches *something* in it, since
-        // short/common Arabic words repeat constantly. Confirmed on a real device in an earlier
-        // round of this feature: with a 127-word window, 57 of 61 recognized tokens matched
-        // something even under strict matching. A small window anchored at the last known-good
-        // position keeps the candidate set tight enough that a match is actually meaningful.
-        const val LOCAL_TRACKER_WINDOW_WORDS = 12
+              const val LOCAL_TRACKER_WINDOW_WORDS = 12
     }
 
     init {
@@ -453,22 +449,7 @@ class MushafViewModel(
         _state.update { it.copy(highlightedWordId = wordId).revealing(wordId) }
     }
 
-    /**
-     * Uncovers [wordId] while the memorisation veil is on, so a word the user has just recited (or
-     * that playback has just reached) is actually readable instead of staying blank under its own
-     * highlight.
-     *
-     * Everything from the top of the page up to [wordId] is uncovered, not just [wordId] itself:
-     * the cursor routinely lands mid-page without having reported every word before it — most
-     * obviously right after a page turn, where [loadPage] has just re-hidden the page and the first
-     * confirmed word can be several words in. Revealing the whole prefix keeps the page reading as
-     * "everything I have recited so far", never a scatter of visible words over blank gaps.
-     *
-     * Already-revealed ids are kept, so a cursor that moves backwards (a correction, a seek) never
-     * re-hides text, and manual [revealNextWord] / [revealNextAyah] steps ahead of the cursor stand.
-     *
-     * No-op when ayahs are visible, so it is safe to call from every cursor update.
-     */
+
     private fun MushafUiState.revealing(wordId: String?): MushafUiState {
         if (areAyahsVisible || wordId == null) return this
         val words = wordsForCurrentPage()
@@ -939,29 +920,22 @@ class MushafViewModel(
             0f
         }
 
+        val level = (smoothedMicLevel.coerceIn(0f, 1f) * MIC_LEVEL_STEPS).roundToInt() / MIC_LEVEL_STEPS.toFloat()
+        val current = _state.value
+        if (current.micLevel == level && current.isSpeechDetected == event.isSpeaking) return
+
         // No timing-based guess here on purpose: highlightedWordId only ever moves once a word
         // is actually confirmed via mergeChunk's server cursor, never from a blind frame-count
         // estimate. See docs/features/06-taahud-live-highlight-sync-code-audit.md.
         _state.update {
             it.copy(
-                micLevel = smoothedMicLevel.coerceIn(0f, 1f),
+                micLevel = level,
                 isSpeechDetected = event.isSpeaking,
             )
         }
     }
 
-    /**
-     * The on-device model's running phoneme transcript (see [LiveRecitationEvent.LocalPhonemes]),
-     * arriving roughly every 100ms.
-     *
-     * This is the *only* thing that moves the highlight between server chunks, and it is
-     * deliberately narrow in what it may do: it advances [MushafUiState.predictedWordId], and
-     * nothing else. It does not reveal words under the memorisation veil (an unconfirmed guess
-     * must not uncover text the reciter may not have reached), does not turn the page, and never
-     * feeds grading. It also only ever moves *forward* — a prediction that lands behind where the
-     * highlight already is means the aligner is out of step, and the server cursor will resolve it
-     * within a chunk or two.
-     */
+
     private fun updateLocalCursor(transcript: LocalTranscript) {
         val predicted = localCursorTracker.offer(transcript.phonemes) ?: return
         val state = _state.value
