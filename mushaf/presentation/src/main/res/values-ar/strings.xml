@@ -110,9 +110,6 @@
     <string name="mushaf_correction_phonemes_expected">المتوقع «%1$s»</string>
     <string name="mushaf_correction_phonemes_heard">نطقت «%1$s»</string>
     <string name="mushaf_correction_confidence">نسبة الثقة %1$d%%</string>
-    <string name="mushaf_phonemes_title">الأصوات المُلتقطة</string>
-    <string name="mushaf_phonemes_heard">ما سمعناه</string>
-    <string name="mushaf_phonemes_expected">ما كان متوقعًا</string>
     <string name="mushaf_correction_sifa">%1$s: المتوقع %2$s، ونطقتها %3$s</string>
     <string name="mushaf_correction_sifa_expected">%1$s: المتوقع %2$s</string>
     <string name="mushaf_correction_sifa_heard">%1$s: نطقتها %2$s</string>

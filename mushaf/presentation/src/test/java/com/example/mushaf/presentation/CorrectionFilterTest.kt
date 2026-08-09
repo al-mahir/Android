@@ -5,6 +5,7 @@ import com.example.mushaf.presentation.R
 import com.example.mushaf.presentation.recite.AyahCorrectionUi
 import com.example.mushaf.presentation.recite.CorrectionFilter
 import com.example.mushaf.presentation.recite.CorrectionWordUi
+import com.example.mushaf.presentation.recite.MistakeFindingUi
 import com.example.mushaf.presentation.recite.WordMistakeUi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -19,9 +20,19 @@ class CorrectionFilterTest {
     ) = WordMistakeUi(
         wordId = wordId,
         word = wordId,
-        category = category,
-        labelRes = R.string.mushaf_correction_generic,
-        detail = null,
+        findings = listOf(
+            MistakeFindingUi(
+                category = category,
+                labelRes = R.string.mushaf_correction_generic,
+                rules = emptyList(),
+                expectedLength = null,
+                actualLength = null,
+                expectedPhonemes = null,
+                predictedPhonemes = null,
+                confidencePercent = null,
+                sifa = null,
+            ),
+        ),
     )
 
     private fun ayah(

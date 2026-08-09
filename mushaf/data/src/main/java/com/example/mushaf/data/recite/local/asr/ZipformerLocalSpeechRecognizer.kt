@@ -2,8 +2,12 @@ package com.example.mushaf.data.recite.local.asr
 
 import com.example.mushaf.domain.model.recite.AudioFrame
 import com.example.mushaf.domain.model.recite.RecitationAudioFormat
+import com.example.mushaf.domain.model.recite.SpeechGateConfig
 import com.example.mushaf.domain.model.recite.local.AsrModelState
+import com.example.mushaf.domain.model.recite.local.LocalTranscript
 import com.example.mushaf.domain.repository.LocalSpeechRecognizer
+import com.k2fsa.sherpa.onnx.EndpointConfig
+import com.k2fsa.sherpa.onnx.EndpointRule
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
@@ -21,24 +25,31 @@ import kotlinx.coroutines.withContext
 /**
  * On-device streaming ASR via sherpa-onnx's `OnlineRecognizer` (`Muno459/zipformer_p-quran`,
  * causal Zipformer2-CTC - see [AsrModelRepositoryImpl]'s doc for where the model comes from).
- * Genuinely streaming: [accept] feeds one 100ms frame at a time and [words] emits each newly
- * settled word as soon as the decoder is confident about it, not once per whole utterance.
  *
- * Settlement heuristic: a streaming CTC decoder's partial transcript can still revise its *last*
- * word as more audio arrives, but essentially never revises an earlier one once a later word has
- * started appearing - so everything except the last word in each decode cycle's result is safe
- * to emit immediately. This is the per-word design the old debounce-based approach (see
- * docs/features/06-taahud-speechrecognizer-status.md §6.4) needed but couldn't get from
- * `android.speech.SpeechRecognizer`'s black-box partial-result callback; here the decode loop is
- * ours, so it's straightforward. The endpoint detector (silence) flushes the final word too and
- * resets for the next utterance, mirroring sherpa-onnx's own official streaming demo.
+ * Emits the running transcript after every decode - roughly every 100ms frame - rather than
+ * waiting for anything to "settle". Two findings forced that shape, both confirmed against the
+ * model's own `tokens.txt` and sherpa-onnx's compiled defaults rather than guessed:
+ *
+ * 1. **The vocabulary has no word delimiter.** All 251 symbols are bare Arabic letters or
+ *    letter+ḥaraka pairs; there is no space and no SentencePiece `▁`. An earlier version split
+ *    `getResult().text` on whitespace and emitted everything but the last token, which meant the
+ *    token count was permanently 1 and *nothing was ever emitted* except at an endpoint.
+ * 2. **Endpointing can barely fire here.** sherpa-onnx's defaults need 1.4s (rule 2) or 2.4s
+ *    (rule 1) of trailing silence, but [SpeechGateConfig.hangoverFrames] closes the gate after
+ *    600ms and then stops feeding frames entirely, so only rule 3 - a 20 *second* utterance cap -
+ *    could ever trigger. [ENDPOINT_TRAILING_SILENCE_SECONDS] is set inside the hangover window so
+ *    a real pause resets the decoder, and nothing downstream depends on that happening.
+ *
+ * Segmenting the phoneme stream into words is
+ * [com.example.mushaf.domain.model.recite.local.PhonemeCursorTracker]'s job, against the text the
+ * reciter is expected to be reading - the model cannot do it and never could.
  */
 class ZipformerLocalSpeechRecognizer(
     private val asrModelRepository: AsrModelRepositoryImpl,
 ) : LocalSpeechRecognizer {
 
-    private val _words = MutableSharedFlow<String>(extraBufferCapacity = 64)
-    override val words: SharedFlow<String> = _words.asSharedFlow()
+    private val _transcript = MutableSharedFlow<LocalTranscript>(extraBufferCapacity = 64)
+    override val transcript: SharedFlow<LocalTranscript> = _transcript.asSharedFlow()
 
     override val isAvailable: Boolean
         get() = asrModelRepository.state.value is AsrModelState.Ready
@@ -46,7 +57,7 @@ class ZipformerLocalSpeechRecognizer(
     private val engineMutex = Mutex()
     private var recognizer: OnlineRecognizer? = null
     private var stream: OnlineStream? = null
-    private var settledWordCount = 0
+    private var emittedLength = 0
 
     override suspend fun accept(frame: AudioFrame): Unit = withContext(Dispatchers.Default) {
         engineMutex.withLock {
@@ -59,29 +70,30 @@ class ZipformerLocalSpeechRecognizer(
                 engine.decode(stream)
             }
 
+            val text = engine.getResult(stream).text
             val atEndpoint = engine.isEndpoint(stream)
-            emitNewlySettledWords(engine.getResult(stream).text, includeLast = atEndpoint)
+
+            // Re-emitting an unchanged transcript would make every consumer redo the same
+            // alignment work 10 times a second for nothing; a shrinking one can't happen without
+            // a reset, which is handled below.
+            if (text.length != emittedLength || atEndpoint) {
+                _transcript.tryEmit(LocalTranscript(phonemes = text, isFinal = atEndpoint))
+                emittedLength = text.length
+            }
+
             if (atEndpoint) {
                 engine.reset(stream)
-                settledWordCount = 0
+                emittedLength = 0
             }
         }
     }
 
-    private fun emitNewlySettledWords(text: String, includeLast: Boolean) {
-        val currentWords = text.trim().split(WHITESPACE).filter { it.isNotBlank() }
-        val settledCount = if (includeLast) currentWords.size else (currentWords.size - 1).coerceAtLeast(0)
-        if (settledCount <= settledWordCount) return
-        for (index in settledWordCount until settledCount) {
-            _words.tryEmit(currentWords[index])
+    override suspend fun reset() {
+        engineMutex.withLock {
+            stream?.release()
+            stream = recognizer?.createStream()
+            emittedLength = 0
         }
-        settledWordCount = settledCount
-    }
-
-    override fun reset() {
-        stream?.release()
-        stream = recognizer?.createStream()
-        settledWordCount = 0
     }
 
     /** Lazily builds the recognizer + stream once the model is downloaded - safe to call
@@ -99,6 +111,11 @@ class ZipformerLocalSpeechRecognizer(
                 numThreads = NUM_THREADS,
                 provider = "cpu",
             ),
+            endpointConfig = EndpointConfig(
+                rule1 = EndpointRule(false, ENDPOINT_TRAILING_SILENCE_SECONDS, 0f),
+                rule2 = EndpointRule(true, ENDPOINT_TRAILING_SILENCE_SECONDS, 0f),
+                rule3 = EndpointRule(false, 0f, MAX_UTTERANCE_SECONDS),
+            ),
             decodingMethod = "greedy_search",
             enableEndpoint = true,
         )
@@ -113,6 +130,14 @@ class ZipformerLocalSpeechRecognizer(
         const val SHORT_FULL_SCALE = 32768.0f
         const val FEATURE_DIM = 80
         const val NUM_THREADS = 2
-        val WHITESPACE = Regex("\\s+")
+
+        /** Comfortably inside the speech gate's 600ms hangover, so a genuine pause resets the
+         * decoder instead of letting one "utterance" run until the 20s cap. */
+        const val ENDPOINT_TRAILING_SILENCE_SECONDS = 0.4f
+
+        /** Bounds how long a single decode context can grow; a shorter cap than sherpa-onnx's
+         * default would cost accuracy, a longer one memory, and neither matters much now that
+         * nothing waits for an endpoint to emit. */
+        const val MAX_UTTERANCE_SECONDS = 20f
     }
 }

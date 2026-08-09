@@ -28,9 +28,12 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.RecitationWordFeedback
 import com.example.mushaf.domain.model.recite.RecitationSettings
 import com.example.mushaf.domain.model.recite.RecitationWordStatus
+import com.example.mushaf.domain.model.recite.local.LocalTranscript
 import com.example.mushaf.domain.model.recite.local.LocalWordEntry
 import com.example.mushaf.domain.repository.LiveRecitationRepository
+import com.example.mushaf.domain.model.recite.local.ReferencePhonemeUnit
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
+import com.example.mushaf.domain.repository.ReferencePhonemeRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
 import com.example.mushaf.domain.repository.RecitationRepository
@@ -303,6 +306,31 @@ class MushafReducerTest {
             if (startIndex < 0) return Result.Success(emptyList())
             return Result.Success(entries.drop(startIndex).take(count))
         }
+
+        override suspend fun wordsForAyah(sura: Int, aya: Int): Result<List<LocalWordEntry>?> {
+            val prefix = "$sura:$aya:"
+            val ayahWords = entries.filter { it.wordId.startsWith(prefix) }
+            return Result.Success(ayahWords.ifEmpty { null })
+        }
+    }
+
+    /** Turns the fake corpus into one-word-per-unit reference phonemes, so a test can drive the
+     * local cursor by "speaking" a word's own text. */
+    private class FakeReferencePhonemeRepository(
+        private val entries: List<LocalWordEntry> = emptyList(),
+    ) : ReferencePhonemeRepository {
+        override suspend fun unitsFrom(
+            cursor: RecitationCursor,
+            wordCount: Int,
+        ): Result<List<ReferencePhonemeUnit>> {
+            val startIndex = entries.indexOfFirst { it.wordId == cursor.wordId }
+            if (startIndex < 0) return Result.Success(emptyList())
+            return Result.Success(
+                entries.drop(startIndex).take(wordCount).map {
+                    ReferencePhonemeUnit(phonemes = it.plainText, wordIds = listOf(it.wordId))
+                },
+            )
+        }
     }
 
     private class FakeAppPreferencesRepo : AppPreferencesRepository {
@@ -362,6 +390,7 @@ class MushafReducerTest {
         sessionRepo: FakeSessionRepo = FakeSessionRepo(),
         settingsRepo: FakeSettingsRepo = FakeSettingsRepo(),
         localWordCorpusRepository: FakeLocalWordCorpusRepository = FakeLocalWordCorpusRepository(),
+        referencePhonemeRepository: ReferencePhonemeRepository = FakeReferencePhonemeRepository(),
         appPrefsRepo: AppPreferencesRepository = FakeAppPreferencesRepo(),
         connectivityObserver: ConnectivityObserver = FakeConnectivityObserver(),
         almahirRepository: FakeAlmahirRepository = FakeAlmahirRepository(),
@@ -384,6 +413,7 @@ class MushafReducerTest {
             updateRecitationSettings = UpdateRecitationSettingsUseCase(settingsRepo),
             downloadRecitation = DownloadRecitationUseCase(recitationRepo),
             localWordCorpusRepository = localWordCorpusRepository,
+            referencePhonemeRepository = referencePhonemeRepository,
             observeAvailableTafsirBooks = ObserveAvailableTafsirBooksUseCase(
                 mushafRepo
             ),
@@ -939,16 +969,58 @@ class MushafReducerTest {
     }
 
     @Test
-    fun `a follow-along engine disables the grading toggle`() = runTest(dispatcher) {
+    fun `a stored follow-along engine shows as memorisation-only`() = runTest(dispatcher) {
         val vm = buildViewModel(
             FakePrefsRepo(ReaderPreferences(lastPage = 1)),
             settingsRepo = FakeSettingsRepo(RecitationSettings(engine = "zipformer")),
         )
         advanceUntilIdle()
 
-        
-        
-        assertFalse(vm.state.value.canGradeTajweed)
+        assertFalse(vm.state.value.isTajweedGradingEnabled)
+    }
+
+    @Test
+    fun `the practice mode toggle switches the engine with it`() = runTest(dispatcher) {
+        val settings = FakeSettingsRepo()
+        val vm = buildViewModel(FakePrefsRepo(ReaderPreferences(lastPage = 1)), settingsRepo = settings)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.SetTajweedGrading(false))
+        advanceUntilIdle()
+        assertEquals("zipformer", settings.current.engine)
+
+        vm.onIntent(MushafIntent.SetTajweedGrading(true))
+        advanceUntilIdle()
+        assertEquals("real", settings.current.engine)
+    }
+
+    @Test
+    fun `a session always names its engine`() = runTest(dispatcher) {
+        // Nothing stored: the practice mode has to decide, or the server silently picks its own
+        // default and the reciter gets an engine neither screen ever offered them.
+        val live = startedSession()
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals("real", live.lastConfig?.engine)
+    }
+
+    @Test
+    fun `memorisation-only sends the follow-along engine and grades no rules`() = runTest(dispatcher) {
+        val live = startedSession()
+        val vm = recitingViewModel(live)
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.SetTajweedGrading(false))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals("zipformer", live.lastConfig?.engine)
+        assertEquals(emptySet<String>(), live.lastConfig?.gradedRules)
     }
 
     @Test
@@ -1199,5 +1271,119 @@ class MushafReducerTest {
         advanceUntilIdle()
 
         assertNull(vm.state.value.highlightedWordId)
+    }
+
+    // ── Local (on-device) cursor vs. server cursor ────────────────────────────
+
+    private val fatihaCorpus = listOf(
+        LocalWordEntry("1:1:1", "بسم"),
+        LocalWordEntry("1:1:2", "الله"),
+        LocalWordEntry("1:1:3", "الرحمن"),
+        LocalWordEntry("1:1:4", "الرحيم"),
+    )
+
+    private fun localPhonemes(vararg words: String) =
+        LiveRecitationEvent.LocalPhonemes(LocalTranscript(words.joinToString(" "), isFinal = false))
+
+    private fun localTrackingViewModel(vararg events: LiveRecitationEvent): MushafViewModel {
+        val vm = buildViewModel(
+            FakePrefsRepo(ReaderPreferences(lastPage = 1)),
+            mushafRepo = WordedMushafRepo(),
+            liveRepo = startedSession(*events),
+            localWordCorpusRepository = FakeLocalWordCorpusRepository(fatihaCorpus),
+            referencePhonemeRepository = FakeReferencePhonemeRepository(fatihaCorpus),
+        )
+        vm.onIntent(MushafIntent.SetMode(MushafMode.RECITATION))
+        return vm
+    }
+
+    @Test
+    fun `the local model moves the highlight between server chunks`() = runTest(dispatcher) {
+        val vm = localTrackingViewModel(
+            localPhonemes("بسم"),
+            localPhonemes("بسم", "الله"),
+        )
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals("1:1:2", vm.state.value.highlightedWordId)
+        assertEquals("1:1:2", vm.state.value.predictedWordId)
+        assertEquals(
+            "with nothing graded yet, the confirmed cursor is still the session's start anchor",
+            "1:1:1",
+            vm.state.value.confirmedWordId,
+        )
+    }
+
+    @Test
+    fun `a lagging server chunk does not drag a leading prediction backwards`() = runTest(dispatcher) {
+        // The bug this whole split exists to prevent: the highlight visibly snapping back a word
+        // or two every time a chunk lands, because one field held both positions.
+        val vm = localTrackingViewModel(
+            localPhonemes("بسم"),
+            localPhonemes("بسم", "الله"),
+            localPhonemes("بسم", "الله", "الرحمن"),
+            gradedChunk(wordIndex = 1),
+        )
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertEquals("the server pulled the highlight back", "1:1:3", state.highlightedWordId)
+        assertEquals("1:1:3", state.predictedWordId)
+        assertEquals("the confirmed cursor must still track the server", "1:1:2", state.confirmedWordId)
+    }
+
+    @Test
+    fun `the server overtaking a prediction takes the highlight back`() = runTest(dispatcher) {
+        val vm = localTrackingViewModel(
+            localPhonemes("بسم"),
+            gradedChunk(wordIndex = 3),
+        )
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertEquals("1:1:4", state.highlightedWordId)
+        assertEquals("a passed prediction must be dropped, not kept", "1:1:4", state.predictedWordId)
+        assertEquals("1:1:4", state.confirmedWordId)
+    }
+
+    @Test
+    fun `phonemes matching nothing expected leave the highlight where it is`() = runTest(dispatcher) {
+        val vm = localTrackingViewModel(localPhonemes("قلمون"))
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        assertEquals(
+            "an unrecognised sound must never move the cursor",
+            "1:1:1",
+            vm.state.value.highlightedWordId,
+        )
+        assertEquals("1:1:1", vm.state.value.predictedWordId)
+    }
+
+    @Test
+    fun `ending a session clears both cursors`() = runTest(dispatcher) {
+        val vm = localTrackingViewModel(localPhonemes("بسم"), localPhonemes("بسم", "الله"))
+        advanceUntilIdle()
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        vm.onIntent(MushafIntent.ToggleRecording)
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertNull(state.highlightedWordId)
+        assertNull(state.predictedWordId)
+        assertNull(state.confirmedWordId)
     }
 }

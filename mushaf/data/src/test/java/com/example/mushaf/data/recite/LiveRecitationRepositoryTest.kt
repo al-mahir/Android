@@ -13,6 +13,7 @@ import com.example.mushaf.domain.model.recite.RecitationMatch
 import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.model.recite.SpeechGateConfig
 import com.example.mushaf.domain.model.recite.local.AsrModelState
+import com.example.mushaf.domain.model.recite.local.LocalTranscript
 import com.example.mushaf.domain.repository.AsrModelRepository
 import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
@@ -93,25 +94,25 @@ class LiveRecitationRepositoryTest {
         }.map { Result.Success(it) }
     }
 
-    /** Emits [words] once accept() has been called at least once, then stays open - mirrors a
-     * real streaming recognizer, which never completes on its own. */
+    /** Emits [scriptedTranscripts] once accept() has been called at least once, then stays open -
+     * mirrors a real streaming recognizer, which never completes on its own. */
     private class FakeLocalSpeechRecognizer(
         override val isAvailable: Boolean = true,
-        private val scriptedWords: List<String> = emptyList(),
+        private val scriptedTranscripts: List<String> = emptyList(),
         private val failure: Throwable? = null,
     ) : LocalSpeechRecognizer {
-        private val _words = MutableSharedFlow<String>(extraBufferCapacity = 64)
-        override val words: SharedFlow<String> = _words.asSharedFlow()
+        private val _transcript = MutableSharedFlow<LocalTranscript>(extraBufferCapacity = 64)
+        override val transcript: SharedFlow<LocalTranscript> = _transcript.asSharedFlow()
         private var emitted = false
 
         override suspend fun accept(frame: com.example.mushaf.domain.model.recite.AudioFrame) {
             failure?.let { throw it }
             if (emitted) return
             emitted = true
-            scriptedWords.forEach { _words.emit(it) }
+            scriptedTranscripts.forEach { _transcript.emit(LocalTranscript(it, isFinal = false)) }
         }
 
-        override fun reset() {
+        override suspend fun reset() {
             emitted = false
         }
     }
@@ -265,10 +266,10 @@ class LiveRecitationRepositoryTest {
     }
 
     @Test
-    fun `local words from the recognizer arrive as LocalWord events`() = runBlocking {
+    fun `the recognizer transcript arrives as LocalPhonemes events`() = runBlocking {
         service = FakeAiService().start()
         val capture = FakeCapture(frameCount = 3)
-        val recognizer = FakeLocalSpeechRecognizer(scriptedWords = listOf("الله", "الرحمن"))
+        val recognizer = FakeLocalSpeechRecognizer(scriptedTranscripts = listOf("بِسمِ", "بِسمِ للَااهِ"))
         val controls = MutableSharedFlow<RecitationControl>()
         val events = mutableListOf<LiveRecitationEvent>()
         withTimeout(TIMEOUT_MS) {
@@ -280,8 +281,8 @@ class LiveRecitationRepositoryTest {
                     ).map { it.getOrNull()!! }.toList(events)
                 }
                 awaitUntil("session started") { events.any { it is LiveRecitationEvent.Started } }
-                awaitUntil("local words arrived") {
-                    events.count { it is LiveRecitationEvent.LocalWord } >= 2
+                awaitUntil("local transcripts arrived") {
+                    events.count { it is LiveRecitationEvent.LocalPhonemes } >= 2
                 }
                 controls.emit(RecitationControl.Finish)
                 session.join()
@@ -289,8 +290,8 @@ class LiveRecitationRepositoryTest {
         }
 
         assertEquals(
-            listOf("الله", "الرحمن"),
-            events.filterIsInstance<LiveRecitationEvent.LocalWord>().map { it.word },
+            listOf("بِسمِ", "بِسمِ للَااهِ"),
+            events.filterIsInstance<LiveRecitationEvent.LocalPhonemes>().map { it.transcript.phonemes },
         )
     }
 
@@ -305,8 +306,8 @@ class LiveRecitationRepositoryTest {
         }
 
         assertTrue(
-            "a broken recognizer must never produce a LocalWord event",
-            events.none { it is LiveRecitationEvent.LocalWord },
+            "a broken recognizer must never produce a LocalPhonemes event",
+            events.none { it is LiveRecitationEvent.LocalPhonemes },
         )
         assertTrue("the session must survive a local recognizer failure", events.last() is LiveRecitationEvent.Finished)
     }

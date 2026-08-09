@@ -315,6 +315,25 @@ class MushafRepositoryImpl(
             result
         }
 
+    override suspend fun wordsForAyah(sura: Int, aya: Int): Result<List<LocalWordEntry>?> =
+        resultOf(mapError) {
+            val plainText = textDataSource.getVerseText(sura, aya) ?: return@resultOf null
+
+            val plainWords = plainText.split(WHITESPACE)
+            val realCount = dataSource.wordCountForAyah(sura, aya)
+            if (plainWords.size != realCount) {
+                Log.d(
+                    MushafLog.TAG,
+                    "Local corpus: skipping $sura:$aya (plain=${plainWords.size}, layout=$realCount)",
+                )
+                return@resultOf emptyList()
+            }
+
+            plainWords.mapIndexed { index, word ->
+                LocalWordEntry(wordId = "$sura:$aya:${index + 1}", plainText = word)
+            }
+        }
+
     /** No ayah-count table is queried; instead we just check surah 114 has already been passed,
      * since [QuranTextDataSource.getVerseText] returning null for `(sura, 1)` beyond it means
      * the corpus is exhausted. */

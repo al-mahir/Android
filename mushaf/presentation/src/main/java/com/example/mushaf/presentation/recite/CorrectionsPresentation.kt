@@ -9,7 +9,6 @@ import com.example.core.designsystem.locale.isArabicLocale
 import com.example.designsystem.components.mushaf.CorrectionCardUi
 import com.example.designsystem.components.mushaf.CorrectionFindingUi
 import com.example.designsystem.components.mushaf.CorrectionMistakeUi
-import com.example.designsystem.components.mushaf.CorrectionPhonemesUi
 import com.example.designsystem.components.mushaf.CorrectionTabUi
 import com.example.mushaf.domain.model.recite.MistakeCategory
 import com.example.mushaf.domain.model.recite.PracticeFocus
@@ -152,24 +151,6 @@ fun LiveCorrectionUiState.correctionsSubtitle(): String {
         label(last.position.sura, last.position.aya),
     )
     return "$count · $range"
-}
-
-
-/**
- * The passage-level phoneme card, or null when the engine sent nothing to show — a silent
- * session, or an engine that reports no phonemes.
- */
-@Composable
-fun LiveCorrectionUiState.phonemesCard(): CorrectionPhonemesUi? {
-    val heard = predictedPhonemes?.takeIf { it.isNotBlank() } ?: return null
-    val expected = referencePhonemes?.takeIf { it.isNotBlank() }
-    return CorrectionPhonemesUi(
-        title = stringResource(R.string.mushaf_phonemes_title),
-        heardLabel = stringResource(R.string.mushaf_phonemes_heard),
-        heard = heard,
-        expectedLabel = expected?.let { stringResource(R.string.mushaf_phonemes_expected) },
-        expected = expected,
-    )
 }
 
 

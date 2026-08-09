@@ -14,6 +14,7 @@ import com.example.mushaf.data.recite.audio.AudioRecordPcmRecorder
 import com.example.mushaf.data.recite.audio.PcmRecorder
 import com.example.mushaf.data.recite.audio.WavDebugSink
 import com.example.mushaf.data.recite.local.asr.AsrModelRepositoryImpl
+import com.example.mushaf.data.recite.local.asr.QuranPhonemeReferenceSource
 import com.example.mushaf.data.recite.local.asr.ZipformerLocalSpeechRecognizer
 import com.example.mushaf.data.recite.remote.AiServiceApi
 import com.example.mushaf.data.recite.remote.AiServiceConfig
@@ -22,6 +23,7 @@ import com.example.mushaf.data.repository.LiveRecitationRepositoryImpl
 import com.example.mushaf.data.repository.MushafPreferencesRepositoryImpl
 import com.example.mushaf.data.repository.MushafRepositoryImpl
 import com.example.mushaf.data.repository.ReadingProgressRepositoryImpl
+import com.example.mushaf.data.repository.ReferencePhonemeRepositoryImpl
 import com.example.mushaf.data.repository.RecitationApiRepositoryImpl
 import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
 import com.example.mushaf.data.repository.RecitationRepositoryImpl
@@ -32,6 +34,7 @@ import com.example.mushaf.domain.repository.LocalSpeechRecognizer
 import com.example.mushaf.domain.repository.LocalWordCorpusRepository
 import com.example.mushaf.domain.repository.MushafRepository
 import com.example.mushaf.domain.repository.ReaderPreferencesRepository
+import com.example.mushaf.domain.repository.ReferencePhonemeRepository
 import com.example.mushaf.domain.repository.RecitationCaptureRepository
 import com.example.mushaf.domain.repository.RecitationRepository
 import com.example.mushaf.domain.repository.RecitationSchemaRepository
@@ -94,6 +97,8 @@ val mushafDataModule = module {
     single { AsrModelRepositoryImpl(androidContext()) }
     single<AsrModelRepository> { get<AsrModelRepositoryImpl>() }
     single<LocalSpeechRecognizer> { ZipformerLocalSpeechRecognizer(get()) }
+    single { QuranPhonemeReferenceSource(get()) }
+    single<ReferencePhonemeRepository> { ReferencePhonemeRepositoryImpl(get(), get()) }
 
     single<LiveRecitationRepository> { LiveRecitationRepositoryImpl(get(), get(), get(), get()) }
 

@@ -77,20 +77,6 @@ data class CorrectionCardUi(
     val mistakes: List<CorrectionMistakeUi>,
 )
 
-/**
- * Passage-level phonemes for the last graded chunk: what the engine heard against what it
- * expected. Diagnostic rather than instructional — it belongs below the corrections, for the
- * reciter who wants to know *why* a word was marked.
- */
-data class CorrectionPhonemesUi(
-    val title: String,
-    val heardLabel: String,
-    val heard: String,
-    val expectedLabel: String?,
-    val expected: String?,
-)
-
-
 @Composable
 fun CorrectionsSheet(
     title: String,
@@ -103,7 +89,6 @@ fun CorrectionsSheet(
     practiceFocus: List<String> = emptyList(),
     tabs: List<CorrectionTabUi> = emptyList(),
     selectedTabIndex: Int = 0,
-    phonemes: CorrectionPhonemesUi? = null,
     onTabSelected: (Int) -> Unit = {},
     onMistakeClick: (String) -> Unit = {},
 ) {
@@ -117,7 +102,6 @@ fun CorrectionsSheet(
             practiceFocus = practiceFocus,
             tabs = tabs,
             selectedTabIndex = selectedTabIndex,
-            phonemes = phonemes,
             onTabSelected = onTabSelected,
             onMistakeClick = onMistakeClick,
         )
@@ -136,7 +120,6 @@ internal fun CorrectionsList(
     practiceFocus: List<String> = emptyList(),
     tabs: List<CorrectionTabUi> = emptyList(),
     selectedTabIndex: Int = 0,
-    phonemes: CorrectionPhonemesUi? = null,
     onTabSelected: (Int) -> Unit = {},
     onMistakeClick: (String) -> Unit = {},
 ) {
@@ -211,9 +194,6 @@ internal fun CorrectionsList(
             }
 
             // Last, because it explains the gradings above rather than replacing them.
-            phonemes?.let {
-                item(key = "phonemes") { PhonemesCard(phonemes = it) }
-            }
         }
     }
 }
@@ -250,54 +230,6 @@ private fun PracticeFocusCard(title: String, focus: List<String>) {
     }
 }
 
-/**
- * Heard against expected, for the last graded chunk.
- *
- * Phoneme strings are Latin/Arabic transliteration that can run long, so each scrolls on its own
- * axis rather than wrapping into a wall — the page itself must never scroll sideways.
- */
-@Composable
-private fun PhonemesCard(phonemes: CorrectionPhonemesUi) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(Theme.shapes.medium)
-            .border(1.dp, Theme.colors.border, Theme.shapes.medium)
-            .background(Theme.colors.surface)
-            .padding(Theme.spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(Theme.spacing.extraSmall),
-    ) {
-        BasicText(
-            text = phonemes.title,
-            style = Theme.typography.body.medium.copy(
-                color = Theme.colors.primaryFont,
-                fontWeight = FontWeight.SemiBold,
-            ),
-        )
-
-        PhonemeLine(label = phonemes.heardLabel, value = phonemes.heard)
-        if (phonemes.expectedLabel != null && phonemes.expected != null) {
-            PhonemeLine(label = phonemes.expectedLabel, value = phonemes.expected)
-        }
-    }
-}
-
-@Composable
-private fun PhonemeLine(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        BasicText(
-            text = label,
-            style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
-        )
-        BasicText(
-            text = value,
-            style = Theme.typography.body.medium.copy(color = Theme.colors.primaryFont),
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-        )
-    }
-}
 
 /**
  * A filter chip.

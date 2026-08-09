@@ -111,9 +111,6 @@
     <string name="mushaf_correction_phonemes_expected">Expected “%1$s”</string>
     <string name="mushaf_correction_phonemes_heard">You said “%1$s”</string>
     <string name="mushaf_correction_confidence">Confidence %1$d%%</string>
-    <string name="mushaf_phonemes_title">Sounds detected</string>
-    <string name="mushaf_phonemes_heard">What we heard</string>
-    <string name="mushaf_phonemes_expected">What was expected</string>
     <string name="mushaf_correction_sifa">%1$s: expected %2$s, you said %3$s</string>
     <string name="mushaf_correction_sifa_expected">%1$s: expected %2$s</string>
     <string name="mushaf_correction_sifa_heard">%1$s: you said %2$s</string>
