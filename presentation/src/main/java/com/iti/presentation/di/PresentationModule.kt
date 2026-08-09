@@ -89,6 +89,13 @@ val presentationModule = module {
     factory { com.iti.domain.usecase.bookmark.RemoveBookmarkUseCase(get()) }
     factory { com.iti.domain.usecase.bookmark.ToggleBookmarkUseCase(get()) }
 
+    // ── Exam use cases ────────────────────────────────────────────────────────
+    factory { com.iti.domain.usecase.exam.GenerateExamQuestionsUseCase() }
+    factory { com.iti.domain.usecase.exam.ComputeQuestionCountRangeUseCase() }
+    factory { com.iti.domain.usecase.exam.SaveExamSummaryUseCase(get()) }
+    factory { com.iti.domain.usecase.exam.GetRecentExamScopesUseCase(get()) }
+    factory { com.iti.domain.usecase.exam.GetExamSummaryByIdUseCase(get()) }
+
     // ── Platform ──────────────────────────────────────────────────────────────
     single<AppReviewLauncher> { StoreListingAppReviewLauncher(androidContext().packageName) }
 
@@ -127,6 +134,17 @@ val presentationModule = module {
     viewModel { (circleId: String) -> JoiningCircleViewModel(circleId, get(), get()) }
     viewModel { (circleId: String) -> InSessionViewModel(circleId, get()) }
     viewModel { com.iti.presentation.bookmark.BookmarkViewModel(get(), get(), get(), get(), get()) }
+    
+    // ── Exam ViewModels ───────────────────────────────────────────────────────
+    viewModel { (initialScope: com.iti.domain.model.exam.ExamScope?) ->
+        com.iti.presentation.exam.setup.ExamSetupViewModel(get(), get(), get(), initialScope)
+    }
+    viewModel { (scope: com.iti.domain.model.exam.ExamScope, count: Int, linesPerQuestion: Int) ->
+        com.iti.presentation.exam.session.ExamSessionViewModel(scope, count, linesPerQuestion, get(), get(), get(), get(),get(),get())
+    }
+    viewModel { (summaryId: String) ->
+        com.iti.presentation.exam.summary.ExamSummaryViewModel(summaryId, get())
+    }
 }
 
 const val APP_VERSION = "app_version"
