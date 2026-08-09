@@ -85,12 +85,22 @@ class RecitationSessionRepositoryTest {
         override suspend fun cancelJoinCircle(circleId: String) = Unit
     }
 
+    private class StubMeetingStatusDao : com.iti.data.local.meeting.MeetingStatusDao {
+        override suspend fun insert(meetingStatus: com.iti.data.local.meeting.MeetingStatusEntity) = Unit
+        override fun observeMeetingStatuses(
+            userId: String,
+        ): Flow<List<com.iti.data.local.meeting.MeetingStatusEntity>> = MutableStateFlow(emptyList())
+
+        override suspend fun delete(id: String) = Unit
+    }
+
     private val dao = InMemoryDao()
     private val repository = AlmahirRepositoryImpl(
         dataSource = StubAlmahirDataSource(),
         sheikhDataSource = StubSheikhDataSource(),
         circleDataSource = StubCircleDataSource(),
         dao = dao,
+        meetingStatusDao = StubMeetingStatusDao(),
     )
 
     private fun summary(id: String = "s1") = RecitationSessionSummary(
