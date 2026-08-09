@@ -1,7 +1,6 @@
 package com.iti.data.di
 
 import com.iti.data.core.di.AlmahirClient
-import com.iti.data.core.di.networkModule
 import com.iti.data.datasource.AlmahirDataSource
 import com.iti.data.datasource.AlmahirFakeDataSource
 import com.iti.data.datasource.AlmahirLocalDataSource
@@ -30,9 +29,9 @@ import com.iti.data.connectivity.AndroidConnectivityObserver
 import com.iti.domain.connectivity.ConnectivityObserver
 import com.iti.domain.repository.exam.ExamDataSource
 
+
 val almahirDataModule = module {
     single<ConnectivityObserver> { AndroidConnectivityObserver(androidContext()) }
-    includes(networkModule)
 
     single { AppPreferencesDataStore(androidContext()) }
 

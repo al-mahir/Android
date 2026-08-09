@@ -99,12 +99,12 @@ private fun SheikhAppNavHost(
     val callController: CallSessionController = koinInject()
     val availabilityController: SheikhAvailabilityController = koinInject()
 
-        fun isPhantomReplayOfEndedCall(requestId: String): Boolean {
+    fun isPhantomReplayOfEndedCall(requestId: String): Boolean {
         val session = callController.state.value
         return session.requestId == requestId && !session.isLive
     }
 
-       fun openActiveCallIfLive() {
+    fun openActiveCallIfLive() {
         val callSession = callController.state.value
         val requestId = callSession.requestId
         val channelName = callSession.channelName
@@ -133,12 +133,14 @@ private fun SheikhAppNavHost(
                 openActiveCallIfLive()
                 onActionHandled()
             }
+
             SheikhAvailabilityForegroundService.ACTION_ACCEPT_INCOMING_REQUEST -> {
                 // Belt-and-suspenders: the state machine shouldn't allow a new IncomingRequest
                 // while already Busy/live on a call, but never let a stale/duplicate notification
                 // tap interrupt an active call.
                 if (!callController.state.value.isLive) {
-                    val incoming = availabilityController.currentState as? AvailabilityUiState.IncomingRequest
+                    val incoming =
+                        availabilityController.currentState as? AvailabilityUiState.IncomingRequest
                     if (incoming != null) {
                         if (backStack.lastOrNull() != SheikhAppRoute.Home) {
                             backStack.clear()
@@ -187,22 +189,52 @@ private fun SheikhAppNavHost(
                     SheikhHomeScreen(
                         onOpenProfile = { selectTab(SheikhBottomNavDestination.Profile) },
                         onOpenActiveCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
-                            backStack.add(MeetingRoute.Call(requestId = requestId, token = token, channelName = channelName, userAccount = userAccount, remoteDisplayName = remoteDisplayName))
+                            backStack.add(
+                                MeetingRoute.Call(
+                                    requestId = requestId,
+                                    token = token,
+                                    channelName = channelName,
+                                    userAccount = userAccount,
+                                    remoteDisplayName = remoteDisplayName
+                                )
+                            )
                         },
                         availabilityPanel = {
                             SheikhAvailabilityPanel(
                                 onMeetingAccepted = { requestId, token, channelName, userAccount, remoteDisplayName ->
                                     val top = backStack.lastOrNull()
-                                    android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: onMeetingAccepted requestId=$requestId, backstack top=$top, size=${backStack.size}")
+                                    android.util.Log.d(
+                                        "MeetingLifecycle",
+                                        "SheikhAppNavigation: onMeetingAccepted requestId=$requestId, backstack top=$top, size=${backStack.size}"
+                                    )
                                     when {
                                         isPhantomReplayOfEndedCall(requestId) ->
-                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, $requestId already ended locally (stale Busy state)")
+                                            android.util.Log.d(
+                                                "MeetingLifecycle",
+                                                "SheikhAppNavigation: SKIPPED push, $requestId already ended locally (stale Busy state)"
+                                            )
+
                                         top !is com.iti.meeting.presentation.navigation.MeetingRoute.Call || top.requestId != requestId -> {
-                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: pushing Call($requestId)")
-                                            backStack.add(com.iti.meeting.presentation.navigation.MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
+                                            android.util.Log.d(
+                                                "MeetingLifecycle",
+                                                "SheikhAppNavigation: pushing Call($requestId)"
+                                            )
+                                            backStack.add(
+                                                com.iti.meeting.presentation.navigation.MeetingRoute.Call(
+                                                    requestId,
+                                                    token,
+                                                    channelName,
+                                                    userAccount,
+                                                    remoteDisplayName
+                                                )
+                                            )
                                         }
+
                                         else ->
-                                            android.util.Log.d("MeetingLifecycle", "SheikhAppNavigation: SKIPPED push, already on Call($requestId)")
+                                            android.util.Log.d(
+                                                "MeetingLifecycle",
+                                                "SheikhAppNavigation: SKIPPED push, already on Call($requestId)"
+                                            )
                                     }
                                 },
                             )
@@ -227,14 +259,22 @@ private fun SheikhAppNavHost(
                     )
                 }
 
-                profileEntries(onBack = { backStack.removeLastOrNull() })
+                profileEntries(onBack = { backStack.removeLastOrNull() }, onNavigateToCheckout = { })
 
                 settingsEntries(onBack = { backStack.removeLastOrNull() })
 
                 meetingRequestEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onNavigateToCall = { requestId, token, channelName, userAccount, remoteDisplayName ->
-                        backStack.add(MeetingRoute.Call(requestId, token, channelName, userAccount, remoteDisplayName))
+                        backStack.add(
+                            MeetingRoute.Call(
+                                requestId,
+                                token,
+                                channelName,
+                                userAccount,
+                                remoteDisplayName
+                            )
+                        )
                     },
                     onBack = { backStack.removeLastOrNull() },
                     onShowMessage = { message ->

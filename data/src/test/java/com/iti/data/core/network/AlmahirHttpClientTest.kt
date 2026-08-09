@@ -98,6 +98,25 @@ class AlmahirHttpClientTest {
         assertNull(store.getTokens())
     }
 
+    @Test
+    fun `keeps the session when the refresh endpoint itself is broken`() = runBlocking {
+        val store = FakeTokenStore(TokenPair(ACCESS_TOKEN, REFRESH_TOKEN))
+        val client = clientWith(store) { request ->
+            when {
+                // A wrong/undeployed refresh route, not a rejected refresh token — the stored
+                // session is still good and logging the user out over it would be wrong.
+                request.url.encodedPath.endsWith(AlmahirApi.Auth.REFRESH) ->
+                    respondJson(NOT_FOUND_BODY, HttpStatusCode.NotFound)
+
+                else -> respondJson(UNAUTHORIZED_BODY, HttpStatusCode.Unauthorized)
+            }
+        }
+
+        runCatching { client.post(AlmahirApi.Auth.LOGOUT) { jsonBody() } }
+
+        assertEquals(TokenPair(ACCESS_TOKEN, REFRESH_TOKEN), store.getTokens())
+    }
+
     private fun clientWith(
         store: TokenStore,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
@@ -152,6 +171,7 @@ class AlmahirHttpClientTest {
 
         const val SUCCESS_BODY = """{"success":true,"message":"ok","data":{}}"""
         const val UNAUTHORIZED_BODY = """{"success":false,"message":"Unauthorized"}"""
+        const val NOT_FOUND_BODY = """{"success":false,"message":"Not Found"}"""
         const val REFRESHED_BODY =
             """{"success":true,"message":"ok","data":{"accessToken":"$NEW_ACCESS_TOKEN","refreshToken":"$NEW_REFRESH_TOKEN"}}"""
     }
