@@ -10,12 +10,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
+import com.example.core.designsystem.locale.rememberLocaleLocals
 import com.example.designsystem.theme.Theme
 
 /**
@@ -29,9 +26,11 @@ import com.example.designsystem.theme.Theme
  *
  * Locale propagation: ModalBottomSheet renders in a separate Popup window whose owner
  * view re-overrides `LocalContext`/`LocalConfiguration`/`LocalLayoutDirection` with the
- * activity defaults. That bypasses the localized context SpTheme installs at the root,
- * so `stringResource` inside the sheet would resolve against the system locale. We
- * capture the parent locale-aware locals up here and re-provide them inside the sheet.
+ * activity defaults. That bypasses the localized context AlMahirTheme installs at the root,
+ * so `stringResource` inside the sheet would resolve against the system locale. We capture
+ * the parent locale-aware locals up here and re-provide them inside the sheet — see
+ * [com.example.core.designsystem.locale.LocaleLocals], which every popup-hosted composable
+ * needs, not just this one.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,9 +41,7 @@ fun AppBottomSheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = skipPartiallyExpanded)
-    val parentContext = LocalContext.current
-    val parentConfiguration = LocalConfiguration.current
-    val parentLayoutDirection = LocalLayoutDirection.current
+    val localeLocals = rememberLocaleLocals()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -53,11 +50,7 @@ fun AppBottomSheet(
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         modifier = modifier.fillMaxWidth(),
     ) {
-        CompositionLocalProvider(
-            LocalContext provides parentContext,
-            LocalConfiguration provides parentConfiguration,
-            LocalLayoutDirection provides parentLayoutDirection,
-        ) {
+        localeLocals.Provide {
             Box(modifier = Modifier.padding(horizontal = Theme.spacing.medium)) {
                 Column(content = content)
             }
