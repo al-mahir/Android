@@ -449,16 +449,34 @@ class MushafViewModel(
     }
 
     private fun updateWordHighlight(wordId: String?) {
-        _state.update { state ->
-            if (!state.areAyahsVisible && wordId != null) {
-                state.copy(
-                    highlightedWordId = wordId,
-                    revealedWordIds = state.revealedWordIds + wordId,
-                )
-            } else {
-                state.copy(highlightedWordId = wordId)
-            }
-        }
+        _state.update { it.copy(highlightedWordId = wordId).revealing(wordId) }
+    }
+
+    /**
+     * Uncovers [wordId] while the memorisation veil is on, so a word the user has just recited (or
+     * that playback has just reached) is actually readable instead of staying blank under its own
+     * highlight.
+     *
+     * Everything from the top of the page up to [wordId] is uncovered, not just [wordId] itself:
+     * the cursor routinely lands mid-page without having reported every word before it — most
+     * obviously right after a page turn, where [loadPage] has just re-hidden the page and the first
+     * confirmed word can be several words in. Revealing the whole prefix keeps the page reading as
+     * "everything I have recited so far", never a scatter of visible words over blank gaps.
+     *
+     * Already-revealed ids are kept, so a cursor that moves backwards (a correction, a seek) never
+     * re-hides text, and manual [revealNextWord] / [revealNextAyah] steps ahead of the cursor stand.
+     *
+     * No-op when ayahs are visible, so it is safe to call from every cursor update.
+     */
+    private fun MushafUiState.revealing(wordId: String?): MushafUiState {
+        if (areAyahsVisible || wordId == null) return this
+        val words = wordsForCurrentPage()
+        val target = words.indexOfFirst { it.id == wordId }
+        if (target < 0) return copy(revealedWordIds = revealedWordIds + wordId)
+
+        return copy(
+            revealedWordIds = revealedWordIds + words.take(target + 1).map { it.id },
+        )
     }
 
     private fun navigateToSurah(surahNumber: Int) {
@@ -561,13 +579,16 @@ class MushafViewModel(
         Log.d(TAG, "loadPage(requested=$page, clamped=$clamped)")
         val wasLive = _state.value.liveCorrection.isActive
         _state.update {
+            val samePage = clamped == it.currentPage
             it.copy(
                 currentPage = clamped,
 
 
 
                 highlightedWordId = if (wasLive) it.highlightedWordId else null,
-                revealedWordIds = emptySet(),
+                // Only a real page change re-hides the text; a redundant load of the page we are
+                // already on must not wipe what the reader has revealed.
+                revealedWordIds = if (samePage) it.revealedWordIds else emptySet(),
             )
         }
         requestPage(clamped)
@@ -731,6 +752,17 @@ class MushafViewModel(
     private fun toggleRecording() {
         val state = _state.value
         if (state.mushafMode != MushafMode.RECITATION && state.mushafMode != MushafMode.MUALLEM) return
+
+        // The Mu'allem session owns the mic — [startMuallemRepeat] opens it when the sheikh's
+        // recitation ends and [finishMuallemRepeat] closes it. Honouring a manual toggle outside
+        // the user's turn would flip isRecordingActive underneath the session and start a capture
+        // the session never tears down, so the flow is guarded here and not only in the UI.
+        if (state.mushafMode == MushafMode.MUALLEM &&
+            state.muallemSession?.phase !is MuallemPhase.UserRecording
+        ) {
+            Log.d(TAG, "Ignoring mic toggle: Mu'allem phase is ${state.muallemSession?.phase}")
+            return
+        }
 
         val nowRecording = !state.isRecordingActive
         _state.update { it.copy(isRecordingActive = nowRecording, captureError = null) }
@@ -917,7 +949,7 @@ class MushafViewModel(
     private fun updateLocalWord(word: String) {
         val confirmed = localCursorTracker.offer(word)
         Log.d(TAG, "Local word '$word' -> ${confirmed ?: "NO MATCH"}")
-        if (confirmed != null) _state.update { it.copy(highlightedWordId = confirmed) }
+        if (confirmed != null) updateWordHighlight(confirmed)
     }
 
     private fun mergeChunk(chunk: RecitationChunk) {
@@ -945,8 +977,12 @@ class MushafViewModel(
                     nonVerse = chunk.nonVerse,
                     lastOutcome = chunk.match.toOutcome(),
                     cursor = chunk.cursor ?: live.cursor,
+                    // Keep the last chunk that actually carried phonemes: a silent or unmatched
+                    // chunk should not blank out what the reciter was just shown.
+                    predictedPhonemes = chunk.predictedPhonemes ?: live.predictedPhonemes,
+                    referencePhonemes = chunk.referencePhonemes ?: live.referencePhonemes,
                 ),
-            )
+            ).revealing(chunk.cursor?.wordId)
         }
     }
 
