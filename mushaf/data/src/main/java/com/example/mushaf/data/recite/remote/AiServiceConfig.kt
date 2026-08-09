@@ -23,10 +23,8 @@ import com.example.mushaf.data.BuildConfig
  
 data class AiServiceConfig(
     val authority: String = DEFAULT_AUTHORITY,
-     
-    val secure: Boolean = DEFAULT_SECURE,
-
     val token: String = DEFAULT_TOKEN,
+    val secure: Boolean = !authority.startsWith("10.0.") && !authority.startsWith("127.0.") && !authority.startsWith("localhost"),
 ) {
     val httpBaseUrl: String get() = "${if (secure) "https" else "http"}://$authority"
 

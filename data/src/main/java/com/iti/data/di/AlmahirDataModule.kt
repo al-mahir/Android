@@ -9,12 +9,15 @@ import com.iti.data.datasource.circle.CircleDataSource
 import com.iti.data.datasource.circle.FakeCircleDataSource
 import com.iti.data.datasource.sheikh.SheikhDataSource
 import com.iti.data.datasource.sheikh.SheikhRemoteDataSource
+import com.iti.data.exam.ExamRepositoryImpl
+import com.iti.data.exam.KtorExamDataSource
 import com.iti.data.local.AlmahirDatabase
 import com.iti.data.repository.AlmahirRepositoryImpl
 import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.data.settings.repository.SettingsRepositoryImpl
 import com.iti.domain.repository.AlmahirRepository
 import com.iti.domain.repository.CircleRepository
+import com.iti.domain.repository.ExamRepository
 import com.iti.domain.repository.RecitationSessionRepository
 import com.iti.domain.repository.SheikhRepository
 import com.iti.domain.settings.repository.AppPreferencesRepository
@@ -24,6 +27,7 @@ import org.koin.dsl.module
 
 import com.iti.data.connectivity.AndroidConnectivityObserver
 import com.iti.domain.connectivity.ConnectivityObserver
+import com.iti.domain.repository.exam.ExamDataSource
 
 
 val almahirDataModule = module {
@@ -36,10 +40,14 @@ val almahirDataModule = module {
     single<SheikhDataSource> { SheikhRemoteDataSource(httpClient = get(AlmahirClient)) }
     single<CircleDataSource> { FakeCircleDataSource() }
 
+
+    single<ExamDataSource> { KtorExamDataSource(tokenStore = get()) }
+
     single { AlmahirDatabase.create(androidContext()) }
     single { get<AlmahirDatabase>().recitationSessionDao() }
     single { get<AlmahirDatabase>().bookmarkDao() }
     single { get<AlmahirDatabase>().meetingStatusDao() }
+    single { get<AlmahirDatabase>().examSummaryDao() }
     single<AlmahirLocalDataSource> { AlmahirLocalDataSourceImpl(get()) }
     single { AlmahirRepositoryImpl(get(), get(), get(), get(), get(), get(), get()) }
     single<AlmahirRepository> { get<AlmahirRepositoryImpl>() }
@@ -47,7 +55,11 @@ val almahirDataModule = module {
     single<CircleRepository> { get<AlmahirRepositoryImpl>() }
     single<RecitationSessionRepository> { get<AlmahirRepositoryImpl>() }
 
+    single { ExamRepositoryImpl(get(), androidContext().getSharedPreferences("exam_prefs", android.content.Context.MODE_PRIVATE)) }
+    single<ExamRepository> { get<ExamRepositoryImpl>() }
+
     single { SettingsRepositoryImpl(get()) }
     single<AppPreferencesRepository> { get<SettingsRepositoryImpl>() }
     single<RecordingsRepository> { get<SettingsRepositoryImpl>() }
 }
+
