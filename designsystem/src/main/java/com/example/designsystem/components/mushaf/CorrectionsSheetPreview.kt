@@ -23,8 +23,21 @@ private val sampleCorrections = listOf(
             CorrectionWordUi("ٱلرَّحِيمِ", isMistake = false),
         ),
         mistakes = listOf(
-            CorrectionMistakeUi("1:3:1", "ٱلْحَمْدُ", "كلمات زائدة"),
-            CorrectionMistakeUi("1:3:2", "لِلَّهِ", "خطأ في التشكيل"),
+            CorrectionMistakeUi(
+                "1:3:1", "ٱلْحَمْدُ",
+                listOf(CorrectionFindingUi("كلمات زائدة")),
+            ),
+            // Two findings on one word — the case the old single-label row could not show.
+            CorrectionMistakeUi(
+                "1:3:2", "لِلَّهِ",
+                listOf(
+                    CorrectionFindingUi(
+                        "خطأ في التشكيل",
+                        listOf("المتوقع «lilla:hi»، ونطقت «lilla:ha»", "نسبة الثقة ٨٢٪"),
+                    ),
+                    CorrectionFindingUi("خطأ في التجويد", listOf("الحكم: الإدغام")),
+                ),
+            ),
         ),
     ),
     CorrectionCardUi(
@@ -37,7 +50,19 @@ private val sampleCorrections = listOf(
             CorrectionWordUi("عَلَيْهِمْ", isMistake = false),
         ),
         mistakes = listOf(
-            CorrectionMistakeUi("1:7:3", "أَنْعَمْتَ", "خطأ في التجويد", "المد الطبيعي: المتوقع ٢، قرأت ٣"),
+            CorrectionMistakeUi(
+                "1:7:3", "أَنْعَمْتَ",
+                listOf(
+                    CorrectionFindingUi(
+                        "خطأ في التجويد",
+                        listOf(
+                            "المد الطبيعي: المتوقع ٢، قرأت ٣",
+                            "المتوقع «ʔanʕamta»، ونطقت «ʔanʕaːmta»",
+                            "نسبة الثقة ٩١٪",
+                        ),
+                    ),
+                ),
+            ),
         ),
     ),
 )
@@ -89,8 +114,17 @@ private fun PreviewCorrectionsLightLtr() {
                 sampleCorrections[1].copy(
                     mistakes = listOf(
                         CorrectionMistakeUi(
-                            "1:7:3", "أَنْعَمْتَ", "Tajweed mistake",
-                            "Normal Madd: expected 2, you held 3",
+                            "1:7:3", "أَنْعَمْتَ",
+                            listOf(
+                                CorrectionFindingUi(
+                                    "Tajweed mistake",
+                                    listOf(
+                                        "Normal Madd: expected 2, you held 3",
+                                        "Expected “ʔanʕamta”, you said “ʔanʕaːmta”",
+                                        "Confidence 91%",
+                                    ),
+                                ),
+                            ),
                         ),
                     ),
                 ),

@@ -72,11 +72,13 @@ fun MuallemSessionBar(
                     isActive -> Theme.colors.success
                     else -> Theme.colors.error
                 }
-                val statusText = when {
-                    isConnecting -> "Connecting..."
-                    isActive -> "Connected"
-                    else -> "Disconnected"
-                }
+                val statusText = stringResource(
+                    when {
+                        isConnecting -> R.string.muallem_status_connecting
+                        isActive -> R.string.muallem_status_connected
+                        else -> R.string.muallem_status_disconnected
+                    }
+                )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)

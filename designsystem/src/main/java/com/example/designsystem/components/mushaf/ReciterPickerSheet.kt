@@ -9,9 +9,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.background
+import com.example.core.designsystem.locale.rememberLocaleLocals
 import com.example.designsystem.R
 import com.example.designsystem.theme.Theme
 
@@ -35,74 +35,79 @@ fun ReciterPickerSheet(
     downloadContentDescription: String,
     modifier: Modifier = Modifier
 ) {
+    // ModalBottomSheet renders in its own window, which resets the localized context.
+    val localeLocals = rememberLocaleLocals()
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
         containerColor = Theme.colors.surface,
         contentColor = Theme.colors.onSurface
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
-        ) {
-            Text(
-                text = title,
-                style = Theme.typography.title.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(Theme.spacing.medium)
-            )
+        localeLocals.Provide {
+            Column(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+            ) {
+                Text(
+                    text = title,
+                    style = Theme.typography.title.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(Theme.spacing.medium)
+                )
 
-            HorizontalDivider(color = Theme.colors.outline)
+                HorizontalDivider(color = Theme.colors.outline)
 
-            LazyColumn {
-                items(reciters, key = { it.id }) { reciter ->
-                    val isSelected = reciter.id == selectedId
+                LazyColumn {
+                    items(reciters, key = { it.id }) { reciter ->
+                        val isSelected = reciter.id == selectedId
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onReciterSelected(reciter) }
-                            .background(if (isSelected) Theme.colors.primaryContainer.copy(alpha = 0.3f) else Theme.colors.surface)
-                            .padding(Theme.spacing.medium),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = reciter.nameArabic,
-                                style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
-                                color = if (isSelected) Theme.colors.primary else Theme.colors.onSurface
-                            )
-                            Text(
-                                text = reciter.style,
-                                style = Theme.typography.body.medium,
-                                color = Theme.colors.secondaryFont
-                            )
-                        }
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (isSelected) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_check),
-                                    contentDescription = selectedContentDescription,
-                                    tint = Theme.colors.primary,
-                                    modifier = Modifier.padding(end = Theme.spacing.small)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onReciterSelected(reciter) }
+                                .background(if (isSelected) Theme.colors.primaryContainer.copy(alpha = 0.3f) else Theme.colors.surface)
+                                .padding(Theme.spacing.medium),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = reciter.nameArabic,
+                                    style = Theme.typography.body.large.copy(fontWeight = FontWeight.Medium),
+                                    color = if (isSelected) Theme.colors.primary else Theme.colors.onSurface
+                                )
+                                Text(
+                                    text = reciter.style,
+                                    style = Theme.typography.body.medium,
+                                    color = Theme.colors.secondaryFont
                                 )
                             }
 
-                            if (onDownloadClick != null) {
-                                IconButton(onClick = { onDownloadClick.invoke(reciter) }) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isSelected) {
                                     Icon(
-                                        painter = painterResource(R.drawable.ic_download),
-                                        contentDescription = downloadContentDescription,
-                                        tint = Theme.colors.primary
+                                        painter = painterResource(R.drawable.ic_check),
+                                        contentDescription = selectedContentDescription,
+                                        tint = Theme.colors.primary,
+                                        modifier = Modifier.padding(end = Theme.spacing.small)
                                     )
+                                }
+
+                                if (onDownloadClick != null) {
+                                    IconButton(onClick = { onDownloadClick.invoke(reciter) }) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_download),
+                                            contentDescription = downloadContentDescription,
+                                            tint = Theme.colors.primary
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    HorizontalDivider(color = Theme.colors.outline, modifier = Modifier.padding(start = Theme.spacing.medium))
+                        HorizontalDivider(color = Theme.colors.outline, modifier = Modifier.padding(start = Theme.spacing.medium))
+                    }
                 }
             }
         }

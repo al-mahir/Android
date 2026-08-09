@@ -60,6 +60,13 @@ data class LiveCorrectionUiState(
 
      
     val selectedMistakeWordId: String? = null,
+
+    /**
+     * Phonemes for the most recent graded chunk: what the model heard against what the passage
+     * should have produced. Passage-level diagnostics that no per-word finding carries.
+     */
+    val predictedPhonemes: String? = null,
+    val referencePhonemes: String? = null,
 ) {
     
 
