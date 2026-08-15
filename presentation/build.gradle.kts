@@ -36,6 +36,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        dataBinding = true
     }
 }
 
@@ -80,6 +81,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
     implementation(libs.navigation3.runtime)
+
+    // Paymob Android SDK — local AAR
+    implementation("com.paymob.sdk:Paymob-SDK:1.9.3")
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
