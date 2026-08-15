@@ -84,6 +84,8 @@
     <string name="home_resume_reading">استئناف القراءة </string>
     <string name="home_search_content_description">بحث</string>
     <string name="home_continue_reading_content_description">متابعة القراءة</string>
+    <string name="home_start_reading">ابدأ القراءة</string>
+    <string name="home_start_reading_subtitle">ابدأ رحلتك مع القرآن الكريم</string>
 
     <!-- %1$s = sheikh name -->
     <string name="home_sheikh_avatar_content_description">صورة %1$s</string>

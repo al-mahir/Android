@@ -106,14 +106,12 @@ fun HomeContent(
                 }
 
                 // ── Continue reading ─────────────────────────────────────────
-                state.readingProgress?.let { progress ->
-                    item(key = "continue-reading") {
-                        ContinueReadingCard(
-                            progress = progress,
-                            onClick = onContinueReadingClick,
-                            modifier = gutter,
-                        )
-                    }
+                item(key = "continue-reading") {
+                    ContinueReadingCard(
+                        progress = state.readingProgress,
+                        onClick = onContinueReadingClick,
+                        modifier = gutter,
+                    )
                 }
 
                 // ── Exam CTA ──────────────────────────────────────────────────

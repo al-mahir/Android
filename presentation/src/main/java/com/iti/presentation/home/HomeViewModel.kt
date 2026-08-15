@@ -180,7 +180,7 @@ class HomeViewModel(
     }
 
     private fun openReadingProgress() {
-        val page = currentState.readingProgress?.pageNumber ?: return
+        val page = currentState.readingProgress?.pageNumber ?: 1
         sendEffect(HomeEffect.OpenMushafAtPage(page))
     }
 

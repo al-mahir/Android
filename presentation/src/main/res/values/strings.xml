@@ -84,6 +84,8 @@
     <string name="home_resume_reading">Resume reading</string>
     <string name="home_search_content_description">Search</string>
     <string name="home_continue_reading_content_description">Continue reading</string>
+    <string name="home_start_reading">Start reading</string>
+    <string name="home_start_reading_subtitle">Start your journey with the Qur\'an</string>
 
     <!-- %1$s = sheikh name -->
     <string name="home_sheikh_avatar_content_description">%1$s\'s photo</string>
