@@ -146,6 +146,12 @@ private fun AppNavHost(
         backStack.add(root)
     }
 
+    fun popBackStack() {
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
+    }
+
     var showExitDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = backStack.size == 1) {
@@ -212,13 +218,13 @@ private fun AppNavHost(
                             backStack.lastOrNull() is AppRoute.Mushaf ->
                                 selectTab(AppBottomNavDestination.Home)
 
-                            backStack.size > 1 -> backStack.removeLastOrNull()
+                            backStack.size > 1 -> popBackStack()
                         }
                     },
                     entryProvider = entryProvider {
                         authEntries(
                             onNavigate = { route -> backStack.add(route) },
-                            onBack = { backStack.removeLastOrNull() },
+                            onBack = { popBackStack() },
                             onAuthenticated = {
                                 backStack.clear()
                                 backStack.add(AppRoute.Home)
@@ -286,7 +292,7 @@ private fun AppNavHost(
                         entry<AppRoute.Search> {
                             com.example.mushaf.presentation.search.MushafSearchScreen(
                                 viewModel = koinViewModel(),
-                                onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                                onNavigateBack = { popBackStack() },
                                 onNavigateToMushaf = {
                                     backStack.removeAll { it is AppRoute.Mushaf }
                                     backStack.add(AppRoute.Mushaf())
@@ -337,7 +343,7 @@ private fun AppNavHost(
 
                         entry<AppRoute.SheikhList> {
                             SheikhListScreen(
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onOpenSheikhDetails = { sheikhId ->
                                     backStack.add(AppRoute.SheikhDetails(sheikhId))
                                 },
@@ -347,7 +353,7 @@ private fun AppNavHost(
                         entry<AppRoute.SheikhDetails> { route ->
                             SheikhDetailsScreen(
                                 sheikhId = route.sheikhId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onNavigateToJoiningCircle = { circleId ->
                                     backStack.add(AppRoute.JoiningCircle(circleId))
                                 },
@@ -364,7 +370,7 @@ private fun AppNavHost(
 
                         entry<AppRoute.CircleList> {
                             CircleListScreen(
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onNavigateToJoiningCircle = { circleId ->
                                     backStack.add(AppRoute.JoiningCircle(circleId))
                                 },
@@ -374,7 +380,7 @@ private fun AppNavHost(
                         entry<AppRoute.JoiningCircle> { route ->
                             JoiningCircleScreen(
                                 circleId = route.circleId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onNavigateToSession = { circleId ->
                                     backStack.removeLastOrNull()
                                     backStack.add(AppRoute.InSession(circleId))
@@ -385,19 +391,19 @@ private fun AppNavHost(
                         entry<AppRoute.InSession> { route ->
                             InSessionScreen(
                                 circleId = route.circleId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onOpenMushaf = { backStack.add(AppRoute.Mushaf()) },
                             )
                         }
 
                         profileEntries(
-                            onBack = { backStack.removeLastOrNull() },
+                            onBack = { popBackStack() },
                             onNavigateToCheckout = { packageId -> backStack.add(ProfileRoute.Checkout(packageId)) },
                         )
 
                         entry<SettingsRoute.Settings> {
                             SettingsScreen(
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = { popBackStack() },
                                 onShowMessage = { messageRes ->
                                     Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
                                 },
@@ -415,13 +421,13 @@ private fun AppNavHost(
                         }
 
                         downloadsEntries(
-                            onBack = { backStack.removeLastOrNull() },
+                            onBack = { popBackStack() },
                             onNavigateToSurahList = { reciterId ->
                                 backStack.add(com.example.mushaf.presentation.download.navigation.DownloadsRoute.SurahDownload(reciterId))
                             }
                         )
 
-                        reciteSettingsEntries(onBack = { backStack.removeLastOrNull() })
+                        reciteSettingsEntries(onBack = { popBackStack() })
 
                         meetingRequestEntries(
                             onNavigate = { route -> backStack.add(route) },
@@ -441,7 +447,7 @@ private fun AppNavHost(
                                     )
                                 }
                             },
-                            onBack = { backStack.removeLastOrNull() },
+                            onBack = { popBackStack() },
                             onShowMessage = { message ->
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             },
@@ -449,9 +455,9 @@ private fun AppNavHost(
                         meetingEntries(
                             onNavigate = { route -> backStack.add(route) },
                             onBack = {
-                                backStack.removeLastOrNull()
-                                while (backStack.lastOrNull() is MeetingRequestRoute) {
-                                    backStack.removeLastOrNull()
+                                popBackStack()
+                                while (backStack.size > 1 && backStack.lastOrNull() is MeetingRequestRoute) {
+                                    popBackStack()
                                 }
                             },
                         )
@@ -461,7 +467,7 @@ private fun AppNavHost(
                                 viewModel = org.koin.compose.viewmodel.koinViewModel(
                                     parameters = { org.koin.core.parameter.parametersOf(route.initialScope) }
                                 ),
-                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateBack = { popBackStack() },
                                 onNavigateToSession = { scope, count, lines ->
                                     backStack.add(AppRoute.ExamSession(scope, count, lines))
                                 },
@@ -477,7 +483,7 @@ private fun AppNavHost(
                                     key = "exam_session_${route.scope}_${route.questionCount}_${route.linesPerQuestion}_${System.nanoTime()}",
                                     parameters = { org.koin.core.parameter.parametersOf(route.scope, route.questionCount, route.linesPerQuestion) }
                                 ),
-                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateBack = { popBackStack() },
                                 onNavigateToSummary = { summaryId ->
                                     backStack.removeLastOrNull()
                                     backStack.add(AppRoute.ExamSummary(summaryId))
@@ -491,7 +497,7 @@ private fun AppNavHost(
                                 viewModel = org.koin.compose.viewmodel.koinViewModel(
                                     parameters = { org.koin.core.parameter.parametersOf(route.summaryId) }
                                 ),
-                                onNavigateBack = { backStack.removeLastOrNull() },
+                                onNavigateBack = { popBackStack() },
                                 onNavigateToSetup = { initialScope ->
                                     backStack.removeLastOrNull()
                                     backStack.add(AppRoute.ExamSetup(initialScope))
