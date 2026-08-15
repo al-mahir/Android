@@ -195,10 +195,10 @@ class HomeViewModelTest {
     }
 
     private class FakeReadingProgressRepository(
-        private val page: Int,
+        private val page: Int?,
         private val fail: Boolean = false,
     ) : ReadingProgressRepository {
-        override fun observeLastPage(): Flow<Int> =
+        override fun observeLastPage(): Flow<Int?> =
             if (fail) flow { throw IllegalStateException("boom") } else flowOf(page)
     }
 }

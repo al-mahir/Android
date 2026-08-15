@@ -18,9 +18,8 @@ import com.iti.domain.payment.model.PaymentStatus
 import com.iti.domain.payment.model.WalletProvider
 import com.iti.domain.payment.repository.PaymentRepository
 import com.iti.domain.payment.usecase.ActivateSubscriptionAfterPaymentUseCase
-import com.iti.domain.payment.usecase.ConfirmCardPaymentUseCase
-import com.iti.domain.payment.usecase.ConfirmWalletPaymentUseCase
 import com.iti.domain.payment.usecase.CreatePaymentIntentionUseCase
+import com.iti.domain.payment.usecase.GetPaymentStatusUseCase
 import com.iti.domain.repository.AlmahirRepository
 import com.iti.domain.settings.model.AppPreferences
 import com.iti.domain.settings.model.AppLanguage
@@ -84,42 +83,84 @@ class CheckoutViewModelTest {
     }
 
     @Test
-    fun `a successful wallet payment activates the subscription`() = runTest(dispatcher) {
+    fun `successful intention creation sends LaunchPaymobSdk effect`() = runTest(dispatcher) {
+        val paymentRepository = FakePaymentRepository()
+        val viewModel = viewModel(paymentRepository = paymentRepository)
+        testScheduler.advanceUntilIdle()
+
+        viewModel.payWithValidWallet()
+        testScheduler.advanceUntilIdle()
+
+        val effect = viewModel.effect.first()
+        assertTrue("Expected LaunchPaymobSdk effect", effect is CheckoutEffect.LaunchPaymobSdk)
+        assertEquals(listOf(PACKAGE_ID), paymentRepository.createIntentionCalls)
+    }
+
+    @Test
+    fun `SDK success callback + backend SUCCESS activates subscription`() = runTest(dispatcher) {
         val almahirRepository = FakeCheckoutAlmahirRepository()
-        val paymentRepository = FakePaymentRepository(outcomeStatus = PaymentStatus.SUCCESS)
+        val paymentRepository = FakePaymentRepository(statusResult = PaymentStatus.SUCCESS)
         val viewModel = viewModel(almahirRepository = almahirRepository, paymentRepository = paymentRepository)
         testScheduler.advanceUntilIdle()
 
         viewModel.payWithValidWallet()
         testScheduler.advanceUntilIdle()
 
-        assertEquals(listOf(PACKAGE_ID), paymentRepository.createIntentionCalls)
+        // Simulate SDK reporting success
+        viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Success(hashMapOf())))
+        testScheduler.advanceUntilIdle()
+
         assertEquals(listOf(PACKAGE_ID), almahirRepository.activatedPackageIds)
         assertTrue(viewModel.state.value.overlay is CheckoutOverlay.Success)
     }
 
     @Test
-    fun `a pending payment does not activate the subscription`() = runTest(dispatcher) {
+    fun `SDK pending callback + backend PENDING does not activate subscription and shows pending overlay`() = runTest(dispatcher) {
         val almahirRepository = FakeCheckoutAlmahirRepository()
-        val paymentRepository = FakePaymentRepository(outcomeStatus = PaymentStatus.PENDING)
+        val paymentRepository = FakePaymentRepository(statusResult = PaymentStatus.PENDING)
         val viewModel = viewModel(almahirRepository = almahirRepository, paymentRepository = paymentRepository)
         testScheduler.advanceUntilIdle()
 
         viewModel.payWithValidWallet()
         testScheduler.advanceUntilIdle()
 
+        viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Pending))
+        testScheduler.advanceUntilIdle()
+
         assertTrue(almahirRepository.activatedPackageIds.isEmpty())
+        // After MAX_STATUS_POLLS retries still pending → success overlay with pending message
         assertTrue(viewModel.state.value.overlay is CheckoutOverlay.Success)
     }
 
     @Test
-    fun `a failed payment does not activate the subscription`() = runTest(dispatcher) {
+    fun `SDK failure callback does not call status endpoint and shows error overlay`() = runTest(dispatcher) {
         val almahirRepository = FakeCheckoutAlmahirRepository()
-        val paymentRepository = FakePaymentRepository(outcomeStatus = PaymentStatus.FAILED)
+        val paymentRepository = FakePaymentRepository(statusResult = PaymentStatus.SUCCESS)
         val viewModel = viewModel(almahirRepository = almahirRepository, paymentRepository = paymentRepository)
         testScheduler.advanceUntilIdle()
 
         viewModel.payWithValidWallet()
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Failure("declined")))
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(almahirRepository.activatedPackageIds.isEmpty())
+        assertTrue(paymentRepository.getStatusCalls.isEmpty()) // no status poll on SDK failure
+        assertTrue(viewModel.state.value.overlay is CheckoutOverlay.Error)
+    }
+
+    @Test
+    fun `backend FAILED status does not activate subscription`() = runTest(dispatcher) {
+        val almahirRepository = FakeCheckoutAlmahirRepository()
+        val paymentRepository = FakePaymentRepository(statusResult = PaymentStatus.FAILED)
+        val viewModel = viewModel(almahirRepository = almahirRepository, paymentRepository = paymentRepository)
+        testScheduler.advanceUntilIdle()
+
+        viewModel.payWithValidWallet()
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Success(hashMapOf())))
         testScheduler.advanceUntilIdle()
 
         assertTrue(almahirRepository.activatedPackageIds.isEmpty())
@@ -145,9 +186,19 @@ class CheckoutViewModelTest {
 
     @Test
     fun `dismissing the overlay after success sends a navigate-back effect`() = runTest(dispatcher) {
-        val viewModel = viewModel(paymentRepository = FakePaymentRepository(outcomeStatus = PaymentStatus.SUCCESS))
+        val paymentRepository = FakePaymentRepository(statusResult = PaymentStatus.SUCCESS)
+        val viewModel = viewModel(paymentRepository = paymentRepository)
         testScheduler.advanceUntilIdle()
+
         viewModel.payWithValidWallet()
+        testScheduler.advanceUntilIdle()
+
+        // PayClicked → createIntention → sends LaunchPaymobSdk effect first.
+        // Consume it so the channel is empty before we trigger NavigateBack.
+        val sdkEffect = viewModel.effect.first()
+        assertTrue("Expected LaunchPaymobSdk before NavigateBack", sdkEffect is CheckoutEffect.LaunchPaymobSdk)
+
+        viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Success(hashMapOf())))
         testScheduler.advanceUntilIdle()
 
         viewModel.onIntent(CheckoutIntent.OverlayDismissed)
@@ -155,6 +206,10 @@ class CheckoutViewModelTest {
         assertEquals(CheckoutEffect.NavigateBack, viewModel.effect.first())
         assertNull(viewModel.state.value.overlay)
     }
+
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
 
     private fun CheckoutViewModel.payWithValidWallet() {
         onIntent(CheckoutIntent.WalletProviderSelected(WalletProvider.VODAFONE_CASH))
@@ -171,8 +226,7 @@ class CheckoutViewModelTest {
         getSubscriptionPackages = GetSubscriptionPackagesUseCase(almahirRepository),
         getCurrentUser = GetCurrentUserUseCase(appPreferencesRepository),
         createPaymentIntention = CreatePaymentIntentionUseCase(paymentRepository),
-        confirmWalletPayment = ConfirmWalletPaymentUseCase(paymentRepository),
-        confirmCardPayment = ConfirmCardPaymentUseCase(paymentRepository),
+        getPaymentStatus = GetPaymentStatusUseCase(paymentRepository),
         activateSubscriptionAfterPayment = ActivateSubscriptionAfterPaymentUseCase(
             SelectSubscriptionPackageUseCase(almahirRepository),
         ),
@@ -192,34 +246,37 @@ class CheckoutViewModelTest {
     }
 
     private class FakePaymentRepository(
-        private val outcomeStatus: PaymentStatus = PaymentStatus.SUCCESS,
+        private val statusResult: PaymentStatus = PaymentStatus.SUCCESS,
         private val failIntention: Boolean = false,
     ) : PaymentRepository {
         val createIntentionCalls = mutableListOf<String>()
+        val getStatusCalls = mutableListOf<String>()
 
-        override suspend fun createIntention(packageId: String, method: PaymentMethodType): Result<PaymentIntention> {
+        override suspend fun createIntention(
+            packageId: String,
+            method: PaymentMethodType,
+            idempotencyKey: String,
+        ): Result<PaymentIntention> {
             createIntentionCalls += packageId
             return if (failIntention) {
                 Result.Error(DomainError.Unknown(IllegalStateException("boom")))
             } else {
-                Result.Success(PaymentIntention("intent-1", "secret-1", 6_500, "EGP"))
+                Result.Success(
+                    PaymentIntention(
+                        intentionId = "intent-1",
+                        clientSecret = "secret-1",
+                        publicKey = "pub-key-1",
+                        amountMinorUnits = 6_500,
+                        currencyCode = "EGP",
+                    )
+                )
             }
         }
 
-        override suspend fun confirmWalletPayment(
-            intentionId: String,
-            walletProvider: WalletProvider,
-            walletNumber: String,
-        ): Result<PaymentOutcome> = Result.Success(PaymentOutcome("txn-1", outcomeStatus))
-
-        override suspend fun confirmCardPayment(
-            intentionId: String,
-            cardBrand: CardBrand,
-            cardNumber: String,
-            expiry: String,
-            cvv: String,
-            cardholderName: String,
-        ): Result<PaymentOutcome> = Result.Success(PaymentOutcome("txn-1", outcomeStatus))
+        override suspend fun getPaymentStatus(intentionId: String): Result<PaymentOutcome> {
+            getStatusCalls += intentionId
+            return Result.Success(PaymentOutcome(transactionId = "txn-1", status = statusResult))
+        }
     }
 
     /** Tracks `selectSubscriptionPackage` calls so tests can assert whether activation happened;
@@ -250,6 +307,12 @@ class CheckoutViewModelTest {
         override suspend fun getBookmark(id: String): Result<Bookmark?> = notUsed()
         override suspend fun addBookmark(bookmark: Bookmark): Result<Unit> = notUsed()
         override suspend fun removeBookmark(id: String): Result<Unit> = notUsed()
+
+        override fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>> =
+            flowOf(Result.Success(emptyList()))
+
+        override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
+            Result.Success(Unit)
 
         private fun notUsed(): Nothing = error("not used by this test")
     }

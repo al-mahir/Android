@@ -16,7 +16,8 @@ interface AuthRepository {
         lastName: String,
         email: String,
         password: String,
-        phoneNumber: String
+        phoneNumber: String,
+        gender: String
     ): Result<User>
 
     suspend fun login(email: String, password: String): Result<AuthData>

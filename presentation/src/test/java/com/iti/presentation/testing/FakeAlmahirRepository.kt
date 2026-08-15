@@ -121,7 +121,11 @@ class FakeAlmahirRepository(
         return Result.Success(Unit)
     }
 
-    // ── SheikhRepository ──────────────────────────────────────────────────
+    override fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>> =
+        flowOf(Result.Success(emptyList()))
+
+    override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
+        Result.Success(Unit)
 
     override suspend fun getSheikhs(): Result<List<Sheikh>> =
         if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)

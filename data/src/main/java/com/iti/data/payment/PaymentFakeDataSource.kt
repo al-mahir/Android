@@ -6,43 +6,41 @@ import kotlinx.coroutines.delay
 import java.util.UUID
 
 
+/**
+ * Fake payment data source used during development and for Compose Previews.
+ *
+ * Deterministic outcome rules (based on last digit of packageId or intentionId):
+ *   0-7 → SUCCESS, 8 → PENDING, 9 → FAILED
+ *
+ * Keep this in the codebase — it is useful for previews, tests, and as a quick
+ * rollback binding if the backend has an outage. To revert: swap the DI binding
+ * in PaymentDataModule back to PaymentFakeDataSource().
+ */
 class PaymentFakeDataSource : PaymentDataSource {
 
-    override suspend fun createIntention(packageId: String, method: String): PaymentIntentionDto {
+    override suspend fun createIntention(
+        packageId: String,
+        method: String,
+        idempotencyKey: String,
+    ): PaymentIntentionDto {
         delay(CREATE_INTENTION_DELAY_MS)
         return PaymentIntentionDto(
             intentionId = "fake_intent_${UUID.randomUUID()}",
             clientSecret = "fake_secret_${UUID.randomUUID()}",
+            publicKey = "fake_public_key",
             amountMinorUnits = FAKE_PACKAGE_PRICES[packageId] ?: DEFAULT_AMOUNT_MINOR_UNITS,
             currencyCode = "EGP",
         )
     }
 
-    override suspend fun confirmWalletPayment(
-        intentionId: String,
-        walletProvider: String,
-        walletNumber: String,
-    ): PaymentOutcomeDto {
+    override suspend fun getPaymentStatus(intentionId: String): PaymentOutcomeDto {
         delay(CONFIRM_PAYMENT_DELAY_MS)
-        return outcomeFor(walletNumber)
-    }
-
-    override suspend fun confirmCardPayment(
-        intentionId: String,
-        cardBrand: String,
-        cardNumber: String,
-        expiry: String,
-        cvv: String,
-        cardholderName: String,
-    ): PaymentOutcomeDto {
-        delay(CONFIRM_PAYMENT_DELAY_MS)
-        return outcomeFor(cardNumber)
+        return outcomeFor(intentionId)
     }
 
     /**
      * Last digit 0-7 => SUCCESS, 8 => PENDING, 9 => FAILED. Lets QA/demo force each outcome
-     * branch on demand (e.g. end a wallet number in 9 to see the failure path) without a
-     * separate debug flag, matching the "realistic fake" spirit of AlmahirFakeDataSource.
+     * branch on demand without a separate debug flag.
      */
     private fun outcomeFor(rawInput: String): PaymentOutcomeDto {
         val lastDigit = rawInput.filterNot { it.isWhitespace() }.lastOrNull { it.isDigit() }
@@ -63,8 +61,6 @@ class PaymentFakeDataSource : PaymentDataSource {
         const val CONFIRM_PAYMENT_DELAY_MS = 1_500L
         const val DEFAULT_AMOUNT_MINOR_UNITS = 4_000L
 
-        // Mirrors the package seed prices in AlmahirFakeDataSource.packagesFor(...) so the
-        // amount confirmed here agrees with what PackagesScreen/Checkout already displayed.
         val FAKE_PACKAGE_PRICES = mapOf(
             "pkg-light" to 4_000L,
             "pkg-intensive" to 6_500L,

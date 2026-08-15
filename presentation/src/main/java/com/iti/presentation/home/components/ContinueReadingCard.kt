@@ -49,14 +49,16 @@ private const val SupportingAlpha = 0.65f
 
 @Composable
 fun ContinueReadingCard(
-    progress: ReadingProgress,
+    progress: ReadingProgress?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val completionFraction by remember(progress.surahReadAyahs, progress.surahTotalAyahs) {
+    val completionFraction by remember(progress?.surahReadAyahs, progress?.surahTotalAyahs) {
         derivedStateOf {
-            if (progress.surahTotalAyahs > 0) {
-                (progress.surahReadAyahs.toFloat() / progress.surahTotalAyahs).coerceIn(0f, 1f)
+            val total = progress?.surahTotalAyahs ?: 0
+            val read = progress?.surahReadAyahs ?: 0
+            if (total > 0) {
+                (read.toFloat() / total).coerceIn(0f, 1f)
             } else {
                 0f
             }
@@ -94,12 +96,17 @@ fun ContinueReadingCard(
             // Surah name — the domain hands us the surah *number*; the localized name comes from
             // the catalog so the card follows the in-app language instead of always showing English.
             val isArabic = isArabicLocale()
-            val surahName = remember(progress.surahNumber, isArabic, progress.surahName) {
-                val surah = SurahCatalog.all.firstOrNull { it.number == progress.surahNumber }
-                when {
-                    surah == null -> progress.surahName
-                    isArabic -> surah.nameArabic
-                    else -> surah.nameEnglish
+            val startReadingTitle = stringResource(R.string.home_start_reading)
+            val surahName = remember(progress, isArabic, startReadingTitle) {
+                if (progress != null) {
+                    val surah = SurahCatalog.all.firstOrNull { it.number == progress.surahNumber }
+                    when {
+                        surah == null -> progress.surahName
+                        isArabic -> surah.nameArabic
+                        else -> surah.nameEnglish
+                    }
+                } else {
+                    startReadingTitle
                 }
             }
 
@@ -113,13 +120,18 @@ fun ContinueReadingCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Ayah + Juz
-            BasicText(
-                text = stringResource(
+            val subtitleText = if (progress != null) {
+                stringResource(
                     R.string.home_ayah_juz,
                     progress.ayahNumber,
                     progress.juzNumber,
-                ),
+                )
+            } else {
+                stringResource(R.string.home_start_reading_subtitle)
+            }
+
+            BasicText(
+                text = subtitleText,
                 style = Theme.typography.body.small.copy(
                     color = Theme.colors.secondaryFont.copy(alpha = SupportingAlpha),
                 ),
@@ -127,34 +139,38 @@ fun ContinueReadingCard(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            // Progress bar
-            LinearProgressIndicator(
-                progress = { completionFraction },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(50)),
-                color = Theme.colors.primary,
-                trackColor = Theme.colors.border,
-                strokeCap = StrokeCap.Round,
-            )
+            if (progress != null) {
+                // Progress bar
+                LinearProgressIndicator(
+                    progress = { completionFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(50)),
+                    color = Theme.colors.primary,
+                    trackColor = Theme.colors.border,
+                    strokeCap = StrokeCap.Round,
+                )
+            }
 
             // Percentage + resume button row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = if (progress != null) Arrangement.SpaceBetween else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                BasicText(
-                    text = stringResource(R.string.home_surah_progress_percent, completionPercent),
-                    style = Theme.typography.body.small.copy(
-                        color = Theme.colors.secondaryFont,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                )
+                if (progress != null) {
+                    BasicText(
+                        text = stringResource(R.string.home_surah_progress_percent, completionPercent),
+                        style = Theme.typography.body.small.copy(
+                            color = Theme.colors.secondaryFont,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    )
+                }
 
                 PrimaryButton(
-                    caption = stringResource(R.string.home_resume_reading),
+                    caption = stringResource(if (progress != null) R.string.home_resume_reading else R.string.home_start_reading),
                     iconPainter = painterResource(DesignSystemR.drawable.ic_arrow_back_rotated),
                     iconPosition = ButtonIconPosition.End,
                     modifier = Modifier.width(ButtonHeightCompact * 3),

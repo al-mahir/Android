@@ -23,6 +23,9 @@
     <string name="auth_last_name">Last Name</string>
     <string name="auth_phone_number">Phone Number</string>
     <string name="auth_enter_phone_number">Enter your phone number</string>
+    <string name="auth_gender">Gender</string>
+    <string name="auth_male">Male</string>
+    <string name="auth_female">Female</string>
     <string name="auth_register_with_google">Register with Google</string>
     <string name="auth_already_have_account">Already have an account? </string>
 
@@ -81,6 +84,8 @@
     <string name="home_resume_reading">Resume reading</string>
     <string name="home_search_content_description">Search</string>
     <string name="home_continue_reading_content_description">Continue reading</string>
+    <string name="home_start_reading">Start reading</string>
+    <string name="home_start_reading_subtitle">Start your journey with the Qur\'an</string>
 
     <!-- %1$s = sheikh name -->
     <string name="home_sheikh_avatar_content_description">%1$s\'s photo</string>

@@ -20,9 +20,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.VectorPainter
@@ -79,7 +84,7 @@ fun MushafPageView(
     val surahBannerPainter = rememberVectorPainter(
         image = ImageVector.vectorResource(id = DesignSystemR.drawable.surah_name_design),
     )
-    val contentColor = Theme.colors.onSurface
+    val contentColor = Theme.colors.primaryFont
     val highlightColor = Theme.colors.primary.copy(alpha = 0.20f)
     val mistakeColor = Theme.colors.error
     val hintColor = Theme.colors.amber
@@ -93,6 +98,26 @@ fun MushafPageView(
     
     
     val fontResolver = LocalFontFamilyResolver.current
+
+    val needsColorMatrix = mode == ReadingMode.TAJWEED && contentColor.luminance() > 0.5f
+    val tajweedPaint = remember(needsColorMatrix, contentColor) {
+        if (needsColorMatrix) {
+            val rc = contentColor.red
+            val gc = contentColor.green
+            val bc = contentColor.blue
+            val factor = 0.75f
+            val sr = rc * factor
+            val sg = gc * factor
+            val sb = bc * factor
+            val matrix = ColorMatrix(floatArrayOf(
+                1f - sr, 0f, 0f, 0f, sr * 255f,
+                0f, 1f - sg, 0f, 0f, sg * 255f,
+                0f, 0f, 1f - sb, 0f, sb * 255f,
+                0f, 0f, 0f, 1f, 0f
+            ))
+            Paint().apply { colorFilter = ColorFilter.colorMatrix(matrix) }
+        } else null
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -253,7 +278,23 @@ fun MushafPageView(
                     RecitationWordMark.HINT -> hintColor
                     else -> Color.Unspecified
                 }
-                drawText(token.layout, color = glyphColor, topLeft = Offset(token.left, token.top))
+                
+                if (tajweedPaint != null && isAyahWord && mark == null) {
+                    drawIntoCanvas { canvas ->
+                        val bounds = Rect(
+                            token.left,
+                            token.top,
+                            token.left + token.layout.size.width,
+                            token.top + token.layout.size.height
+                        )
+                        canvas.saveLayer(bounds, tajweedPaint)
+                        drawText(token.layout, color = glyphColor, topLeft = Offset(token.left, token.top))
+                        canvas.restore()
+                    }
+                } else {
+                    drawText(token.layout, color = glyphColor, topLeft = Offset(token.left, token.top))
+                }
+                
                 drawMarkUnderline(token, mark, mistakeColor, hintColor, underlineStroke)
             }
         }
@@ -268,13 +309,7 @@ fun MushafPageView(
 
 
  
-/**
- * The animated position of the reading highlight.
- *
- * Held as [Animatable]s rather than derived per frame so the values can be read inside the
- * [Canvas] draw lambda: that keeps a moving highlight in the draw phase, instead of recomposing
- * the whole page — including its text measurement — sixty times a second.
- */
+
 @Stable
 private class SlidingHighlight {
     val left = Animatable(0f)
@@ -445,6 +480,7 @@ private fun pageTokens(
     PageTokenCache.get(page, mode, availableWidthPx, availableHeightPx, colorArgb)?.let { return it }
     val built = buildPageTokens(
         page = page,
+        mode = mode,
         lineSizes = lineSizes,
         measurer = measurer,
         fontFamily = fontFamily,
@@ -465,6 +501,7 @@ private fun pageTokens(
  
 private fun buildPageTokens(
     page: MushafPage,
+    mode: ReadingMode,
     lineSizes: Map<Int, Float>,
     measurer: TextMeasurer,
     fontFamily: FontFamily,
@@ -490,7 +527,11 @@ private fun buildPageTokens(
                 val layouts = line.words.map { word ->
                     measurer.measure(
                         text = AnnotatedString(word.glyphs),
-                        style = TextStyle(fontFamily = fontFamily, fontSize = fontSize, color = contentColor),
+                        style = TextStyle(
+                            fontFamily = fontFamily,
+                            fontSize = fontSize,
+                            color = if (mode == ReadingMode.TAJWEED) Color.Unspecified else contentColor
+                        ),
                         softWrap = false,
                         maxLines = 1,
                     )

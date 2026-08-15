@@ -5,9 +5,11 @@ import com.iti.domain.payment.model.CardBrand
 import com.iti.domain.payment.model.PaymentOutcome
 import com.iti.domain.payment.repository.PaymentRepository
 
+@Deprecated("Use GetPaymentStatusUseCase after the Paymob SDK callback instead.")
 class ConfirmCardPaymentUseCase(
-    private val repository: PaymentRepository,
+    @Suppress("UNUSED_PARAMETER") private val repository: PaymentRepository,
 ) {
+    @Deprecated("Use GetPaymentStatusUseCase after the Paymob SDK callback instead.")
     suspend operator fun invoke(
         intentionId: String,
         cardBrand: CardBrand,
@@ -16,7 +18,8 @@ class ConfirmCardPaymentUseCase(
         cvv: String,
         cardholderName: String,
     ): Result<PaymentOutcome> {
-        require(intentionId.isNotBlank()) { "intentionId must not be blank" }
-        return repository.confirmCardPayment(intentionId, cardBrand, cardNumber, expiry, cvv, cardholderName)
+        throw UnsupportedOperationException(
+            "Card confirmation is handled by the Paymob SDK. Use GetPaymentStatusUseCase."
+        )
     }
 }
