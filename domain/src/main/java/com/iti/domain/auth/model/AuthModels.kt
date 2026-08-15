@@ -7,6 +7,7 @@ data class User(
     val lastName: String,
     val email: String,
     val phoneNumber: String? = null,
+    val gender: String? = null,
     val profilePictureUrl: String? = null,
     val provider: String? = null,
     val roles: List<String> = emptyList(),

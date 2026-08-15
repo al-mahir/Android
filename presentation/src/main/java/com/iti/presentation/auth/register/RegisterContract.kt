@@ -16,6 +16,8 @@ data class RegisterState(
     val isPasswordVisible: Boolean = false,
     val phoneNumber: String = "",
     val phoneNumberError: UiText? = null,
+    val gender: String = "MALE",
+    val genderError: UiText? = null,
     val isLoading: Boolean = false
 )
 
@@ -26,6 +28,7 @@ sealed class RegisterIntent {
     data class EmailChanged(val email: String) : RegisterIntent()
     data class PasswordChanged(val password: String) : RegisterIntent()
     data class PhoneNumberChanged(val phoneNumber: String) : RegisterIntent()
+    data class GenderChanged(val gender: String) : RegisterIntent()
     data object TogglePasswordVisibility : RegisterIntent()
     data object SubmitRegistration : RegisterIntent()
     data object GoogleSignInClicked : RegisterIntent()

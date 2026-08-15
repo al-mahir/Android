@@ -119,6 +119,37 @@ fun RegisterScreen(
         }
 
         item {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = Theme.spacing.medium)) {
+                Text(
+                    text = stringResource(id = R.string.auth_gender),
+                    style = Theme.typography.body.medium,
+                    color = Theme.colors.primaryFont,
+                    modifier = Modifier.padding(bottom = Theme.spacing.small)
+                )
+                
+                val genders = listOf(stringResource(id = R.string.auth_male), stringResource(id = R.string.auth_female))
+                val genderValues = listOf("MALE", "FEMALE")
+                val selectedIndex = genderValues.indexOf(state.gender).takeIf { it >= 0 } ?: 0
+                
+                com.example.designsystem.components.tabs.TabSelector(
+                    tabs = genders,
+                    selectedIndex = selectedIndex,
+                    onTabSelected = { index -> onIntent(RegisterIntent.GenderChanged(genderValues[index])) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                if (state.genderError != null) {
+                    Text(
+                        text = state.genderError.asString(),
+                        style = Theme.typography.body.small,
+                        color = Theme.colors.error,
+                        modifier = Modifier.padding(top = Theme.spacing.small)
+                    )
+                }
+            }
+        }
+
+        item {
             TextField(
                 text = state.password,
                 onTextChange = { onIntent(RegisterIntent.PasswordChanged(it)) },

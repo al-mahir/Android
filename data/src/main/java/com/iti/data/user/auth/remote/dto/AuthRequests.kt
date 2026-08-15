@@ -10,6 +10,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val phoneNumber: String,
+    val gender: String,
 )
 
 @Serializable

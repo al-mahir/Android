@@ -32,6 +32,7 @@ class FakeAuthRepository(
         email: String,
         password: String,
         phoneNumber: String,
+        gender: String,
     ): Result<User> {
         registrations += email
         return registerResult

@@ -23,6 +23,9 @@
     <string name="auth_last_name">الاسم الأخير</string>
     <string name="auth_phone_number">رقم الهاتف</string>
     <string name="auth_enter_phone_number">أدخل رقم الهاتف</string>
+    <string name="auth_gender">النوع</string>
+    <string name="auth_male">ذكر</string>
+    <string name="auth_female">أنثى</string>
     <string name="auth_register_with_google">التسجيل باستخدام جوجل</string>
     <string name="auth_already_have_account">لديك حساب بالفعل؟ </string>
 

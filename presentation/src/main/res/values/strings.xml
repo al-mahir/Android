@@ -23,6 +23,9 @@
     <string name="auth_last_name">Last Name</string>
     <string name="auth_phone_number">Phone Number</string>
     <string name="auth_enter_phone_number">Enter your phone number</string>
+    <string name="auth_gender">Gender</string>
+    <string name="auth_male">Male</string>
+    <string name="auth_female">Female</string>
     <string name="auth_register_with_google">Register with Google</string>
     <string name="auth_already_have_account">Already have an account? </string>
 
