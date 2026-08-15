@@ -72,6 +72,9 @@ class ActivateSubscriptionAfterPaymentUseCaseTest {
         override suspend fun getBookmark(id: String): Result<Bookmark?> = notUsed()
         override suspend fun addBookmark(bookmark: Bookmark): Result<Unit> = notUsed()
         override suspend fun removeBookmark(id: String): Result<Unit> = notUsed()
+        
+        override fun observeMeetingStatuses(userId: String): Flow<Result<List<com.iti.domain.model.MeetingStatus>>> = notUsed()
+        override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> = notUsed()
 
         private fun notUsed(): Nothing = error("not used by this test")
     }

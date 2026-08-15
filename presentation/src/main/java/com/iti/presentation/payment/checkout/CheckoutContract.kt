@@ -19,6 +19,8 @@ data class CheckoutUiState(
     val userDisplayName: String = "",
     val selectedTabIndex: Int = 0,
 
+    val pendingIntentionId: String? = null,
+
     val selectedWalletProvider: WalletProvider? = null,
     val walletNumber: String = "",
     val walletNumberError: UiText? = null,
@@ -57,10 +59,18 @@ sealed interface CheckoutIntent {
     data object PayClicked : CheckoutIntent
     data object OverlayDismissed : CheckoutIntent
     data object RetryLoadClicked : CheckoutIntent
+    /** Fired by CheckoutScreen when the Paymob SDK finishes (success / failure / pending). */
+    data class PaymobSdkResult(val outcome: PaymobSdkOutcome) : CheckoutIntent
+}
+
+sealed interface PaymobSdkOutcome {
+    data class Success(val result: HashMap<String, String?>) : PaymobSdkOutcome
+    data class Failure(val message: String?) : PaymobSdkOutcome
+    data object Pending : PaymobSdkOutcome
 }
 
 sealed interface CheckoutEffect {
-    /** Unused while fake-backed; wired once the real Paymob Android SDK is integrated. */
+    /** Fired after intention creation; CheckoutScreen launches the real Paymob SDK. */
     data class LaunchPaymobSdk(val clientSecret: String, val publicKey: String) : CheckoutEffect
     data object NavigateBack : CheckoutEffect
     data class ShowMessage(val message: UiText) : CheckoutEffect

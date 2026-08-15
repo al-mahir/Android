@@ -5,20 +5,11 @@ import com.iti.data.payment.dto.PaymentOutcomeDto
 
 interface PaymentDataSource {
 
-    suspend fun createIntention(packageId: String, method: String): PaymentIntentionDto
+    suspend fun createIntention(
+        packageId: String,
+        method: String,
+        idempotencyKey: String,
+    ): PaymentIntentionDto
 
-    suspend fun confirmWalletPayment(
-        intentionId: String,
-        walletProvider: String,
-        walletNumber: String,
-    ): PaymentOutcomeDto
-
-    suspend fun confirmCardPayment(
-        intentionId: String,
-        cardBrand: String,
-        cardNumber: String,
-        expiry: String,
-        cvv: String,
-        cardholderName: String,
-    ): PaymentOutcomeDto
+    suspend fun getPaymentStatus(intentionId: String): PaymentOutcomeDto
 }

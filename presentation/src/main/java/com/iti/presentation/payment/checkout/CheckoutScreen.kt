@@ -12,6 +12,8 @@ import com.example.designsystem.components.overlay.animated.StatusOverlay
 import com.example.designsystem.text.asString
 import com.example.designsystem.text.resolve
 import com.iti.presentation.core.mvi.ObserveEffect
+import com.paymob.paymob_sdk.PaymobSdk
+import com.paymob.paymob_sdk.ui.PaymobSdkListener
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -31,9 +33,37 @@ fun CheckoutScreen(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             CheckoutEffect.NavigateBack -> onBack()
+
             is CheckoutEffect.ShowMessage ->
                 Toast.makeText(context, effect.message.resolve(context), Toast.LENGTH_SHORT).show()
-            is CheckoutEffect.LaunchPaymobSdk -> Unit
+
+            is CheckoutEffect.LaunchPaymobSdk -> {
+
+                try {
+                    PaymobSdk.Builder(
+                        context,
+                        effect.clientSecret,
+                        effect.publicKey,
+                        object : PaymobSdkListener {
+                            override fun onSuccess(result: HashMap<String, String?>) {
+                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Success(result)))
+                            }
+                            override fun onFailure(msg: String) {
+                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Failure(msg)))
+                            }
+                            override fun onPending() {
+                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Pending))
+                            }
+                            override fun onCancelled() {
+                                // Treat cancellation as a failure from the checkout flow perspective
+                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Failure("Payment cancelled by user")))
+                            }
+                        }
+                    ).build().start()
+                } catch (e: Exception) {
+                    viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Failure(e.message)))
+                }
+            }
         }
     }
 
@@ -51,6 +81,7 @@ fun CheckoutScreen(
         onDismiss = { viewModel.onIntent(CheckoutIntent.OverlayDismissed) },
     )
 }
+
 
 @Composable
 private fun CheckoutOverlay?.toOverlayState(): OverlayState? = when (this) {

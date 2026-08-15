@@ -9,6 +9,7 @@ import com.iti.domain.payment.model.PaymentStatus
 internal fun PaymentIntentionDto.toDomain(): PaymentIntention = PaymentIntention(
     intentionId = intentionId,
     clientSecret = clientSecret,
+    publicKey = publicKey,
     amountMinorUnits = amountMinorUnits,
     currencyCode = currencyCode,
 )
