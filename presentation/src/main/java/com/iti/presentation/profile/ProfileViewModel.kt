@@ -87,7 +87,7 @@ class ProfileViewModel(
             }
             .onEach { snapshot ->
                 if (snapshot == null) {
-                    updateState { copy(isLoading = false) }
+                    updateState { copy(isLoading = false, errorMessageRes = R.string.profile_error_generic) }
                 } else {
                     updateState {
                         copy(
