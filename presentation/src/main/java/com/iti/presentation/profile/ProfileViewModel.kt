@@ -71,10 +71,14 @@ class ProfileViewModel(
             getSubscription(),
             connectivityObserver.status
         ) { userResult, subscriptionResult, connectivity ->
-            val user = userResult.getOrNull() ?: error("Failed to load current user")
-            val subscription = subscriptionResult.getOrNull() ?: error("Failed to load subscription")
-            val isOffline = connectivity == ConnectivityStatus.Unavailable
-            ProfileAccountSnapshot(user, subscription, isOffline)
+            val user = userResult.getOrNull()
+            val subscription = subscriptionResult.getOrNull()
+            if (user == null || subscription == null) {
+                null
+            } else {
+                val isOffline = connectivity == ConnectivityStatus.Unavailable
+                ProfileAccountSnapshot(user, subscription, isOffline)
+            }
         }
             .catch {
                 updateState {
@@ -82,14 +86,18 @@ class ProfileViewModel(
                 }
             }
             .onEach { snapshot ->
-                updateState {
-                    copy(
-                        isLoading = false,
-                        errorMessageRes = null,
-                        user = snapshot.user,
-                        subscription = snapshot.subscription,
-                        isOffline = snapshot.isOffline,
-                    )
+                if (snapshot == null) {
+                    updateState { copy(isLoading = false, errorMessageRes = R.string.profile_error_generic) }
+                } else {
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            errorMessageRes = null,
+                            user = snapshot.user,
+                            subscription = snapshot.subscription,
+                            isOffline = snapshot.isOffline,
+                        )
+                    }
                 }
             }
             .launchIn(viewModelScope)

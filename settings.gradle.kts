@@ -21,6 +21,9 @@ dependencyResolutionManagement {
         mavenCentral()
         // sherpa-onnx (on-device streaming ASR) is only published via JitPack, not Maven Central.
         maven("https://jitpack.io")
+        // Paymob Android SDK is distributed as a local AAR — not published to Maven Central.
+        // Place the AAR at: libs/com/paymob/sdk/Paymob-SDK/<version>/Paymob-SDK-<version>.aar
+        maven { url = rootProject.projectDir.toURI().resolve("libs") }
     }
 }
 

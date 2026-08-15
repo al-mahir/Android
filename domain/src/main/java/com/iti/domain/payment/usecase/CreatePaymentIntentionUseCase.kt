@@ -8,8 +8,13 @@ import com.iti.domain.payment.repository.PaymentRepository
 class CreatePaymentIntentionUseCase(
     private val repository: PaymentRepository,
 ) {
-    suspend operator fun invoke(packageId: String, method: PaymentMethodType): Result<PaymentIntention> {
+    suspend operator fun invoke(
+        packageId: String,
+        method: PaymentMethodType,
+        idempotencyKey: String,
+    ): Result<PaymentIntention> {
         require(packageId.isNotBlank()) { "packageId must not be blank" }
-        return repository.createIntention(packageId, method)
+        require(idempotencyKey.isNotBlank()) { "idempotencyKey must not be blank" }
+        return repository.createIntention(packageId, method, idempotencyKey)
     }
 }

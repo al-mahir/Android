@@ -20,43 +20,18 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
 class LiveRecitationSocket(
     private val client: HttpClient,
     private val config: AiServiceConfig,
     private val json: Json = ProtocolJson,
 ) {
 
-    
-
-
-
-
-
-
-
-
- 
     fun open(
         start: StartSessionDto,
         commands: Flow<LiveSessionCommand>,
     ): Flow<LiveSessionEvent> = channelFlow {
+        val latency = LiveLatencyProbe()
+
         client.webSocket(urlString = config.sessionUrl) {
             outgoing.send(Frame.Text(json.encodeToString(StartSessionDto.serializer(), start)))
             Log.d(TAG, "Session start sent to ${config.sessionUrl} (engine=${start.engine ?: "server default"})")
@@ -71,10 +46,10 @@ class LiveRecitationSocket(
                 ),
             )
 
-            
-            val pump = launch { pumpCommands(commands) }
+
+            val pump = launch { pumpCommands(commands, latency) }
             val sawDone = try {
-                readEvents { event -> send(event) }
+                readEvents(latency) { event -> send(event) }
             } finally {
                 pump.cancel()
             }
@@ -118,13 +93,20 @@ class LiveRecitationSocket(
         throw LiveSessionException("Socket closed before the session ack arrived")
     }
 
-    private suspend fun io.ktor.websocket.WebSocketSession.pumpCommands(commands: Flow<LiveSessionCommand>) {
+    private suspend fun io.ktor.websocket.WebSocketSession.pumpCommands(
+        commands: Flow<LiveSessionCommand>,
+        latency: LiveLatencyProbe,
+    ) {
         commands.collect { command ->
             when (command) {
                 is LiveSessionCommand.Audio -> {
-                    
-                    
+
+
                     outgoing.send(Frame.Binary(true, PcmCodec.toLittleEndianBytes(command.frame.samples)))
+                    // After the send, not before: the mark must record when the audio actually
+                    // left, otherwise a backed-up outgoing queue would be invisible here and
+                    // charged to the server instead.
+                    latency.onAudioSent(command.frame)
                 }
 
                 is LiveSessionCommand.Seek -> {
@@ -147,6 +129,7 @@ class LiveRecitationSocket(
 
  
     private suspend fun io.ktor.websocket.WebSocketSession.readEvents(
+        latency: LiveLatencyProbe,
         emit: suspend (LiveSessionEvent) -> Unit,
     ): Boolean {
         for (frame in incoming) {
@@ -155,6 +138,11 @@ class LiveRecitationSocket(
             when (val type = json.decodeFromString(MessageEnvelopeDto.serializer(), text).type) {
                 TYPE_FEEDBACK -> {
                     val envelope = json.decodeFromString(FeedbackEnvelopeDto.serializer(), text)
+                    latency.onFeedback(
+                        chunkSeq = envelope.chunkSeq,
+                        spanEndSec = envelope.audioSpanSec.lastOrNull(),
+                        forcedCut = envelope.forcedCut,
+                    )
                     Log.d(
                         TAG,
                         "Feedback #${envelope.chunkSeq}: status=${envelope.feedback?.status} " +

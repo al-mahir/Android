@@ -23,6 +23,9 @@
     <string name="auth_last_name">الاسم الأخير</string>
     <string name="auth_phone_number">رقم الهاتف</string>
     <string name="auth_enter_phone_number">أدخل رقم الهاتف</string>
+    <string name="auth_gender">النوع</string>
+    <string name="auth_male">ذكر</string>
+    <string name="auth_female">أنثى</string>
     <string name="auth_register_with_google">التسجيل باستخدام جوجل</string>
     <string name="auth_already_have_account">لديك حساب بالفعل؟ </string>
 
@@ -54,7 +57,7 @@
     <!-- ===== Shared errors ===== -->
     <string name="error_network">لا يوجد اتصال. يرجى التحقق من الشبكة والمحاولة مرة أخرى.</string>
     <string name="error_generic">حدث خطأ ما. يرجى المحاولة مرة أخرى.</string>
-    
+
     <!-- ===== Offline Banner ===== -->
     <string name="offline_banner_offline">لا يوجد اتصال بالإنترنت</string>
     <string name="offline_banner_online">تمت استعادة الاتصال</string>
@@ -83,6 +86,8 @@
     <string name="home_resume_reading">استئناف القراءة </string>
     <string name="home_search_content_description">بحث</string>
     <string name="home_continue_reading_content_description">متابعة القراءة</string>
+    <string name="home_start_reading">ابدأ القراءة</string>
+    <string name="home_start_reading_subtitle">ابدأ رحلتك مع القرآن الكريم</string>
 
     <!-- %1$s = sheikh name -->
     <string name="home_sheikh_avatar_content_description">صورة %1$s</string>
@@ -522,4 +527,86 @@
     <string name="bookmark_empty_page_description">اضغط على أيقونة الإشارة المرجعية أثناء القراءة لحفظ الصفحة.</string>
     <string name="bookmark_empty_sheikh_title">لا يوجد شيوخ محفوظون بعد</string>
     <string name="bookmark_empty_sheikh_description">اضغط على أيقونة الإشارة المرجعية في بطاقة الشيخ لحفظه.</string>
+    <!-- ===== Exam (Ikhtibar) ===== -->
+    <string name="exam_setup_title">اختبار جديد</string>
+    <string name="exam_cta_title">اختبر حفظك</string>
+    <string name="exam_cta_subtitle">ابدأ اختباراً مخصصاً لقياس حفظك</string>
+    <string name="exam_tab_surah">سورة</string>
+    <string name="exam_tab_juz">جزء</string>
+    <string name="exam_tab_rub">ربع</string>
+    <string name="exam_tab_ayah">آية</string>
+    <string name="exam_section_quick_select">اختيار سريع</string>
+    <string name="exam_section_recent">الأخيرة</string>
+    <string name="exam_question_count_label">عدد الأسئلة</string>
+    <string name="exam_start_button">ابدأ الاختبار</string>
+    <string name="exam_scope_too_small">اختر 3 آيات على الأقل</string>
+    <string name="exam_scope_invalid_range">يجب أن تكون نقطة البداية قبل نقطة النهاية</string>
+    <string name="exam_question_progress">السؤال %1$d من %2$d</string>
+    <string name="exam_recite_prompt">أَكمِل التَّالِي</string>
+    <string name="exam_mistakes_label">أخطاء</string>
+    <string name="exam_skip_question">تخطّ</string>
+    <string name="exam_next_question">السؤال التالي</string>
+    <string name="exam_end_session">إنهاء الجلسة</string>
+    <string name="exam_end_session_confirm_title">إنهاء الاختبار؟</string>
+    <string name="exam_end_session_confirm_message">سيُحفظ تقدّمك وستظهر نتيجة جزئية.</string>
+    <string name="exam_end_session_confirm">إنهاء</string>
+    <string name="exam_session_complete_title">اكتمل الاختبار</string>
+    <string name="exam_score_well_done">أحسنت! 🎉</string>
+    <string name="exam_score_good">جهد جيد!</string>
+    <string name="exam_score_keep_practicing">واصل المراجعة</string>
+    <string name="exam_stat_questions">الأسئلة</string>
+    <string name="exam_stat_mistakes">الأخطاء</string>
+    <string name="exam_stat_duration">المدة</string>
+    <string name="exam_mistakes_to_review">مراجعة الأخطاء</string>
+    <string name="exam_no_mistakes">لا أخطاء! نتيجة مثالية.</string>
+    <string name="exam_test_again">اختبر مجددًا</string>
+    <string name="exam_review_all_mistakes">مراجعة كل الأخطاء</string>
+    <string name="exam_word_status_correct">صحيح</string>
+    <string name="exam_word_status_error">خطأ</string>
+    <string name="exam_word_status_almost">تقريبًا</string>
+    <string name="exam_connecting">جارِ الاتصال بالذكاء الاصطناعي…</string>
+    <string name="exam_connection_error">فشل الاتصال. تحقق من الشبكة.</string>
+    <string name="exam_hasbok">حسبك</string>
+    <string name="exam_retry">حاول مجددًا</string>
+    <string name="exam_start_recording">ابدأ التلاوة</string>
+    <string name="exam_stop_recording">أوقف التلاوة</string>
+    <string name="exam_ambiguous_passage">تعذّر تحديد الآية التي تلوتها. حاول مجددًا.</string>
+    <string name="exam_no_match">لم يُتعرّف على أي نص قرآني. حاول التلاوة بوضوح أكثر.</string>
+    <string name="exam_reveal_rest_of_ayah">باقي الآية</string>
+    <string name="exam_mistakes_sheet_title">الأخطاء الحالية</string>
+    <string name="exam_mistake_said">قيل</string>
+    <string name="exam_mistake_expected">المتوقع</string>
+    <string name="exam_mistake_type">النوع</string>
+    <string name="exam_mistake_category_memorization">حفظ</string>
+    <string name="exam_mistake_category_tashkeel">تشكيل</string>
+    <string name="exam_mistake_category_tajweed">تجويد</string>
+    <string name="exam_mistake_category_other">أخرى</string>
+    <string name="exam_no_mistakes_yet">لا أخطاء حتى الآن</string>
+    <string name="exam_summary_no_valid_recitation">لم يتم تسجيل تلاوة صحيحة</string>
+    <string name="exam_mistake_details_title_format">تفاصيل الخطأ (%1$d/%2$d)</string>
+    <string name="exam_dialog_ok">حسناً</string>
+    <string name="exam_dialog_next">التالي</string>
+    <string name="exam_dialog_close">إغلاق</string>
+    <string name="exam_setup_my_ranges">نطاقاتي</string>
+    <string name="exam_setup_delete">حذف</string>
+    <string name="exam_setup_create_new_range">+ إنشاء نطاق جديد</string>
+    <string name="exam_setup_recent_exams">آخر الاختبارات</string>
+    <string name="exam_setup_score">النتيجة</string>
+    <string name="exam_setup_add_to_selection">إضافة للتحديد</string>
+    <string name="exam_setup_added_to_range">تم إضافته للنطاق:</string>
+    <string name="exam_setup_range_name_required">اسم النطاق (مطلوب)</string>
+    <string name="exam_setup_add_range">أضف النطاق</string>
+    <string name="exam_setup_select_surah">اختر السورة</string>
+    <string name="exam_setup_select_juz">اختر الجزء</string>
+    <string name="exam_setup_select_rub">اختر الربع</string>
+    <string name="exam_setup_from">من</string>
+    <string name="exam_setup_surah">السورة</string>
+    <string name="exam_setup_ayah">الآية</string>
+    <string name="exam_setup_to">إلى</string>
+    <string name="exam_setup_lines_per_question">عدد الأسطر لكل سؤال</string>
+    <string name="exam_timer_paused">مؤقت متوقف</string>
+    <string name="exam_timer_resume_in">متابعة بعد %1$s</string>
+    <string name="exam_timer_pause">إيقاف</string>
+    <string name="exam_timer_skip">تخطي</string>
+    <string name="exam_reveal_next_word">الكلمة التالية</string>
 </resources>

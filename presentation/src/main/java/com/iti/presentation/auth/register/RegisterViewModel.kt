@@ -34,6 +34,7 @@ class RegisterViewModel(
             is RegisterIntent.EmailChanged -> updateState { copy(email = intent.email, emailError = null) }
             is RegisterIntent.PasswordChanged -> updateState { copy(password = intent.password, passwordError = null) }
             is RegisterIntent.PhoneNumberChanged -> updateState { copy(phoneNumber = intent.phoneNumber, phoneNumberError = null) }
+            is RegisterIntent.GenderChanged -> updateState { copy(gender = intent.gender, genderError = null) }
             is RegisterIntent.TogglePasswordVisibility -> updateState { copy(isPasswordVisible = !isPasswordVisible) }
             is RegisterIntent.SubmitRegistration -> submitRegistration()
             is RegisterIntent.GoogleSignInClicked -> startGoogleSignIn()
@@ -66,6 +67,7 @@ class RegisterViewModel(
                 email = email,
                 password = password,
                 phoneNumber = currentState.phoneNumber.trim(),
+                gender = currentState.gender,
             )
 
             if (registration is Result.Error) {
@@ -117,6 +119,7 @@ class RegisterViewModel(
                 emailError = error.fieldError(AuthField.EMAIL),
                 passwordError = error.fieldError(AuthField.PASSWORD),
                 phoneNumberError = error.fieldError(AuthField.PHONE_NUMBER),
+                genderError = error.fieldError(AuthField.GENDER),
             )
         }
 
@@ -130,10 +133,11 @@ class RegisterViewModel(
         emailError = null,
         passwordError = null,
         phoneNumberError = null,
+        genderError = null,
     )
 
     private fun RegisterState.hasFieldErrors() = listOf(
-        usernameError, firstNameError, lastNameError, emailError, passwordError, phoneNumberError,
+        usernameError, firstNameError, lastNameError, emailError, passwordError, phoneNumberError, genderError,
     ).any { it != null }
 
 }

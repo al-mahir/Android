@@ -46,6 +46,7 @@ class SheikhAuthRepositoryImpl(
         email: String,
         password: String,
         phoneNumber: String,
+        gender: String,
     ): Result<User> = apiCall(
         request = {
             remoteDataSource.register(
@@ -56,6 +57,7 @@ class SheikhAuthRepositoryImpl(
                     email = email,
                     password = password,
                     phoneNumber = phoneNumber,
+                    gender = gender,
                 )
             )
         },
@@ -165,6 +167,7 @@ class SheikhAuthRepositoryImpl(
         lastName = this?.lastName.orEmpty(),
         email = this?.email.orEmpty(),
         phoneNumber = this?.phoneNumber,
+        gender = this?.gender,
         profilePictureUrl = this?.profilePictureUrl,
         provider = this?.provider,
         roles = this?.roles.orEmpty(),

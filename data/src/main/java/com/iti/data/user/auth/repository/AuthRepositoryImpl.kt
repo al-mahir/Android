@@ -42,6 +42,7 @@ class AuthRepositoryImpl(
         email: String,
         password: String,
         phoneNumber: String,
+        gender: String,
     ): Result<User> = apiCall(
         request = {
             remoteDataSource.register(
@@ -52,6 +53,7 @@ class AuthRepositoryImpl(
                     email = email,
                     password = password,
                     phoneNumber = phoneNumber,
+                    gender = gender,
                 )
             )
         },
@@ -182,6 +184,7 @@ class AuthRepositoryImpl(
         lastName = this?.lastName.orEmpty(),
         email = this?.email.orEmpty(),
         phoneNumber = this?.phoneNumber,
+        gender = this?.gender,
         profilePictureUrl = this?.profilePictureUrl,
         provider = this?.provider,
         roles = this?.roles.orEmpty(),

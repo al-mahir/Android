@@ -39,4 +39,9 @@ object AlmahirApi {
         const val SEARCH = "api/sheikh/search"
         const val UPDATE = "api/sheikh/{id}"
     }
+
+    object Payment {
+        const val CREATE_INTENTION = "api/payment/intentions"
+        fun statusUrl(intentionId: String) = "api/payment/intentions/$intentionId/status"
+    }
 }

@@ -121,7 +121,6 @@ fun StatusOverlay(
                         resId = R.raw.anim_error,
                         iterations = 1,
                         size = Theme.size.overlayIndicator,
-                        onAnimationFinished = currentOnDismiss,
                     )
                     OverlayMessage(state.message)
                 }

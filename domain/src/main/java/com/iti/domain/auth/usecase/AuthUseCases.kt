@@ -20,7 +20,8 @@ class RegisterUseCase(private val repository: AuthRepository) {
         lastName: String,
         email: String,
         password: String,
-        phoneNumber: String
+        phoneNumber: String,
+        gender: String
     ): Result<User> {
         val fieldErrors = buildMap {
             if (username.isBlank()) put(AuthField.USERNAME, AuthValidationCode.REQUIRED)
@@ -31,11 +32,12 @@ class RegisterUseCase(private val repository: AuthRepository) {
             }
             if (!AuthValidators.isValidEmail(email)) put(AuthField.EMAIL, AuthValidationCode.INVALID_EMAIL)
             if (!AuthValidators.isValidPassword(password)) put(AuthField.PASSWORD, AuthValidationCode.WEAK_PASSWORD)
+            if (gender.isBlank()) put(AuthField.GENDER, AuthValidationCode.REQUIRED)
         }
 
         if (fieldErrors.isNotEmpty()) return validationFailure(fieldErrors)
 
-        return repository.register(username, firstName, lastName, email, password, phoneNumber)
+        return repository.register(username, firstName, lastName, email, password, phoneNumber, gender)
     }
 }
 

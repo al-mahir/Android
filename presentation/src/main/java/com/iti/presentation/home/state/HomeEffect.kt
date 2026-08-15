@@ -20,4 +20,5 @@ sealed interface HomeEffect {
         val remoteDisplayName: String?,
     ) : HomeEffect
     data class ShowMessage(@StringRes val messageRes: Int) : HomeEffect
+    data object OpenExamSetup : HomeEffect
 }

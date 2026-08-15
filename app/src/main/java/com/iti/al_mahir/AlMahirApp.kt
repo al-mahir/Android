@@ -8,7 +8,6 @@ import com.iti.domain.core.getOrNull
 import com.iti.data.di.almahirDataModule
 import com.iti.data.payment.di.paymentDataModule
 import com.iti.data.user.auth.di.authDataModule
-import com.iti.domain.auth.MeetingAuthTokenProvider
 import com.iti.domain.auth.MeetingCurrentUserProvider
 import com.iti.domain.auth.di.authDomainModule
 import com.iti.domain.payment.di.paymentDomainModule
@@ -68,18 +67,6 @@ class AlMahirApp : Application() {
                             agoraAppId = BuildConfig.AGORA_APP_ID,
                             enableHttpLogging = BuildConfig.DEBUG
                         ) 
-                    }
-                    single<MeetingAuthTokenProvider> {
-                        val tokenStore = GlobalContext.get().get<TokenStore>()
-                        val refresher = com.iti.data.core.token.TokenRefresher(
-                            tokenStore = tokenStore,
-                            refreshEndpoint = com.iti.data.core.network.AlmahirApi.Auth.REFRESH,
-                        )
-                        object : MeetingAuthTokenProvider {
-                            override suspend fun currentToken(): String? = tokenStore.getTokens()?.accessToken
-                            override suspend fun refreshToken(): String? = refresher.refresh()?.accessToken
-                            override suspend fun onAuthenticationExpired() = tokenStore.clear()
-                        }
                     }
                     single<MeetingCurrentUserProvider> {
                         MeetingCurrentUserProvider {

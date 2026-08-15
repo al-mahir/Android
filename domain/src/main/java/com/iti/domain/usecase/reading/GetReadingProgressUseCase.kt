@@ -11,6 +11,7 @@ class GetReadingProgressUseCase(
     private val repository: ReadingProgressRepository,
 ) {
     operator fun invoke(): Flow<ReadingProgress?> = repository.observeLastPage().map { page ->
+        if (page == null) return@map null
         val surahNumber = surahForPage(page)
         val surah = SURAHS.getOrNull(surahNumber - 1) ?: return@map null
         

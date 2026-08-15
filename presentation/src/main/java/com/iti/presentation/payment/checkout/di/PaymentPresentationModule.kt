@@ -6,6 +6,6 @@ import org.koin.dsl.module
 
 val paymentPresentationModule = module {
     viewModel { (packageId: String) ->
-        CheckoutViewModel(packageId, get(), get(), get(), get(), get(), get())
+        CheckoutViewModel(packageId, get(), get(), get(), get(), get())
     }
 }

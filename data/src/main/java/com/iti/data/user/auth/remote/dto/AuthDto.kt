@@ -10,6 +10,7 @@ data class UserDto(
     val lastName: String? = null,
     val email: String? = null,
     val phoneNumber: String? = null,
+    val gender: String? = null,
     val profilePictureUrl: String? = null,
     val provider: String? = null,
     val roles: List<String> = emptyList(),

@@ -21,6 +21,7 @@ import com.iti.domain.core.Result
 import com.iti.domain.core.asResult
 import com.iti.domain.core.getOrNull
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
@@ -107,7 +109,9 @@ class LiveRecitationRepositoryImpl(
             localFrames.close()
             commands.close()
         }
-    }.asResult()
+    }
+              .flowOn(Dispatchers.IO)
+        .asResult()
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private suspend fun ProducerScope<LiveRecitationEvent>.streamCaptureInto(
@@ -120,19 +124,16 @@ class LiveRecitationRepositoryImpl(
             when (event) {
                 is SpeechEvent.Audio -> {
                     commands.send(LiveSessionCommand.Audio(event.frame))
-                    send(LiveRecitationEvent.Level(event.frame.rms(), isSpeaking = event.isSpeech))
-                    // trySend, never send: this loop must never wait on the local path.
+                         trySend(LiveRecitationEvent.Level(event.frame.rms(), isSpeaking = event.isSpeech))
                     localFrames.trySend(event.frame)
                 }
 
-                SpeechEvent.SpeechEnded -> send(LiveRecitationEvent.Level(amplitude = 0f, isSpeaking = false))
+                  SpeechEvent.SpeechEnded -> send(LiveRecitationEvent.Level(amplitude = 0f, isSpeaking = false))
             }
         }
     }
 
-    /** Drains [localFrames] into the on-device model on its own coroutine. Failures are logged and
-     * swallowed per frame - a recognizer that throws degrades the highlight, it does not end the
-     * session. */
+
     private suspend fun decodeLocally(localFrames: ReceiveChannel<AudioFrame>) {
         for (frame in localFrames) {
             runCatching { localSpeechRecognizer.accept(frame) }
@@ -140,8 +141,9 @@ class LiveRecitationRepositoryImpl(
         }
     }
 
+
     private suspend fun ProducerScope<LiveRecitationEvent>.streamLocalTranscriptInto() {
-        localSpeechRecognizer.transcript.collect { send(LiveRecitationEvent.LocalPhonemes(it)) }
+        localSpeechRecognizer.transcript.collect { trySend(LiveRecitationEvent.LocalPhonemes(it)) }
     }
 
     private fun LiveSessionEvent.toDomain(): LiveRecitationEvent = when (this) {
@@ -164,9 +166,6 @@ class LiveRecitationRepositoryImpl(
     private companion object {
         const val TAG = MushafLog.TAG
 
-        /** ~3 seconds of 100ms frames. Deep enough to ride out a slow decode or a GC pause,
-         * shallow enough that a decoder falling behind for longer is cut loose rather than
-         * spending the rest of the session narrating the past. */
-        const val LOCAL_FRAME_BUFFER = 32
+              const val LOCAL_FRAME_BUFFER = 32
     }
 }

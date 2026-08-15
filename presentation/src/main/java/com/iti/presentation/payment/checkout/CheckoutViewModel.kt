@@ -6,15 +6,13 @@ import com.example.designsystem.text.UiText
 import com.iti.domain.core.Result
 import com.iti.domain.core.fold
 import com.iti.domain.core.onSuccess
-import com.iti.domain.payment.model.CardBrand
-import com.iti.domain.payment.model.PaymentIntention
-import com.iti.domain.payment.model.PaymentMethodType
 import com.iti.domain.payment.model.PaymentStatus
+import com.iti.domain.payment.model.PaymentMethodType
 import com.iti.domain.payment.model.WalletProvider
+import com.iti.domain.payment.model.CardBrand
 import com.iti.domain.payment.usecase.ActivateSubscriptionAfterPaymentUseCase
-import com.iti.domain.payment.usecase.ConfirmCardPaymentUseCase
-import com.iti.domain.payment.usecase.ConfirmWalletPaymentUseCase
 import com.iti.domain.payment.usecase.CreatePaymentIntentionUseCase
+import com.iti.domain.payment.usecase.GetPaymentStatusUseCase
 import com.iti.domain.payment.usecase.validation.CardValidators
 import com.iti.domain.payment.usecase.validation.WalletNumberValidator
 import com.iti.domain.usecase.subscription.GetSubscriptionPackagesUseCase
@@ -24,18 +22,19 @@ import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class CheckoutViewModel(
     private val packageId: String,
     private val getSubscriptionPackages: GetSubscriptionPackagesUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
     private val createPaymentIntention: CreatePaymentIntentionUseCase,
-    private val confirmWalletPayment: ConfirmWalletPaymentUseCase,
-    private val confirmCardPayment: ConfirmCardPaymentUseCase,
+    private val getPaymentStatus: GetPaymentStatusUseCase,
     private val activateSubscriptionAfterPayment: ActivateSubscriptionAfterPaymentUseCase,
 ) : ViewModel(),
     StateHolder<CheckoutUiState> by DefaultStateHolder(CheckoutUiState()),
@@ -84,6 +83,7 @@ class CheckoutViewModel(
             CheckoutIntent.PayClicked -> submitPayment()
             CheckoutIntent.OverlayDismissed -> handleOverlayDismissed()
             CheckoutIntent.RetryLoadClicked -> loadPackage()
+            is CheckoutIntent.PaymobSdkResult -> handleSdkResult(intent.outcome)
         }
     }
 
@@ -118,55 +118,106 @@ class CheckoutViewModel(
 
     private fun submitPayment() {
         if (currentState.isProcessing) return
-        val pkg = currentState.pkg ?: return
+        currentState.pkg ?: return
         val method = methodForSelectedTab()
 
         val isValid = if (method == PaymentMethodType.MOBILE_WALLET) validateWalletForm() else validateCardForm()
         if (!isValid) return
 
-        updateState { copy(overlay = CheckoutOverlay.Loading) }
+        val idempotencyKey = UUID.randomUUID().toString()
+        updateState { copy(overlay = CheckoutOverlay.Loading, pendingIntentionId = null) }
+
         viewModelScope.launch {
-            when (val intentionResult = createPaymentIntention(pkg.id, method)) {
+            when (val intentionResult = createPaymentIntention(packageId, method, idempotencyKey)) {
                 is Result.Error -> updateState {
                     copy(overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_error_intention_failed)))
                 }
-                is Result.Success -> confirmAndActivate(pkg.id, intentionResult.data, method)
+                is Result.Success -> {
+                    val intention = intentionResult.data
+                    updateState { copy(pendingIntentionId = intention.intentionId) }
+                    // Dismiss loading overlay before SDK launches its own UI
+                    updateState { copy(overlay = null) }
+                    sendEffect(CheckoutEffect.LaunchPaymobSdk(intention.clientSecret, intention.publicKey))
+                }
             }
         }
     }
 
-    private suspend fun confirmAndActivate(packageId: String, intention: PaymentIntention, method: PaymentMethodType) {
-        val outcomeResult = if (method == PaymentMethodType.MOBILE_WALLET) {
-            confirmWalletPayment(
-                intention.intentionId,
-                currentState.selectedWalletProvider ?: return,
-                currentState.walletNumber,
-            )
-        } else {
-            confirmCardPayment(
-                intention.intentionId,
-                currentState.selectedCardBrand ?: return,
-                currentState.cardNumber,
-                currentState.expiry.asMonthYear(),
-                currentState.cvv,
-                currentState.cardholderName,
-            )
-        }
-
-        when (outcomeResult) {
-            is Result.Error -> updateState {
+    /**
+     * Called when the Paymob SDK reports back. We never trust the SDK callback alone — we always
+     * confirm with the backend status endpoint before activating the subscription.
+     *
+     * On FAILURE the SDK callback is definitive; no need to poll.
+     * On SUCCESS or PENDING we poll up to [MAX_STATUS_POLLS] times with [STATUS_POLL_DELAY_MS]
+     * between each attempt.
+     */
+    private fun handleSdkResult(outcome: PaymobSdkOutcome) {
+        if (outcome is PaymobSdkOutcome.Failure) {
+            updateState {
                 copy(overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_payment_failed)))
             }
-            is Result.Success -> when (outcomeResult.data.status) {
-                PaymentStatus.SUCCESS -> {
-                    activateSubscriptionAfterPayment(packageId)
-                    updateState { copy(overlay = CheckoutOverlay.Success(UiText.Resource(R.string.checkout_payment_success))) }
+            return
+        }
+
+        val intentionId = currentState.pendingIntentionId
+        if (intentionId == null) {
+            updateState {
+                copy(overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_payment_failed)))
+            }
+            return
+        }
+
+        updateState { copy(overlay = CheckoutOverlay.Loading) }
+        viewModelScope.launch {
+            pollStatus(intentionId)
+        }
+    }
+
+    private suspend fun pollStatus(intentionId: String) {
+        repeat(MAX_STATUS_POLLS) { attempt ->
+            when (val statusResult = getPaymentStatus(intentionId)) {
+                is Result.Error -> {
+                    if (attempt == MAX_STATUS_POLLS - 1) {
+                        updateState {
+                            copy(overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_payment_failed)))
+                        }
+                        return
+                    }
+                    delay(STATUS_POLL_DELAY_MS)
                 }
-                PaymentStatus.PENDING -> updateState {
-                    copy(overlay = CheckoutOverlay.Success(UiText.Resource(R.string.checkout_payment_pending)))
-                }
-                PaymentStatus.FAILED -> updateState {
-                    copy(overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_payment_failed)))
+                is Result.Success -> when (statusResult.data.status) {
+                    PaymentStatus.SUCCESS -> {
+                        activateSubscriptionAfterPayment(packageId)
+                        updateState {
+                            copy(
+                                overlay = CheckoutOverlay.Success(UiText.Resource(R.string.checkout_payment_success)),
+                                pendingIntentionId = null,
+                            )
+                        }
+                        return
+                    }
+                    PaymentStatus.FAILED -> {
+                        updateState {
+                            copy(
+                                overlay = CheckoutOverlay.Error(UiText.Resource(R.string.checkout_payment_failed)),
+                                pendingIntentionId = null,
+                            )
+                        }
+                        return
+                    }
+                    PaymentStatus.PENDING -> {
+                        if (attempt < MAX_STATUS_POLLS - 1) {
+                            delay(STATUS_POLL_DELAY_MS)
+                        } else {
+                            // Exhausted retries while still PENDING — tell user payment is processing
+                            updateState {
+                                copy(
+                                    overlay = CheckoutOverlay.Success(UiText.Resource(R.string.checkout_payment_pending)),
+                                    pendingIntentionId = null,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -235,11 +286,13 @@ class CheckoutViewModel(
         const val EXPIRY_MAX_DIGITS = 4
         const val CVV_MAX_DIGITS = 3
 
+        const val MAX_STATUS_POLLS = 3
+
+        const val STATUS_POLL_DELAY_MS = 2_000L
+
         fun String.digitsOnly(maxLength: Int): String = filter { it.isDigit() }.take(maxLength)
 
-        /** Converts the raw "MMYY" digits the state holds (display-formatted to "MM/YY" only via
-         * `ExpiryDateVisualTransformation`) to the "MM/YY" string [CardValidators.isValidExpiry]
-         * and the payment confirmation call expect. */
+        /** Converts "MMYY" raw digits to "MM/YY" string for validation. */
         fun String.asMonthYear(): String = if (length > 2) "${take(2)}/${drop(2)}" else this
     }
 }

@@ -24,6 +24,7 @@ import com.iti.presentation.circle.CurrentCircleCard
 import com.iti.presentation.home.components.AyahOfTheDayCard
 import com.iti.presentation.home.components.CirclesSummaryCard
 import com.iti.presentation.home.components.ContinueReadingCard
+import com.iti.presentation.home.components.ExamCtaCard
 import com.iti.presentation.home.components.HomeHeader
 import com.iti.presentation.home.components.HomeSkeleton
 import com.iti.presentation.home.components.OngoingCallCard
@@ -42,6 +43,8 @@ fun HomeContent(
     onSeeAllCirclesClick: () -> Unit,
     onSheikhClick: (String) -> Unit,
     onCircleClick: (String) -> Unit,
+    onJoinCircleClick: (String) -> Unit,
+    onStartExamClick: () -> Unit,
     onRetryClick: () -> Unit,
     onViewPendingMeetingClick: () -> Unit = {},
     onCancelPendingMeetingClick: () -> Unit = {},
@@ -112,14 +115,20 @@ fun HomeContent(
                 }
 
                 // ── Continue reading ─────────────────────────────────────────
-                state.readingProgress?.let { progress ->
-                    item(key = "continue-reading") {
-                        ContinueReadingCard(
-                            progress = progress,
-                            onClick = onContinueReadingClick,
-                            modifier = gutter,
-                        )
-                    }
+                item(key = "continue-reading") {
+                    ContinueReadingCard(
+                        progress = state.readingProgress,
+                        onClick = onContinueReadingClick,
+                        modifier = gutter,
+                    )
+                }
+
+                // ── Exam CTA ──────────────────────────────────────────────────
+                item(key = "exam-cta") {
+                    ExamCtaCard(
+                        onClick = onStartExamClick,
+                        modifier = gutter
+                    )
                 }
 
                 // ── Sheikhs ─────────────────────────────────────────────────

@@ -9,6 +9,7 @@ object AuthField {
     const val PASSWORD = "password"
     const val PHONE_NUMBER = "phoneNumber"
     const val OTP = "otp"
+    const val GENDER = "gender"
 }
 
 

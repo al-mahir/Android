@@ -105,6 +105,7 @@ class RegisterViewModelTest {
         onIntent(RegisterIntent.FirstNameChanged("Yasser"))
         onIntent(RegisterIntent.LastNameChanged("Ali"))
         onIntent(RegisterIntent.PhoneNumberChanged("1247170592"))
+        onIntent(RegisterIntent.GenderChanged("MALE"))
         onIntent(RegisterIntent.EmailChanged(email))
         onIntent(RegisterIntent.PasswordChanged(password))
         onIntent(RegisterIntent.SubmitRegistration)

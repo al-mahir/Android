@@ -64,6 +64,7 @@ class HomeViewModel(
             HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
             HomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
             HomeIntent.DismissActiveCallClicked -> dismissActiveCall()
+            HomeIntent.StartExamClicked -> sendEffect(HomeEffect.OpenExamSetup)
         }
     }
 
@@ -201,7 +202,7 @@ class HomeViewModel(
     }
 
     private fun openReadingProgress() {
-        val page = currentState.readingProgress?.pageNumber ?: return
+        val page = currentState.readingProgress?.pageNumber ?: 1
         sendEffect(HomeEffect.OpenMushafAtPage(page))
     }
 }

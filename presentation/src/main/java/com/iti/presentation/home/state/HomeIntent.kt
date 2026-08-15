@@ -13,4 +13,5 @@ sealed interface HomeIntent {
     data object CancelPendingMeetingClicked : HomeIntent
     data object RejoinActiveCallClicked : HomeIntent
     data object DismissActiveCallClicked : HomeIntent
+    data object StartExamClicked : HomeIntent
 }

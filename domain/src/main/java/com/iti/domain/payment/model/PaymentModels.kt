@@ -20,6 +20,7 @@ enum class CardBrand {
 data class PaymentIntention(
     val intentionId: String,
     val clientSecret: String,
+    val publicKey: String,
     val amountMinorUnits: Long,
     val currencyCode: String,
 )
@@ -31,7 +32,7 @@ enum class PaymentStatus {
 }
 
 data class PaymentOutcome(
-    val transactionId: String,
+    val transactionId: String?,
     val status: PaymentStatus,
     val failureReasonCode: String? = null,
 )
