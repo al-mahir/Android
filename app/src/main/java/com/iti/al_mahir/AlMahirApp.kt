@@ -22,24 +22,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 
-private const val JWT_EXPIRY_LEEWAY_MS = 60_000L
-
-private fun String.isJwtExpired(): Boolean {
-    val payload = split('.').getOrNull(1) ?: return false
-    return runCatching {
-        val padded = payload + when (payload.length % 4) {
-            2 -> "=="
-            3 -> "="
-            else -> ""
-        }
-        val decoded = String(
-            android.util.Base64.decode(padded, android.util.Base64.URL_SAFE)
-        )
-        val exp = org.json.JSONObject(decoded).optLong("exp", 0L)
-        exp > 0L && exp * 1000L <= System.currentTimeMillis() + JWT_EXPIRY_LEEWAY_MS
-    }.getOrDefault(false)
-}
-
 class AlMahirApp : Application() {
     override fun onCreate() {
         super.onCreate()

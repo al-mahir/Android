@@ -186,7 +186,9 @@ private suspend fun RefreshTokensParams.refreshSession(
 }
 
 private suspend fun HttpResponse.readTokenPair(fallbackRefreshToken: String): TokenPair? {
-    val payload = runCatching { body<ApiResponse<TokenPairDto>>() }.getOrNull()?.data ?: return null
+    val envelope = runCatching { body<ApiResponse<TokenPairDto>>() }.getOrNull() ?: return null
+    if (!envelope.isSuccessful) return null
+    val payload = envelope.data ?: return null
     val accessToken = payload.accessToken?.takeIf { it.isNotBlank() } ?: return null
     return TokenPair(
         accessToken = accessToken,

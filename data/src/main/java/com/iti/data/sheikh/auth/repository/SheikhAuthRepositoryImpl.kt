@@ -150,7 +150,7 @@ class SheikhAuthRepositoryImpl(
         val response = request()
         val payload = response.data
         when {
-            !response.success -> Result.Error(response.toDomainError())
+            !response.isSuccessful -> Result.Error(response.toDomainError())
             payload == null -> Result.Error(DomainError.ServerError(response.message ?: EMPTY_PAYLOAD))
             else -> Result.Success(onSuccess(payload))
         }
