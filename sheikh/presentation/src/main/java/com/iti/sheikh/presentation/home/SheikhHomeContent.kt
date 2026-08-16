@@ -26,6 +26,7 @@ fun SheikhHomeContent(
     onRejoinActiveCallClick: () -> Unit = {},
     onDismissActiveCallClick: () -> Unit = {},
     availabilityPanel: @Composable () -> Unit,
+    circlesPanel: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val rootModifier = modifier
@@ -71,13 +72,7 @@ fun SheikhHomeContent(
                 availabilityPanel()
             }
 
-            PrimaryButton(
-                caption = stringResource(R.string.sheikh_home_open_circles),
-                onClick = onOpenCircles,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Theme.spacing.medium),
-            )
+            circlesPanel()
         }
     }
 }

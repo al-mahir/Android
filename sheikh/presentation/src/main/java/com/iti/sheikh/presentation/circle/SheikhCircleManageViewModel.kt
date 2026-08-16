@@ -38,6 +38,7 @@ class SheikhCircleManageViewModel(
         SheikhCircleManageIntent.StartClicked -> start()
         SheikhCircleManageIntent.EndClicked -> end()
         SheikhCircleManageIntent.CancelClicked -> cancel()
+        SheikhCircleManageIntent.JoinSessionClicked -> joinSession()
         SheikhCircleManageIntent.EditClicked -> openEdit()
         is SheikhCircleManageIntent.EditNameChanged -> updateState { copy(editName = intent.name) }
         is SheikhCircleManageIntent.EditStartDateChanged -> updateState { copy(editStartDate = intent.date) }
@@ -160,17 +161,53 @@ class SheikhCircleManageViewModel(
         if (currentState.actionInProgress) return
         updateState { copy(actionInProgress = true) }
         viewModelScope.launch {
-            circleRepository.startCircle(circleId).fold(
-                onSuccess = {
-                    updateState { copy(actionInProgress = false, circle = it) }
+            // 1. Tell the server to start the circle.
+            val startResult = circleRepository.startCircle(circleId)
+            startResult.fold(
+                onSuccess = { updatedCircle ->
+                    updateState { copy(actionInProgress = false, circle = updatedCircle) }
                     sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_started))
                 },
                 onFailure = {
                     updateState { copy(actionInProgress = false) }
                     sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                    return@launch
                 },
             )
+
+            // 2. Immediately fetch the Agora token so the sheikh enters the call.
+            fetchTokenAndNavigate()
         }
+    }
+
+    /**
+     * Fetches the Agora token for an already-ONGOING circle and emits [SheikhCircleManageEffect.OpenCall].
+     * Used both after [start] and as a standalone recovery path via [JoinSessionClicked].
+     */
+    private fun joinSession() {
+        if (currentState.isTokenLoading || currentState.actionInProgress) return
+        viewModelScope.launch { fetchTokenAndNavigate() }
+    }
+
+    private suspend fun fetchTokenAndNavigate() {
+        updateState { copy(isTokenLoading = true) }
+        circleRepository.getToken(circleId).fold(
+            onSuccess = { circleToken ->
+                updateState { copy(isTokenLoading = false) }
+                sendEffect(
+                    SheikhCircleManageEffect.OpenCall(
+                        requestId = circleId,
+                        token = circleToken.token,
+                        channelName = circleToken.channelName,
+                        userAccount = circleToken.userAccount,
+                    )
+                )
+            },
+            onFailure = {
+                updateState { copy(isTokenLoading = false) }
+                sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_token_error))
+            },
+        )
     }
 
     private fun end() {

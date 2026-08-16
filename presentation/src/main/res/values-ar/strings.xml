@@ -404,8 +404,13 @@
 
     <string name="circle_leave_success">غادرت الحلقة.</string>
     <string name="circle_leave_success_title">غادرت الحلقة</string>
-    <string name="circle_leave_success_message">لم تعد عضوًا في هذه الحلقة.</string>
+    <string name="circle_leave_success_message">لم تعد عضواً في هذه الحلقة.</string>
     <string name="circle_leave_success_done">تم</string>
+
+    <!-- ===== In Session ===== -->
+    <string name="in_session_pending_requests">%1$d طلبات</string>
+    <string name="in_session_approve">قبول</string>
+    <string name="in_session_reject">رفض</string>
     <string name="circle_leave_error">تعذّر مغادرة الحلقة. حاول مرة أخرى.</string>
     
     <!-- ===== Create Circle ===== -->

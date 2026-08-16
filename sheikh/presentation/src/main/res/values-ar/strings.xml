@@ -94,6 +94,8 @@
     <string name="sheikh_circle_cancel_confirm">إلغاء</string>
     <string name="sheikh_circle_confirm_dismiss">ليس الآن</string>
     <string name="sheikh_circle_started">بدأت الحلقة.</string>
+    <string name="sheikh_circle_token_error">بدأت الحلقة. اضغط على "الانضمام للجلسة" للدخول.</string>
+    <string name="sheikh_circle_join_session">الانضمام للجلسة</string>
     <string name="sheikh_circle_ended">انتهت الحلقة.</string>
     <string name="sheikh_circle_cancelled">تم إلغاء الحلقة.</string>
     <string name="sheikh_circle_request_approved">تمت الموافقة على الطلب.</string>

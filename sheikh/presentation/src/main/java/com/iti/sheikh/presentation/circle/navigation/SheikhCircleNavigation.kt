@@ -20,6 +20,7 @@ sealed interface SheikhCircleRoute : NavKey {
 fun EntryProviderScope<NavKey>.sheikhCircleEntries(
     onNavigate: (SheikhCircleRoute) -> Unit,
     onBack: () -> Unit,
+    onOpenCall: (requestId: String, token: String, channelName: String, userAccount: String) -> Unit,
 ) {
     entry<SheikhCircleRoute.CircleList> {
         SheikhCircleListScreen(
@@ -40,6 +41,8 @@ fun EntryProviderScope<NavKey>.sheikhCircleEntries(
         SheikhCircleManageScreen(
             circleId = route.circleId,
             onBack = onBack,
+            onOpenCall = onOpenCall,
         )
     }
 }
+

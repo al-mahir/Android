@@ -43,6 +43,9 @@ import com.iti.sheikh.presentation.circle.navigation.SheikhCircleRoute
 import com.iti.sheikh.presentation.circle.navigation.sheikhCircleEntries
 import com.iti.sheikh.presentation.home.SheikhHomeScreen
 import com.iti.presentation.meetingrequest.navigation.meetingRequestEntries
+import com.iti.presentation.circle.InSessionScreen
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -54,6 +57,7 @@ import org.koin.compose.koinInject
 sealed interface SheikhAppRoute : NavKey {
     data object Home : SheikhAppRoute
     data object Profile : SheikhAppRoute
+    data class InSession(val circleId: String) : SheikhAppRoute
 }
 
 /** Sheikh-only view of the shared Profile menu: no "Sessions" row (student session history). */
@@ -240,6 +244,35 @@ private fun SheikhAppNavHost(
                                 },
                             )
                         },
+                        circlesPanel = { myCircles, availableCount ->
+                            val current = myCircles.firstOrNull { it.status == com.iti.meeting.domain.model.circle.CircleStatus.ONGOING }
+                                ?: myCircles.firstOrNull()
+                            
+                            val gutter = androidx.compose.ui.Modifier.padding(horizontal = com.example.designsystem.theme.Theme.spacing.medium)
+                            
+                            if (current != null) {
+                                androidx.compose.foundation.layout.Column {
+                                    com.example.designsystem.components.section.SectionHeader(
+                                        title = androidx.compose.ui.res.stringResource(com.iti.presentation.R.string.home_circles_title),
+                                        actionLabel = androidx.compose.ui.res.stringResource(com.iti.presentation.R.string.home_see_all),
+                                        onActionClick = { backStack.add(SheikhCircleRoute.CircleList) },
+                                        modifier = gutter,
+                                    )
+                                    com.iti.presentation.circle.CurrentCircleCard(
+                                        circle = current,
+                                        onClick = { backStack.add(SheikhCircleRoute.CircleManage(current.id)) },
+                                        modifier = gutter.padding(bottom = com.example.designsystem.theme.Theme.spacing.large),
+                                    )
+                                }
+                            } else {
+                                com.iti.presentation.home.components.CirclesSummaryCard(
+                                    joinedCount = myCircles.size,
+                                    availableCount = availableCount,
+                                    onClick = { backStack.add(SheikhCircleRoute.CircleList) },
+                                    modifier = gutter.padding(bottom = com.example.designsystem.theme.Theme.spacing.large),
+                                )
+                            }
+                        },
                     )
                 }
 
@@ -256,7 +289,17 @@ private fun SheikhAppNavHost(
                         },
                         onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                         onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
+                        onOpenCircleList = { backStack.add(SheikhCircleRoute.CircleList) },
+                        onOpenCircle = { circleId -> backStack.add(SheikhCircleRoute.CircleManage(circleId)) },
                         visibleMenuItems = sheikhProfileMenuItems,
+                    )
+                }
+
+                entry<SheikhAppRoute.InSession> { route ->
+                    InSessionScreen(
+                        circleId = route.circleId,
+                        onBack = { backStack.removeLastOrNull() },
+                        onOpenMushaf = { /* No Mushaf tab in Sheikh App currently, so no-op for now */ },
                     )
                 }
 
@@ -293,6 +336,11 @@ private fun SheikhAppNavHost(
                 sheikhCircleEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onBack = { backStack.removeLastOrNull() },
+                    onOpenCall = { requestId, token, channelName, userAccount ->
+                        // Sheikh also navigates to the shared InSession audio lobby
+                        // instead of the video CallScreen for circles.
+                        backStack.add(SheikhAppRoute.InSession(requestId))
+                    },
                 )
             },
         )

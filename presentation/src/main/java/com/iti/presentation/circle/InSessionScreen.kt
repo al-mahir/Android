@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,13 +42,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.activity.compose.BackHandler
-import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.avatar.InitialsAvatar
 import com.example.designsystem.components.button.ButtonHeightCompact
+import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.dialog.ConfirmationDialog
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.domain.model.circle.PendingJoinRequest
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
@@ -114,6 +120,16 @@ private fun InSessionContent(
             isLeaving = state.isLeaving,
             onLeave = { onIntent(InSessionIntent.Leave) },
         )
+
+        // ── Pending join requests (host only) ─────────────────────────────────
+        if (state.isHost && state.pendingRequests.isNotEmpty()) {
+            PendingRequestsPanel(
+                requests = state.pendingRequests,
+                actionInProgress = state.actionInProgress,
+                onApprove = { userId -> onIntent(InSessionIntent.ApproveRequest(userId)) },
+                onReject = { userId -> onIntent(InSessionIntent.RejectRequest(userId)) },
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -378,5 +394,77 @@ private fun SessionBarItem(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = onClick) { content() }
         Text(text = label, style = Theme.typography.body.small, color = SessionSecondary)
+    }
+}
+
+@Composable
+private fun PendingRequestsPanel(
+    requests: List<PendingJoinRequest>,
+    actionInProgress: Boolean,
+    onApprove: (String) -> Unit,
+    onReject: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Theme.colors.backGround)
+            .padding(vertical = Theme.spacing.small),
+    ) {
+        Text(
+            text = stringResource(R.string.in_session_pending_requests, requests.size),
+            style = Theme.typography.body.medium,
+            color = Theme.colors.secondaryFont,
+            modifier = Modifier
+                .padding(horizontal = Theme.spacing.medium)
+                .padding(bottom = Theme.spacing.small),
+        )
+
+        LazyColumn(
+            modifier = Modifier.height(160.dp),
+        ) {
+            items(requests, key = { it.membershipId }) { request ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
+                ) {
+                    InitialsAvatar(
+                        initials = request.initials,
+                        imageUrl = request.avatarUrl,
+                        contentDescription = request.displayName,
+                        modifier = Modifier.size(40.dp),
+                    )
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = request.displayName,
+                            style = Theme.typography.body.large,
+                            color = Theme.colors.primaryFont,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+
+                    PrimaryButton(
+                        caption = stringResource(R.string.in_session_approve),
+                        onClick = { onApprove(request.userId) },
+                        isLoading = actionInProgress,
+                        height = ButtonHeightCompact,
+                        modifier = Modifier.width(80.dp),
+                    )
+
+                    SecondaryButton(
+                        caption = stringResource(R.string.in_session_reject),
+                        onClick = { onReject(request.userId) },
+                        isDisabled = actionInProgress,
+                        height = ButtonHeightCompact,
+                        modifier = Modifier.width(80.dp),
+                    )
+                }
+            }
+        }
     }
 }

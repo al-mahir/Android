@@ -68,6 +68,7 @@ import org.koin.core.parameter.parametersOf
 fun SheikhCircleManageScreen(
     circleId: String,
     onBack: () -> Unit,
+    onOpenCall: (requestId: String, token: String, channelName: String, userAccount: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhCircleManageViewModel = koinViewModel(parameters = { parametersOf(circleId) }),
 ) {
@@ -81,6 +82,8 @@ fun SheikhCircleManageScreen(
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
             is SheikhCircleManageEffect.ShowInviteToken ->
                 pendingInviteToken = effect.token to effect.circleName
+            is SheikhCircleManageEffect.OpenCall ->
+                onOpenCall(effect.requestId, effect.token, effect.channelName, effect.userAccount)
         }
     }
 
@@ -94,6 +97,7 @@ fun SheikhCircleManageScreen(
         onStart = { viewModel.onIntent(SheikhCircleManageIntent.StartClicked) },
         onEnd = { viewModel.onIntent(SheikhCircleManageIntent.EndClicked) },
         onCancel = { viewModel.onIntent(SheikhCircleManageIntent.CancelClicked) },
+        onJoinSession = { viewModel.onIntent(SheikhCircleManageIntent.JoinSessionClicked) },
         onEdit = { viewModel.onIntent(SheikhCircleManageIntent.EditClicked) },
         onEditNameChanged = { viewModel.onIntent(SheikhCircleManageIntent.EditNameChanged(it)) },
         onEditStartDateChanged = { viewModel.onIntent(SheikhCircleManageIntent.EditStartDateChanged(it)) },
@@ -123,6 +127,7 @@ private fun SheikhCircleManageContent(
     onStart: () -> Unit,
     onEnd: () -> Unit,
     onCancel: () -> Unit,
+    onJoinSession: () -> Unit,
     onEdit: () -> Unit,
     onEditNameChanged: (String) -> Unit,
     onEditStartDateChanged: (String) -> Unit,
@@ -193,7 +198,9 @@ private fun SheikhCircleManageContent(
                     LifecycleActions(
                         circle = circle,
                         actionInProgress = state.actionInProgress,
+                        isTokenLoading = state.isTokenLoading,
                         onStart = onStart,
+                        onJoinSession = onJoinSession,
                         onEnd = { pendingLifecycleAction = SheikhCircleManageIntent.EndClicked },
                         onCancel = { pendingLifecycleAction = SheikhCircleManageIntent.CancelClicked },
                     )
@@ -405,7 +412,9 @@ private fun MembersSection(
 private fun LifecycleActions(
     circle: Circle,
     actionInProgress: Boolean,
+    isTokenLoading: Boolean,
     onStart: () -> Unit,
+    onJoinSession: () -> Unit,
     onEnd: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
@@ -416,21 +425,29 @@ private fun LifecycleActions(
                 PrimaryButton(
                     caption = stringResource(R.string.sheikh_circle_start),
                     onClick = onStart,
-                    isLoading = actionInProgress,
+                    isLoading = actionInProgress || isTokenLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 SecondaryButton(
                     caption = stringResource(R.string.sheikh_circle_cancel),
                     onClick = onCancel,
-                    isDisabled = actionInProgress,
+                    isDisabled = actionInProgress || isTokenLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             CircleStatus.ONGOING -> {
+                // Primary action: enter (or re-enter) the live session.
                 PrimaryButton(
+                    caption = stringResource(R.string.sheikh_circle_join_session),
+                    onClick = onJoinSession,
+                    isLoading = isTokenLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                // Destructive action: end the circle for everyone.
+                SecondaryButton(
                     caption = stringResource(R.string.sheikh_circle_end),
                     onClick = onEnd,
-                    isLoading = actionInProgress,
+                    isDisabled = actionInProgress || isTokenLoading,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

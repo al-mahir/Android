@@ -7,6 +7,9 @@ import com.iti.domain.connectivity.ConnectivityStatus
 import com.iti.domain.core.getOrNull
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.meeting.domain.repository.MeetingRepository
+import com.iti.meeting.domain.repository.CircleRepository
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.model.circle.Circle
 import com.iti.sheikh.presentation.R
 import com.iti.sheikh.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.sheikh.presentation.core.mvi.DefaultStateHolder
@@ -26,6 +29,7 @@ class SheikhHomeViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val connectivityObserver: ConnectivityObserver,
     private val meetingRepository: MeetingRepository,
+    private val circleRepository: CircleRepository,
 ) : ViewModel(),
     StateHolder<SheikhHomeUiState> by DefaultStateHolder(SheikhHomeUiState()),
     EffectPublisher<SheikhHomeEffect> by DefaultEffectPublisher() {
@@ -88,6 +92,29 @@ class SheikhHomeViewModel(
     private fun observeContent() {
         contentJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
+
+        viewModelScope.launch {
+            circleRepository.getMyCircles().fold(
+                onSuccess = { circles -> updateState { copy(myCircles = circles) } },
+                onFailure = { },
+            )
+        }
+
+        viewModelScope.launch {
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(
+                            availableCircles = circles.filter { circle ->
+                                circle.status == CircleStatus.SCHEDULED ||
+                                    circle.status == CircleStatus.ONGOING
+                            },
+                        )
+                    }
+                },
+                onFailure = { },
+            )
+        }
 
         contentJob = combine(
             getCurrentUser(),

@@ -407,6 +407,11 @@
     <string name="circle_leave_success_message">You are no longer a member of this circle.</string>
     <string name="circle_leave_success_done">Done</string>
 
+    <!-- ===== In Session ===== -->
+    <string name="in_session_pending_requests">%1$d requests</string>
+    <string name="in_session_approve">Approve</string>
+    <string name="in_session_reject">Reject</string>
+
     <!-- ===== Create Circle ===== -->
     <string name="create_circle_title">Create Circle</string>
     <string name="create_circle_subtitle">Start your private study circle</string>

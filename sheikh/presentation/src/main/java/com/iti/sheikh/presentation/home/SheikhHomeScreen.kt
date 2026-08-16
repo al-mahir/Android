@@ -17,6 +17,7 @@ fun SheikhHomeScreen(
     onOpenActiveCall: (String, String, String, String, String?) -> Unit,
     onOpenCircles: () -> Unit,
     availabilityPanel: @Composable () -> Unit,
+    circlesPanel: @Composable (myCircles: List<com.iti.meeting.domain.model.circle.Circle>, availableCount: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhHomeViewModel = koinViewModel(),
 ) {
@@ -41,6 +42,12 @@ fun SheikhHomeScreen(
         onDismissActiveCallClick = { viewModel.onIntent(SheikhHomeIntent.DismissActiveCallClicked) },
         onOpenCircles = onOpenCircles,
         availabilityPanel = availabilityPanel,
+        circlesPanel = {
+            circlesPanel(
+                state.myCircles,
+                state.availableCircles.count { available -> state.myCircles.none { it.id == available.id } }
+            )
+        },
         modifier = modifier,
     )
 }

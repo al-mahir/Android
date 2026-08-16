@@ -6,6 +6,7 @@ import com.iti.meeting.domain.model.circle.CircleMember
 import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.CircleRosterEvent
+import com.iti.meeting.domain.repository.PendingJoinRequestEvent
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
@@ -41,6 +42,8 @@ class InSessionViewModel(
         InSessionIntent.DismissLeaveDialog -> updateState { copy(isLeaveDialogVisible = false) }
         InSessionIntent.OpenChat -> updateState { copy(unreadChatCount = 0) }
         InSessionIntent.OpenMushaf -> sendEffect(InSessionEffect.OpenMushaf)
+        is InSessionIntent.ApproveRequest -> approve(intent.userId)
+        is InSessionIntent.RejectRequest -> reject(intent.userId)
     }
 
     private fun leaveCircle() {
@@ -79,6 +82,8 @@ class InSessionViewModel(
                 onSuccess = { circle ->
                     val isHost = circle.ownerId == currentUserId || circle.host?.userId == currentUserId
                     updateState { copy(circle = circle, isHost = isHost) }
+                    // Start observing pending join requests only if this user is the host.
+                    if (isHost) observePendingRequests()
                 },
                 onFailure = { /* keep last known circle; roster still renders */ },
             )
@@ -124,6 +129,57 @@ class InSessionViewModel(
 
     private fun removeParticipant(userId: String) {
         updateState { copy(participants = participants.filterNot { it.id == userId }) }
+    }
+
+    /** Streams live pending join requests for the host via STOMP. */
+    private fun observePendingRequests() {
+        viewModelScope.launch {
+            // Seed with the current snapshot so requests already waiting are visible immediately.
+            circleRepository.getPendingRequests(circleId).onSuccess { initial ->
+                updateState { copy(pendingRequests = initial) }
+            }
+        }
+        circleRepository.observePendingRequests(circleId)
+            .onEach { event ->
+                when (event) {
+                    is PendingJoinRequestEvent.Received -> updateState {
+                        copy(pendingRequests = (pendingRequests + event.request).distinctBy { it.membershipId })
+                    }
+                    is PendingJoinRequestEvent.Removed -> updateState {
+                        copy(pendingRequests = pendingRequests.filterNot { it.membershipId == event.membershipId })
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun approve(userId: String) = runRequestAction(userId) {
+        circleRepository.approveJoinRequest(circleId, userId)
+    }
+
+    private fun reject(userId: String) = runRequestAction(userId) {
+        circleRepository.rejectJoinRequest(circleId, userId)
+    }
+
+    private fun runRequestAction(userId: String, block: suspend () -> Result<Unit>) {
+        if (currentState.actionInProgress) return
+        updateState { copy(actionInProgress = true) }
+        viewModelScope.launch {
+            block().fold(
+                onSuccess = {
+                    updateState {
+                        copy(
+                            actionInProgress = false,
+                            pendingRequests = pendingRequests.filterNot { it.userId == userId },
+                        )
+                    }
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(InSessionEffect.ShowMessage(R.string.circle_leave_error))
+                },
+            )
+        }
     }
 }
 

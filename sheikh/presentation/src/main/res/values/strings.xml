@@ -93,6 +93,8 @@
     <string name="sheikh_circle_cancel_confirm">Cancel</string>
     <string name="sheikh_circle_confirm_dismiss">Not now</string>
     <string name="sheikh_circle_started">Circle started.</string>
+    <string name="sheikh_circle_token_error">Circle started. Tap \"Join session\" to enter.</string>
+    <string name="sheikh_circle_join_session">Join session</string>
     <string name="sheikh_circle_ended">Circle ended.</string>
     <string name="sheikh_circle_cancelled">Circle cancelled.</string>
     <string name="sheikh_circle_request_approved">Request approved.</string>

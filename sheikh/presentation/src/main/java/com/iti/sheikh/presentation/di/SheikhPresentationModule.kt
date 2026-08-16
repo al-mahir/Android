@@ -8,7 +8,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val sheikhPresentationModule = module {
-    viewModel { SheikhHomeViewModel(get(), get(), get()) }
+    viewModel { SheikhHomeViewModel(get(), get(), get(), get()) }
     viewModel { SheikhCircleListViewModel(get()) }
     viewModel { SheikhCreateCircleViewModel(get()) }
     viewModel { (circleId: String) -> SheikhCircleManageViewModel(circleId, get()) }
