@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import com.iti.domain.model.Subscription
 import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
+import com.iti.meeting.domain.model.circle.Circle
 
 enum class ProfileDialog { LOGOUT, DELETE_ACCOUNT }
 
@@ -17,6 +18,8 @@ data class ProfileUiState(
     val dialog: ProfileDialog? = null,
     val isProcessingDialogAction: Boolean = false,
     val isOffline: Boolean = false,
+    val myCircles: List<Circle> = emptyList(),
+    val availableCircles: List<Circle> = emptyList(),
 ) {
     val hasError: Boolean get() = errorMessageRes != null && user == null
 

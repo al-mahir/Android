@@ -22,4 +22,8 @@ sealed interface ProfileIntent {
     data class MenuOptionClicked(val menuType: ProfileMenuType) : ProfileIntent
 
     data class SocialChannelClicked(val channel: SocialChannel) : ProfileIntent
+
+    data object SeeAllCirclesClicked : ProfileIntent
+
+    data class CircleClicked(val circleId: String) : ProfileIntent
 }

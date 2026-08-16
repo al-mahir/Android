@@ -30,6 +30,9 @@ import kotlinx.coroutines.launch
 
 import com.iti.domain.connectivity.ConnectivityObserver
 import com.iti.domain.connectivity.ConnectivityStatus
+import com.iti.domain.core.fold
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.repository.CircleRepository
 
 class ProfileViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
@@ -37,6 +40,7 @@ class ProfileViewModel(
     private val logout: LogoutUseCase,
     private val deleteAccount: DeleteAccountUseCase,
     private val connectivityObserver: ConnectivityObserver,
+    private val circleRepository: CircleRepository,
 ) : ViewModel(),
     StateHolder<ProfileUiState> by DefaultStateHolder(ProfileUiState()),
     EffectPublisher<ProfileEffect> by DefaultEffectPublisher() {
@@ -59,12 +63,37 @@ class ProfileViewModel(
             is ProfileIntent.MenuOptionClicked -> openMenuOption(intent.menuType)
             is ProfileIntent.SocialChannelClicked ->
                 sendEffect(ProfileEffect.OpenSocialChannel(intent.channel))
+            ProfileIntent.SeeAllCirclesClicked -> sendEffect(ProfileEffect.OpenCircleList)
+            is ProfileIntent.CircleClicked -> sendEffect(ProfileEffect.OpenCircle(intent.circleId))
         }
     }
 
     private fun observeAccount() {
         accountJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
+
+        viewModelScope.launch {
+            circleRepository.getMyCircles().fold(
+                onSuccess = { circles -> updateState { copy(myCircles = circles) } },
+                onFailure = { },
+            )
+        }
+
+        viewModelScope.launch {
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(
+                            availableCircles = circles.filter { circle ->
+                                circle.status == CircleStatus.SCHEDULED ||
+                                    circle.status == CircleStatus.ONGOING
+                            },
+                        )
+                    }
+                },
+                onFailure = { },
+            )
+        }
 
         accountJob = combine(
             getCurrentUser(),

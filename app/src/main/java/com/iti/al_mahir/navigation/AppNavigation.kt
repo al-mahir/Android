@@ -353,6 +353,8 @@ private fun AppNavHost(
                                 onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                                 onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
                                 onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
+                                onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                                onOpenCircle = { circleId -> backStack.add(AppRoute.CircleDetails(circleId)) },
                             )
                         }
 
@@ -371,10 +373,6 @@ private fun AppNavHost(
                                 onBack = { popBackStack() },
                                 onOpenCircle = { circleId ->
                                     backStack.add(AppRoute.CircleDetails(circleId))
-                                },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId, ""))
-
                                 },
                                 onRequestMeeting = { sheikhId, sheikhName ->
                                     backStack.add(
@@ -414,9 +412,6 @@ private fun AppNavHost(
                                 onBack = { popBackStack() },
                                 onOpenJoining = { circleId, membershipId ->
                                     backStack.add(AppRoute.JoiningCircle(circleId, membershipId))
-                                },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId, ""))
                                 },
                                 onOpenSession = { circleId ->
                                     popBackStack()

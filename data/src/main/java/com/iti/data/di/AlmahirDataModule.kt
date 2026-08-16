@@ -14,7 +14,7 @@ import com.iti.data.repository.AlmahirRepositoryImpl
 import com.iti.data.settings.local.AppPreferencesDataStore
 import com.iti.data.settings.repository.SettingsRepositoryImpl
 import com.iti.domain.repository.AlmahirRepository
-import com.iti.domain.repository.CircleRepository
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.domain.repository.ExamRepository
 import com.iti.domain.repository.RecitationSessionRepository
 import com.iti.domain.repository.SheikhRepository

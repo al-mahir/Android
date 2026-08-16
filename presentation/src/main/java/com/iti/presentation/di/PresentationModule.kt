@@ -102,7 +102,7 @@ val presentationModule = module {
     // ── ViewModels ────────────────────────────────────────────────────────────
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
     viewModel { PackagesViewModel(get(), get()) }
     viewModel { SubscriptionDetailsViewModel(get(), get(), get()) }

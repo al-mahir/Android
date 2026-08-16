@@ -57,7 +57,6 @@ fun HomeScreen(
         onSeeAllCirclesClick = { viewModel.onIntent(HomeIntent.SeeAllCirclesClicked) },
         onSheikhClick = { sheikhId -> viewModel.onIntent(HomeIntent.SheikhClicked(sheikhId)) },
         onCircleClick = { circleId -> viewModel.onIntent(HomeIntent.CircleClicked(circleId)) },
-        onJoinCircleClick = { circleId -> viewModel.onIntent(HomeIntent.JoinCircleClicked(circleId)) },
         onStartExamClick = { viewModel.onIntent(HomeIntent.StartExamClicked) },
         onRetryClick = { viewModel.onIntent(HomeIntent.Retry) },
         onViewPendingMeetingClick = { viewModel.onIntent(HomeIntent.ViewPendingMeetingClicked) },

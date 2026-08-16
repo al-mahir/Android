@@ -43,7 +43,6 @@ fun HomeContent(
     onSeeAllCirclesClick: () -> Unit,
     onSheikhClick: (String) -> Unit,
     onCircleClick: (String) -> Unit,
-    onJoinCircleClick: (String) -> Unit,
     onStartExamClick: () -> Unit,
     onRetryClick: () -> Unit,
     onViewPendingMeetingClick: () -> Unit = {},
@@ -160,7 +159,7 @@ fun HomeContent(
                 // ── Circles ──────────────────────────────────────────────────
                 // A joined circle is featured as the "current circle"; otherwise the plain
                 // summary entry opens the full circle list.
-                if (!state.isOffline && (state.myCircles.isNotEmpty() || availableCount > 0)) {
+                if (!state.isOffline) {
                     val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
                         ?: state.myCircles.firstOrNull()
                     if (current != null) {

@@ -32,6 +32,8 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit = {},
     onOpenSessions: () -> Unit = {},
     onOpenAttributions: () -> Unit = {},
+    onOpenCircleList: () -> Unit = {},
+    onOpenCircle: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
     viewModel: ProfileViewModel = koinViewModel(),
@@ -91,6 +93,10 @@ fun ProfileScreen(
             ProfileEffect.NavigateToAuth -> onSignedOut()
 
             is ProfileEffect.ShowMessage -> showMessage(effect.messageRes)
+
+            ProfileEffect.OpenCircleList -> onOpenCircleList()
+
+            is ProfileEffect.OpenCircle -> onOpenCircle(effect.circleId)
         }
     }
 
@@ -103,6 +109,8 @@ fun ProfileScreen(
         onMenuOptionClick = { menuType -> viewModel.onIntent(ProfileIntent.MenuOptionClicked(menuType)) },
         onSocialChannelClick = { channel -> viewModel.onIntent(ProfileIntent.SocialChannelClicked(channel)) },
         onRetryClick = { viewModel.onIntent(ProfileIntent.Retry) },
+        onSeeAllCirclesClick = { viewModel.onIntent(ProfileIntent.SeeAllCirclesClicked) },
+        onCircleClick = { circleId -> viewModel.onIntent(ProfileIntent.CircleClicked(circleId)) },
         modifier = modifier,
         visibleMenuItems = visibleMenuItems,
     )

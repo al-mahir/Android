@@ -18,8 +18,12 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.presentation.R
+import com.iti.presentation.circle.CurrentCircleCard
+import com.iti.presentation.home.components.CirclesSummaryCard
 import com.iti.presentation.profile.components.AccountActionsBlock
 import com.iti.presentation.profile.components.ProfileHeader
 import com.iti.presentation.profile.components.ProfileMenuRow
@@ -41,6 +45,8 @@ fun ProfileContent(
     onMenuOptionClick: (ProfileMenuType) -> Unit,
     onSocialChannelClick: (SocialChannel) -> Unit,
     onRetryClick: () -> Unit,
+    onSeeAllCirclesClick: () -> Unit,
+    onCircleClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
 ) {
@@ -102,6 +108,40 @@ fun ProfileContent(
                             SocialMediaChannelsRow(
                                 onChannelClick = onSocialChannelClick,
                                 modifier = gutter,
+                            )
+                        }
+                    }
+                }
+
+                if (!state.isOffline) {
+                    val joinedCircleIds = state.myCircles.mapTo(mutableSetOf()) { it.id }
+                    val availableCount = state.availableCircles.count { it.id !in joinedCircleIds }
+
+                    val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
+                        ?: state.myCircles.firstOrNull()
+                    if (current != null) {
+                        item(key = "circles-header") {
+                            SectionHeader(
+                                title = stringResource(R.string.home_circles_title),
+                                actionLabel = stringResource(R.string.home_see_all),
+                                onActionClick = onSeeAllCirclesClick,
+                                modifier = gutter,
+                            )
+                        }
+                        item(key = "current-circle") {
+                            CurrentCircleCard(
+                                circle = current,
+                                onClick = { onCircleClick(current.id) },
+                                modifier = gutter.padding(bottom = Theme.spacing.large),
+                            )
+                        }
+                    } else {
+                        item(key = "circles-summary") {
+                            CirclesSummaryCard(
+                                joinedCount = state.myCircles.size,
+                                availableCount = availableCount,
+                                onClick = onSeeAllCirclesClick,
+                                modifier = gutter.padding(bottom = Theme.spacing.large),
                             )
                         }
                     }
