@@ -68,7 +68,7 @@ import org.koin.core.parameter.parametersOf
 fun SheikhCircleManageScreen(
     circleId: String,
     onBack: () -> Unit,
-    onOpenCall: (requestId: String, token: String, channelName: String, userAccount: String) -> Unit,
+    onOpenSession: (circleId: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhCircleManageViewModel = koinViewModel(parameters = { parametersOf(circleId) }),
 ) {
@@ -82,8 +82,7 @@ fun SheikhCircleManageScreen(
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
             is SheikhCircleManageEffect.ShowInviteToken ->
                 pendingInviteToken = effect.token to effect.circleName
-            is SheikhCircleManageEffect.OpenCall ->
-                onOpenCall(effect.requestId, effect.token, effect.channelName, effect.userAccount)
+            is SheikhCircleManageEffect.OpenSession -> onOpenSession(effect.circleId)
         }
     }
 
@@ -198,7 +197,6 @@ private fun SheikhCircleManageContent(
                     LifecycleActions(
                         circle = circle,
                         actionInProgress = state.actionInProgress,
-                        isTokenLoading = state.isTokenLoading,
                         onStart = onStart,
                         onJoinSession = onJoinSession,
                         onEnd = { pendingLifecycleAction = SheikhCircleManageIntent.EndClicked },
@@ -412,7 +410,6 @@ private fun MembersSection(
 private fun LifecycleActions(
     circle: Circle,
     actionInProgress: Boolean,
-    isTokenLoading: Boolean,
     onStart: () -> Unit,
     onJoinSession: () -> Unit,
     onEnd: () -> Unit,
@@ -425,13 +422,13 @@ private fun LifecycleActions(
                 PrimaryButton(
                     caption = stringResource(R.string.sheikh_circle_start),
                     onClick = onStart,
-                    isLoading = actionInProgress || isTokenLoading,
+                    isLoading = actionInProgress,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 SecondaryButton(
                     caption = stringResource(R.string.sheikh_circle_cancel),
                     onClick = onCancel,
-                    isDisabled = actionInProgress || isTokenLoading,
+                    isDisabled = actionInProgress,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -440,14 +437,14 @@ private fun LifecycleActions(
                 PrimaryButton(
                     caption = stringResource(R.string.sheikh_circle_join_session),
                     onClick = onJoinSession,
-                    isLoading = isTokenLoading,
+                    isLoading = actionInProgress,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 // Destructive action: end the circle for everyone.
                 SecondaryButton(
                     caption = stringResource(R.string.sheikh_circle_end),
                     onClick = onEnd,
-                    isDisabled = actionInProgress || isTokenLoading,
+                    isDisabled = actionInProgress,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

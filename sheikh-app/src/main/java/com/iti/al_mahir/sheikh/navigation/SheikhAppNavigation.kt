@@ -337,11 +337,10 @@ private fun SheikhAppNavHost(
                 sheikhCircleEntries(
                     onNavigate = { route -> backStack.add(route) },
                     onBack = { backStack.removeLastOrNull() },
-                    onOpenCall = { requestId, token, channelName, userAccount ->
-                        // Sheikh also navigates to the shared InSession audio lobby
-                        // instead of the video CallScreen for circles.
-                        backStack.add(SheikhAppRoute.InSession(requestId))
-                    },
+                    // Circles use the shared InSession screen (a group audio roster), not the 1:1
+                    // video CallScreen — that one is wired to the instant-meeting endpoints and
+                    // models a single remote participant. See docs/Circle-Audio-Fix-Plan.md.
+                    onOpenSession = { circleId -> backStack.add(SheikhAppRoute.InSession(circleId)) },
                 )
             },
         )

@@ -17,10 +17,17 @@ sealed interface SheikhCircleRoute : NavKey {
 }
 
 /** Registers the sheikh circle destinations on the host app's Navigation 3 back stack. */
+/**
+ * @param onOpenSession opens the circle's live session screen. Deliberately takes only a circleId:
+ *   the Agora credentials are fetched by the session controller itself, from
+ *   `GET /api/circles/{id}/token`. Passing them through navigation (as an earlier version did) meant
+ *   a token that was already minutes old by the time the screen mounted, and the host app simply
+ *   dropped them on the floor.
+ */
 fun EntryProviderScope<NavKey>.sheikhCircleEntries(
     onNavigate: (SheikhCircleRoute) -> Unit,
     onBack: () -> Unit,
-    onOpenCall: (requestId: String, token: String, channelName: String, userAccount: String) -> Unit,
+    onOpenSession: (circleId: String) -> Unit,
 ) {
     entry<SheikhCircleRoute.CircleList> {
         SheikhCircleListScreen(
@@ -41,7 +48,7 @@ fun EntryProviderScope<NavKey>.sheikhCircleEntries(
         SheikhCircleManageScreen(
             circleId = route.circleId,
             onBack = onBack,
-            onOpenCall = onOpenCall,
+            onOpenSession = onOpenSession,
         )
     }
 }

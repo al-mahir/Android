@@ -175,39 +175,16 @@ class SheikhCircleManageViewModel(
                 },
             )
 
-            // 2. Immediately fetch the Agora token so the sheikh enters the call.
-            fetchTokenAndNavigate()
+            // 2. Enter the live session. The Agora credentials are fetched there, by the session's
+            // own audio controller — see SheikhCircleManageEffect.OpenSession.
+            sendEffect(SheikhCircleManageEffect.OpenSession(circleId))
         }
     }
 
-    /**
-     * Fetches the Agora token for an already-ONGOING circle and emits [SheikhCircleManageEffect.OpenCall].
-     * Used both after [start] and as a standalone recovery path via [JoinSessionClicked].
-     */
+    /** Re-enters an already-ONGOING circle — the recovery path for a sheikh who navigated away. */
     private fun joinSession() {
-        if (currentState.isTokenLoading || currentState.actionInProgress) return
-        viewModelScope.launch { fetchTokenAndNavigate() }
-    }
-
-    private suspend fun fetchTokenAndNavigate() {
-        updateState { copy(isTokenLoading = true) }
-        circleRepository.getToken(circleId).fold(
-            onSuccess = { circleToken ->
-                updateState { copy(isTokenLoading = false) }
-                sendEffect(
-                    SheikhCircleManageEffect.OpenCall(
-                        requestId = circleId,
-                        token = circleToken.token,
-                        channelName = circleToken.channelName,
-                        userAccount = circleToken.userAccount,
-                    )
-                )
-            },
-            onFailure = {
-                updateState { copy(isTokenLoading = false) }
-                sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_token_error))
-            },
-        )
+        if (currentState.actionInProgress) return
+        sendEffect(SheikhCircleManageEffect.OpenSession(circleId))
     }
 
     private fun end() {

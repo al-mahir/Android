@@ -13,7 +13,6 @@ data class SheikhCircleManageUiState(
     val isError: Boolean = false,
     val actionInProgress: Boolean = false,
     /** True while fetching the Agora token to enter the live session. */
-    val isTokenLoading: Boolean = false,
     /** Edit-circle dialog visibility */
     val isEditDialogVisible: Boolean = false,
     val editName: String = "",
@@ -45,11 +44,12 @@ sealed interface SheikhCircleManageEffect {
     data class ShowMessage(@StringRes val messageRes: Int) : SheikhCircleManageEffect
     /** Shown after creating / loading a PRIVATE circle that has an invite token. */
     data class ShowInviteToken(val token: String, val circleName: String) : SheikhCircleManageEffect
-    /** Navigate to the Agora video call screen after the circle is started (or rejoined). */
-    data class OpenCall(
-        val requestId: String,
-        val token: String,
-        val channelName: String,
-        val userAccount: String,
-    ) : SheikhCircleManageEffect
+    /**
+     * Enter the circle's live session after starting (or rejoining) it.
+     *
+     * Carries only the circleId: the session screen's audio controller fetches its own Agora
+     * credentials from `GET /api/circles/{id}/token` when it joins, so threading a token through
+     * navigation would only ever hand it a staler copy of the same thing.
+     */
+    data class OpenSession(val circleId: String) : SheikhCircleManageEffect
 }
