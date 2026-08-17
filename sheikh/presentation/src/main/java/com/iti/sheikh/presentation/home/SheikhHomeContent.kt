@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.theme.Theme
@@ -49,7 +50,7 @@ fun SheikhHomeContent(
         )
 
         else -> Column(
-            modifier = rootModifier,
+            modifier = rootModifier.padding(bottom = Theme.spacing.medium + Theme.spacing.small + 48.dp, top = Theme.spacing.medium),
             verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
         ) {
             SheikhHomeHeader(

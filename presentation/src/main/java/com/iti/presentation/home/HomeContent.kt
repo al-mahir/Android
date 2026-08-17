@@ -79,7 +79,7 @@ fun HomeContent(
                 onSearchClick = onSearchClick,
                 modifier = Modifier
                     .then(gutter)
-                    .padding(top = Theme.spacing.medium, bottom = Theme.spacing.medium),
+                    .padding(top = Theme.spacing.extraLarge, bottom = Theme.spacing.medium),
             )
 
             LazyColumn(

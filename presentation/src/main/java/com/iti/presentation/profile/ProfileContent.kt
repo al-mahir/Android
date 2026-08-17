@@ -72,6 +72,7 @@ fun ProfileContent(
                 modifier = rootModifier,
                 contentPadding = PaddingValues(
                     bottom = Theme.spacing.large + bottomNavBarHeight(),
+                    top = Theme.spacing.large
                 ),
             ) {
                 item(key = "profile-header") {

@@ -90,7 +90,7 @@ private fun SheikhCircleListContent(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(bottom = innerPadding.calculateBottomPadding()),
         ) {
             BackTitleTopBar(
                 title = stringResource(R.string.sheikh_circle_list_title),

@@ -3,8 +3,11 @@ package com.iti.al_mahir.navigation
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.example.designsystem.components.dialog.ConfirmationDialog
 import androidx.compose.runtime.Composable
@@ -16,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +61,8 @@ import com.iti.presentation.sheikh.SheikhDetailsScreen
 import com.iti.presentation.sheikh.SheikhListScreen
 import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.R
+import com.iti.presentation.core.MainViewModel
+import com.iti.presentation.core.components.OfflineBanner
 import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
@@ -215,11 +221,11 @@ private fun AppNavHost(
     ) {
         val showBanner =
             backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
-        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             if (showBanner) {
-                val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
+                val mainViewModel: MainViewModel = koinViewModel()
                 val banner by mainViewModel.banner.collectAsStateWithLifecycle()
-                com.iti.presentation.core.components.OfflineBanner(banner = banner)
+                OfflineBanner(banner = banner)
             }
             Box(modifier = Modifier.weight(1f)) {
                 NavDisplay(

@@ -109,6 +109,7 @@ private fun InSessionContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .padding( top = Theme.spacing.extraLarge)
             .background(SessionBackground),
     ) {
         BackHandler {
