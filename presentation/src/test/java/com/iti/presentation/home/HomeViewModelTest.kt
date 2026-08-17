@@ -178,6 +178,67 @@ class HomeViewModelTest {
         assertEquals(HomeEffect.OpenCircle("circle-1"), viewModel.effect.first())
     }
 
+    // ── Swipe-to-refresh ─────────────────────────────────────────────────
+
+    @Test
+    fun `a pull to refresh re-fetches the sections without blanking the screen`() = runTest(dispatcher) {
+        val circleRepository = FakeCircleRepository(myCircles = listOf(CIRCLE))
+        val viewModel = viewModel(FakeAlmahirRepository(), circleRepository = circleRepository)
+        testScheduler.advanceUntilIdle()
+        val callsBefore = circleRepository.publicCircleCalls
+
+        viewModel.onIntent(HomeIntent.Refresh)
+
+        // The indicator spins while the loaded content stays on screen — no skeleton.
+        val refreshing = viewModel.state.value
+        assertTrue(refreshing.isRefreshing)
+        assertFalse(refreshing.isLoading)
+        assertEquals("JD", refreshing.user?.initials)
+
+        testScheduler.advanceUntilIdle()
+
+        val settled = viewModel.state.value
+        assertFalse(settled.isRefreshing)
+        assertEquals(null, settled.errorMessageRes)
+        assertEquals(1, settled.myCircles.size)
+        assertEquals(1, circleRepository.publicCircleCalls - callsBefore)
+    }
+
+    @Test
+    fun `a second pull while one is already refreshing is ignored`() = runTest(dispatcher) {
+        val circleRepository = FakeCircleRepository()
+        val viewModel = viewModel(FakeAlmahirRepository(), circleRepository = circleRepository)
+        testScheduler.advanceUntilIdle()
+        val callsBefore = circleRepository.publicCircleCalls
+
+        viewModel.onIntent(HomeIntent.Refresh)
+        viewModel.onIntent(HomeIntent.Refresh)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, circleRepository.publicCircleCalls - callsBefore)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
+    fun `a failed pull to refresh keeps the loaded sections and clears the indicator`() = runTest(dispatcher) {
+        val repository = FakeAlmahirRepository()
+        val circleRepository = FakeCircleRepository(myCircles = listOf(CIRCLE))
+        val viewModel = viewModel(repository, circleRepository = circleRepository)
+        testScheduler.advanceUntilIdle()
+        val sheikhsBefore = viewModel.state.value.sheikhs
+
+        repository.failSheikhs = true
+        circleRepository.failPublic = true
+        viewModel.onIntent(HomeIntent.Refresh)
+        testScheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isRefreshing)
+        assertFalse(state.isLoading)
+        assertEquals(null, state.errorMessageRes)
+        assertEquals(sheikhsBefore, state.sheikhs)
+    }
+
     private fun viewModel(
         repository: FakeAlmahirRepository,
         lastPage: Int = 298,

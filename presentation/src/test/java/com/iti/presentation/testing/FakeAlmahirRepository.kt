@@ -33,7 +33,8 @@ class FakeAlmahirRepository(
     private val subscription: Subscription = FREE_SUBSCRIPTION,
     private val packages: List<SubscriptionPackage> = emptyList(),
     private val sheikhs: List<Sheikh> = listOf(SHEIKH),
-    private val failSheikhs: Boolean = false,
+    /** `var` so a test can make a *later* fetch fail — e.g. a refresh over a loaded list. */
+    var failSheikhs: Boolean = false,
     private val failSubscription: Boolean = false,
     private val failLogout: Boolean = false,
     private val failDeleteAccount: Boolean = false,
@@ -56,10 +57,12 @@ class FakeAlmahirRepository(
         if (failSubscription) Result.Error(BOOM) else Result.Success(subscription)
     )
 
-    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+    // TEMP-VERIFY: `override` removed — AlmahirRepository no longer declares these (in-flight
+    // payment refactor). Restore before commit.
+    fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
         flowOf(Result.Success(packages))
 
-    override suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
+    suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
 
     override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
         Result.Success(subscription)
@@ -120,8 +123,14 @@ class FakeAlmahirRepository(
     override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
         Result.Success(Unit)
 
-    override suspend fun getSheikhs(): Result<List<Sheikh>> =
-        if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)
+    /** Counts fetches so a test can assert a re-entrant pull-to-refresh was dropped. */
+    var sheikhCalls = 0
+        private set
+
+    override suspend fun getSheikhs(): Result<List<Sheikh>> {
+        sheikhCalls++
+        return if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)
+    }
 
     override suspend fun getSheikhById(id: String): Result<Sheikh?> =
         Result.Success(sheikhs.firstOrNull { it.id == id })

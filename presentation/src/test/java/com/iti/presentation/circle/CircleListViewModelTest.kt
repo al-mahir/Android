@@ -261,6 +261,90 @@ class CircleListViewModelTest {
     private fun viewModel(circleRepository: FakeCircleRepository) =
         CircleListViewModel(circleRepository = circleRepository)
 
+    // ── Swipe-to-refresh ─────────────────────────────────────────────────
+
+    @Test
+    fun `a pull to refresh re-fetches both lists without blanking the screen`() = runTest(dispatcher) {
+        val repository = FakeCircleRepository(circles = listOf(CIRCLE))
+        val viewModel = viewModel(repository)
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+
+        // The indicator spins while the list stays on screen — no skeleton, no error.
+        val refreshing = viewModel.state.value
+        assertTrue(refreshing.isRefreshing)
+        assertFalse(refreshing.isLoading)
+        assertEquals(listOf(CIRCLE), refreshing.filteredCircles)
+
+        testScheduler.advanceUntilIdle()
+
+        val settled = viewModel.state.value
+        assertFalse(settled.isRefreshing)
+        assertFalse(settled.isError)
+        assertEquals(listOf(CIRCLE), settled.filteredCircles)
+    }
+
+    @Test
+    fun `a pull to refresh keeps the search query and status filter applied`() = runTest(dispatcher) {
+        val completed = CIRCLE.copy(id = "circle-2", name = "حفظ", status = CircleStatus.COMPLETED)
+        val viewModel = viewModel(FakeCircleRepository(circles = listOf(CIRCLE, completed)))
+        testScheduler.advanceUntilIdle()
+        viewModel.onIntent(CircleListIntent.StatusSelected(CircleStatus.COMPLETED))
+        testScheduler.advanceUntilIdle()
+
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(listOf(completed), viewModel.state.value.filteredCircles)
+    }
+
+    @Test
+    fun `a failed pull to refresh keeps the loaded list and reports the failure`() = runTest(dispatcher) {
+        val repository = FakeCircleRepository(circles = listOf(CIRCLE))
+        val viewModel = viewModel(repository)
+        testScheduler.advanceUntilIdle()
+
+        repository.failPublic = true
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+        testScheduler.advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse("a transient refresh blip must not blow the list away", state.isError)
+        assertFalse(state.isRefreshing)
+        assertEquals(listOf(CIRCLE), state.filteredCircles)
+        assertEquals(CircleListEffect.ShowMessage(R.string.refresh_failed), viewModel.effect.first())
+    }
+
+    @Test
+    fun `a failed pull to refresh on an empty list falls through to the error screen`() = runTest(dispatcher) {
+        val repository = FakeCircleRepository()
+        val viewModel = viewModel(repository)
+        testScheduler.advanceUntilIdle()
+
+        repository.failPublic = true
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isError)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
+    @Test
+    fun `a second pull while one is already refreshing is ignored`() = runTest(dispatcher) {
+        val repository = FakeCircleRepository(circles = listOf(CIRCLE))
+        val viewModel = viewModel(repository)
+        testScheduler.advanceUntilIdle()
+        val callsBefore = repository.publicCircleCalls
+
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+        viewModel.onIntent(CircleListIntent.PullToRefresh)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, repository.publicCircleCalls - callsBefore)
+        assertFalse(viewModel.state.value.isRefreshing)
+    }
+
     private companion object {
         private val CIRCLE = Circle(
             id = "circle-1",

@@ -25,7 +25,8 @@ class FakeCircleRepository(
     private val myCircles: List<Circle> = emptyList(),
     private val privateCircles: List<Circle> = emptyList(),
     private val members: Map<String, List<CircleMember>> = emptyMap(),
-    private val failPublic: Boolean = false,
+    /** `var` so a test can make a *later* fetch fail — e.g. a refresh over a loaded list. */
+    var failPublic: Boolean = false,
     private val failMine: Boolean = false,
     private val failCircle: Boolean = false,
     private val failLeave: Boolean = false,
@@ -46,8 +47,14 @@ class FakeCircleRepository(
         joinRequestEvents.value = joinRequestEvents.value + event
     }
 
-    override suspend fun getPublicCircles(status: CircleStatus?): Result<List<Circle>> =
-        if (failPublic) Result.failure(BOOM) else Result.success(circles)
+    /** Counts fetches so a test can assert a re-entrant pull-to-refresh was dropped. */
+    var publicCircleCalls = 0
+        private set
+
+    override suspend fun getPublicCircles(status: CircleStatus?): Result<List<Circle>> {
+        publicCircleCalls++
+        return if (failPublic) Result.failure(BOOM) else Result.success(circles)
+    }
 
     override suspend fun getMyCircles(): Result<List<Circle>> =
         if (failMine) Result.failure(BOOM) else Result.success(joinedCircles)
