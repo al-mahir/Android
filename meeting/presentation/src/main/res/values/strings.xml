@@ -7,4 +7,46 @@
     <string name="meeting_call_notification_mute">Mute</string>
     <string name="meeting_call_notification_unmute">Unmute</string>
     <string name="meeting_call_notification_end">End call</string>
+
+    <!-- Call screen: status -->
+    <string name="meeting_call_connecting">Connecting…</string>
+    <string name="meeting_call_reconnecting">Reconnecting…</string>
+    <string name="meeting_call_waiting_for_participant">Waiting for the other participant to join…</string>
+    <string name="meeting_call_camera_off">Camera is off</string>
+    <string name="meeting_call_participant_generic">Participant</string>
+    <string name="meeting_call_you">You</string>
+
+    <!-- Call screen: errors -->
+    <string name="meeting_call_error_connect_failed">Couldn\'t connect to the call. Please try again.</string>
+    <string name="meeting_call_error_connection_lost">Connection lost. Please try again.</string>
+    <string name="meeting_call_error_engine">Something went wrong with the call.</string>
+    <string name="meeting_call_error_code">Error code %1$d</string>
+
+    <!-- Call screen: controls -->
+    <string name="meeting_call_mic_mute">Mute microphone</string>
+    <string name="meeting_call_mic_unmute">Unmute microphone</string>
+    <string name="meeting_call_camera_turn_off">Turn camera off</string>
+    <string name="meeting_call_camera_turn_on">Turn camera on</string>
+    <string name="meeting_call_switch_camera">Switch camera</string>
+    <string name="meeting_call_leave">Leave call</string>
+    <string name="meeting_call_more_options">More options</string>
+    <string name="meeting_call_muted_badge">Muted</string>
+    <string name="meeting_call_swap_views">Swap the main and small video</string>
+
+    <!-- Call screen: audio output picker -->
+    <string name="meeting_call_audio_output">Audio output</string>
+    <string name="meeting_call_audio_output_title">Speaker output</string>
+    <string name="meeting_call_audio_earpiece">Phone earpiece</string>
+    <string name="meeting_call_audio_speaker">Speaker</string>
+    <string name="meeting_call_audio_wired">Headphones</string>
+    <string name="meeting_call_audio_bluetooth">Bluetooth</string>
+
+    <!-- Call screen: camera picker -->
+    <string name="meeting_call_camera_title">Camera</string>
+    <string name="meeting_call_camera_front">Front camera</string>
+    <string name="meeting_call_camera_back">Back camera</string>
+    <string name="meeting_call_torch">Flashlight</string>
+    <string name="meeting_call_torch_on">On</string>
+    <string name="meeting_call_torch_off">Off</string>
+    <string name="meeting_call_selected">Selected</string>
 </resources>
