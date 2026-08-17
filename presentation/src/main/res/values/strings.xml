@@ -123,62 +123,55 @@
 
     <!-- Packages / checkout -->
     <string name="packages_title">Choose Your Package</string>
-    <string name="packages_recommended_badge">RECOMMENDED</string>
     <string name="packages_price_period_month">/month</string>
+    <string name="packages_price_period_year">/year</string>
+    <plurals name="packages_price_period_days">
+        <item quantity="one">/%1$d day</item>
+        <item quantity="other">/%1$d days</item>
+    </plurals>
+    <plurals name="packages_price_period_weeks">
+        <item quantity="one">/%1$d week</item>
+        <item quantity="other">/%1$d weeks</item>
+    </plurals>
+    <plurals name="packages_meeting_minutes">
+        <item quantity="one">%1$d minute of live sessions</item>
+        <item quantity="other">%1$d minutes of live sessions</item>
+    </plurals>
+    <plurals name="packages_meeting_hours">
+        <item quantity="one">%1$d hour of live sessions</item>
+        <item quantity="other">%1$d hours of live sessions</item>
+    </plurals>
     <string name="packages_select_button">Select Package</string>
     <string name="packages_selecting_button">Selecting…</string>
-    <string name="packages_start_trial_cta">Start free 7-day trial</string>
-    <string name="packages_starting_trial">Starting trial…</string>
     <string name="packages_error_generic">Couldn\'t load packages. Please try again.</string>
-    <string name="packages_purchase_succeeded">You\'re now Al-Māhir Premium!</string>
-    <string name="packages_purchase_failed">Something went wrong. Please try again.</string>
-    <string name="packages_trial_started">Your free trial has started!</string>
+    <string name="packages_empty_title">No packages available</string>
+    <string name="packages_empty_description">There are no subscription packages on offer right now. Please check back soon.</string>
 
     <!-- Checkout -->
     <string name="checkout_title">Checkout</string>
     <string name="checkout_secured_by_paymob">Secured by Paymob</string>
     <string name="checkout_reciter_pass_eyebrow">RECITER PASS</string>
-    <string name="checkout_price_period_month">/ Month</string>
     <string name="checkout_purchasing_as_pattern">Purchasing as %1$s</string>
     <string name="checkout_tab_wallet">Mobile Wallet</string>
     <string name="checkout_tab_card">Credit/Debit Card</string>
-    <string name="checkout_select_payment_method">Select Payment Method</string>
     <string name="checkout_wallet_vodafone_cash">Vodafone Cash</string>
     <string name="checkout_wallet_orange_cash">Orange Cash</string>
     <string name="checkout_wallet_etisalat_cash">e&amp; money</string>
     <string name="checkout_wallet_we_pay">We Pay</string>
-    <string name="checkout_wallet_hint_pattern">Pay with your %1$s wallet</string>
-    <string name="checkout_wallet_number_label">Mobile Wallet Number</string>
-    <string name="checkout_wallet_number_hint">e.g. 01012345678</string>
-    <string name="checkout_security_note">Your payment is processed securely. We never store your wallet credentials.</string>
-    <string name="checkout_pay_button_pattern">Pay %1$s</string>
-    <string name="checkout_select_card_brand">Select Card Brand</string>
     <string name="checkout_card_visa">Visa</string>
     <string name="checkout_card_mastercard">Mastercard</string>
-    <string name="checkout_card_details_title">Card Details</string>
-    <string name="checkout_card_number_label">Card Number</string>
-    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
-    <string name="checkout_expiry_label">Expiry Date</string>
-    <string name="checkout_expiry_hint">MM/YY</string>
-    <string name="checkout_cvv_label">CVV</string>
-    <string name="checkout_cvv_hint">123</string>
-    <string name="checkout_cardholder_name_label">Cardholder Name</string>
-    <string name="checkout_cardholder_name_hint">Name on card</string>
+    <string name="checkout_secure_entry_title">You only enter your details once</string>
+    <string name="checkout_secure_entry_card_note">Tap Pay to open Paymob\'s secure screen and enter your card there. We never see or store your card number.</string>
+    <string name="checkout_secure_entry_wallet_note">Tap Pay to open Paymob\'s secure screen and enter your wallet number there. We never see or store your wallet credentials.</string>
+    <string name="checkout_accepted_cards">Accepted cards</string>
+    <string name="checkout_accepted_wallets">Accepted wallets</string>
+    <string name="checkout_pay_button_pattern">Pay %1$s</string>
     <string name="checkout_load_error">Couldn\'t load this package. Please try again.</string>
+    <string name="checkout_package_unavailable">This package is no longer available. Please pick another one.</string>
     <string name="checkout_error_intention_failed">Couldn\'t start the payment. Please try again.</string>
     <string name="checkout_payment_success">Payment successful — your subscription is active!</string>
     <string name="checkout_payment_failed">Payment failed. Please try again.</string>
     <string name="checkout_payment_pending">Your payment is being processed. We\'ll notify you once it\'s confirmed.</string>
-    <string name="checkout_error_wallet_number_invalid">Enter a valid Egyptian mobile number</string>
-    <string name="checkout_error_wallet_prefix_vodafone">Enter your Vodafone Cash number</string>
-    <string name="checkout_error_wallet_prefix_orange">Enter your Orange Cash number</string>
-    <string name="checkout_error_wallet_prefix_etisalat">Enter your e&amp; money number</string>
-    <string name="checkout_error_wallet_prefix_we">Enter your We Pay number</string>
-    <string name="checkout_error_card_number_invalid">Enter a valid card number</string>
-    <string name="checkout_error_card_brand_mismatch">This card doesn\'t match the selected brand</string>
-    <string name="checkout_error_expiry_invalid">Enter a valid, non-expired date</string>
-    <string name="checkout_error_cvv_invalid">Enter a valid CVV</string>
-    <string name="checkout_error_cardholder_name_required">Enter the name on the card</string>
 
     <!-- My subscription -->
     <string name="subscription_details_title">My Subscription</string>
@@ -612,4 +605,30 @@
     <string name="exam_timer_pause">Pause</string>
     <string name="exam_timer_skip">Skip</string>
     <string name="exam_reveal_next_word">Next Word</string>
+
+    <!-- Subscription quota (profile + meeting request) -->
+    <plurals name="profile_minutes_remaining">
+        <item quantity="one">%1$d min left</item>
+        <item quantity="other">%1$d min left</item>
+    </plurals>
+    <string name="profile_minutes_used_pattern">%1$d of %2$d minutes used</string>
+    <string name="profile_subscription_renews_pattern">Valid until %1$s</string>
+    <string name="profile_subscription_running_low">You\'re running low on minutes.</string>
+    <string name="profile_subscription_expired">Your package has expired.</string>
+    <string name="profile_subscription_depleted">You\'ve used all your minutes.</string>
+    <string name="profile_subscription_renew_cta">Renew subscription</string>
+    <string name="profile_no_subscription_title">No active subscription</string>
+    <string name="profile_no_subscription_description">Subscribe to a package to book live sessions with a sheikh.</string>
+    <string name="profile_no_subscription_cta">See packages</string>
+    <string name="meetingrequest_quota_checking">Checking your remaining minutes\u2026</string>
+    <string name="meetingrequest_quota_none_title">Subscription required</string>
+    <string name="meetingrequest_quota_none_subtitle">Book live sessions with a sheikh by subscribing to a package first.</string>
+    <string name="meetingrequest_quota_expired_title">Your package has expired</string>
+    <string name="meetingrequest_quota_expired_subtitle">Renew your subscription to keep booking sessions.</string>
+    <string name="meetingrequest_quota_expired_subtitle_named">Your %1$s package has expired. Renew it to keep booking sessions.</string>
+    <string name="meetingrequest_quota_depleted_title">No minutes left</string>
+    <string name="meetingrequest_quota_depleted_subtitle">You\'ve used all the minutes in your package. Top up to book another session.</string>
+    <string name="meetingrequest_quota_low_title">Not enough minutes</string>
+    <string name="meetingrequest_quota_low_subtitle">You have %1$d minutes left, but a session needs at least %2$d. Top up to continue.</string>
+    <string name="meetingrequest_quota_browse_packages">See packages</string>
 </resources>

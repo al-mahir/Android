@@ -123,62 +123,71 @@
 
     <!-- Packages / checkout -->
     <string name="packages_title">اختر باقتك</string>
-    <string name="packages_recommended_badge">الأكثر طلبًا</string>
     <string name="packages_price_period_month">/شهريًا</string>
+    <string name="packages_price_period_year">/سنويًا</string>
+    <plurals name="packages_price_period_days">
+        <item quantity="zero">/%1$d يوم</item>
+        <item quantity="one">/يوم واحد</item>
+        <item quantity="two">/يومين</item>
+        <item quantity="few">/%1$d أيام</item>
+        <item quantity="many">/%1$d يومًا</item>
+        <item quantity="other">/%1$d يوم</item>
+    </plurals>
+    <plurals name="packages_price_period_weeks">
+        <item quantity="zero">/%1$d أسبوع</item>
+        <item quantity="one">/أسبوع واحد</item>
+        <item quantity="two">/أسبوعين</item>
+        <item quantity="few">/%1$d أسابيع</item>
+        <item quantity="many">/%1$d أسبوعًا</item>
+        <item quantity="other">/%1$d أسبوع</item>
+    </plurals>
+    <plurals name="packages_meeting_minutes">
+        <item quantity="zero">%1$d دقيقة من الجلسات المباشرة</item>
+        <item quantity="one">دقيقة واحدة من الجلسات المباشرة</item>
+        <item quantity="two">دقيقتان من الجلسات المباشرة</item>
+        <item quantity="few">%1$d دقائق من الجلسات المباشرة</item>
+        <item quantity="many">%1$d دقيقة من الجلسات المباشرة</item>
+        <item quantity="other">%1$d دقيقة من الجلسات المباشرة</item>
+    </plurals>
+    <plurals name="packages_meeting_hours">
+        <item quantity="zero">%1$d ساعة من الجلسات المباشرة</item>
+        <item quantity="one">ساعة واحدة من الجلسات المباشرة</item>
+        <item quantity="two">ساعتان من الجلسات المباشرة</item>
+        <item quantity="few">%1$d ساعات من الجلسات المباشرة</item>
+        <item quantity="many">%1$d ساعة من الجلسات المباشرة</item>
+        <item quantity="other">%1$d ساعة من الجلسات المباشرة</item>
+    </plurals>
     <string name="packages_select_button">اختر الباقة</string>
     <string name="packages_selecting_button">جارٍ الاختيار…</string>
-    <string name="packages_start_trial_cta">ابدأ تجربة مجانية لمدة 7 أيام</string>
-    <string name="packages_starting_trial">جارٍ بدء التجربة…</string>
     <string name="packages_error_generic">تعذّر تحميل الباقات. حاول مرة أخرى.</string>
-    <string name="packages_purchase_succeeded">أصبحت الآن مشتركًا في الماهر Premium!</string>
-    <string name="packages_purchase_failed">حدث خطأ ما. حاول مرة أخرى.</string>
-    <string name="packages_trial_started">بدأت تجربتك المجانية!</string>
+    <string name="packages_empty_title">لا توجد باقات متاحة</string>
+    <string name="packages_empty_description">لا توجد باقات اشتراك معروضة حاليًا. تفقّد الصفحة لاحقًا.</string>
 
     <!-- Checkout -->
     <string name="checkout_title">الدفع</string>
     <string name="checkout_secured_by_paymob">مؤمَّن بواسطة Paymob</string>
     <string name="checkout_reciter_pass_eyebrow">اشتراك القارئ</string>
-    <string name="checkout_price_period_month">/ شهريًا</string>
     <string name="checkout_purchasing_as_pattern">الشراء باسم %1$s</string>
     <string name="checkout_tab_wallet">محفظة إلكترونية</string>
     <string name="checkout_tab_card">بطاقة ائتمان/خصم</string>
-    <string name="checkout_select_payment_method">اختر طريقة الدفع</string>
     <string name="checkout_wallet_vodafone_cash">فودافون كاش</string>
     <string name="checkout_wallet_orange_cash">أورانج كاش</string>
     <string name="checkout_wallet_etisalat_cash">اتصالات e&amp; money</string>
     <string name="checkout_wallet_we_pay">وي باي</string>
-    <string name="checkout_wallet_hint_pattern">ادفع من محفظة %1$s</string>
-    <string name="checkout_wallet_number_label">رقم المحفظة الإلكترونية</string>
-    <string name="checkout_wallet_number_hint">مثال: 01012345678</string>
-    <string name="checkout_security_note">تتم معالجة دفعتك بأمان. نحن لا نخزّن بيانات محفظتك أبدًا.</string>
-    <string name="checkout_pay_button_pattern">ادفع %1$s</string>
-    <string name="checkout_select_card_brand">اختر نوع البطاقة</string>
     <string name="checkout_card_visa">فيزا</string>
     <string name="checkout_card_mastercard">ماستركارد</string>
-    <string name="checkout_card_details_title">بيانات البطاقة</string>
-    <string name="checkout_card_number_label">رقم البطاقة</string>
-    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
-    <string name="checkout_expiry_label">تاريخ الانتهاء</string>
-    <string name="checkout_expiry_hint">شهر/سنة</string>
-    <string name="checkout_cvv_label">رمز التحقق CVV</string>
-    <string name="checkout_cvv_hint">123</string>
-    <string name="checkout_cardholder_name_label">اسم حامل البطاقة</string>
-    <string name="checkout_cardholder_name_hint">الاسم كما هو على البطاقة</string>
+    <string name="checkout_secure_entry_title">تدخل بياناتك مرة واحدة فقط</string>
+    <string name="checkout_secure_entry_card_note">اضغط على زر الدفع لفتح شاشة Paymob الآمنة وإدخال بيانات بطاقتك هناك. لا نطّلع على رقم بطاقتك ولا نخزّنه.</string>
+    <string name="checkout_secure_entry_wallet_note">اضغط على زر الدفع لفتح شاشة Paymob الآمنة وإدخال رقم محفظتك هناك. لا نطّلع على بيانات محفظتك ولا نخزّنها.</string>
+    <string name="checkout_accepted_cards">البطاقات المقبولة</string>
+    <string name="checkout_accepted_wallets">المحافظ المقبولة</string>
+    <string name="checkout_pay_button_pattern">ادفع %1$s</string>
     <string name="checkout_load_error">تعذّر تحميل هذه الباقة. حاول مرة أخرى.</string>
+    <string name="checkout_package_unavailable">هذه الباقة لم تعد متاحة. اختر باقة أخرى.</string>
     <string name="checkout_error_intention_failed">تعذّر بدء عملية الدفع. حاول مرة أخرى.</string>
     <string name="checkout_payment_success">تم الدفع بنجاح — اشتراكك أصبح مفعّلًا!</string>
     <string name="checkout_payment_failed">فشلت عملية الدفع. حاول مرة أخرى.</string>
     <string name="checkout_payment_pending">جارٍ معالجة دفعتك. سنُعلمك فور تأكيدها.</string>
-    <string name="checkout_error_wallet_number_invalid">أدخل رقم موبايل مصري صحيح</string>
-    <string name="checkout_error_wallet_prefix_vodafone">أدخل رقم محفظة فودافون كاش</string>
-    <string name="checkout_error_wallet_prefix_orange">أدخل رقم محفظة أورانج كاش</string>
-    <string name="checkout_error_wallet_prefix_etisalat">أدخل رقم محفظة اتصالات e&amp; money</string>
-    <string name="checkout_error_wallet_prefix_we">أدخل رقم محفظة وي باي</string>
-    <string name="checkout_error_card_number_invalid">أدخل رقم بطاقة صحيح</string>
-    <string name="checkout_error_card_brand_mismatch">هذه البطاقة لا تطابق النوع المختار</string>
-    <string name="checkout_error_expiry_invalid">أدخل تاريخ انتهاء صحيحًا وغير منتهٍ</string>
-    <string name="checkout_error_cvv_invalid">أدخل رمز CVV صحيحًا</string>
-    <string name="checkout_error_cardholder_name_required">أدخل الاسم كما هو على البطاقة</string>
 
     <!-- My subscription -->
     <string name="subscription_details_title">اشتراكي</string>
@@ -614,4 +623,34 @@
     <string name="exam_timer_pause">إيقاف</string>
     <string name="exam_timer_skip">تخطي</string>
     <string name="exam_reveal_next_word">الكلمة التالية</string>
+
+    <!-- Subscription quota (profile + meeting request) -->
+    <plurals name="profile_minutes_remaining">
+        <item quantity="zero">%1$d دقيقة متبقية</item>
+        <item quantity="one">دقيقة واحدة متبقية</item>
+        <item quantity="two">دقيقتان متبقيتان</item>
+        <item quantity="few">%1$d دقائق متبقية</item>
+        <item quantity="many">%1$d دقيقة متبقية</item>
+        <item quantity="other">%1$d دقيقة متبقية</item>
+    </plurals>
+    <string name="profile_minutes_used_pattern">تم استخدام %1$d من %2$d دقيقة</string>
+    <string name="profile_subscription_renews_pattern">سارٍ حتى %1$s</string>
+    <string name="profile_subscription_running_low">دقائقك المتبقية أوشكت على النفاد.</string>
+    <string name="profile_subscription_expired">انتهت صلاحية باقتك.</string>
+    <string name="profile_subscription_depleted">لقد استهلكت كل دقائقك.</string>
+    <string name="profile_subscription_renew_cta">جدّد الاشتراك</string>
+    <string name="profile_no_subscription_title">لا يوجد اشتراك نشط</string>
+    <string name="profile_no_subscription_description">اشترك في إحدى الباقات لحجز جلسات مباشرة مع الشيخ.</string>
+    <string name="profile_no_subscription_cta">عرض الباقات</string>
+    <string name="meetingrequest_quota_checking">جارٍ التحقق من دقائقك المتبقية…</string>
+    <string name="meetingrequest_quota_none_title">الاشتراك مطلوب</string>
+    <string name="meetingrequest_quota_none_subtitle">اشترك في إحدى الباقات أولًا لتتمكن من حجز جلسات مباشرة مع الشيخ.</string>
+    <string name="meetingrequest_quota_expired_title">انتهت صلاحية باقتك</string>
+    <string name="meetingrequest_quota_expired_subtitle">جدّد اشتراكك لمواصلة حجز الجلسات.</string>
+    <string name="meetingrequest_quota_expired_subtitle_named">انتهت صلاحية باقة %1$s الخاصة بك. جدّدها لمواصلة حجز الجلسات.</string>
+    <string name="meetingrequest_quota_depleted_title">لا توجد دقائق متبقية</string>
+    <string name="meetingrequest_quota_depleted_subtitle">لقد استهلكت كل دقائق باقتك. اشحن رصيدك لحجز جلسة أخرى.</string>
+    <string name="meetingrequest_quota_low_title">الدقائق غير كافية</string>
+    <string name="meetingrequest_quota_low_subtitle">لديك %1$d دقيقة متبقية، بينما تحتاج الجلسة إلى %2$d على الأقل. اشحن رصيدك للمتابعة.</string>
+    <string name="meetingrequest_quota_browse_packages">عرض الباقات</string>
 </resources>
