@@ -29,6 +29,8 @@ import com.iti.presentation.profile.components.ProfileHeader
 import com.iti.presentation.profile.components.ProfileMenuRow
 import com.iti.presentation.profile.components.ProfileSkeleton
 import com.iti.presentation.profile.components.SocialMediaChannelsRow
+import com.iti.presentation.profile.components.NoSubscriptionCard
+import com.iti.presentation.profile.components.SubscriptionQuotaCard
 import com.iti.presentation.profile.components.SubscriptionStatusRow
 import com.iti.presentation.profile.model.ProfileMenuType
 import com.iti.presentation.profile.model.SocialChannel
@@ -91,17 +93,36 @@ fun ProfileContent(
                             modifier = gutter,
                         )
 
-                        SubscriptionStatusRow(
-                            isPremium = state.isPremium,
-                            joinedAtEpochMillis = user.joinedAtEpochMillis,
-                            modifier = gutter,
-                        )
+                        // The entire subscription section is student-only; the sheikh app has no
+                        // payment graph and its users are paid rather than paying.
+                        if (state.isSubscriptionSupported) {
+                            SubscriptionStatusRow(
+                                isPremium = state.isPremium,
+                                joinedAtEpochMillis = user.joinedAtEpochMillis,
+                                modifier = gutter,
+                            )
+
+                            // Subscribed students see their live minute balance; everyone else
+                            // sees the packages pitch. `onPremiumClick` opens the packages list in
+                            // both cases — a lapsed student renews by buying a package again.
+                            val minutes = state.subscriptionMinutes
+                            when {
+                                minutes != null -> SubscriptionQuotaCard(
+                                    minutes = minutes,
+                                    nowEpochMillis = state.nowEpochMillis,
+                                    onRenewClick = onPremiumClick,
+                                    modifier = gutter,
+                                )
+
+                                !state.isLoadingMinutes && !state.isOffline -> NoSubscriptionCard(
+                                    onBrowsePackagesClick = onPremiumClick,
+                                    modifier = gutter,
+                                )
+                            }
+                        }
 
                         if (!state.isOffline) {
                             AccountActionsBlock(
-                                isPremium = state.isPremium,
-                                onPremiumClick = onPremiumClick,
-                                onMySubscriptionClick = onMySubscriptionClick,
                                 onLogoutClick = onLogoutClick,
                                 modifier = gutter,
                             )

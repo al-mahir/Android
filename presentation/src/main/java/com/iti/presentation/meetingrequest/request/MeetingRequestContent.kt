@@ -54,6 +54,7 @@ import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.theme.Theme
+import com.iti.domain.model.MeetingEligibility
 import com.iti.presentation.R
 import kotlinx.coroutines.delay
 
@@ -69,6 +70,7 @@ fun MeetingRequestContent(
     onCancel: () -> Unit,
     onBack: () -> Unit,
     onCancelExisting: () -> Unit = {},
+    onBuyPackage: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -86,6 +88,12 @@ fun MeetingRequestContent(
         ) { targetState ->
             when (targetState) {
                 RequestUiState.Idle -> IdleContent(onSend = onSend)
+                RequestUiState.CheckingQuota -> CheckingQuotaContent()
+                is RequestUiState.QuotaBlocked -> QuotaBlockedContent(
+                    state = targetState,
+                    onBuyPackage = onBuyPackage,
+                    onBack = onBack,
+                )
                 RequestUiState.Sending -> SendingContent()
                 is RequestUiState.Pending -> PendingContent(state = targetState, onCancel = onCancel)
                 is RequestUiState.Accepted -> AcceptedContent()
@@ -136,6 +144,83 @@ private fun IdleContent(onSend: (String?) -> Unit) {
         PrimaryButton(
             caption = stringResource(R.string.meetingrequest_request_send),
             onClick = { onSend(note.ifBlank { null }) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun CheckingQuotaContent() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        CircularProgressIndicator(color = Theme.colors.primary)
+        VerticalSpace(Theme.spacing.medium)
+        BasicText(
+            text = stringResource(R.string.meetingrequest_quota_checking),
+            style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont, textAlign = TextAlign.Center),
+        )
+    }
+}
+
+/**
+ * Terminal-but-recoverable state: the student has no usable minutes. Each reason gets its own
+ * copy because "buy your first package", "renew an expired one" and "you're a few minutes short"
+ * are different problems, and a single generic message would leave the student guessing.
+ */
+@Composable
+private fun QuotaBlockedContent(
+    state: RequestUiState.QuotaBlocked,
+    onBuyPackage: () -> Unit,
+    onBack: () -> Unit,
+) {
+    val title = when (state.reason) {
+        is MeetingEligibility.NoSubscription -> stringResource(R.string.meetingrequest_quota_none_title)
+        is MeetingEligibility.Expired -> stringResource(R.string.meetingrequest_quota_expired_title)
+        is MeetingEligibility.NoMinutesLeft -> stringResource(R.string.meetingrequest_quota_depleted_title)
+        is MeetingEligibility.NotEnoughMinutes -> stringResource(R.string.meetingrequest_quota_low_title)
+        else -> stringResource(R.string.meetingrequest_quota_none_title)
+    }
+    val subtitle = when (val reason = state.reason) {
+        is MeetingEligibility.NoSubscription ->
+            stringResource(R.string.meetingrequest_quota_none_subtitle)
+        is MeetingEligibility.Expired -> reason.packageName?.let {
+            stringResource(R.string.meetingrequest_quota_expired_subtitle_named, it)
+        } ?: stringResource(R.string.meetingrequest_quota_expired_subtitle)
+        is MeetingEligibility.NoMinutesLeft ->
+            stringResource(R.string.meetingrequest_quota_depleted_subtitle)
+        is MeetingEligibility.NotEnoughMinutes -> stringResource(
+            R.string.meetingrequest_quota_low_subtitle,
+            reason.remainingMinutes,
+            reason.requiredMinutes,
+        )
+        else -> stringResource(R.string.meetingrequest_quota_none_subtitle)
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HeroCircle(
+            iconRes = com.example.designsystem.R.drawable.ic_lock,
+            containerColor = Theme.colors.amber.copy(alpha = 0.14f),
+            iconTint = Theme.colors.amber,
+        )
+        VerticalSpace(Theme.spacing.medium)
+        BasicText(
+            text = title,
+            style = Theme.typography.title.copy(color = Theme.colors.primaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.small)
+        BasicText(
+            text = subtitle,
+            style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont, textAlign = TextAlign.Center),
+        )
+        VerticalSpace(Theme.spacing.large)
+        PrimaryButton(
+            caption = stringResource(R.string.meetingrequest_quota_browse_packages),
+            onClick = onBuyPackage,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        VerticalSpace(Theme.spacing.small)
+        SecondaryButton(
+            caption = stringResource(R.string.meetingrequest_request_back),
+            onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
         )
     }

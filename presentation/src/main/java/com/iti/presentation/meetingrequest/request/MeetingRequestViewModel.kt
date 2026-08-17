@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
+import com.iti.domain.usecase.subscription.CheckMeetingEligibilityUseCase
 import com.iti.presentation.core.mvi.StateHolder
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.meeting.domain.repository.SendMeetingRequestResult
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 
 class MeetingRequestViewModel(
     private val repository: MeetingRepository,
+    private val checkMeetingEligibility: CheckMeetingEligibilityUseCase,
 ) : ViewModel(),
     StateHolder<RequestUiState> by DefaultStateHolder(RequestUiState.Idle),
     EffectPublisher<RequestEffect> by DefaultEffectPublisher() {
@@ -41,6 +43,7 @@ class MeetingRequestViewModel(
             RequestIntent.CancelExisting -> cancelExisting()
             RequestIntent.Reset -> reset()
             is RequestIntent.Resume -> resume(intent.requestId, intent.expiresAt)
+            RequestIntent.BuyPackage -> sendEffect(RequestEffect.OpenPackages)
         }
     }
 
@@ -50,7 +53,17 @@ class MeetingRequestViewModel(
         // resent (see `MeetingHttpClient`), two racing taps that would previously have had a good
         // chance of one hard-failing outright can now both actually succeed, creating two
         // distinct pending requests server-side.
-        if (currentState is RequestUiState.Sending) return@launch
+        if (currentState is RequestUiState.Sending || currentState is RequestUiState.CheckingQuota) return@launch
+
+        // Quota is verified at send time rather than on screen entry so a balance consumed in
+        // another session (or in a call that just ended) is caught on the very next attempt.
+        updateState { RequestUiState.CheckingQuota }
+        val eligibility = checkMeetingEligibility()
+        if (!eligibility.allowsRequest) {
+            updateState { RequestUiState.QuotaBlocked(eligibility) }
+            return@launch
+        }
+
         updateState { RequestUiState.Sending }
         when (val result = repository.sendMeetingRequest(sheikhId, sheikhName, note)) {
             is SendMeetingRequestResult.Pending -> {

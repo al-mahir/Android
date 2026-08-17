@@ -7,6 +7,11 @@ sealed interface ProfileIntent {
 
     data object Retry : ProfileIntent
 
+    /** Re-reads the subscription entitlement — fired whenever the screen resumes, so a
+     * package bought on the checkout screen is reflected on return instead of after a
+     * cold start. */
+    data object Refresh : ProfileIntent
+
     data object PremiumClicked : ProfileIntent
 
     data object MySubscriptionClicked : ProfileIntent

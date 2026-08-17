@@ -10,11 +10,9 @@ import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhByIdUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
-import com.iti.domain.usecase.subscription.GetSubscriptionPackagesUseCase
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.subscription.RequestSubscriptionCancellationUseCase
 import com.iti.domain.usecase.subscription.SelectSubscriptionPackageUseCase
-import com.iti.domain.usecase.subscription.StartFreeTrialUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
 import com.iti.domain.usecase.settings.DeleteAllRecordingsUseCase
@@ -50,8 +48,6 @@ val presentationModule = module {
     factory { GetReadingProgressUseCase(get()) }
     factory { GetAyahOfTheDayUseCase() }
     factory { GetSubscriptionUseCase(get()) }
-    factory { GetSubscriptionPackagesUseCase(get()) }
-    factory { StartFreeTrialUseCase(get()) }
     factory { SelectSubscriptionPackageUseCase(get()) }
     factory { RequestSubscriptionCancellationUseCase(get()) }
     factory { DeleteAccountUseCase(get()) }
@@ -102,9 +98,11 @@ val presentationModule = module {
     // ── ViewModels ────────────────────────────────────────────────────────────
     viewModel { MainViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { ProfileViewModel(get(), get(), get(), get(), get(), get()) }
+    // getOrNull: the sheikh app has no payment graph, so the entitlement use case is absent
+    // there and the profile simply renders without any subscription section.
+    viewModel { ProfileViewModel(get(), get(), getOrNull(), get(), get(), get(), get()) }
     viewModel { SessionHistoryViewModel(get(), get()) }
-    viewModel { PackagesViewModel(get(), get()) }
+    viewModel { PackagesViewModel(get()) }
     viewModel { SubscriptionDetailsViewModel(get(), get(), get()) }
     viewModel { (documentType: LegalDocumentType) ->
         StaticContentViewModel(documentType, get())

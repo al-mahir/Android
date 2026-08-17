@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iti.domain.model.LegalDocumentType
 import com.iti.presentation.R
@@ -98,6 +99,13 @@ fun ProfileScreen(
 
             is ProfileEffect.OpenCircle -> onOpenCircle(effect.circleId)
         }
+    }
+
+    // Checkout is a separate screen, so returning from a successful purchase must re-read the
+    // entitlement; without this the profile keeps the pre-payment status until a cold start.
+    LifecycleResumeEffect(Unit) {
+        viewModel.onIntent(ProfileIntent.Refresh)
+        onPauseOrDispose { }
     }
 
     ProfileContent(

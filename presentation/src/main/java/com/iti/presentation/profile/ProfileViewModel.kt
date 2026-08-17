@@ -6,6 +6,7 @@ import com.iti.domain.auth.usecase.LogoutUseCase
 import com.iti.domain.core.Result
 import com.iti.domain.core.getOrNull
 import com.iti.domain.model.LegalDocumentType
+import com.iti.domain.usecase.subscription.GetSubscriptionMinutesUseCase
 import com.iti.domain.usecase.subscription.GetSubscriptionUseCase
 import com.iti.domain.usecase.user.DeleteAccountUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
@@ -37,23 +38,29 @@ import com.iti.meeting.domain.repository.CircleRepository
 class ProfileViewModel(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getSubscription: GetSubscriptionUseCase,
+    /** Absent in apps without a payment graph (sheikh app) — then no subscription UI at all. */
+    private val getSubscriptionMinutes: GetSubscriptionMinutesUseCase?,
     private val logout: LogoutUseCase,
     private val deleteAccount: DeleteAccountUseCase,
     private val connectivityObserver: ConnectivityObserver,
     private val circleRepository: CircleRepository,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel(),
     StateHolder<ProfileUiState> by DefaultStateHolder(ProfileUiState()),
     EffectPublisher<ProfileEffect> by DefaultEffectPublisher() {
 
     private var accountJob: Job? = null
+    private var minutesJob: Job? = null
 
     init {
+        updateState { copy(isSubscriptionSupported = getSubscriptionMinutes != null) }
         observeAccount()
     }
 
     fun onIntent(intent: ProfileIntent) {
         when (intent) {
             ProfileIntent.Retry -> observeAccount()
+            ProfileIntent.Refresh -> loadSubscriptionMinutes()
             ProfileIntent.PremiumClicked -> sendEffect(ProfileEffect.OpenPremium)
             ProfileIntent.MySubscriptionClicked -> sendEffect(ProfileEffect.OpenMySubscription)
             ProfileIntent.LogoutClicked -> openDialog(ProfileDialog.LOGOUT)
@@ -71,6 +78,8 @@ class ProfileViewModel(
     private fun observeAccount() {
         accountJob?.cancel()
         updateState { copy(isLoading = true, errorMessageRes = null) }
+
+        loadSubscriptionMinutes()
 
         viewModelScope.launch {
             circleRepository.getMyCircles().fold(
@@ -130,6 +139,29 @@ class ProfileViewModel(
                 }
             }
             .launchIn(viewModelScope)
+    }
+
+    /**
+     * The entitlement is fetched separately from the account stream: it must not be able to fail
+     * the whole profile. A failed lookup leaves [ProfileUiState.subscriptionMinutes] null with
+     * loading finished, which the state treats as "not subscribed" and shows the packages CTA —
+     * the same as a student who genuinely has none.
+     */
+    private fun loadSubscriptionMinutes() {
+        val useCase = getSubscriptionMinutes ?: return
+        minutesJob?.cancel()
+        updateState { copy(isLoadingMinutes = true) }
+
+        minutesJob = viewModelScope.launch {
+            val minutes = useCase().getOrNull()
+            updateState {
+                copy(
+                    isLoadingMinutes = false,
+                    subscriptionMinutes = minutes,
+                    nowEpochMillis = now(),
+                )
+            }
+        }
     }
 
     private fun openDialog(dialog: ProfileDialog) {
