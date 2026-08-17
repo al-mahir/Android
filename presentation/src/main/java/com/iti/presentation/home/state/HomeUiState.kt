@@ -14,6 +14,9 @@ import com.iti.meeting.domain.model.circle.Circle
 @Immutable
 data class HomeUiState(
     val isLoading: Boolean = true,
+    /** A user-initiated swipe-to-refresh is in flight. Distinct from [isLoading]: the content
+     * stays on screen and only the pull indicator spins. */
+    val isRefreshing: Boolean = false,
     @StringRes val errorMessageRes: Int? = null,
     val user: User? = null,
     val readingProgress: ReadingProgress? = null,

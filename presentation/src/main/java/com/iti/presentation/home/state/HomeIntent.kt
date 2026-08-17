@@ -2,6 +2,9 @@ package com.iti.presentation.home.state
 
 sealed interface HomeIntent {
     data object Retry : HomeIntent
+
+    /** Swipe-to-refresh — re-fetches the remote sections without blanking the screen. */
+    data object Refresh : HomeIntent
     data object SearchClicked : HomeIntent
     data object ProfileClicked : HomeIntent
     data object ContinueReadingClicked : HomeIntent

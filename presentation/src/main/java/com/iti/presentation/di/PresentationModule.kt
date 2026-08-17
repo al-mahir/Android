@@ -126,7 +126,7 @@ val presentationModule = module {
     viewModel { (circleId: String, membershipId: String) ->
         JoiningCircleViewModel(circleId, membershipId, get())
     }
-    viewModel { (circleId: String) -> InSessionViewModel(circleId, get(), get()) }
+    viewModel { (circleId: String) -> InSessionViewModel(circleId, get(), get(), get()) }
     viewModel { com.iti.presentation.circle.CreateCircleViewModel(get()) }
     viewModel { com.iti.presentation.bookmark.BookmarkViewModel(get(), get(), get(), get(), get()) }
     

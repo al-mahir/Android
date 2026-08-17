@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.refresh.AppPullToRefreshBox
+import com.example.designsystem.components.refresh.PullToRefreshPlaceholder
 import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
 import com.iti.meeting.domain.model.circle.CircleStatus
@@ -45,6 +47,7 @@ fun HomeContent(
     onCircleClick: (String) -> Unit,
     onStartExamClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onRefresh: () -> Unit,
     onViewPendingMeetingClick: () -> Unit = {},
     onCancelPendingMeetingClick: () -> Unit = {},
     onRejoinActiveCallClick: () -> Unit = {},
@@ -63,12 +66,21 @@ fun HomeContent(
     }
 
     when {
-        state.hasError -> NetworkErrorScreen(
+        // The error screen is pullable too — reaching for the Retry button is optional.
+        state.hasError -> AppPullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
             modifier = rootModifier,
-            description = stringResource(state.errorMessageRes ?: R.string.home_error_generic),
-            onRetry = onRetryClick,
-        )
+        ) {
+            PullToRefreshPlaceholder {
+                NetworkErrorScreen(
+                    description = stringResource(state.errorMessageRes ?: R.string.home_error_generic),
+                    onRetry = onRetryClick,
+                )
+            }
+        }
 
+        // Nothing to refresh yet while the first load is still painting the skeleton.
         state.isLoading && state.user == null -> HomeSkeleton(modifier = rootModifier)
 
         else -> Column(modifier = rootModifier) {
@@ -82,121 +94,127 @@ fun HomeContent(
                     .padding(top = Theme.spacing.extraLarge, bottom = Theme.spacing.medium),
             )
 
-            LazyColumn(
+            AppPullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onRefresh,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    bottom = Theme.spacing.extraLarge + bottomNavBarHeight(),
-                ),
-                verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
             ) {
-                // ── Ongoing call (process died mid-call — rejoin prompt) ───────
-                state.activeCall?.let { active ->
-                    item(key = "active-call") {
-                        OngoingCallCard(
-                            call = active,
-                            onRejoin = onRejoinActiveCallClick,
-                            onDismiss = onDismissActiveCallClick,
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        bottom = Theme.spacing.extraLarge + bottomNavBarHeight(),
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+                ) {
+                    // ── Ongoing call (process died mid-call — rejoin prompt) ───────
+                    state.activeCall?.let { active ->
+                        item(key = "active-call") {
+                            OngoingCallCard(
+                                call = active,
+                                onRejoin = onRejoinActiveCallClick,
+                                onDismiss = onDismissActiveCallClick,
+                                modifier = gutter,
+                            )
+                        }
+                    }
+
+                    // ── Pending meeting request ──────────────────────────────────
+                    state.pendingMeetingRequest?.let { pending ->
+                        item(key = "pending-meeting-request") {
+                            PendingMeetingRequestCard(
+                                request = pending,
+                                onView = onViewPendingMeetingClick,
+                                onCancel = onCancelPendingMeetingClick,
+                                modifier = gutter,
+                            )
+                        }
+                    }
+
+                    // ── Continue reading ─────────────────────────────────────────
+                    item(key = "continue-reading") {
+                        ContinueReadingCard(
+                            progress = state.readingProgress,
+                            onClick = onContinueReadingClick,
                             modifier = gutter,
                         )
                     }
-                }
 
-                // ── Pending meeting request ──────────────────────────────────
-                state.pendingMeetingRequest?.let { pending ->
-                    item(key = "pending-meeting-request") {
-                        PendingMeetingRequestCard(
-                            request = pending,
-                            onView = onViewPendingMeetingClick,
-                            onCancel = onCancelPendingMeetingClick,
-                            modifier = gutter,
+                    // ── Exam CTA ──────────────────────────────────────────────────
+                    item(key = "exam-cta") {
+                        ExamCtaCard(
+                            onClick = onStartExamClick,
+                            modifier = gutter
                         )
                     }
-                }
 
-                // ── Continue reading ─────────────────────────────────────────
-                item(key = "continue-reading") {
-                    ContinueReadingCard(
-                        progress = state.readingProgress,
-                        onClick = onContinueReadingClick,
-                        modifier = gutter,
-                    )
-                }
-
-                // ── Exam CTA ──────────────────────────────────────────────────
-                item(key = "exam-cta") {
-                    ExamCtaCard(
-                        onClick = onStartExamClick,
-                        modifier = gutter
-                    )
-                }
-
-                // ── Sheikhs ─────────────────────────────────────────────────
-                if (state.sheikhs.isNotEmpty() && !state.isOffline) {
-                    item(key = "sheikhs-header") {
-                        SectionHeader(
-                            title = stringResource(R.string.home_section_sheikhs),
-                            actionLabel = stringResource(R.string.home_see_all),
-                            onActionClick = onSeeAllSheikhsClick,
-                            modifier = gutter,
-                        )
+                    // ── Sheikhs ─────────────────────────────────────────────────
+                    if (state.sheikhs.isNotEmpty() && !state.isOffline) {
+                        item(key = "sheikhs-header") {
+                            SectionHeader(
+                                title = stringResource(R.string.home_section_sheikhs),
+                                actionLabel = stringResource(R.string.home_see_all),
+                                onActionClick = onSeeAllSheikhsClick,
+                                modifier = gutter,
+                            )
+                        }
+                        item(key = "sheikhs-row") {
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = Theme.spacing.medium),
+                                horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+                            ) {
+                                items(items = state.sheikhs, key = { sheikh -> sheikh.id }) { sheikh ->
+                                    SheikhProfileCard(
+                                        sheikh = sheikh,
+                                        onClick = { onSheikhClick(sheikh.id) },
+                                    )
+                                }
+                            }
+                        }
                     }
-                    item(key = "sheikhs-row") {
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(horizontal = Theme.spacing.medium),
-                            horizontalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
-                        ) {
-                            items(items = state.sheikhs, key = { sheikh -> sheikh.id }) { sheikh ->
-                                SheikhProfileCard(
-                                    sheikh = sheikh,
-                                    onClick = { onSheikhClick(sheikh.id) },
+
+                    // ── Circles ──────────────────────────────────────────────────
+                    // A joined circle is featured as the "current circle"; otherwise the plain
+                    // summary entry opens the full circle list.
+                    if (!state.isOffline) {
+                        val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
+                            ?: state.myCircles.firstOrNull()
+                        if (current != null) {
+                            item(key = "circles-header") {
+                                SectionHeader(
+                                    title = stringResource(R.string.home_circles_title),
+                                    actionLabel = stringResource(R.string.home_see_all),
+                                    onActionClick = onSeeAllCirclesClick,
+                                    modifier = gutter,
+                                )
+                            }
+                            item(key = "current-circle") {
+                                CurrentCircleCard(
+                                    circle = current,
+                                    onClick = { onCircleClick(current.id) },
+                                    modifier = gutter,
+                                )
+                            }
+                        } else {
+                            item(key = "circles-summary") {
+                                CirclesSummaryCard(
+                                    joinedCount = state.myCircles.size,
+                                    availableCount = availableCount,
+                                    onClick = onSeeAllCirclesClick,
+                                    modifier = gutter,
                                 )
                             }
                         }
                     }
-                }
 
-                // ── Circles ──────────────────────────────────────────────────
-                // A joined circle is featured as the "current circle"; otherwise the plain
-                // summary entry opens the full circle list.
-                if (!state.isOffline) {
-                    val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
-                        ?: state.myCircles.firstOrNull()
-                    if (current != null) {
-                        item(key = "circles-header") {
-                            SectionHeader(
-                                title = stringResource(R.string.home_circles_title),
-                                actionLabel = stringResource(R.string.home_see_all),
-                                onActionClick = onSeeAllCirclesClick,
+                    // ── Ayah of the Day ──────────────────────────────────────────
+                    state.ayahOfTheDay?.let { ayah ->
+                        item(key = "ayah-of-the-day") {
+                            AyahOfTheDayCard(
+                                ayah = ayah,
                                 modifier = gutter,
                             )
                         }
-                        item(key = "current-circle") {
-                            CurrentCircleCard(
-                                circle = current,
-                                onClick = { onCircleClick(current.id) },
-                                modifier = gutter,
-                            )
-                        }
-                    } else {
-                        item(key = "circles-summary") {
-                            CirclesSummaryCard(
-                                joinedCount = state.myCircles.size,
-                                availableCount = availableCount,
-                                onClick = onSeeAllCirclesClick,
-                                modifier = gutter,
-                            )
-                        }
-                    }
-                }
-
-                // ── Ayah of the Day ──────────────────────────────────────────
-                state.ayahOfTheDay?.let { ayah ->
-                    item(key = "ayah-of-the-day") {
-                        AyahOfTheDayCard(
-                            ayah = ayah,
-                            modifier = gutter,
-                        )
                     }
                 }
             }

@@ -20,6 +20,7 @@ import com.iti.presentation.home.state.HomeEffect
 import com.iti.presentation.home.state.HomeIntent
 import com.iti.presentation.home.state.HomeUiState
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
@@ -45,6 +46,7 @@ class HomeViewModel(
     private var contentJob: Job? = null
 
     init {
+        loadSections()
         observeContent()
         observePendingMeetingRequest()
         observeActiveCall()
@@ -52,7 +54,8 @@ class HomeViewModel(
 
     fun onIntent(intent: HomeIntent) {
         when (intent) {
-            HomeIntent.Retry -> observeContent()
+            HomeIntent.Retry -> retry()
+            HomeIntent.Refresh -> refresh()
             HomeIntent.SearchClicked -> sendEffect(HomeEffect.OpenSearch)
             HomeIntent.ProfileClicked -> sendEffect(HomeEffect.OpenProfile)
             HomeIntent.SeeAllSheikhsClicked -> sendEffect(HomeEffect.OpenSheikhList)
@@ -126,27 +129,55 @@ class HomeViewModel(
         }
     }
 
-    private fun observeContent() {
-        // Cancel any in-flight collection so a retry cannot leave two streams writing state.
-        contentJob?.cancel()
-        updateState { copy(isLoading = true, errorMessageRes = null) }
+    /** Full reload behind the skeleton — the initial load and the error screen's Retry button. */
+    private fun retry() {
+        loadSections()
+        observeContent()
+    }
 
-        // Load sheikhs and my circles from the real APIs in parallel (one-shot suspends).
+    /**
+     * Swipe-to-refresh. Unlike [retry] it never raises [HomeUiState.isLoading], so the content the
+     * user is looking at stays put and only the pull indicator spins. Re-entrant pulls are dropped:
+     * the gesture can fire again before `isRefreshing` has reached the UI.
+     */
+    private fun refresh() {
+        if (currentState.isRefreshing) return
+        updateState { copy(isRefreshing = true) }
+
+        // The user/progress/ayah/connectivity stream is local and cheap, so restarting it silently
+        // is what lets a pull clear a stale error screen without flashing the skeleton.
+        observeContent(silent = true)
+
+        viewModelScope.launch {
+            try {
+                loadSections().joinAll()
+            } finally {
+                // Also runs if the ViewModel is cleared mid-refresh, so the flag never sticks.
+                updateState { copy(isRefreshing = false) }
+            }
+        }
+    }
+
+    /**
+     * The one-shot remote sections (teachers, my circles, available circles), fired in parallel.
+     * Returns their [Job]s so [refresh] can keep the indicator up until all of them have settled.
+     */
+    private fun loadSections(): List<Job> = listOf(
         viewModelScope.launch {
             getSheikhs().fold(
                 onSuccess = { sheikhs -> updateState { copy(sheikhs = sheikhs) } },
                 onError = { /* Home shows error only if all sources fail; ignore partial sheikh failure */ },
             )
-        }
+        },
 
         viewModelScope.launch {
             circleRepository.getMyCircles().fold(
                 onSuccess = { circles -> updateState { copy(myCircles = circles) } },
                 onFailure = {
-                    /* My circles are a section; a partial failure leaves it empty. */
+                    /* My circles are a section; a partial failure leaves the previous list in place. */
                 },
             )
-        }
+        },
 
         viewModelScope.launch {
             circleRepository.getPublicCircles().fold(
@@ -161,12 +192,23 @@ class HomeViewModel(
                     }
                 },
                 onFailure = {
-                    /* Available circles are a section; a partial failure leaves it empty. */
+                    /* Available circles are a section; a partial failure leaves the previous list in place. */
                 },
             )
-        }
+        },
+    )
 
-        // Observe user, reading progress, ayah of the day, and connectivity.
+    /**
+     * Observes user, reading progress, ayah of the day, and connectivity.
+     *
+     * @param silent skips the skeleton — a refresh restarts the stream in place rather than
+     *   emptying the screen while it re-emits.
+     */
+    private fun observeContent(silent: Boolean = false) {
+        // Cancel any in-flight collection so a retry cannot leave two streams writing state.
+        contentJob?.cancel()
+        if (!silent) updateState { copy(isLoading = true, errorMessageRes = null) }
+
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
