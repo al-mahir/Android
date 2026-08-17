@@ -6,6 +6,8 @@ import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
 import io.agora.rtc2.RtcEngine
 import io.agora.rtc2.ChannelMediaOptions
+import io.agora.rtc2.video.CameraCapturerConfiguration
+import io.agora.rtc2.video.CameraCapturerConfiguration.CAMERA_DIRECTION
 
 private const val TAG = "MeetingCall"
 
@@ -16,10 +18,7 @@ class AgoraEngineWrapper(context: Context, appId: String, listener: IRtcEngineEv
         enableVideo()
         enableLocalAudio(false)
         enableLocalVideo(false)
-        // CHANNEL_PROFILE_COMMUNICATION defaults to the earpiece on many devices, which reads as
-        // "no audio at all" in a video call. Force the speaker so the remote party is audible.
         setDefaultAudioRoutetoSpeakerphone(true)
-        setEnableSpeakerphone(true)
     }
 
     fun joinChannel(token: String, channelName: String, userAccount: String, publishAudio: Boolean, publishVideo: Boolean) {
@@ -52,12 +51,32 @@ class AgoraEngineWrapper(context: Context, appId: String, listener: IRtcEngineEv
         engine.updateChannelMediaOptions(ChannelMediaOptions().apply { publishCameraTrack = enabled })
     }
 
+
+    fun setAudioRoute(agoraRoute: Int) {
+        val result = engine.setRouteInCommunicationMode(agoraRoute)
+        Log.i(TAG, "setRouteInCommunicationMode($agoraRoute) returned $result (0 = ok)")
+        if (agoraRoute == Constants.AUDIO_ROUTE_SPEAKERPHONE || agoraRoute == Constants.AUDIO_ROUTE_EARPIECE) {
+            engine.setEnableSpeakerphone(agoraRoute == Constants.AUDIO_ROUTE_SPEAKERPHONE)
+        }
+    }
+
+
+    fun setCameraDirection(front: Boolean) {
+        val direction = if (front) CAMERA_DIRECTION.CAMERA_FRONT else CAMERA_DIRECTION.CAMERA_REAR
+        val result = engine.setCameraCapturerConfiguration(CameraCapturerConfiguration(direction))
+        Log.i(TAG, "setCameraCapturerConfiguration(front=$front) returned $result (0 = ok)")
+    }
+
     fun switchCamera() {
         engine.switchCamera()
     }
 
-    fun setSpeakerphoneEnabled(enabled: Boolean) {
-        engine.setEnableSpeakerphone(enabled)
+    /** The torch is a rear-camera feature on essentially every phone, and unsupported on many. */
+    fun isTorchSupported(): Boolean = runCatching { engine.isCameraTorchSupported() }.getOrDefault(false)
+
+    fun setTorchEnabled(enabled: Boolean) {
+        val result = engine.setCameraTorchOn(enabled)
+        Log.i(TAG, "setCameraTorchOn($enabled) returned $result (0 = ok)")
     }
 
     fun leaveChannel() = engine.leaveChannel()
