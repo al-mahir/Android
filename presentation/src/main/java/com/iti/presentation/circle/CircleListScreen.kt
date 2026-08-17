@@ -39,6 +39,8 @@ import com.example.designsystem.components.filter.FilterChips
 import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.designsystem.components.placeholderscreens.EmptySearchScreen
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.refresh.AppPullToRefreshBox
+import com.example.designsystem.components.refresh.PullToRefreshPlaceholder
 import com.example.designsystem.components.search.SearchBar
 import com.example.designsystem.components.textfield.TextField
 import com.example.designsystem.components.topbar.BackTitleTopBar
@@ -88,6 +90,7 @@ fun CircleListScreen(
         onStatusSelected = { viewModel.onIntent(CircleListIntent.StatusSelected(it)) },
         onCircleClick = { viewModel.onIntent(CircleListIntent.CircleClicked(it)) },
         onRetry = { viewModel.onIntent(CircleListIntent.Retry) },
+        onPullToRefresh = { viewModel.onIntent(CircleListIntent.PullToRefresh) },
         onCreateCircle = { viewModel.onIntent(CircleListIntent.CreateCircleClicked) },
         onJoinPrivateClick = { viewModel.onIntent(CircleListIntent.JoinPrivateClicked) },
         onJoinCircleIdChanged = { viewModel.onIntent(CircleListIntent.JoinCircleIdChanged(it)) },
@@ -109,6 +112,7 @@ private fun CircleListContent(
     onStatusSelected: (CircleStatus?) -> Unit,
     onCircleClick: (String) -> Unit,
     onRetry: () -> Unit,
+    onPullToRefresh: () -> Unit,
     onCreateCircle: () -> Unit,
     onJoinPrivateClick: () -> Unit,
     onJoinCircleIdChanged: (String) -> Unit,
@@ -143,14 +147,21 @@ private fun CircleListContent(
                 onBackClick = onBack,
             )
 
-            Box(
+            AppPullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onPullToRefresh,
+                // Nothing to refresh yet while the first load is still painting the skeleton.
+                enabled = !state.isLoading,
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f),
             ) {
                 when {
                     state.isLoading -> CircleListSkeleton()
-                    state.isError -> NetworkErrorScreen(modifier = Modifier.fillMaxSize(), onRetry = onRetry)
+                    // The error screen is pullable too — reaching for Retry is optional.
+                    state.isError -> PullToRefreshPlaceholder {
+                        NetworkErrorScreen(onRetry = onRetry)
+                    }
                     else -> {
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             state.currentCircle?.let { current ->

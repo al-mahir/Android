@@ -15,6 +15,7 @@ import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
 import com.iti.presentation.core.mvi.StateHolder
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 class CircleListViewModel(
@@ -22,6 +23,7 @@ class CircleListViewModel(
 ) : ViewModel(),
     StateHolder<CircleListUiState> by DefaultStateHolder(CircleListUiState()),
     EffectPublisher<CircleListEffect> by DefaultEffectPublisher() {
+
 
     init {
         load()
@@ -47,44 +49,83 @@ class CircleListViewModel(
         CircleListIntent.DismissJoinPrivate -> updateState { closeJoinSheet() }
         CircleListIntent.Retry -> load()
         CircleListIntent.Refresh -> loadMyCircles()
+        CircleListIntent.PullToRefresh -> pullToRefresh()
     }
 
     private fun load() {
         updateState { copy(isLoading = true, isError = false) }
+        viewModelScope.launch { fetchPublicCircles(keepContentOnFailure = false) }
+    }
+
+    /**
+     * Swipe-to-refresh. Unlike [load] it never raises [CircleListUiState.isLoading], so the list
+     * the user is reading stays put and only the pull indicator spins. Re-entrant pulls are
+     * dropped: the gesture can fire again before `isRefreshing` has reached the UI.
+     */
+    private fun pullToRefresh() {
+        if (currentState.isRefreshing) return
+        updateState { copy(isRefreshing = true) }
         viewModelScope.launch {
-            circleRepository.getPublicCircles().fold(
-                onSuccess = { circles ->
-                    updateState {
-                        copy(
-                            circles = circles,
-                            filteredCircles = buildFilteredList(circles, myCircles, searchQuery, selectedStatus),
-                            isLoading = false,
-                            isError = false,
-                        )
-                    }
-                },
-                onFailure = { updateState { copy(isLoading = false, isError = true) } },
-            )
+            try {
+                joinAll(
+                    launch { fetchPublicCircles(keepContentOnFailure = true) },
+                    launch { fetchMyCircles() },
+                )
+            } finally {
+                // Also runs if the ViewModel is cleared mid-refresh, so the flag never sticks.
+                updateState { copy(isRefreshing = false) }
+            }
         }
+    }
+
+    /**
+     * @param keepContentOnFailure true for a refresh over an already-populated list: a transient
+     *   failure reports itself as a message instead of throwing away circles the user can still
+     *   read. An empty list has nothing to protect, so it falls through to the error screen.
+     */
+    private suspend fun fetchPublicCircles(keepContentOnFailure: Boolean) {
+        circleRepository.getPublicCircles().fold(
+            onSuccess = { circles ->
+                updateState {
+                    copy(
+                        circles = circles,
+                        filteredCircles = buildFilteredList(circles, myCircles, searchQuery, selectedStatus),
+                        isLoading = false,
+                        isError = false,
+                    )
+                }
+            },
+            onFailure = {
+                val hasContent = currentState.filteredCircles.isNotEmpty()
+                if (keepContentOnFailure && hasContent) {
+                    updateState { copy(isLoading = false) }
+                    sendEffect(CircleListEffect.ShowMessage(R.string.refresh_failed))
+                } else {
+                    updateState { copy(isLoading = false, isError = true) }
+                }
+            },
+        )
     }
 
     /** Joined circles (including PRIVATE ones) are merged into the list so the user keeps seeing
      * them after joining, and marked so the card can show the joined state. */
     private fun loadMyCircles() {
-        viewModelScope.launch {
-            circleRepository.getMyCircles().fold(
-                onSuccess = { circles ->
-                    updateState {
-                        copy(
-                            myCircles = circles,
-                            joinedCircleIds = circles.mapTo(mutableSetOf()) { it.id },
-                            filteredCircles = buildFilteredList(this@CircleListViewModel.currentState.circles, circles, searchQuery, selectedStatus),
-                        )
-                    }
-                },
-                onFailure = { /* Joined markers are optional; a failure leaves the list unmarked. */ },
-            )
-        }
+        viewModelScope.launch { fetchMyCircles() }
+    }
+
+    private suspend fun fetchMyCircles() {
+        circleRepository.getMyCircles().fold(
+            onSuccess = { mine ->
+                updateState {
+                    copy(
+                        myCircles = mine,
+                        joinedCircleIds = mine.mapTo(mutableSetOf()) { it.id },
+                        filteredCircles = buildFilteredList(circles, mine, searchQuery, selectedStatus),
+                    )
+                }
+            },
+            onFailure = { /* Joined markers are optional; a failure leaves the list unmarked. */ },
+        )
     }
 
     private fun updateSearch(query: String) {

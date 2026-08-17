@@ -12,6 +12,9 @@ data class CircleListUiState(
     val selectedStatus: CircleStatus? = null,
     val joinedCircleIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
+    /** A user-initiated swipe-to-refresh is in flight. Distinct from [isLoading]: the list stays
+     * on screen and only the pull indicator spins. */
+    val isRefreshing: Boolean = false,
     val isError: Boolean = false,
     val joinSheetVisible: Boolean = false,
     val joinByToken: Boolean = false,
@@ -41,8 +44,11 @@ sealed interface CircleListIntent {
     data class JoinModeChanged(val byToken: Boolean) : CircleListIntent
     data object DismissJoinPrivate : CircleListIntent
     data object Retry : CircleListIntent
-    /** Re-fetches joined circles (e.g. after leaving one and returning to the list). */
+    /** Re-fetches joined circles (e.g. after leaving one and returning to the list). Silent —
+     * no pull indicator, because the user did not ask for it. */
     data object Refresh : CircleListIntent
+    /** Swipe-to-refresh — re-fetches both the public list and the joined circles. */
+    data object PullToRefresh : CircleListIntent
 }
 
 sealed interface CircleListEffect {
