@@ -1,5 +1,6 @@
 package com.iti.presentation.sheikh
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.refresh.AppPullToRefreshBox
+import com.example.designsystem.components.refresh.PullToRefreshPlaceholder
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
 import com.iti.domain.model.Sheikh
@@ -58,11 +62,14 @@ fun SheikhListScreen(
     viewModel: SheikhListViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is SheikhListEffect.NavigateToSheikhDetails -> onOpenSheikhDetails(effect.sheikhId)
             SheikhListEffect.NavigateBack -> onBack()
+            is SheikhListEffect.ShowMessage ->
+                Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -74,6 +81,7 @@ fun SheikhListScreen(
         onSheikhClick = { viewModel.onIntent(SheikhListIntent.SheikhClicked(it)) },
         onSheikhBookmarkClick = { viewModel.onIntent(SheikhListIntent.ToggleSheikhBookmark(it)) },
         onRetry = { viewModel.onIntent(SheikhListIntent.Retry) },
+        onRefresh = { viewModel.onIntent(SheikhListIntent.Refresh) },
         modifier = modifier,
     )
 }
@@ -87,6 +95,7 @@ private fun SheikhListContent(
     onSheikhClick: (String) -> Unit,
     onSheikhBookmarkClick: (String) -> Unit,
     onRetry: () -> Unit,
+    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -99,58 +108,68 @@ private fun SheikhListContent(
             onBackClick = onBack,
         )
 
-        when {
-            state.isLoading -> SheikhListSkeleton()
-            state.isError -> NetworkErrorScreen(
-                modifier = Modifier.fillMaxSize(),
-                onRetry = onRetry,
-            )
-            else -> {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    item {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            SheikhSearchBar(
-                                query = state.searchQuery,
-                                onQueryChanged = onSearchChanged,
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            SheikhFilterRow(
-                                selected = state.selectedFilter,
-                                onSelected = onFilterSelected,
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = stringResource(
-                                    R.string.sheikh_list_count,
-                                    state.filteredSheikhs.count {
-                                        it.availability == SheikhAvailability.AVAILABLE
-                                    },
-                                ),
-                                style = Theme.typography.body.small,
-                                color = Theme.colors.secondaryFont,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-
-                    if (state.filteredSheikhs.isEmpty()) {
+        AppPullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = onRefresh,
+            // Nothing to refresh yet while the first load is still painting the skeleton.
+            enabled = !state.isLoading,
+            modifier = Modifier
+                .fillMaxSize()
+                .weight(1f),
+        ) {
+            when {
+                state.isLoading -> SheikhListSkeleton()
+                // The error screen is pullable too — reaching for Retry is optional.
+                state.isError -> PullToRefreshPlaceholder {
+                    NetworkErrorScreen(onRetry = onRetry)
+                }
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
                         item {
-                            EmptyDataScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                SheikhSearchBar(
+                                    query = state.searchQuery,
+                                    onQueryChanged = onSearchChanged,
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                SheikhFilterRow(
+                                    selected = state.selectedFilter,
+                                    onSelected = onFilterSelected,
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.sheikh_list_count,
+                                        state.filteredSheikhs.count {
+                                            it.availability == SheikhAvailability.AVAILABLE
+                                        },
+                                    ),
+                                    style = Theme.typography.body.small,
+                                    color = Theme.colors.secondaryFont,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                         }
-                    } else {
-                        items(state.filteredSheikhs, key = { it.id }) { sheikh ->
-                            SheikhCard(
-                                sheikh = sheikh,
-                                onClick = { onSheikhClick(sheikh.id) },
-                                isBookmarked = sheikh.id in state.bookmarkedSheikhIds,
-                                onBookmarkClick = { onSheikhBookmarkClick(sheikh.id) },
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            )
-                        }
-                    }
 
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
+                        if (state.filteredSheikhs.isEmpty()) {
+                            item {
+                                EmptyDataScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                            }
+                        } else {
+                            items(state.filteredSheikhs, key = { it.id }) { sheikh ->
+                                SheikhCard(
+                                    sheikh = sheikh,
+                                    onClick = { onSheikhClick(sheikh.id) },
+                                    isBookmarked = sheikh.id in state.bookmarkedSheikhIds,
+                                    onBookmarkClick = { onSheikhBookmarkClick(sheikh.id) },
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                )
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(24.dp)) }
+                    }
                 }
             }
         }

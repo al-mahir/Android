@@ -6,4 +6,6 @@ sealed interface SheikhListIntent {
     data class SheikhClicked(val sheikhId: String) : SheikhListIntent
     data class ToggleSheikhBookmark(val sheikhId: String) : SheikhListIntent
     data object Retry : SheikhListIntent
+    /** Swipe-to-refresh — re-fetches the list without blanking it. */
+    data object Refresh : SheikhListIntent
 }

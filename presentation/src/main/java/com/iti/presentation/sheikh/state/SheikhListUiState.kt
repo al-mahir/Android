@@ -9,6 +9,9 @@ data class SheikhListUiState(
     val searchQuery: String = "",
     val selectedFilter: SheikhFilter = SheikhFilter.ALL,
     val isLoading: Boolean = true,
+    /** A user-initiated swipe-to-refresh is in flight. Distinct from [isLoading]: the list stays
+     * on screen and only the pull indicator spins. */
+    val isRefreshing: Boolean = false,
     val isError: Boolean = false,
     val bookmarkedSheikhIds: Set<String> = emptySet(),
 )
