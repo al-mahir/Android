@@ -2,15 +2,7 @@ package com.iti.meeting.presentation.call.audio
 
 import io.agora.rtc2.Constants
 
-/**
- * The audio output routes a user can pick between during a call.
- *
- * Deliberately coarse — one entry per *kind* of output rather than per physical device. Android
- * can report several `AudioDeviceInfo`s that all mean "the Bluetooth headset the user is wearing"
- * (SCO + A2DP for the same headset), and Agora routes by kind anyway
- * ([io.agora.rtc2.Constants.AUDIO_ROUTE_BLUETOOTH_DEVICE_HFP], not by device id), so modelling
- * individual devices would add a picker full of duplicates that all do the same thing.
- */
+
 enum class AudioOutputDevice {
     EARPIECE,
     SPEAKER,
@@ -18,7 +10,6 @@ enum class AudioOutputDevice {
     BLUETOOTH,
     ;
 
-    /** The `Constants.AUDIO_ROUTE_*` value to hand [io.agora.rtc2.RtcEngine.setRouteInCommunicationMode]. */
     val agoraRoute: Int
         get() = when (this) {
             EARPIECE -> Constants.AUDIO_ROUTE_EARPIECE

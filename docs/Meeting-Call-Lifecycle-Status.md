@@ -408,6 +408,72 @@ indicator lingers (expected, cosmetic), confirm no phantom re-navigation/hang ei
 
 ---
 
+### ✅ Done — Audio routed to the earpiece, plus full in-call device controls
+
+Field-reported: opening a meeting sometimes played the remote audio out of the **phone's earpiece**
+instead of the speaker — intermittently, which is why it read as "no sound" rather than "wrong
+output". Fixed, and the surrounding controls were rebuilt so the user can change any of it mid-call.
+
+**Root cause.** `AgoraEngineWrapper`'s init block called `setEnableSpeakerphone(true)` at *engine
+creation* time, before `joinChannel`. In `CHANNEL_PROFILE_COMMUNICATION` the SDK re-decides the
+audio route as part of joining, so anything set beforehand is discarded — the sibling call,
+`setDefaultAudioRoutetoSpeakerphone(true)`, only sets the fallback and isn't a "switch now" command.
+Whether the pre-join call happened to survive depended on timing, hence the intermittency. The
+missing `MODIFY_AUDIO_SETTINGS` permission was ruled out — `:meeting:presentation`'s own manifest
+already declares it and it merges into both apps (verified in the merged manifests).
+
+**The fix**: the route is now asserted from `onJoinChannelSuccess` — the first moment it sticks —
+via `RtcEngine.setRouteInCommunicationMode()`, the API actually intended for in-call routing, and
+re-asserted once ~1.2s later (`ROUTE_REASSERT_DELAY_MS`), because several OEM audio HALs finish
+setting up the voice-call stream a beat after join and reset the route while doing so.
+
+**New: user-controlled audio output.** `call/audio/AudioRouteController.kt` enumerates connected
+outputs via `AudioManager.getDevices` and tracks connect/disconnect with an `AudioDeviceCallback`;
+`AudioOutputDevice` maps them to `Constants.AUDIO_ROUTE_*`. Policy: an explicit user pick is sticky
+until that device physically disconnects, otherwise wired headset > Bluetooth > speaker — never the
+earpiece by default. The controller owns policy only and never touches Agora; `CallSessionController`
+applies `selected` to the engine, and Agora's `onAudioRouteChanged` is folded back into the state so
+the picker shows where audio actually is rather than where we asked for it. Bluetooth on API 31+
+needs runtime `BLUETOOTH_CONNECT`, now declared in `:meeting:presentation`'s manifest and requested
+**lazily** — only when the user picks Bluetooth in the sheet, not at call start.
+
+**New: camera control.** `setCameraDirection(front)` (via `CameraCapturerConfiguration`) replaces
+blind `switchCamera()` flipping, so front/back are explicit, idempotent, and survive a rejoin; the
+state carries `isFrontCamera`. Torch support is exposed too, re-probed whenever the camera is turned
+on or switched (the SDK reports "no torch" for a camera it isn't currently holding, so the value
+taken at join time is not trustworthy).
+
+**New: call UI.** `CallScreen` rewritten — top bar with the remote party's name and a duration /
+reconnecting / waiting status pill; auto-hiding chrome (5s, suppressed while a sheet is open or
+before the remote joins) with tap-to-toggle; tap-to-swap between the main stage and the PiP tile,
+with the mic badge following whoever is in the tile; `InitialsAvatar` placeholders instead of a
+generic person glyph; long-press on the camera controls opens the camera sheet. New
+`call/components/` holds `CallControls.kt` (control bar, buttons, status pill) and
+`CallOptionSheets.kt` (audio-output and camera sheets, built on the design system's
+`AppBottomSheet`). Control-button convention: a filled white button means the capability is **off**.
+
+**Localization gap closed.** `CallScreen` previously hardcoded every English string, and
+`CallUiState.Error` carried a raw `message: String` — flagged as an open gap in Step 9 above and now
+fixed: `Error` carries a `CallErrorReason` enum plus an optional diagnostic Agora code, and all call
+UI text is EN + AR resources.
+
+`AgoraVideoViews` also gained `onRelease` canvas detach on both local and remote views — required
+now that swapping recreates those `SurfaceView`s, since the engine otherwise keeps rendering into a
+destroyed surface.
+
+**Verified**: `:meeting:presentation` `lintDebug` **clean** (the pre-existing `RememberReturnType`
+error on `prepareForRequest` is resolved — kept synchronous-during-composition, which is
+load-bearing, behind a documented `@Suppress` on a small helper), `:app`/`:sheikh-app`
+`compileDebugKotlin` + `processDebugMainManifest` clean. All changes are confined to
+`:meeting:presentation` — neither host app needed touching. **Not verified on-device** (same
+constraint as every entry in this doc). The specific pass to run: join from both apps and confirm
+audio comes out of the speaker by default; open the output sheet and switch between earpiece and
+speaker; plug in wired headphones mid-call and confirm it auto-switches and reverts on unplug;
+connect a Bluetooth headset and confirm the permission prompt appears only on selecting it; switch
+front/back camera; check the whole screen in Arabic/RTL.
+
+---
+
 ## Open questions / risks carried into this work
 
 - No on-device/emulator in this environment (same constraint noted throughout

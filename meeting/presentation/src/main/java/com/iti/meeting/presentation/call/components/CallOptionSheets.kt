@@ -39,10 +39,7 @@ import com.example.designsystem.theme.Theme
 import com.iti.meeting.presentation.R
 import com.iti.meeting.presentation.call.audio.AudioOutputDevice
 
-/**
- * Where the remote audio plays out of. Only lists outputs that are actually connected, so the
- * earpiece/speaker choice is always available and headphones/Bluetooth appear only when present.
- */
+
 @Composable
 fun AudioOutputSheet(
     available: List<AudioOutputDevice>,
@@ -67,10 +64,7 @@ fun AudioOutputSheet(
     }
 }
 
-/**
- * Explicit front/back choice plus the torch, rather than the blind "flip to the other one" the
- * control bar offers — useful when a sheikh wants to point the back camera at a page of a Mushaf.
- */
+
 @Composable
 fun CameraOptionsSheet(
     isFrontCamera: Boolean,

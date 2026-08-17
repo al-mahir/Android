@@ -12,31 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 
 private const val TAG = "MeetingCallAudio"
 
-/**
- * What outputs exist right now and which one the call should be using.
- *
- * [userSelected] is what makes the auto-routing policy in [AudioRouteController] non-annoying: once
- * the user has explicitly picked an output we stop overriding their choice on every device change,
- * and only fall back automatically when the device they picked physically disappears.
- */
 data class AudioRouteState(
     val available: List<AudioOutputDevice> = listOf(AudioOutputDevice.SPEAKER),
     val selected: AudioOutputDevice = AudioOutputDevice.SPEAKER,
     val userSelected: Boolean = false,
 )
 
-/**
- * Tracks the connected audio outputs and decides which one a call should use.
- *
- * This owns *policy and availability only* — it never talks to Agora. [selected] is applied to the
- * engine by [com.iti.meeting.presentation.call.session.CallSessionController], which is the only
- * thing that knows whether an engine currently exists. That split keeps this class testable and
- * means a headset plugged in before the engine is up is still honoured once it comes up.
- *
- * Note on Agora's own routing: the SDK also switches routes on its own when hardware changes.
- * We don't fight it — [onEngineReportedRoute] folds whatever it actually did back into [state] so
- * the UI shows the truth rather than our intent.
- */
+
 class AudioRouteController(context: Context) {
 
     private val appContext = context.applicationContext
@@ -79,10 +61,7 @@ class AudioRouteController(context: Context) {
         _state.value = current.copy(selected = device, userSelected = true)
     }
 
-    /**
-     * Folds the route Agora reports via `onAudioRouteChanged` back into [state] without marking it
-     * as a user choice, so the UI reflects reality even when the SDK reroutes by itself.
-     */
+
     fun onEngineReportedRoute(device: AudioOutputDevice) {
         val current = _state.value
         if (current.selected == device) return
@@ -111,13 +90,7 @@ class AudioRouteController(context: Context) {
         )
     }
 
-    /**
-     * Routing policy, in priority order:
-     * 1. Keep whatever the user explicitly picked, as long as it's still connected.
-     * 2. Otherwise prefer a wired headset, then Bluetooth — plugging one in means "use this".
-     * 3. Otherwise the speaker. Never the earpiece by default: this is a video call, and defaulting
-     *    to the earpiece is exactly the "there's no sound" bug this whole class exists to fix.
-     */
+
     private fun resolveSelection(
         current: AudioRouteState,
         available: List<AudioOutputDevice>,

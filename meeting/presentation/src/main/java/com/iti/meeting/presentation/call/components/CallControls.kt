@@ -59,13 +59,7 @@ object CallColors {
     val textSecondary = Color(0xB3FFFFFF)
 }
 
-/**
- * The in-call control bar.
- *
- * Layout intent: the destructive control (leave) is visually separated and larger, the two controls
- * users reach for constantly (mic, camera) sit closest to the thumbs, and the two that are
- * occasional (output, camera options) open sheets rather than cycling blindly.
- */
+
 @Composable
 fun CallControlsBar(
     isMicEnabled: Boolean,
@@ -146,13 +140,7 @@ fun CallControlsBar(
     }
 }
 
-/**
- * A single round control.
- *
- * `isOn` follows the convention every call app uses: a *filled white* button means the capability
- * is OFF (it's the thing you'd tap to fix), and a translucent one means it's on and fine. Getting
- * that backwards is the single most common way call UIs confuse people.
- */
+
 @Composable
 fun CallControlButton(
     icon: ImageVector,
