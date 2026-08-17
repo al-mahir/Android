@@ -34,6 +34,7 @@ import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
 import com.iti.presentation.subscription.components.ReturnSubscriptionSheet
+import com.iti.presentation.subscription.components.billingPeriodLabel
 import com.iti.presentation.subscription.components.rememberFormattedDate
 import com.iti.presentation.subscription.components.rememberFormattedWholePrice
 import com.iti.presentation.subscription.state.SubscriptionDetailsUiState
@@ -84,9 +85,9 @@ fun SubscriptionDetailsContent(
                     PlanHeroCard(
                         planName = activePackage?.name ?: stringResource(R.string.profile_plan_premium),
                         priceText = activePackage?.let {
-                            rememberFormattedWholePrice(it.monthlyPriceMinorUnits, it.currencyCode)
+                            rememberFormattedWholePrice(it.priceAmount, it.currencyCode)
                         },
-                        pricePeriodText = stringResource(R.string.packages_price_period_month),
+                        pricePeriodText = billingPeriodLabel(activePackage?.durationDays ?: 0),
                         renewsAtText = subscription?.renewsAtEpochMillis?.let { rememberFormattedDate(it) },
                     )
 

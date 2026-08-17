@@ -23,7 +23,6 @@ fun PackagesScreen(
 
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
-            PackagesEffect.PurchaseCompleted -> onBack()
             is PackagesEffect.NavigateToCheckout -> onNavigateToCheckout(effect.packageId)
             is PackagesEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
@@ -37,7 +36,6 @@ fun PackagesScreen(
         onSelectPackageClick = { packageId ->
             viewModel.onIntent(PackagesIntent.SelectPackageClicked(packageId))
         },
-        onStartFreeTrialClick = { viewModel.onIntent(PackagesIntent.StartFreeTrialClicked) },
         modifier = modifier,
     )
 }

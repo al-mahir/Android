@@ -14,19 +14,19 @@ internal fun PackageListItem(
     onSelectClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val priceText = rememberFormattedWholePrice(pkg.monthlyPriceMinorUnits, pkg.currencyCode)
+    val priceText = rememberFormattedWholePrice(pkg.priceAmount, pkg.currencyCode)
 
     PackageCard(
         title = pkg.name,
         priceText = priceText,
-        pricePeriodText = stringResource(R.string.packages_price_period_month),
+        pricePeriodText = billingPeriodLabel(pkg.durationDays),
         features = pkg.features,
         selectCaption = stringResource(
             if (isProcessing) R.string.packages_selecting_button else R.string.packages_select_button
         ),
         onSelectClick = onSelectClick,
-        isRecommended = pkg.isRecommended,
-        recommendedLabel = stringResource(R.string.packages_recommended_badge),
+        description = pkg.description,
+        highlightText = meetingAllowanceLabel(pkg.meetingMinutesAllowed),
         isLoading = isProcessing,
         modifier = modifier,
     )

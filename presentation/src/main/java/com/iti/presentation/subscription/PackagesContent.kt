@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.loading.ShimmerBox
+import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
@@ -30,7 +30,6 @@ fun PackagesContent(
     onBackClick: () -> Unit,
     onRetryClick: () -> Unit,
     onSelectPackageClick: (String) -> Unit,
-    onStartFreeTrialClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -52,6 +51,12 @@ fun PackagesContent(
 
             state.isLoading && state.packages.isEmpty() -> PackagesSkeleton()
 
+            state.isEmpty -> EmptyDataScreen(
+                modifier = Modifier.fillMaxSize(),
+                title = stringResource(R.string.packages_empty_title),
+                description = stringResource(R.string.packages_empty_description),
+            )
+
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
@@ -60,23 +65,11 @@ fun PackagesContent(
                 ),
                 verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
             ) {
-                items(items = state.packages, key = { it.id }) { pkg ->
+                items(items = state.packages, key = { it.code }) { pkg ->
                     PackageListItem(
                         pkg = pkg,
-                        isProcessing = state.processingPackageId == pkg.id,
-                        onSelectClick = { onSelectPackageClick(pkg.id) },
-                    )
-                }
-
-                item(key = "start-free-trial") {
-                    SecondaryButton(
-                        caption = stringResource(
-                            if (state.isStartingTrial) R.string.packages_starting_trial
-                            else R.string.packages_start_trial_cta
-                        ),
-                        onClick = onStartFreeTrialClick,
-                        isLoading = state.isStartingTrial,
-                        modifier = Modifier.fillMaxWidth(),
+                        isProcessing = state.processingPackageId == pkg.code,
+                        onSelectClick = { onSelectPackageClick(pkg.code) },
                     )
                 }
             }
