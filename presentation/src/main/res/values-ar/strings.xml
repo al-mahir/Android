@@ -421,6 +421,16 @@
     <string name="in_session_approve">قبول</string>
     <string name="in_session_reject">رفض</string>
     <string name="circle_leave_error">تعذّر مغادرة الحلقة. حاول مرة أخرى.</string>
+
+    <!-- Circle live audio -->
+    <string name="circle_session_ended">انتهت هذه الحلقة.</string>
+    <string name="circle_audio_connecting">جارٍ الاتصال بصوت الحلقة…</string>
+    <string name="circle_audio_not_started">لم يبدأ المُضيف هذه الحلقة بعد.</string>
+    <string name="circle_audio_connect_failed">تعذّر الاتصال بصوت الحلقة.</string>
+    <string name="circle_audio_connection_lost">انقطع الاتصال الصوتي.</string>
+    <string name="circle_audio_mic_denied">إذن الميكروفون غير مُفعّل، لذا لا يمكن لأحد سماعك.</string>
+    <string name="circle_audio_listen_only">استماع فقط — إذن الميكروفون غير مُفعّل.</string>
+    <string name="circle_audio_retry">إعادة المحاولة</string>
     
     <!-- ===== Create Circle ===== -->
     <string name="create_circle_title">إنشاء حلقة</string>
@@ -653,4 +663,6 @@
     <string name="meetingrequest_quota_low_title">الدقائق غير كافية</string>
     <string name="meetingrequest_quota_low_subtitle">لديك %1$d دقيقة متبقية، بينما تحتاج الجلسة إلى %2$d على الأقل. اشحن رصيدك للمتابعة.</string>
     <string name="meetingrequest_quota_browse_packages">عرض الباقات</string>
+    <!-- Swipe-to-refresh -->
+    <string name="refresh_failed">تعذّر التحديث. تحقق من اتصالك وحاول مجددًا.</string>
 </resources>

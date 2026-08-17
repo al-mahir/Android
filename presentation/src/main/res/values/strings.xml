@@ -383,6 +383,16 @@
     <string name="circle_leave_confirm">Leave</string>
     <string name="circle_leave_cancel">Cancel</string>
     <string name="circle_leave_error">Couldn\'t leave the circle. Please try again.</string>
+
+    <!-- Circle live audio -->
+    <string name="circle_session_ended">This circle has ended.</string>
+    <string name="circle_audio_connecting">Connecting to the circle audio…</string>
+    <string name="circle_audio_not_started">The host hasn\'t started this circle yet.</string>
+    <string name="circle_audio_connect_failed">Couldn\'t connect to the circle audio.</string>
+    <string name="circle_audio_connection_lost">Audio connection lost.</string>
+    <string name="circle_audio_mic_denied">Microphone access is off, so no one can hear you.</string>
+    <string name="circle_audio_listen_only">Listening only — microphone access is off.</string>
+    <string name="circle_audio_retry">Retry</string>
     <string name="circle_leave_action_failed">Something went wrong. Please try again.</string>
 
     <string name="circle_end_title">End Circle?</string>
@@ -631,4 +641,6 @@
     <string name="meetingrequest_quota_low_title">Not enough minutes</string>
     <string name="meetingrequest_quota_low_subtitle">You have %1$d minutes left, but a session needs at least %2$d. Top up to continue.</string>
     <string name="meetingrequest_quota_browse_packages">See packages</string>
+    <!-- Swipe-to-refresh -->
+    <string name="refresh_failed">Couldn’t refresh. Check your connection and try again.</string>
 </resources>
