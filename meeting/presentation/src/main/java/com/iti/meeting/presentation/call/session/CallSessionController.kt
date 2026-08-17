@@ -31,6 +31,7 @@ class CallSessionController(
     private val config: MeetingKitConfig,
     private val repository: MeetingRepository,
     private val audioRoutes: AudioRouteController,
+    private val ongoingCalls: OngoingCallRegistry,
 ) : StateHolder<CallSessionState> by DefaultStateHolder(CallSessionState()) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -80,7 +81,11 @@ class CallSessionController(
             Log.d(TAG, "joinChannel: already joined/joining requestId=$requestId, skipping")
             return
         }
-        CallForegroundService.start(appContext)
+        ongoingCalls.start(
+            context = appContext,
+            display = OngoingCallDisplay(title = remoteDisplayName, isMicEnabled = micEnabled, isConnecting = true),
+            actions = OngoingCallActions(onToggleMic = ::toggleMic, onHangUp = ::endCall),
+        )
         updateState {
             copy(
                 requestId = requestId,
@@ -123,6 +128,7 @@ class CallSessionController(
         releaseEngine()
         eventsJob?.cancel()
         eventsJob = null
+        ongoingCalls.stop(appContext)
         updateState { CallSessionState() }
     }
 
@@ -183,6 +189,7 @@ class CallSessionController(
                 applyAudioRoute(routeState.selected)
                 startDurationTimer()
                 persistActiveCall()
+                publishOngoingCall()
             }
 
             override fun onUserJoined(remoteUid: Int, elapsed: Int) {
@@ -289,6 +296,7 @@ class CallSessionController(
                     // keep surfacing `requestId`/`Ended` so a composed CallScreen's own
                     // `state is Ended` watcher still fires and navigates away.
                     releaseEngine()
+                    ongoingCalls.stop(appContext)
                     updateCallState { CallUiState.Ended }
                 }
             }
@@ -313,7 +321,20 @@ class CallSessionController(
         releaseEngine()
         eventsJob?.cancel()
         eventsJob = null
+        ongoingCalls.stop(appContext)
         updateCallState { if (this is CallUiState.Ended) this else CallUiState.Ended }
+    }
+
+    /** Re-renders the ongoing-call notification from the current session state. */
+    private fun publishOngoingCall() {
+        val session = currentState
+        ongoingCalls.update(
+            OngoingCallDisplay(
+                title = session.remoteDisplayName,
+                isMicEnabled = (session.callState as? CallUiState.InCall)?.isMicEnabled ?: false,
+                isConnecting = session.callState is CallUiState.Connecting,
+            )
+        )
     }
 
     private suspend fun endMeetingReliably(id: String) {
@@ -361,6 +382,7 @@ class CallSessionController(
         val newState = !current.isMicEnabled
         engine?.setLocalAudioEnabled(newState)
         updateInCall { copy(isMicEnabled = newState) }
+        publishOngoingCall()
     }
 
     fun toggleCamera() {
