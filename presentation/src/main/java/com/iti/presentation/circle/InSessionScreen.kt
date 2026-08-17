@@ -1,6 +1,10 @@
 package com.iti.presentation.circle
 
+import android.Manifest
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +58,12 @@ import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.dialog.ConfirmationDialog
 import com.example.designsystem.theme.Theme
 import com.iti.meeting.domain.model.circle.PendingJoinRequest
+import com.iti.meeting.presentation.call.audio.AudioOutputDevice
+import com.iti.meeting.presentation.call.components.AudioOutputSheet
+import com.iti.meeting.presentation.call.components.icon
+import com.iti.meeting.presentation.call.components.labelRes
+import com.iti.meeting.presentation.circle.CircleAudioError
+import com.iti.meeting.presentation.circle.CircleAudioStatus
 import com.iti.presentation.R
 import com.iti.presentation.circle.state.InSessionEffect
 import com.iti.presentation.circle.state.InSessionIntent
@@ -84,20 +95,50 @@ fun InSessionScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        viewModel.onIntent(
+            InSessionIntent.MicPermissionResult(granted[Manifest.permission.RECORD_AUDIO] == true)
+        )
+    }
+
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             InSessionEffect.NavigateBack -> onBack()
             InSessionEffect.OpenMushaf -> onOpenMushaf()
             is InSessionEffect.ShowMessage ->
                 Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
+            InSessionEffect.RequestMicPermission -> {
+                // POST_NOTIFICATIONS rides along so the ongoing-session notification can show
+                // without a second, separate prompt later.
+                val permissions = buildList {
+                    add(Manifest.permission.RECORD_AUDIO)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        add(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                permissionLauncher.launch(permissions.toTypedArray())
+            }
         }
     }
+
+    LaunchedEffect(circleId) { viewModel.onScreenReady() }
 
     InSessionContent(
         state = state,
         onIntent = viewModel::onIntent,
         modifier = modifier,
     )
+
+    if (state.isAudioOutputSheetVisible) {
+        AudioOutputSheet(
+            available = state.availableAudioDevices,
+            selected = state.audioDevice,
+            onSelect = { viewModel.onIntent(InSessionIntent.SelectAudioDevice(it)) },
+            onDismiss = { viewModel.onIntent(InSessionIntent.DismissAudioOutputPicker) },
+        )
+    }
 }
 
 @Composable
@@ -120,6 +161,12 @@ private fun InSessionContent(
             surahName = state.circle?.name ?: "",
             isLeaving = state.isLeaving,
             onLeave = { onIntent(InSessionIntent.Leave) },
+        )
+
+        AudioStatusBanner(
+            status = state.audioStatus,
+            isMicPermissionDenied = state.isMicPermissionDenied,
+            onRetry = { onIntent(InSessionIntent.RetryAudio) },
         )
 
         // ── Pending join requests (host only) ─────────────────────────────────
@@ -151,6 +198,8 @@ private fun InSessionContent(
 
         SessionBottomBar(
             isMicMuted = state.isMicMuted,
+            isMicEnabled = state.isMicControlEnabled,
+            audioDevice = state.audioDevice,
             isHandRaised = state.isHandRaised,
             unreadChatCount = state.unreadChatCount,
             onIntent = onIntent,
@@ -282,25 +331,45 @@ private fun ParticipantGrid(
 @Composable
 private fun ParticipantCell(participant: SessionParticipant) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(SessionSurface)
-                .then(
-                    if (participant.isSpeaking) {
-                        Modifier.border(2.dp, SessionSpeakingRing, CircleShape)
-                    } else {
-                        Modifier
-                    },
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = participant.initials,
-                style = Theme.typography.body.medium,
-                color = SessionOnSurface,
-            )
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(SessionSurface)
+                    .then(
+                        if (participant.isSpeaking) {
+                            Modifier.border(2.dp, SessionSpeakingRing, CircleShape)
+                        } else {
+                            Modifier
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = participant.initials,
+                    style = Theme.typography.body.medium,
+                    // Members on the roster who haven't joined the audio channel are dimmed, so
+                    // "listed" and "actually here" are visibly different.
+                    color = if (participant.isConnected) SessionOnSurface else SessionSecondary,
+                )
+            }
+            if (participant.isConnected && participant.isMuted) {
+                Box(
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clip(CircleShape)
+                        .background(SessionSurface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MicOff,
+                        contentDescription = stringResource(R.string.session_mic_off),
+                        tint = SessionSecondary,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
+            }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -308,13 +377,75 @@ private fun ParticipantCell(participant: SessionParticipant) {
             style = Theme.typography.body.small,
             color = SessionSecondary,
             textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/**
+ * Explains what the audio transport is doing.
+ *
+ * Worth the space: before this existed, every audio failure — not started, no permission, failed
+ * join — looked identical to a working session with nobody talking.
+ */
+@Composable
+private fun AudioStatusBanner(
+    status: CircleAudioStatus,
+    isMicPermissionDenied: Boolean,
+    onRetry: () -> Unit,
+) {
+    val message = when {
+        isMicPermissionDenied && status is CircleAudioStatus.Live ->
+            stringResource(R.string.circle_audio_listen_only)
+
+        status is CircleAudioStatus.Connecting -> stringResource(R.string.circle_audio_connecting)
+        status is CircleAudioStatus.NotStarted -> stringResource(R.string.circle_audio_not_started)
+        status is CircleAudioStatus.Error -> stringResource(
+            when (status.reason) {
+                CircleAudioError.CONNECT_FAILED -> R.string.circle_audio_connect_failed
+                CircleAudioError.CONNECTION_LOST -> R.string.circle_audio_connection_lost
+                CircleAudioError.MIC_PERMISSION_DENIED -> R.string.circle_audio_mic_denied
+            }
+        )
+
+        else -> null
+    } ?: return
+
+    val isRetryable = status is CircleAudioStatus.Error || status is CircleAudioStatus.NotStarted
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small)
+            .clip(RoundedCornerShape(12.dp))
+            .background(SessionSurface)
+            .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+    ) {
+        Text(
+            text = message,
+            style = Theme.typography.body.small,
+            color = SessionOnSurface,
+            modifier = Modifier.weight(1f),
+        )
+        if (isRetryable) {
+            PrimaryButton(
+                caption = stringResource(R.string.circle_audio_retry),
+                onClick = onRetry,
+                height = ButtonHeightCompact,
+                modifier = Modifier.width(96.dp),
+            )
+        }
     }
 }
 
 @Composable
 private fun SessionBottomBar(
     isMicMuted: Boolean,
+    isMicEnabled: Boolean,
+    audioDevice: AudioOutputDevice,
     isHandRaised: Boolean,
     unreadChatCount: Int,
     onIntent: (InSessionIntent) -> Unit,
@@ -335,7 +466,23 @@ private fun SessionBottomBar(
             Icon(
                 imageVector = if (isMicMuted) Icons.Filled.MicOff else Icons.Filled.Mic,
                 contentDescription = null,
-                tint = if (isMicMuted) Theme.colors.error else SessionOnSurface,
+                tint = when {
+                    !isMicEnabled -> SessionSecondary
+                    isMicMuted -> Theme.colors.error
+                    else -> SessionOnSurface
+                },
+                modifier = Modifier.size(24.dp),
+            )
+        }
+
+        SessionBarItem(
+            label = stringResource(audioDevice.labelRes),
+            onClick = { onIntent(InSessionIntent.OpenAudioOutputPicker) },
+        ) {
+            Icon(
+                imageVector = audioDevice.icon,
+                contentDescription = null,
+                tint = SessionOnSurface,
                 modifier = Modifier.size(24.dp),
             )
         }
