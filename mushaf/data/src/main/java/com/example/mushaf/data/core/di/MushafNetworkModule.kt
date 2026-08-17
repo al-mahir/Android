@@ -72,7 +72,7 @@ val mushafNetworkModule = module {
 
         val aiOkHttpClient = OkHttpClient.Builder()
             .readTimeout(0, TimeUnit.MILLISECONDS)   // long-lived socket; no read timeout
-            .pingInterval(20, TimeUnit.SECONDS)
+            .pingInterval(120, TimeUnit.SECONDS) // Increased to 120s because local ML inference can block the backend event loop
             .connectTimeout(8, TimeUnit.SECONDS)
             .addInterceptor(authInterceptor)          // runs first → adds headers
             .addNetworkInterceptor(loggingInterceptor) // sees final wire headers
