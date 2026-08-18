@@ -40,7 +40,12 @@ object AlmahirApi {
         const val UPDATE = "api/sheikh/{id}"
     }
 
+    object Students {
+        const val SUBSCRIPTION_MINUTES = "api/students/me/subscription-minutes"
+    }
+
     object Payment {
+        const val PACKAGES = "api/payment/packages"
         const val CREATE_INTENTION = "api/payment/intentions"
         fun statusUrl(intentionId: String) = "api/payment/intentions/$intentionId/status"
     }

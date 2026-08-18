@@ -156,7 +156,7 @@ class AuthRepositoryImpl(
         val response = request()
         val payload = response.data
         when {
-            !response.success -> Result.Error(response.toDomainError())
+            !response.isSuccessful -> Result.Error(response.toDomainError())
             payload == null -> Result.Error(DomainError.ServerError(response.message ?: EMPTY_PAYLOAD))
             else -> Result.Success(onSuccess(payload))
         }
@@ -170,7 +170,7 @@ class AuthRepositoryImpl(
         request: suspend () -> ApiResponse<Unit>,
     ): Result<Unit> = try {
         val response = request()
-        if (response.success) Result.Success(Unit) else Result.Error(response.toDomainError())
+        if (response.isSuccessful) Result.Success(Unit) else Result.Error(response.toDomainError())
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (throwable: Throwable) {

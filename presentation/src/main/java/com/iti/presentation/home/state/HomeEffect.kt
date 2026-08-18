@@ -10,6 +10,7 @@ sealed interface HomeEffect {
     data object OpenCircleList : HomeEffect
     data class OpenMushafAtPage(val page: Int) : HomeEffect
     data class OpenSheikh(val sheikhId: String) : HomeEffect
+    data class OpenCircle(val circleId: String) : HomeEffect
     data class OpenMeetingRequest(val sheikhId: String, val sheikhName: String?) : HomeEffect
     data class OpenActiveCall(
         val requestId: String,

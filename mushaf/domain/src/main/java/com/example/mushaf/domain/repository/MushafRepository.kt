@@ -28,6 +28,7 @@ interface MushafRepository {
     suspend fun getAyahPage(surahNumber: Int, ayahNumber: Int): Result<Int?>
     suspend fun getJuzStartingPage(juzNumber: Int): Result<Int?>
 
+    /** Plain (non-glyph) text of a single ayah, used for copy/share and notes. */
     suspend fun getAyahText(surahNumber: Int, ayahNumber: Int): Result<String?>
 
     /** Fetch Tafsir from the local offline SQLite database. */

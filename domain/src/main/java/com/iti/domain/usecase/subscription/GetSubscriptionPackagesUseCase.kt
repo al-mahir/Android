@@ -2,12 +2,14 @@ package com.iti.domain.usecase.subscription
 
 import com.iti.domain.core.Result
 import com.iti.domain.model.SubscriptionPackage
-import com.iti.domain.repository.AlmahirRepository
-import kotlinx.coroutines.flow.Flow
+import com.iti.domain.payment.repository.PaymentRepository
 
+/**
+ * Loads the purchasable package catalogue. One-shot rather than a [kotlinx.coroutines.flow.Flow]:
+ * the catalogue is a plain REST GET with no push channel, so callers refresh explicitly.
+ */
 class GetSubscriptionPackagesUseCase(
-    private val repository: AlmahirRepository,
+    private val repository: PaymentRepository,
 ) {
-    operator fun invoke(): Flow<Result<List<SubscriptionPackage>>> =
-        repository.observeSubscriptionPackages()
+    suspend operator fun invoke(): Result<List<SubscriptionPackage>> = repository.getPackages()
 }

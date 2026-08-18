@@ -4,18 +4,15 @@ import com.iti.domain.core.DomainError
 import com.iti.domain.core.Result
 import com.iti.domain.model.Bookmark
 import com.iti.domain.model.BookmarkType
-import com.iti.domain.model.CircleDifficulty
 import com.iti.domain.model.LegalDocument
 import com.iti.domain.model.LegalDocumentType
 import com.iti.domain.model.Sheikh
 import com.iti.domain.model.SheikhAvailability
-import com.iti.domain.model.StudyCircle
 import com.iti.domain.model.Subscription
 import com.iti.domain.model.SubscriptionPackage
 import com.iti.domain.model.SubscriptionPlan
 import com.iti.domain.model.User
 import com.iti.domain.repository.AlmahirRepository
-import com.iti.domain.repository.CircleRepository
 import com.iti.domain.repository.SheikhRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,9 +20,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /**
- * In-memory [AlmahirRepository] + [SheikhRepository] + [CircleRepository] shared by the
- * presentation tests — mirrors the merged `AlmahirRepositoryImpl` in `:data`, which implements
- * all three on one class.
+ * In-memory [AlmahirRepository] + [SheikhRepository] shared by the presentation tests — mirrors
+ * the merged `AlmahirRepositoryImpl` in `:data`, which implements both on one class.
  *
  * Every failure mode is a constructor flag rather than a subclass, so a test reads as one line
  * of setup, and recorded calls (`joined`, `loggedOut`, `deletedAccount`) let a test assert that
@@ -37,22 +33,20 @@ class FakeAlmahirRepository(
     private val subscription: Subscription = FREE_SUBSCRIPTION,
     private val packages: List<SubscriptionPackage> = emptyList(),
     private val sheikhs: List<Sheikh> = listOf(SHEIKH),
-    initialCircles: List<StudyCircle> = listOf(CIRCLE),
-    private val failSheikhs: Boolean = false,
+    /** `var` so a test can make a *later* fetch fail — e.g. a refresh over a loaded list. */
+    var failSheikhs: Boolean = false,
     private val failSubscription: Boolean = false,
     private val failLogout: Boolean = false,
     private val failDeleteAccount: Boolean = false,
     private val failCancellation: Boolean = false,
-) : AlmahirRepository, SheikhRepository, CircleRepository {
+) : AlmahirRepository, SheikhRepository {
 
-    val joined = mutableListOf<String>()
     var loggedOut = false
         private set
     var deletedAccount = false
         private set
     val cancellationRequests = mutableListOf<String>()
 
-    private val circles = MutableStateFlow(initialCircles)
     private val bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
 
     // ── AlmahirRepository ────────────────────────────────────────────────
@@ -63,10 +57,12 @@ class FakeAlmahirRepository(
         if (failSubscription) Result.Error(BOOM) else Result.Success(subscription)
     )
 
-    override fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
+    // TEMP-VERIFY: `override` removed — AlmahirRepository no longer declares these (in-flight
+    // payment refactor). Restore before commit.
+    fun observeSubscriptionPackages(): Flow<Result<List<SubscriptionPackage>>> =
         flowOf(Result.Success(packages))
 
-    override suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
+    suspend fun startFreeTrial(): Result<Subscription> = Result.Success(subscription)
 
     override suspend fun selectSubscriptionPackage(packageId: String): Result<Subscription> =
         Result.Success(subscription)
@@ -127,31 +123,20 @@ class FakeAlmahirRepository(
     override suspend fun saveMeetingStatus(status: com.iti.domain.model.MeetingStatus): Result<Unit> =
         Result.Success(Unit)
 
-    override suspend fun getSheikhs(): Result<List<Sheikh>> =
-        if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)
+    /** Counts fetches so a test can assert a re-entrant pull-to-refresh was dropped. */
+    var sheikhCalls = 0
+        private set
+
+    override suspend fun getSheikhs(): Result<List<Sheikh>> {
+        sheikhCalls++
+        return if (failSheikhs) Result.Error(BOOM) else Result.Success(sheikhs)
+    }
 
     override suspend fun getSheikhById(id: String): Result<Sheikh?> =
         Result.Success(sheikhs.firstOrNull { it.id == id })
 
     override suspend fun searchSheikhs(name: String): Result<List<Sheikh>> =
         Result.Success(sheikhs.filter { it.name.contains(name, ignoreCase = true) })
-
-    // ── CircleRepository ──────────────────────────────────────────────────
-
-    override fun observeStudyCircles(): Flow<Result<List<StudyCircle>>> = circles.map { Result.Success(it) }
-
-    override fun observeSheikhCircles(sheikhId: String): Flow<Result<List<StudyCircle>>> =
-        circles.map { all -> Result.Success(all.filter { it.hostName == sheikhId }) }
-
-    override suspend fun joinStudyCircle(circleId: String): Result<Unit> {
-        joined += circleId
-        return Result.Success(Unit)
-    }
-
-    override suspend fun cancelJoinCircle(circleId: String): Result<Unit> {
-        joined -= circleId
-        return Result.Success(Unit)
-    }
 
     companion object {
         /** 2026-07-14T00:00:00Z. */
@@ -182,19 +167,6 @@ class FakeAlmahirRepository(
             avatarUrl = null,
             rating = 4.9,
             availability = SheikhAvailability.IN_SESSION,
-        )
-        val CIRCLE = StudyCircle(
-            id = "circle-1",
-            surahName = "دورة",
-            hostId = "sheikh-1",
-            hostName = "Omar",
-            hostInitials = "عم",
-            isLive = true,
-            difficulty = CircleDifficulty.BEGINNER,
-            participantCount = 8,
-            maxParticipants = 15,
-            currentActivity = "Reading",
-            isJoined = false,
         )
     }
 }

@@ -75,7 +75,12 @@ class TokenRefresher(
             return@withLock null
         }
 
-        val payload = runCatching { response.body<ApiResponse<TokenPairDto>>() }.getOrNull()?.data
+        val envelope = runCatching { response.body<ApiResponse<TokenPairDto>>() }.getOrNull()
+        if (envelope == null || !envelope.isSuccessful) {
+            log?.log("AUTH refresh body was missing or reported failure — keeping session")
+            return@withLock null
+        }
+        val payload = envelope.data
         val accessToken = payload?.accessToken?.takeIf { it.isNotBlank() }
         if (accessToken == null) {
             log?.log("AUTH refresh succeeded but carried no access token — keeping session")

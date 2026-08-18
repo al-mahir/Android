@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -44,8 +45,6 @@ import com.iti.domain.model.ReadingProgress
 private val CardShape = RoundedCornerShape(20.dp)
 private val CardImageHeight = 200.dp
 private const val SupportingAlpha = 0.65f
-
-
 
 @Composable
 fun ContinueReadingCard(

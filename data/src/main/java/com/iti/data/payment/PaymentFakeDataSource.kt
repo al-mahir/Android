@@ -2,6 +2,8 @@ package com.iti.data.payment
 
 import com.iti.data.payment.dto.PaymentIntentionDto
 import com.iti.data.payment.dto.PaymentOutcomeDto
+import com.iti.data.payment.dto.SubscriptionMinutesDto
+import com.iti.data.payment.dto.SubscriptionPackageDto
 import kotlinx.coroutines.delay
 import java.util.UUID
 
@@ -18,6 +20,16 @@ import java.util.UUID
  */
 class PaymentFakeDataSource : PaymentDataSource {
 
+    override suspend fun getPackages(): List<SubscriptionPackageDto> {
+        delay(GET_PACKAGES_DELAY_MS)
+        return FAKE_PACKAGES
+    }
+
+    override suspend fun getSubscriptionMinutes(): SubscriptionMinutesDto? {
+        delay(GET_PACKAGES_DELAY_MS)
+        return FAKE_SUBSCRIPTION_MINUTES
+    }
+
     override suspend fun createIntention(
         packageId: String,
         method: String,
@@ -28,7 +40,8 @@ class PaymentFakeDataSource : PaymentDataSource {
             intentionId = "fake_intent_${UUID.randomUUID()}",
             clientSecret = "fake_secret_${UUID.randomUUID()}",
             publicKey = "fake_public_key",
-            amountMinorUnits = FAKE_PACKAGE_PRICES[packageId] ?: DEFAULT_AMOUNT_MINOR_UNITS,
+            amountMinorUnits = FAKE_PACKAGES.firstOrNull { it.code == packageId }?.priceMinorUnits
+                ?: DEFAULT_AMOUNT_MINOR_UNITS,
             currencyCode = "EGP",
         )
     }
@@ -57,14 +70,66 @@ class PaymentFakeDataSource : PaymentDataSource {
     }
 
     private companion object {
+        const val GET_PACKAGES_DELAY_MS = 500L
         const val CREATE_INTENTION_DELAY_MS = 500L
         const val CONFIRM_PAYMENT_DELAY_MS = 1_500L
         const val DEFAULT_AMOUNT_MINOR_UNITS = 4_000L
 
-        val FAKE_PACKAGE_PRICES = mapOf(
-            "pkg-light" to 4_000L,
-            "pkg-intensive" to 6_500L,
-            "pkg-elite" to 12_000L,
+        /** Set to `null` to exercise the "no subscription" branch of the profile/meeting flows. */
+        val FAKE_SUBSCRIPTION_MINUTES = SubscriptionMinutesDto(
+            packageName = "Intensive",
+            totalMinutes = 600,
+            remainingMinutes = 145,
+            startedAt = "2026-08-01T09:00:00Z",
+            expiresAt = "2026-08-31T09:00:00Z",
+        )
+
+        /** Mirrors the shape of `GET /api/payment/packages`, not any specific backend row. */
+        val FAKE_PACKAGES = listOf(
+            SubscriptionPackageDto(
+                code = "LIGHT",
+                name = "Light",
+                description = "A gentle start for weekly revision.",
+                priceMinorUnits = 4_000,
+                currencyCode = "EGP",
+                meetingMinutesAllowed = 240,
+                durationDays = 30,
+                features = listOf(
+                    "30-minute sessions",
+                    "Weekly progress report",
+                    "Group correction sessions",
+                ),
+            ),
+            SubscriptionPackageDto(
+                code = "INTENSIVE",
+                name = "Intensive",
+                description = "Daily practice with direct feedback.",
+                priceMinorUnits = 6_500,
+                currencyCode = "EGP",
+                meetingMinutesAllowed = 600,
+                durationDays = 30,
+                features = listOf(
+                    "45-minute sessions",
+                    "Personalized revision plan",
+                    "Direct feedback + recordings",
+                    "Priority scheduling",
+                ),
+            ),
+            SubscriptionPackageDto(
+                code = "ELITE",
+                name = "Elite",
+                description = "One-on-one guidance all year round.",
+                priceMinorUnits = 12_000,
+                currencyCode = "EGP",
+                meetingMinutesAllowed = 1_200,
+                durationDays = 365,
+                features = listOf(
+                    "60-minute sessions",
+                    "1-on-1 dedicated sheikh",
+                    "Unlimited feedback + recordings",
+                    "Priority scheduling",
+                ),
+            ),
         )
     }
 }

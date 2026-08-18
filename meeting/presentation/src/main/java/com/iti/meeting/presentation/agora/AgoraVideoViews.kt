@@ -7,6 +7,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import io.agora.rtc2.RtcEngine
 import io.agora.rtc2.video.VideoCanvas
 
+
 @Composable
 fun AgoraLocalVideo(engine: RtcEngine, modifier: Modifier = Modifier) {
     AndroidView(
@@ -17,7 +18,8 @@ fun AgoraLocalVideo(engine: RtcEngine, modifier: Modifier = Modifier) {
                 engine.setupLocalVideo(VideoCanvas(this, VideoCanvas.RENDER_MODE_HIDDEN, 0))
                 engine.startPreview()
             }
-        }
+        },
+        onRelease = { engine.setupLocalVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, 0)) },
     )
 }
 
@@ -29,6 +31,7 @@ fun AgoraRemoteVideo(engine: RtcEngine, uid: Int, modifier: Modifier = Modifier)
             SurfaceView(context).apply {
                 engine.setupRemoteVideo(VideoCanvas(this, VideoCanvas.RENDER_MODE_HIDDEN, uid))
             }
-        }
+        },
+        onRelease = { engine.setupRemoteVideo(VideoCanvas(null, VideoCanvas.RENDER_MODE_HIDDEN, uid)) },
     )
 }

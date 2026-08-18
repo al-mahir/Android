@@ -3,8 +3,11 @@ package com.iti.al_mahir.navigation
 import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.example.designsystem.components.dialog.ConfirmationDialog
 import androidx.compose.runtime.Composable
@@ -16,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,7 +44,9 @@ import com.iti.meeting.presentation.navigation.MeetingRoute
 import com.iti.presentation.meetingrequest.navigation.MeetingRequestRoute
 import com.iti.meeting.presentation.navigation.meetingEntries
 import org.koin.compose.koinInject
+import com.iti.presentation.circle.CircleDetailsScreen
 import com.iti.presentation.circle.CircleListScreen
+import com.iti.presentation.circle.CreateCircleScreen
 import com.iti.presentation.circle.InSessionScreen
 import com.iti.presentation.circle.JoiningCircleScreen
 
@@ -55,6 +61,8 @@ import com.iti.presentation.sheikh.SheikhDetailsScreen
 import com.iti.presentation.sheikh.SheikhListScreen
 import com.example.designsystem.theme.Theme
 import com.iti.al_mahir.R
+import com.iti.presentation.core.MainViewModel
+import com.iti.presentation.core.components.OfflineBanner
 import org.koin.androidx.compose.koinViewModel
 
 sealed interface AppRoute : NavKey {
@@ -66,7 +74,9 @@ sealed interface AppRoute : NavKey {
     data object SheikhList : AppRoute
     data class SheikhDetails(val sheikhId: String) : AppRoute
     data object CircleList : AppRoute
-    data class JoiningCircle(val circleId: String) : AppRoute
+    data class CircleDetails(val circleId: String) : AppRoute
+    data object CreateCircle : AppRoute
+    data class JoiningCircle(val circleId: String, val membershipId: String) : AppRoute
     data class InSession(val circleId: String) : AppRoute
 
     // Exam routes
@@ -146,6 +156,16 @@ private fun AppNavHost(
         backStack.add(root)
     }
 
+    /** Back from Mushaf pops to whatever was beneath it (e.g. a circle); only when Mushaf is
+     * the sole entry (bottom-nav tab root) does back fall through to the Home tab. */
+    fun popMushafOrRoot() {
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        } else {
+            selectTab(AppBottomNavDestination.Home)
+        }
+    }
+
     fun popBackStack() {
         if (backStack.size > 1) {
             backStack.removeLastOrNull()
@@ -197,17 +217,15 @@ private fun AppNavHost(
 
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier = modifier.fillMaxSize(),
     ) {
         val showBanner =
             backStack.lastOrNull() !is AppRoute.Mushaf && backStack.lastOrNull() !is AppRoute.Search
-        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             if (showBanner) {
-                val mainViewModel: com.iti.presentation.core.MainViewModel = koinViewModel()
+                val mainViewModel: MainViewModel = koinViewModel()
                 val banner by mainViewModel.banner.collectAsStateWithLifecycle()
-                com.iti.presentation.core.components.OfflineBanner(banner = banner)
+                OfflineBanner(banner = banner)
             }
             Box(modifier = Modifier.weight(1f)) {
                 NavDisplay(
@@ -250,6 +268,9 @@ private fun AppNavHost(
                                 },
                                 onOpenSheikhList = { backStack.add(AppRoute.SheikhList) },
                                 onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
+                                },
                                 onOpenMeetingRequest = { sheikhId, sheikhName ->
                                     backStack.add(
                                         MeetingRequestRoute.SendMeetingRequest(
@@ -277,7 +298,7 @@ private fun AppNavHost(
                             MushafScreen(
                                 startPage = route.startPage,
                                 openInListenMode = route.openInListenMode,
-                                onBack = { selectTab(AppBottomNavDestination.Home) },
+                                onBack = ::popMushafOrRoot,
                                 onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                                 onSearchClick = {
                                     backStack.removeAll { it == AppRoute.Search }
@@ -338,6 +359,8 @@ private fun AppNavHost(
                                 onOpenSettings = { backStack.add(SettingsRoute.Settings) },
                                 onOpenSessions = { backStack.add(ProfileRoute.Sessions) },
                                 onOpenAttributions = { backStack.add(ProfileRoute.Attributions) },
+                                onOpenCircleList = { backStack.add(AppRoute.CircleList) },
+                                onOpenCircle = { circleId -> backStack.add(AppRoute.CircleDetails(circleId)) },
                             )
                         }
 
@@ -354,8 +377,8 @@ private fun AppNavHost(
                             SheikhDetailsScreen(
                                 sheikhId = route.sheikhId,
                                 onBack = { popBackStack() },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
                                 },
                                 onRequestMeeting = { sheikhId, sheikhName ->
                                     backStack.add(
@@ -371,8 +394,34 @@ private fun AppNavHost(
                         entry<AppRoute.CircleList> {
                             CircleListScreen(
                                 onBack = { popBackStack() },
-                                onNavigateToJoiningCircle = { circleId ->
-                                    backStack.add(AppRoute.JoiningCircle(circleId))
+                                onOpenCircle = { circleId ->
+                                    backStack.add(AppRoute.CircleDetails(circleId))
+                                },
+                                onOpenCreateCircle = { backStack.add(AppRoute.CreateCircle) },
+                                refreshKey = backStack.lastOrNull() == AppRoute.CircleList,
+                            )
+                        }
+
+                        entry<AppRoute.CreateCircle> {
+                            CreateCircleScreen(
+                                onBack = { popBackStack() },
+                                onCircleCreated = { circleId ->
+                                    popBackStack()
+                                    backStack.add(AppRoute.CircleDetails(circleId))
+                                },
+                            )
+                        }
+
+                        entry<AppRoute.CircleDetails> { route ->
+                            CircleDetailsScreen(
+                                circleId = route.circleId,
+                                onBack = { popBackStack() },
+                                onOpenJoining = { circleId, membershipId ->
+                                    backStack.add(AppRoute.JoiningCircle(circleId, membershipId))
+                                },
+                                onOpenSession = { circleId ->
+                                    popBackStack()
+                                    backStack.add(AppRoute.InSession(circleId))
                                 },
                             )
                         }
@@ -380,6 +429,7 @@ private fun AppNavHost(
                         entry<AppRoute.JoiningCircle> { route ->
                             JoiningCircleScreen(
                                 circleId = route.circleId,
+                                membershipId = route.membershipId,
                                 onBack = { popBackStack() },
                                 onNavigateToSession = { circleId ->
                                     backStack.removeLastOrNull()

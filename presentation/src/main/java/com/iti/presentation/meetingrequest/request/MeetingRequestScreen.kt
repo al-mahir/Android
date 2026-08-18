@@ -16,6 +16,7 @@ fun MeetingRequestScreen(
     onBack: () -> Unit,
     onMeetingAccepted: (String, String, String, String, String?) -> Unit,
     onShowMessage: (String) -> Unit,
+    onOpenPackages: () -> Unit = {},
     viewModel: MeetingRequestViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -23,6 +24,7 @@ fun MeetingRequestScreen(
     ObserveEffect(viewModel.effect) { effect ->
         when (effect) {
             is RequestEffect.ShowMessage -> onShowMessage(effect.message)
+            RequestEffect.OpenPackages -> onOpenPackages()
         }
     }
 
@@ -59,6 +61,7 @@ fun MeetingRequestScreen(
         onSend = { note -> viewModel.onIntent(RequestIntent.Send(sheikhId, sheikhName, note)) },
         onCancel = { viewModel.onIntent(RequestIntent.Cancel) },
         onCancelExisting = { viewModel.onIntent(RequestIntent.CancelExisting) },
+        onBuyPackage = { viewModel.onIntent(RequestIntent.BuyPackage) },
         onBack = onBack,
     )
 }

@@ -23,6 +23,11 @@ import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.theme.Theme
 
 
+/**
+ * @param description optional one-line pitch shown under the title.
+ * @param highlightText optional headline entitlement (e.g. included session minutes) shown
+ *   between the price and the feature list.
+ */
 @Composable
 fun PackageCard(
     title: String,
@@ -32,6 +37,8 @@ fun PackageCard(
     selectCaption: String,
     onSelectClick: () -> Unit,
     modifier: Modifier = Modifier,
+    description: String? = null,
+    highlightText: String? = null,
     isRecommended: Boolean = false,
     recommendedLabel: String = "",
     isLoading: Boolean = false,
@@ -57,6 +64,13 @@ fun PackageCard(
                     style = Theme.typography.title.copy(color = Theme.colors.primaryFont),
                 )
 
+                if (!description.isNullOrBlank()) {
+                    BasicText(
+                        text = description,
+                        style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
+                    )
+                }
+
                 Row(verticalAlignment = Alignment.Bottom) {
                     BasicText(
                         text = priceText,
@@ -65,10 +79,25 @@ fun PackageCard(
                             fontWeight = FontWeight.Bold,
                         ),
                     )
+                    if (pricePeriodText.isNotBlank()) {
+                        BasicText(
+                            text = pricePeriodText,
+                            style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
+                            modifier = Modifier.padding(
+                                start = Theme.spacing.extraSmall,
+                                bottom = Theme.spacing.extraSmall,
+                            ),
+                        )
+                    }
+                }
+
+                if (!highlightText.isNullOrBlank()) {
                     BasicText(
-                        text = pricePeriodText,
-                        style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
-                        modifier = Modifier.padding(start = Theme.spacing.extraSmall, bottom = Theme.spacing.extraSmall),
+                        text = highlightText,
+                        style = Theme.typography.body.medium.copy(
+                            color = Theme.colors.primary,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     )
                 }
 

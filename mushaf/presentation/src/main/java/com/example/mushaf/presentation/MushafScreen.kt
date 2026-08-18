@@ -2,6 +2,7 @@ package com.example.mushaf.presentation
 
 import android.Manifest
 import android.R.attr.animation
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -47,9 +48,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -72,6 +75,8 @@ import com.example.mushaf.domain.model.MushafMode
 import com.example.mushaf.domain.model.SurahCatalog
 import com.example.mushaf.domain.model.SurahOrigin
 import com.example.mushaf.presentation.audio.AudioState
+import com.example.mushaf.presentation.components.AyahActionSheet
+import com.example.mushaf.presentation.components.AyahNoteDialog
 import com.example.mushaf.presentation.components.GradingModeToggle
 import com.example.mushaf.presentation.components.MushafBottomBar
 import com.example.mushaf.presentation.components.MushafErrorState
@@ -99,7 +104,9 @@ import com.example.mushaf.presentation.recite.MicPrompt
 import com.example.mushaf.presentation.recite.MicPromptDialog
 import com.example.mushaf.presentation.recite.hasRecordAudioPermission
 import com.example.mushaf.presentation.recite.openAppSettings
+import com.example.mushaf.presentation.core.mvi.ObserveEffect
 import com.example.mushaf.presentation.state.CaptureError
+import com.example.mushaf.presentation.state.MushafEffect
 import com.example.mushaf.presentation.state.MushafIntent
 import com.example.mushaf.presentation.state.PageLoadState
 import org.koin.androidx.compose.koinViewModel
@@ -117,6 +124,16 @@ fun MushafScreen(
     viewModel: MushafViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
+    ObserveEffect(viewModel.effects) { effect ->
+        when (effect) {
+            is MushafEffect.ShowMessage ->
+                Toast.makeText(context, effect.messageRes, Toast.LENGTH_SHORT).show()
+            MushafEffect.NavigateBack -> onBack()
+        }
+    }
 
     LaunchedEffect(openInListenMode) {
         if (openInListenMode) {
@@ -124,15 +141,7 @@ fun MushafScreen(
         }
     }
 
-    val context = LocalContext.current
 
-    com.example.mushaf.presentation.core.mvi.ObserveEffect(viewModel.effects) { effect ->
-        when (effect) {
-            is com.example.mushaf.presentation.state.MushafEffect.ShowMessage ->
-                android.widget.Toast.makeText(context, effect.messageRes, android.widget.Toast.LENGTH_SHORT).show()
-            com.example.mushaf.presentation.state.MushafEffect.NavigateBack -> onBack()
-        }
-    }
 
     val pagerState = rememberPagerState(
         initialPage = state.currentPage - 1,
@@ -289,7 +298,7 @@ fun MushafScreen(
                                         val surah = parts[0].toIntOrNull()
                                         val ayah = parts[1].toIntOrNull()
                                         if (surah != null && ayah != null) {
-                                            viewModel.onIntent(MushafIntent.LoadTafsir(surah, ayah))
+                                            viewModel.onIntent(MushafIntent.ShowAyahActions(surah, ayah))
                                         }
                                     }
                                 },
@@ -674,7 +683,7 @@ fun MushafScreen(
                 } else null,
                 onChangeTafsir = { viewModel.onIntent(MushafIntent.ChangeTafsirSource(it)) },
                 onDownloadTafsir = { key, url -> viewModel.onIntent(MushafIntent.DownloadTafsir(key, url)) },
-                onDeleteTafsir = { viewModel.onIntent(MushafIntent.DeleteTafsir(it)) },
+                onDeleteTafsir = { key -> viewModel.onIntent(MushafIntent.DeleteTafsir(key)) },
                 onBookmarkAyah = {
                     if (tafsirState is com.example.mushaf.presentation.state.TafsirState.Success) {
                         viewModel.onIntent(MushafIntent.ToggleAyahBookmark(
@@ -685,6 +694,39 @@ fun MushafScreen(
                 }
             )
         }
+
+        // ── Ayah action sheet ────────────────────────────────────────────────────
+        state.ayahActionSheet?.let { sheet ->
+            AyahActionSheet(
+                sheetState = sheet,
+                onDismiss = { viewModel.onIntent(MushafIntent.DismissAyahActions) },
+                onOpenTafsir = {
+                    viewModel.onIntent(MushafIntent.DismissAyahActions)
+                    viewModel.onIntent(MushafIntent.LoadTafsir(sheet.surahNumber, sheet.ayahNumber))
+                },
+                onCopy = {
+                    if (sheet.ayahText.isNotBlank()) {
+                        clipboardManager.setText(AnnotatedString(sheet.ayahText))
+                    }
+                    viewModel.onIntent(MushafIntent.CopyAyah)
+                },
+                onOpenNotes = { viewModel.onIntent(MushafIntent.OpenAyahNoteEditor) },
+            )
+        }
+
+        if (state.ayahNoteEditorOpen) {
+            val sheet = state.ayahActionSheet
+            if (sheet != null) {
+                AyahNoteDialog(
+                    initialText = sheet.note?.text.orEmpty(),
+                    hasExistingNote = sheet.note != null,
+                    onDismiss = { viewModel.onIntent(MushafIntent.CloseAyahNoteEditor) },
+                    onSave = { text -> viewModel.onIntent(MushafIntent.SaveAyahNote(text)) },
+                    onDelete = { viewModel.onIntent(MushafIntent.DeleteAyahNote) },
+                )
+            }
+        }
+
 
         // ── User Guide Tooltip Overlay ──────────────────────────────────────────
         com.example.mushaf.presentation.guide.GuideTooltip(

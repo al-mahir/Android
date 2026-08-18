@@ -1,11 +1,9 @@
 package com.iti.data.mapper
 
 import com.iti.data.dto.SheikhDto
-import com.iti.data.dto.StudyCircleDto
 import com.iti.data.dto.UserDto
 import com.iti.domain.model.SheikhAvailability
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class MapperTest {
@@ -46,19 +44,6 @@ class MapperTest {
     @Test
     fun `unknown availability token degrades to offline`() {
         assertEquals(SheikhAvailability.OFFLINE, sheikhWithAvailability("on_holiday").availability)
-    }
-
-    @Test
-    fun `study circle defaults to not joined`() {
-        val circle = StudyCircleDto(
-            id = "c1",
-            surahName = "t",
-            hostId = "h1",
-            hostName = "h",
-            hostInitials = "HH",
-        ).toDomain()
-        assertFalse(circle.isJoined)
-        assertEquals("c1", circle.id)
     }
 
     private fun user(displayName: String) =

@@ -10,7 +10,9 @@ data class PackagesUiState(
     @StringRes val errorMessageRes: Int? = null,
     val packages: List<SubscriptionPackage> = emptyList(),
     val processingPackageId: String? = null,
-    val isStartingTrial: Boolean = false,
 ) {
     val hasError: Boolean get() = errorMessageRes != null && packages.isEmpty()
+
+    /** The fetch succeeded but the backend publishes no active packages right now. */
+    val isEmpty: Boolean get() = !isLoading && errorMessageRes == null && packages.isEmpty()
 }

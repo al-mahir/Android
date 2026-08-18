@@ -26,6 +26,7 @@ import com.example.mushaf.data.repository.ReadingProgressRepositoryImpl
 import com.example.mushaf.data.repository.ReferencePhonemeRepositoryImpl
 import com.example.mushaf.data.repository.RecitationApiRepositoryImpl
 import com.example.mushaf.data.repository.RecitationCaptureRepositoryImpl
+import com.example.mushaf.domain.repository.AyahNoteRepository
 import com.example.mushaf.data.repository.RecitationRepositoryImpl
 import com.example.mushaf.domain.repository.AsrModelRepository
 import com.example.mushaf.domain.repository.DownloadableResourceRepository
@@ -60,6 +61,11 @@ val mushafDataModule = module {
 
     single { com.example.mushaf.data.search.remote.SearchApi(get(named(SEARCH_CLIENT))) }
     single { com.example.mushaf.data.search.remote.SemanticSearchRemoteDataSource(get()) }
+
+    // Per-ayah notes
+    single { com.example.mushaf.data.notes.MushafNotesDatabase.create(androidContext()) }
+    single { get<com.example.mushaf.data.notes.MushafNotesDatabase>().ayahNoteDao() }
+    single<AyahNoteRepository> { com.example.mushaf.data.repository.AyahNotesRepositoryImpl(get()) }
 
     // Room DB for offline recitation storage
     single {

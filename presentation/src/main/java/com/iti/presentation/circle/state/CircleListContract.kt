@@ -1,29 +1,59 @@
 package com.iti.presentation.circle.state
 
-import com.iti.domain.model.StudyCircle
+import androidx.annotation.StringRes
+import com.iti.meeting.domain.model.circle.Circle
+import com.iti.meeting.domain.model.circle.CircleStatus
 
 data class CircleListUiState(
-    val circles: List<StudyCircle> = emptyList(),
-    val filteredCircles: List<StudyCircle> = emptyList(),
+    val circles: List<Circle> = emptyList(),
+    val myCircles: List<Circle> = emptyList(),
+    val filteredCircles: List<Circle> = emptyList(),
     val searchQuery: String = "",
-    val selectedTag: String = TAG_ALL,
-    val availableTags: List<String> = emptyList(),
+    val selectedStatus: CircleStatus? = null,
+    val joinedCircleIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
+    /** A user-initiated swipe-to-refresh is in flight. Distinct from [isLoading]: the list stays
+     * on screen and only the pull indicator spins. */
+    val isRefreshing: Boolean = false,
     val isError: Boolean = false,
+    val joinSheetVisible: Boolean = false,
+    val joinByToken: Boolean = false,
+    val joinCircleId: String = "",
+    val joinPassword: String = "",
+    val joinToken: String = "",
+    val isJoining: Boolean = false,
+    @StringRes val joinErrorRes: Int? = null,
 ) {
-    companion object {
-        const val TAG_ALL = "All"
-    }
+    /** The circle the current user belongs to, surfaced at the top of the list. */
+    val currentCircle: Circle?
+        get() = myCircles.firstOrNull { it.status == CircleStatus.ONGOING } ?: myCircles.firstOrNull()
 }
 
 sealed interface CircleListIntent {
     data class SearchQueryChanged(val query: String) : CircleListIntent
-    data class TagSelected(val tag: String) : CircleListIntent
-    data class JoinCircle(val circleId: String) : CircleListIntent
+    data class StatusSelected(val status: CircleStatus?) : CircleListIntent
+    data class CircleClicked(val circleId: String) : CircleListIntent
+    data object CreateCircleClicked : CircleListIntent
+    data object JoinPrivateClicked : CircleListIntent
+    data class JoinCircleIdChanged(val circleId: String) : CircleListIntent
+    data class JoinPasswordChanged(val password: String) : CircleListIntent
+    data class JoinTokenChanged(val token: String) : CircleListIntent
+    data object SubmitJoinPrivate : CircleListIntent
+    data object SubmitJoinViaToken : CircleListIntent
+    /** Toggle between ID+password and invite-token join modes. */
+    data class JoinModeChanged(val byToken: Boolean) : CircleListIntent
+    data object DismissJoinPrivate : CircleListIntent
     data object Retry : CircleListIntent
+    /** Re-fetches joined circles (e.g. after leaving one and returning to the list). Silent —
+     * no pull indicator, because the user did not ask for it. */
+    data object Refresh : CircleListIntent
+    /** Swipe-to-refresh — re-fetches both the public list and the joined circles. */
+    data object PullToRefresh : CircleListIntent
 }
 
 sealed interface CircleListEffect {
-    data class NavigateToJoiningCircle(val circleId: String) : CircleListEffect
+    data class OpenCircle(val circleId: String) : CircleListEffect
+    data object OpenCreateCircle : CircleListEffect
     data object NavigateBack : CircleListEffect
+    data class ShowMessage(@StringRes val messageRes: Int) : CircleListEffect
 }

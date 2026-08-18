@@ -3,10 +3,8 @@ package com.iti.presentation.sheikh
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.core.fold
-import com.iti.domain.core.getOrNull
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
-import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhByIdUseCase
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
 import com.iti.presentation.core.mvi.DefaultStateHolder
 import com.iti.presentation.core.mvi.EffectPublisher
@@ -24,8 +22,7 @@ import kotlinx.coroutines.launch
 class SheikhDetailsViewModel(
     private val sheikhId: String,
     private val getSheikhById: GetSheikhByIdUseCase,
-    private val getStudyCircles: GetStudyCirclesUseCase,
-    private val joinCircle: JoinStudyCircleUseCase,
+    private val circleRepository: CircleRepository,
 ) : ViewModel(),
     StateHolder<SheikhDetailsUiState> by DefaultStateHolder(SheikhDetailsUiState()),
     EffectPublisher<SheikhDetailsEffect> by DefaultEffectPublisher() {
@@ -37,23 +34,25 @@ class SheikhDetailsViewModel(
 
     fun onIntent(intent: SheikhDetailsIntent) = when (intent) {
         SheikhDetailsIntent.Retry -> load()
-        is SheikhDetailsIntent.JoinCircle -> join(intent.circleId)
+        is SheikhDetailsIntent.CircleClicked -> sendEffect(SheikhDetailsEffect.OpenCircle(intent.circleId))
     }
 
     private fun load() {
         viewModelScope.launch {
             updateState { copy(isLoading = true, isError = false) }
             fetchSheikh(silent = false)
+            
+            // The public listing has no host filter; the sheikh's own circles are the ones they
+            // host. Circles are a section — a failure leaves it empty rather than failing the page.
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(circles = circles.filter { it.host?.userId == sheikhId })
+                    }
+                },
+                onFailure = { /* circles are non-critical; ignore */ },
+            )
         }
-
-        // Observe circles from fake/reactive source (Flow)
-        getStudyCircles()
-            .catch { /* circles are non-critical; swallow errors silently */ }
-            .onEach { result ->
-                val circles = result.getOrNull() ?: return@onEach
-                updateState { copy(circles = circles.filter { it.hostId == sheikhId }) }
-            }
-            .launchIn(viewModelScope)
     }
 
     private suspend fun fetchSheikh(silent: Boolean) {
@@ -73,20 +72,12 @@ class SheikhDetailsViewModel(
         )
     }
 
-
     private fun pollAvailability() {
         viewModelScope.launch {
             while (isActive) {
                 delay(AVAILABILITY_POLL_INTERVAL_MS)
                 fetchSheikh(silent = true)
             }
-        }
-    }
-
-    private fun join(circleId: String) {
-        viewModelScope.launch {
-            joinCircle(circleId)
-            sendEffect(SheikhDetailsEffect.NavigateToJoiningCircle(circleId))
         }
     }
 

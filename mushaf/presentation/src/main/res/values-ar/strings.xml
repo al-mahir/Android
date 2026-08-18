@@ -295,6 +295,20 @@
     <string name="tafsir_saadi">تفسير السعدي</string>
     <string name="tafsir_muyassar">التفسير الميسر</string>
 
+    <!-- Ayah action sheet -->
+    <string name="ayah_actions_title">إجراءات الآية</string>
+    <string name="ayah_reference_format">سورة %1$s · الآية %2$d</string>
+    <string name="ayah_action_tafsir">التفسير</string>
+    <string name="ayah_action_copy">نسخ</string>
+    <string name="ayah_action_notes">ملاحظات</string>
+    <string name="ayah_note_saved_title">ملاحظة</string>
+    <string name="ayah_note_view_edit">عرض / تعديل الملاحظة</string>
+    <string name="ayah_note_title">ملاحظة الآية</string>
+    <string name="ayah_note_hint">اكتب ملاحظتك…</string>
+    <string name="ayah_note_cancel">إلغاء</string>
+    <string name="ayah_note_save">حفظ</string>
+    <string name="ayah_note_delete">حذف الملاحظة</string>
+    <string name="ayah_copied_to_clipboard">تم نسخ الآية إلى الحافظة</string>
     <!-- Reciter picker -->
     <string name="reciter_picker_title">اختر القارئ</string>
     <string name="reciter_picker_cd_selected">محدد</string>

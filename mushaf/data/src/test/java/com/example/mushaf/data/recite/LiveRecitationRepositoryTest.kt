@@ -172,8 +172,11 @@ class LiveRecitationRepositoryTest {
             awaitUntil("all audio streamed") { service.binaryFrameCount.get() == 5 }
         }
 
-        // Started arrives first: the microphone is not opened until the handshake succeeds.
-        assertTrue(events.first() is LiveRecitationEvent.Started)
+        // Capture now runs alongside the handshake rather than behind it, so a Level event can
+        // land before the ack does - `first()` is no longer Started and should not be asserted to
+        // be. What matters is that the session started and that every frame captured while the
+        // socket was still coming up reached the server in order rather than being dropped.
+        assertTrue("session never started", events.any { it is LiveRecitationEvent.Started })
         assertTrue("session never finished", events.last() is LiveRecitationEvent.Finished)
         assertEquals(5, service.binaryFrameCount.get())
     }
@@ -313,7 +316,7 @@ class LiveRecitationRepositoryTest {
     }
 
     @Test
-    fun `stopping before the handshake lands ends cleanly without opening the microphone`() = runBlocking {
+    fun `stopping before the handshake lands ends cleanly and releases the microphone`() = runBlocking {
         service = FakeAiService().start()
         val capture = FakeCapture(frameCount = 3)
         val controls = MutableSharedFlow<RecitationControl>(replay = 1)
@@ -326,9 +329,12 @@ class LiveRecitationRepositoryTest {
             ).map { it.getOrNull()!! }.toList()
         }
 
+        // The microphone is deliberately opened before the ack now, so an abandoned session can
+        // legitimately have recorded - and flushed - a frame or two. What must still hold is that
+        // it shuts down cleanly and gives the microphone back; a session that stops before it
+        // starts must not leave AudioRecord held open.
         assertTrue("session did not end cleanly", events.last() is LiveRecitationEvent.Finished)
-        assertEquals("audio was streamed after stopping", 0, service.binaryFrameCount.get())
-        assertEquals("the microphone was opened for an abandoned session", 0L, capture.releasedAt)
+        assertFalse("the microphone was left open after an abandoned session", capture.isCapturing.get())
     }
 
     private companion object {

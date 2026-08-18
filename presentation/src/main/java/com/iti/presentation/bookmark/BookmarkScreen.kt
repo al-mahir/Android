@@ -70,7 +70,8 @@ private fun BookmarkContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Theme.colors.backGround),
+            .background(Theme.colors.backGround)
+            .padding(bottom = Theme.spacing.medium + Theme.spacing.small + 48.dp, top = Theme.spacing.medium),
     ) {
         Text(
             text = stringResource(R.string.bookmark_screen_title),

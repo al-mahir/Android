@@ -27,6 +27,94 @@
     <string name="meetingrequest_availability_busy_subtitle">In a meeting.</string>
     <string name="meetingrequest_availability_busy_rejoin">Rejoin</string>
 
+    <!-- Home — Circles entry -->
+    <string name="sheikh_home_open_circles">Manage Circles</string>
+
+    <!-- Circles — list -->
+    <string name="sheikh_circle_list_title">My Circles</string>
+    <string name="sheikh_circle_list_create">Create Circle</string>
+    <string name="sheikh_circle_list_empty_title">No circles yet</string>
+    <string name="sheikh_circle_list_empty_description">Create your first study circle to start hosting sessions.</string>
+    <string name="sheikh_circle_participants_label">%1$d/%2$d participants</string>
+    <string name="sheikh_circle_live">LIVE</string>
+    <string name="sheikh_circle_status_scheduled">Scheduled</string>
+    <string name="sheikh_circle_status_ongoing">Ongoing</string>
+    <string name="sheikh_circle_status_completed">Completed</string>
+    <string name="sheikh_circle_status_cancelled">Cancelled</string>
+    <string name="sheikh_circle_type_public">Public</string>
+    <string name="sheikh_circle_type_private">Private</string>
+
+    <!-- Circles — create -->
+    <string name="sheikh_create_circle_title">Create Circle</string>
+    <string name="sheikh_create_circle_name_label">Circle name</string>
+    <string name="sheikh_create_circle_name_hint">e.g. Evening Qur\'an Circle</string>
+    <string name="sheikh_create_circle_type_label">Circle type</string>
+    <string name="sheikh_create_circle_approval_label">Approve join requests</string>
+    <string name="sheikh_create_circle_approval_no">No</string>
+    <string name="sheikh_create_circle_approval_yes">Yes</string>
+    <string name="sheikh_create_circle_capacity_label">Max participants</string>
+    <string name="sheikh_create_circle_capacity_hint">e.g. 10</string>
+    <string name="sheikh_create_circle_password_label">Password</string>
+    <string name="sheikh_create_circle_password_hint">Required for private circles</string>
+    <string name="sheikh_create_circle_start_date_label">Start date &amp; time</string>
+    <string name="sheikh_create_circle_end_date_label">End date &amp; time (optional)</string>
+    <string name="sheikh_create_circle_date_hint">ISO date, e.g. 2026-08-03T18:00:00Z</string>
+    <string name="sheikh_create_circle_cta">Create Circle</string>
+    <string name="sheikh_create_circle_error_name">Enter a circle name.</string>
+    <string name="sheikh_create_circle_error_start_date">Enter a start date.</string>
+    <string name="sheikh_create_circle_error_capacity">Enter a capacity of at least 1.</string>
+    <string name="sheikh_create_circle_error_password">Private circles require a password.</string>
+    <string name="sheikh_create_circle_error_generic">Couldn\'t create the circle. Please try again.</string>
+    <string name="sheikh_create_circle_date_next">Next</string>
+    <string name="sheikh_create_circle_time_done">Done</string>
+    <string name="sheikh_create_circle_time_label">Select time</string>
+    <string name="sheikh_create_circle_cancel">Cancel</string>
+
+    <!-- Circles — manage -->
+    <string name="sheikh_circle_manage_title">Circle</string>
+    <string name="sheikh_circle_manage_capacity">%1$d/%2$d participants</string>
+    <string name="sheikh_circle_manage_start_date">Starts: %1$s</string>
+    <string name="sheikh_circle_pending_requests_header">Join requests (%1$d)</string>
+    <string name="sheikh_circle_members_header">Members (%1$d)</string>
+    <string name="sheikh_circle_members_empty">No members yet.</string>
+    <string name="sheikh_circle_role_host">Host</string>
+    <string name="sheikh_circle_approve">Approve</string>
+    <string name="sheikh_circle_reject">Reject</string>
+    <string name="sheikh_circle_remove">Remove</string>
+    <string name="sheikh_circle_start">Start Circle</string>
+    <string name="sheikh_circle_end">End Circle</string>
+    <string name="sheikh_circle_cancel">Cancel Circle</string>
+    <string name="sheikh_circle_closed_note">This circle is closed.</string>
+    <string name="sheikh_circle_end_confirm_title">End this circle?</string>
+    <string name="sheikh_circle_end_confirm_message">The session will be closed for all participants.</string>
+    <string name="sheikh_circle_end_confirm">End</string>
+    <string name="sheikh_circle_cancel_confirm_title">Cancel this circle?</string>
+    <string name="sheikh_circle_cancel_confirm_message">This cannot be undone.</string>
+    <string name="sheikh_circle_cancel_confirm">Cancel</string>
+    <string name="sheikh_circle_confirm_dismiss">Not now</string>
+    <string name="sheikh_circle_started">Circle started.</string>
+    <string name="sheikh_circle_token_error">Circle started. Tap \"Join session\" to enter.</string>
+    <string name="sheikh_circle_join_session">Join session</string>
+    <string name="sheikh_circle_ended">Circle ended.</string>
+    <string name="sheikh_circle_cancelled">Circle cancelled.</string>
+    <string name="sheikh_circle_request_approved">Request approved.</string>
+    <string name="sheikh_circle_action_failed">Something went wrong. Please try again.</string>
+
+    <!-- ===== Edit Circle ===== -->
+    <string name="sheikh_circle_edit">Edit circle</string>
+    <string name="sheikh_circle_edit_title">Edit Circle</string>
+    <string name="sheikh_circle_edit_name_label">Circle name</string>
+    <string name="sheikh_circle_edit_start_date">Start date (ISO-8601)</string>
+    <string name="sheikh_circle_edit_end_date">End date (ISO-8601)</string>
+    <string name="sheikh_circle_edit_save">Save changes</string>
+    <string name="sheikh_circle_edit_saved">Circle updated successfully.</string>
+    <string name="sheikh_circle_edit_error">Couldn\'t update the circle. Please try again.</string>
+
+    <!-- ===== Invite Token ===== -->
+    <string name="sheikh_circle_invite_token_title">Share Invite Link</string>
+    <string name="sheikh_circle_invite_token_copy">Copy token</string>
+    <string name="sheikh_circle_invite_token_copied">Invite token copied!</string>
+    <string name="sheikh_circle_invite_token_share">Share</string>
     <!-- Availability foreground service — persistent "online" status notification -->
     <string name="sheikh_availability_notification_channel_online_name">Availability status</string>
     <string name="sheikh_availability_notification_online_title">You\'re Online</string>

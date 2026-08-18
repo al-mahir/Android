@@ -4,8 +4,11 @@ import com.iti.meeting.domain.config.MeetingKitConfig
 import com.iti.meeting.data.local.ActiveCallStore
 import com.iti.meeting.data.local.PendingMeetingRequestStore
 import com.iti.meeting.data.remote.MeetingApi
+import com.iti.meeting.data.remote.CircleApi
 import com.iti.meeting.domain.repository.MeetingRepository
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.data.repository.MeetingRepositoryImpl
+import com.iti.meeting.data.repository.CircleRepositoryImpl
 import com.iti.meeting.data.remote.createMeetingHttpClient
 import com.iti.meeting.data.realtime.StompClient
 import io.ktor.client.HttpClient
@@ -28,10 +31,14 @@ val meetingDataModule = module {
     }
 
     single { MeetingApi(httpClient = get()) }
+    single { CircleApi(httpClient = get()) }
     single { PendingMeetingRequestStore(context = androidContext()) }
     single { ActiveCallStore(context = androidContext()) }
     single<MeetingRepository> {
         MeetingRepositoryImpl(api = get(), stompClient = get(), pendingRequestStore = get(), activeCallStore = get())
+    }
+    single<CircleRepository> {
+        CircleRepositoryImpl(api = get(), stompClient = get())
     }
 }
 

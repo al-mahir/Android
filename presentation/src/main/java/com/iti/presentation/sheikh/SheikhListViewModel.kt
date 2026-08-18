@@ -18,6 +18,7 @@ import com.iti.presentation.sheikh.state.SheikhListEffect
 import com.iti.presentation.sheikh.state.SheikhListIntent
 import com.iti.presentation.sheikh.state.SheikhListUiState
 import com.iti.presentation.sheikh.state.applyFilters
+import com.iti.presentation.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -32,6 +33,7 @@ class SheikhListViewModel(
     StateHolder<SheikhListUiState> by DefaultStateHolder(SheikhListUiState()),
     EffectPublisher<SheikhListEffect> by DefaultEffectPublisher() {
 
+
     init {
         load()
         observeBookmarkedSheikhs()
@@ -44,6 +46,7 @@ class SheikhListViewModel(
         is SheikhListIntent.SheikhClicked -> sendEffect(SheikhListEffect.NavigateToSheikhDetails(intent.sheikhId))
         is SheikhListIntent.ToggleSheikhBookmark -> toggleSheikhBookmark(intent.sheikhId)
         SheikhListIntent.Retry -> load()
+        SheikhListIntent.Refresh -> refresh()
     }
 
     private fun observeBookmarkedSheikhs() {
@@ -69,27 +72,57 @@ class SheikhListViewModel(
         }
     }
 
-    private fun load(silent: Boolean = false) {
+    private fun load() {
+        viewModelScope.launch { fetchSheikhs(showSkeleton = true) }
+    }
+
+    /**
+     * Swipe-to-refresh. Unlike [load] it never raises [SheikhListUiState.isLoading], so the list
+     * the user is reading stays put and only the pull indicator spins. Re-entrant pulls are
+     * dropped: the gesture can fire again before `isRefreshing` has reached the UI.
+     */
+    private fun refresh() {
+        if (currentState.isRefreshing) return
+        updateState { copy(isRefreshing = true) }
         viewModelScope.launch {
-            if (!silent) updateState { copy(isLoading = true, isError = false) }
-            getSheikhs().fold(
-                onSuccess = { list ->
-                    updateState {
-                        copy(
-                            sheikhs = list,
-                            filteredSheikhs = list.applyFilters(searchQuery, selectedFilter),
-                            isLoading = false,
-                            isError = false,
-                        )
-                    }
-                },
-                onError = {
-                    // A silent background refresh failing (e.g. transient network blip) shouldn't
-                    // blow away an already-loaded list into an error screen.
-                    if (!silent) updateState { copy(isLoading = false, isError = true) }
-                },
-            )
+            try {
+                fetchSheikhs(showSkeleton = false, reportFailure = true)
+            } finally {
+                // Also runs if the ViewModel is cleared mid-refresh, so the flag never sticks.
+                updateState { copy(isRefreshing = false) }
+            }
         }
+    }
+
+    /**
+     * @param showSkeleton flips the whole screen into loading/error. Only the initial load and
+     *   Retry do that; a pull or the availability poll keeps whatever is already on screen, so a
+     *   transient blip cannot blow an already-loaded list away into an error screen.
+     * @param reportFailure surfaces a message when the fetch fails. The user-initiated pull says
+     *   so; the background poll stays quiet.
+     */
+    private suspend fun fetchSheikhs(showSkeleton: Boolean, reportFailure: Boolean = false) {
+        if (showSkeleton) updateState { copy(isLoading = true, isError = false) }
+        getSheikhs().fold(
+            onSuccess = { list ->
+                updateState {
+                    copy(
+                        sheikhs = list,
+                        filteredSheikhs = list.applyFilters(searchQuery, selectedFilter),
+                        isLoading = false,
+                        isError = false,
+                    )
+                }
+            },
+            onError = {
+                val hasContent = currentState.sheikhs.isNotEmpty()
+                if (showSkeleton || !hasContent) {
+                    updateState { copy(isLoading = false, isError = true) }
+                } else if (reportFailure) {
+                    sendEffect(SheikhListEffect.ShowMessage(R.string.refresh_failed))
+                }
+            },
+        )
     }
 
 
@@ -97,7 +130,8 @@ class SheikhListViewModel(
         viewModelScope.launch {
             while (isActive) {
                 delay(AVAILABILITY_POLL_INTERVAL_MS)
-                load(silent = true)
+                // Never while a pull is in flight — two writers would fight over the same list.
+                if (!currentState.isRefreshing) fetchSheikhs(showSkeleton = false)
             }
         }
     }

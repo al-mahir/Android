@@ -67,6 +67,9 @@ val mushafPresentationModule = module {
     factory { SearchTafsirUseCase(get()) }
     factory { ObserveAvailableTafsirBooksUseCase(get()) }
     factory { ManageTafsirDownloadUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.ObserveAyahNoteUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.UpsertAyahNoteUseCase(get()) }
+    factory { com.example.mushaf.domain.usecase.DeleteAyahNoteUseCase(get()) }
 
     factory { ObserveDownloadableResourcesUseCase(get()) }
     factory { StartResourceDownloadUseCase(get()) }
@@ -115,6 +118,10 @@ val mushafPresentationModule = module {
             observeAvailableTafsirBooks = get(),
             manageTafsirDownload = get(),
             observeAppPreferences = get(),
+            observeAyahNote = get(),
+            upsertAyahNote = get(),
+            deleteAyahNote = get(),
+            getAyahText = get(),
             connectivityObserver = get(),
             toggleBookmarkUseCase = get(),
             observeBookmarks = get(),

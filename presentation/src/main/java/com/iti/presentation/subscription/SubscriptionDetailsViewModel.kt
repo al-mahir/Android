@@ -15,9 +15,9 @@ import com.iti.presentation.core.mvi.StateHolder
 import com.iti.presentation.subscription.state.SubscriptionDetailsEffect
 import com.iti.presentation.subscription.state.SubscriptionDetailsIntent
 import com.iti.presentation.subscription.state.SubscriptionDetailsUiState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -28,6 +28,8 @@ class SubscriptionDetailsViewModel(
 ) : ViewModel(),
     StateHolder<SubscriptionDetailsUiState> by DefaultStateHolder(SubscriptionDetailsUiState()),
     EffectPublisher<SubscriptionDetailsEffect> by DefaultEffectPublisher() {
+
+    private var observeJob: Job? = null
 
     init {
         observeSubscription()
@@ -47,28 +49,39 @@ class SubscriptionDetailsViewModel(
 
     private fun observeSubscription() {
         updateState { copy(isLoading = true, errorMessageRes = null) }
+        observeJob?.cancel()
 
-        combine(getSubscription(), getSubscriptionPackages()) { subscriptionResult, packagesResult ->
-            val subscription = subscriptionResult.getOrNull() ?: error("Failed to load subscription")
-            val packages = packagesResult.getOrNull().orEmpty()
-            subscription to packages.firstOrNull { it.id == subscription.activePackageId }
+        observeJob = viewModelScope.launch {
+            // The catalogue is a one-shot GET, so it is fetched once here rather than re-read on
+            // every subscription emission. A failure to load it is not fatal: the subscription
+            // itself still renders, just without the package details.
+            val packages = getSubscriptionPackages().getOrNull().orEmpty()
+
+            getSubscription()
+                .catch {
+                    updateState {
+                        copy(isLoading = false, errorMessageRes = R.string.subscription_details_error_generic)
+                    }
+                }
+                .onEach { subscriptionResult ->
+                    val subscription = subscriptionResult.getOrNull()
+                    if (subscription == null) {
+                        updateState {
+                            copy(isLoading = false, errorMessageRes = R.string.subscription_details_error_generic)
+                        }
+                        return@onEach
+                    }
+                    updateState {
+                        copy(
+                            isLoading = false,
+                            errorMessageRes = null,
+                            subscription = subscription,
+                            activePackage = packages.firstOrNull { it.code == subscription.activePackageId },
+                        )
+                    }
+                }
+                .collect()
         }
-            .catch {
-                updateState {
-                    copy(isLoading = false, errorMessageRes = R.string.subscription_details_error_generic)
-                }
-            }
-            .onEach { (subscription, activePackage) ->
-                updateState {
-                    copy(
-                        isLoading = false,
-                        errorMessageRes = null,
-                        subscription = subscription,
-                        activePackage = activePackage,
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
     }
 
     private fun openReturnSheet() {

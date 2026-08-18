@@ -71,7 +71,9 @@
 
     <string name="home_section_continue_reading">Continue Reading</string>
     <string name="home_section_sheikhs">Learn with a Sheikh</string>
-    <string name="home_section_circles">Active Circles</string>
+    <string name="home_circles_title">Qur\'an Circles</string>
+    <string name="home_circles_joined">%1$d joined · %2$d available</string>
+    <string name="home_circles_available">%1$d circles available to join</string>
     <string name="home_see_all">See All</string>
 
     <string name="home_last_read">LAST READ</string>
@@ -121,62 +123,55 @@
 
     <!-- Packages / checkout -->
     <string name="packages_title">Choose Your Package</string>
-    <string name="packages_recommended_badge">RECOMMENDED</string>
     <string name="packages_price_period_month">/month</string>
+    <string name="packages_price_period_year">/year</string>
+    <plurals name="packages_price_period_days">
+        <item quantity="one">/%1$d day</item>
+        <item quantity="other">/%1$d days</item>
+    </plurals>
+    <plurals name="packages_price_period_weeks">
+        <item quantity="one">/%1$d week</item>
+        <item quantity="other">/%1$d weeks</item>
+    </plurals>
+    <plurals name="packages_meeting_minutes">
+        <item quantity="one">%1$d minute of live sessions</item>
+        <item quantity="other">%1$d minutes of live sessions</item>
+    </plurals>
+    <plurals name="packages_meeting_hours">
+        <item quantity="one">%1$d hour of live sessions</item>
+        <item quantity="other">%1$d hours of live sessions</item>
+    </plurals>
     <string name="packages_select_button">Select Package</string>
     <string name="packages_selecting_button">Selecting…</string>
-    <string name="packages_start_trial_cta">Start free 7-day trial</string>
-    <string name="packages_starting_trial">Starting trial…</string>
     <string name="packages_error_generic">Couldn\'t load packages. Please try again.</string>
-    <string name="packages_purchase_succeeded">You\'re now Al-Māhir Premium!</string>
-    <string name="packages_purchase_failed">Something went wrong. Please try again.</string>
-    <string name="packages_trial_started">Your free trial has started!</string>
+    <string name="packages_empty_title">No packages available</string>
+    <string name="packages_empty_description">There are no subscription packages on offer right now. Please check back soon.</string>
 
     <!-- Checkout -->
     <string name="checkout_title">Checkout</string>
     <string name="checkout_secured_by_paymob">Secured by Paymob</string>
     <string name="checkout_reciter_pass_eyebrow">RECITER PASS</string>
-    <string name="checkout_price_period_month">/ Month</string>
     <string name="checkout_purchasing_as_pattern">Purchasing as %1$s</string>
     <string name="checkout_tab_wallet">Mobile Wallet</string>
     <string name="checkout_tab_card">Credit/Debit Card</string>
-    <string name="checkout_select_payment_method">Select Payment Method</string>
     <string name="checkout_wallet_vodafone_cash">Vodafone Cash</string>
     <string name="checkout_wallet_orange_cash">Orange Cash</string>
     <string name="checkout_wallet_etisalat_cash">e&amp; money</string>
     <string name="checkout_wallet_we_pay">We Pay</string>
-    <string name="checkout_wallet_hint_pattern">Pay with your %1$s wallet</string>
-    <string name="checkout_wallet_number_label">Mobile Wallet Number</string>
-    <string name="checkout_wallet_number_hint">e.g. 01012345678</string>
-    <string name="checkout_security_note">Your payment is processed securely. We never store your wallet credentials.</string>
-    <string name="checkout_pay_button_pattern">Pay %1$s</string>
-    <string name="checkout_select_card_brand">Select Card Brand</string>
     <string name="checkout_card_visa">Visa</string>
     <string name="checkout_card_mastercard">Mastercard</string>
-    <string name="checkout_card_details_title">Card Details</string>
-    <string name="checkout_card_number_label">Card Number</string>
-    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
-    <string name="checkout_expiry_label">Expiry Date</string>
-    <string name="checkout_expiry_hint">MM/YY</string>
-    <string name="checkout_cvv_label">CVV</string>
-    <string name="checkout_cvv_hint">123</string>
-    <string name="checkout_cardholder_name_label">Cardholder Name</string>
-    <string name="checkout_cardholder_name_hint">Name on card</string>
+    <string name="checkout_secure_entry_title">You only enter your details once</string>
+    <string name="checkout_secure_entry_card_note">Tap Pay to open Paymob\'s secure screen and enter your card there. We never see or store your card number.</string>
+    <string name="checkout_secure_entry_wallet_note">Tap Pay to open Paymob\'s secure screen and enter your wallet number there. We never see or store your wallet credentials.</string>
+    <string name="checkout_accepted_cards">Accepted cards</string>
+    <string name="checkout_accepted_wallets">Accepted wallets</string>
+    <string name="checkout_pay_button_pattern">Pay %1$s</string>
     <string name="checkout_load_error">Couldn\'t load this package. Please try again.</string>
+    <string name="checkout_package_unavailable">This package is no longer available. Please pick another one.</string>
     <string name="checkout_error_intention_failed">Couldn\'t start the payment. Please try again.</string>
     <string name="checkout_payment_success">Payment successful — your subscription is active!</string>
     <string name="checkout_payment_failed">Payment failed. Please try again.</string>
     <string name="checkout_payment_pending">Your payment is being processed. We\'ll notify you once it\'s confirmed.</string>
-    <string name="checkout_error_wallet_number_invalid">Enter a valid Egyptian mobile number</string>
-    <string name="checkout_error_wallet_prefix_vodafone">Enter your Vodafone Cash number</string>
-    <string name="checkout_error_wallet_prefix_orange">Enter your Orange Cash number</string>
-    <string name="checkout_error_wallet_prefix_etisalat">Enter your e&amp; money number</string>
-    <string name="checkout_error_wallet_prefix_we">Enter your We Pay number</string>
-    <string name="checkout_error_card_number_invalid">Enter a valid card number</string>
-    <string name="checkout_error_card_brand_mismatch">This card doesn\'t match the selected brand</string>
-    <string name="checkout_error_expiry_invalid">Enter a valid, non-expired date</string>
-    <string name="checkout_error_cvv_invalid">Enter a valid CVV</string>
-    <string name="checkout_error_cardholder_name_required">Enter the name on the card</string>
 
     <!-- My subscription -->
     <string name="subscription_details_title">My Subscription</string>
@@ -333,22 +328,144 @@
     <string name="sheikh_stat_circles">Circles</string>
     <string name="sheikh_section_bio">About</string>
     <string name="sheikh_section_active_circles">Active Circles</string>
+    <string name="sheikh_reviews_count">%1$d reviews</string>
+    <string name="sheikh_details_no_circles">No active circles right now.</string>
+    <string name="sheikh_details_about_empty">This teacher hasn\'t added a bio yet.</string>
+    <string name="sheikh_cd_avatar">%1$s\'s photo</string>
 
     <!-- ===== Circle List ===== -->
     <string name="circle_list_title">Active Circles</string>
     <string name="circle_search_hint">Search by Surah or Sheikh…</string>
+    <string name="circle_count">%1$d circles</string>
+    <string name="circle_joined">Joined</string>
     <string name="circle_join">Join</string>
+    <string name="circle_enter">Enter Circle</string>
     <string name="circle_waiting">Waiting</string>
-    <string name="circle_participants_label">%1$d/%2$d · %3$s</string>
-    <string name="circle_difficulty_beginner">Beginner</string>
-    <string name="circle_difficulty_intermediate">Intermediate</string>
-    <string name="circle_difficulty_advanced">Advanced</string>
+    <string name="circle_participants_label">%1$d/%2$d</string>
+    <string name="circle_row_members">%1$d/%2$d members</string>
+    <string name="circle_filter_all">All</string>
+    <string name="circle_status_scheduled">Scheduled</string>
+    <string name="circle_status_ongoing">Ongoing</string>
+    <string name="circle_status_completed">Completed</string>
+    <string name="circle_status_cancelled">Cancelled</string>
+    <string name="circle_type_public">Public</string>
+    <string name="circle_type_private">Private</string>
+    <string name="current_circle_title">Current Circle</string>
+
+    <!-- ===== Circle Details ===== -->
+    <string name="circle_details_title">Circle Details</string>
+    <string name="circle_details_date">Scheduled: %1$s</string>
+    <string name="circle_waiting_approval">Waiting for host approval</string>
+    <string name="circle_password_hint">Circle password (if any)</string>
+    <string name="circle_password_confirm">Confirm &amp; Join</string>
+    <string name="circle_password_dismiss">Cancel</string>
+    <string name="circle_join_error_full">This circle is full.</string>
+    <string name="circle_join_error_conflict">This circle overlaps with another circle you joined.</string>
+    <string name="circle_join_error_password">The password is incorrect.</string>
+    <string name="circle_join_error_already_member">You are already a member of this circle.</string>
+    <string name="circle_join_error_generic">Couldn\'t join the circle. Please try again.</string>
+
+    <!-- ===== Join Private Circle ===== -->
+    <string name="circle_join_private">Join Private Circle</string>
+    <string name="circle_join_private_sheet_title">Join a Private Circle</string>
+    <string name="circle_join_id_hint">Enter the circle ID</string>
+    <string name="circle_join_id_required">Enter a circle ID</string>
+    <string name="circle_join_confirm">Join</string>
+    <string name="circle_join_cancel">Cancel</string>
+    <string name="circle_join_success">You joined the circle.</string>
+    <string name="circle_join_request_sent">Join request sent. Waiting for host approval.</string>
+    <!-- Token / invite-link join -->
+    <string name="circle_join_mode_by_id">By ID</string>
+    <string name="circle_join_via_link">By Invite Link</string>
+    <string name="circle_join_token_hint">Paste your invite token here</string>
+    <string name="circle_join_token_required">Enter an invite token</string>
+
+    <!-- ===== Leave Circle ===== -->
+    <string name="circle_leave">Leave Circle</string>
+    <string name="circle_leave_title">Leave this circle?</string>
+    <string name="circle_leave_message">You can join again later if the circle is still active.</string>
+    <string name="circle_leave_confirm">Leave</string>
+    <string name="circle_leave_cancel">Cancel</string>
+    <string name="circle_leave_error">Couldn\'t leave the circle. Please try again.</string>
+
+    <!-- Circle live audio -->
+    <string name="circle_session_ended">This circle has ended.</string>
+    <string name="circle_audio_connecting">Connecting to the circle audio…</string>
+    <string name="circle_audio_not_started">The host hasn\'t started this circle yet.</string>
+    <string name="circle_audio_connect_failed">Couldn\'t connect to the circle audio.</string>
+    <string name="circle_audio_connection_lost">Audio connection lost.</string>
+    <string name="circle_audio_mic_denied">Microphone access is off, so no one can hear you.</string>
+    <string name="circle_audio_listen_only">Listening only — microphone access is off.</string>
+    <string name="circle_audio_retry">Retry</string>
+    <string name="circle_leave_action_failed">Something went wrong. Please try again.</string>
+
+    <string name="circle_end_title">End Circle?</string>
+    <string name="circle_end_message">This will end the circle for all participants.</string>
+    <string name="circle_end_confirm">End Circle</string>
+    <string name="circle_end_error">Couldn\'t end the circle. Please try again.</string>
+
+    <string name="circle_cancel_title">Cancel Circle?</string>
+    <string name="circle_cancel_message">This will cancel the circle completely.</string>
+    <string name="circle_cancel_confirm">Cancel Circle</string>
+    <string name="circle_cancel_error">Couldn\'t cancel the circle. Please try again.</string>
+
+    <string name="circle_leave_success">You left the circle.</string>
+    <string name="circle_leave_success_title">You left the circle</string>
+    <string name="circle_leave_success_message">You are no longer a member of this circle.</string>
+    <string name="circle_leave_success_done">Done</string>
+
+    <!-- ===== In Session ===== -->
+    <string name="in_session_pending_requests">%1$d requests</string>
+    <string name="in_session_approve">Approve</string>
+    <string name="in_session_reject">Reject</string>
+
+    <!-- ===== Create Circle ===== -->
+    <string name="create_circle_title">Create Circle</string>
+    <string name="create_circle_subtitle">Start your private study circle</string>
+    <string name="create_circle_user_role_note">As a regular user you can create private circles only. Verified sheikhs can create public circles.</string>
+    <string name="create_circle_details_section">Circle details</string>
+    <string name="create_circle_title_label">Circle title</string>
+    <string name="create_circle_title_hint">e.g. Daily Fajr Revision</string>
+    <string name="create_circle_goals_label">Goals &amp; description</string>
+    <string name="create_circle_goals_hint">What will this circle focus on?</string>
+    <string name="create_circle_start_date_label">Start date &amp; time</string>
+    <string name="create_circle_start_date_hint">e.g. 2026-08-10T18:00:00Z</string>
+    <string name="create_circle_end_date_label">End date &amp; time</string>
+    <string name="create_circle_end_date_hint">Must be after the start date</string>
+    <string name="create_circle_error_start_date">Start date must be in the future.</string>
+    <string name="create_circle_error_end_date">End date must be after the start date.</string>
+    <string name="create_circle_password_label">Access code</string>
+    <string name="create_circle_password_hint">e.g. A7B29X</string>
+    <string name="create_circle_privacy_label">Privacy</string>
+    <string name="create_circle_privacy_private">Private</string>
+    <string name="create_circle_privacy_private_desc">Members join with an access code you share.</string>
+    <string name="create_circle_privacy_public">Public</string>
+    <string name="create_circle_privacy_public_desc">Anyone can join the circle.</string>
+    <string name="create_circle_privacy_public_badge">Sheikh only</string>
+    <string name="create_circle_cta">Create &amp; Generate Link</string>
+    <string name="create_circle_error_generic">Couldn\'t create the circle. Please try again.</string>
+    <string name="create_circle_error_title_required">Enter a circle title.</string>
+    <string name="create_circle_error_password_required">Private circles need an access code.</string>
+    <string name="create_circle_success_title">Circle created!</string>
+    <string name="create_circle_success_message">Share these details with members so they can join.</string>
+    <string name="create_circle_success_session_label">Session ID</string>
+    <string name="create_circle_success_password_label">Password</string>
+    <string name="create_circle_success_token_label">Invite code</string>
+    <string name="create_circle_success_done">Done</string>
+    <string name="create_circle_copied">Copied!</string>
+    <string name="create_circle_copy">Copy</string>
+    <string name="create_circle_date_next">Next</string>
+    <string name="create_circle_time_done">Done</string>
+    <string name="create_circle_time_label">Select time</string>
+    <string name="create_circle_cancel">Cancel</string>
 
     <!-- ===== Joining Circle ===== -->
     <string name="joining_circle_title">Joining Circle</string>
     <string name="joining_circle_waiting_title">Waiting for Approval…</string>
     <string name="joining_circle_waiting_body">The host is verifying your request to join the %1$s circle.</string>
     <string name="joining_circle_cancel">Cancel Request</string>
+    <string name="joining_circle_rejected">Your request was declined by the host.</string>
+    <string name="joining_circle_wait_failed">We couldn\'t reach the circle. Please try again.</string>
 
     <!-- ===== In Session ===== -->
     <string name="session_leave">Leave</string>
@@ -502,4 +619,33 @@
     <string name="exam_timer_pause">Pause</string>
     <string name="exam_timer_skip">Skip</string>
     <string name="exam_reveal_next_word">Next Word</string>
+
+    <!-- Subscription quota (profile + meeting request) -->
+    <plurals name="profile_minutes_remaining">
+        <item quantity="one">%1$d min left</item>
+        <item quantity="other">%1$d min left</item>
+    </plurals>
+    <string name="profile_minutes_used_pattern">%1$d of %2$d minutes used</string>
+    <string name="profile_subscription_renews_pattern">Valid until %1$s</string>
+    <string name="profile_subscription_running_low">You\'re running low on minutes.</string>
+    <string name="profile_subscription_expired">Your package has expired.</string>
+    <string name="profile_subscription_depleted">You\'ve used all your minutes.</string>
+    <string name="profile_subscription_renew_cta">Renew subscription</string>
+    <string name="profile_no_subscription_title">No active subscription</string>
+    <string name="profile_no_subscription_description">Subscribe to a package to book live sessions with a sheikh.</string>
+    <string name="profile_no_subscription_cta">See packages</string>
+    <string name="meetingrequest_quota_checking">Checking your remaining minutes\u2026</string>
+    <string name="meetingrequest_quota_none_title">Subscription required</string>
+    <string name="meetingrequest_quota_none_subtitle">Book live sessions with a sheikh by subscribing to a package first.</string>
+    <string name="meetingrequest_quota_expired_title">Your package has expired</string>
+    <string name="meetingrequest_quota_expired_subtitle">Renew your subscription to keep booking sessions.</string>
+    <string name="meetingrequest_quota_expired_subtitle_named">Your %1$s package has expired. Renew it to keep booking sessions.</string>
+    <string name="meetingrequest_quota_depleted_title">No minutes left</string>
+    <string name="meetingrequest_quota_depleted_subtitle">You\'ve used all the minutes in your package. Top up to book another session.</string>
+    <string name="meetingrequest_quota_low_title">Not enough minutes</string>
+    <string name="meetingrequest_quota_low_subtitle">You have %1$d minutes left, but a session needs at least %2$d. Top up to continue.</string>
+    <string name="meetingrequest_quota_browse_packages">See packages</string>
+    <!-- Swipe-to-refresh -->
+    <string name="refresh_failed">Couldn’t refresh. Check your connection and try again.</string>
+    <string name="filters_clear">Clear filters</string>
 </resources>

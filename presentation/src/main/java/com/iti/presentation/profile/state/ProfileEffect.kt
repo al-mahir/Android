@@ -32,4 +32,8 @@ sealed interface ProfileEffect {
     data object NavigateToAuth : ProfileEffect
 
     data class ShowMessage(@StringRes val messageRes: Int) : ProfileEffect
+
+    data object OpenCircleList : ProfileEffect
+
+    data class OpenCircle(val circleId: String) : ProfileEffect
 }

@@ -1,0 +1,266 @@
+package com.iti.sheikh.presentation.circle
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.model.circle.CircleType
+import com.iti.meeting.domain.model.circle.UpdateCircleRequest
+import com.iti.meeting.domain.repository.CircleRepository
+import com.iti.meeting.domain.repository.CircleRosterEvent
+import com.iti.meeting.domain.repository.PendingJoinRequestEvent
+import com.iti.sheikh.presentation.R
+import com.iti.sheikh.presentation.circle.state.SheikhCircleManageEffect
+import com.iti.sheikh.presentation.circle.state.SheikhCircleManageIntent
+import com.iti.sheikh.presentation.circle.state.SheikhCircleManageUiState
+import com.iti.sheikh.presentation.core.mvi.DefaultEffectPublisher
+import com.iti.sheikh.presentation.core.mvi.DefaultStateHolder
+import com.iti.sheikh.presentation.core.mvi.EffectPublisher
+import com.iti.sheikh.presentation.core.mvi.StateHolder
+import kotlinx.coroutines.launch
+
+class SheikhCircleManageViewModel(
+    private val circleId: String,
+    private val circleRepository: CircleRepository,
+) : ViewModel(),
+    StateHolder<SheikhCircleManageUiState> by DefaultStateHolder(SheikhCircleManageUiState()),
+    EffectPublisher<SheikhCircleManageEffect> by DefaultEffectPublisher() {
+
+    init {
+        load()
+        observeLiveUpdates()
+    }
+
+    fun onIntent(intent: SheikhCircleManageIntent) = when (intent) {
+        SheikhCircleManageIntent.Retry -> load()
+        is SheikhCircleManageIntent.ApproveRequest -> approve(intent.userId)
+        is SheikhCircleManageIntent.RejectRequest -> reject(intent.userId)
+        is SheikhCircleManageIntent.RemoveMember -> removeMember(intent.userId)
+        SheikhCircleManageIntent.StartClicked -> start()
+        SheikhCircleManageIntent.EndClicked -> end()
+        SheikhCircleManageIntent.CancelClicked -> cancel()
+        SheikhCircleManageIntent.JoinSessionClicked -> joinSession()
+        SheikhCircleManageIntent.EditClicked -> openEdit()
+        is SheikhCircleManageIntent.EditNameChanged -> updateState { copy(editName = intent.name) }
+        is SheikhCircleManageIntent.EditStartDateChanged -> updateState { copy(editStartDate = intent.date) }
+        is SheikhCircleManageIntent.EditEndDateChanged -> updateState { copy(editEndDate = intent.date) }
+        SheikhCircleManageIntent.SubmitEdit -> submitEdit()
+        SheikhCircleManageIntent.DismissEdit -> updateState { copy(isEditDialogVisible = false) }
+    }
+
+    private fun load() {
+        updateState { copy(isLoading = true, isError = false) }
+        viewModelScope.launch {
+            val circle = circleRepository.getCircle(circleId)
+            val pending = circleRepository.getPendingRequests(circleId)
+            val members = circleRepository.getMembers(circleId)
+            updateState {
+                copy(
+                    circle = circle.getOrNull(),
+                    pendingRequests = pending.getOrNull().orEmpty(),
+                    members = members.getOrNull().orEmpty(),
+                    isLoading = false,
+                    isError = circle.isFailure,
+                )
+            }
+            // If this is a PRIVATE circle with an invite token, surface it to the sheikh.
+            val loaded = circle.getOrNull()
+            if (loaded != null &&
+                loaded.type == CircleType.PRIVATE &&
+                loaded.status == CircleStatus.SCHEDULED
+            ) {
+                loaded.inviteToken?.takeIf { it.isNotBlank() }?.let { token ->
+                    sendEffect(SheikhCircleManageEffect.ShowInviteToken(token, loaded.name))
+                }
+            }
+        }
+    }
+
+    private fun observeLiveUpdates() {
+        viewModelScope.launch {
+            circleRepository.observePendingRequests(circleId).collect { event ->
+                when (event) {
+                    is PendingJoinRequestEvent.Received -> updateState {
+                        copy(pendingRequests = (pendingRequests + event.request).distinctBy { it.membershipId })
+                    }
+                    is PendingJoinRequestEvent.Removed -> updateState {
+                        copy(pendingRequests = pendingRequests.filterNot { it.membershipId == event.membershipId })
+                    }
+                }
+            }
+        }
+        viewModelScope.launch {
+            circleRepository.observeCircleEvents(circleId).collect { event ->
+                when (event) {
+                    is CircleRosterEvent.MemberJoined,
+                    is CircleRosterEvent.MemberLeft,
+                    is CircleRosterEvent.MemberRemoved,
+                    -> refreshMembers()
+                    is CircleRosterEvent.Started,
+                    is CircleRosterEvent.Ended,
+                    is CircleRosterEvent.Cancelled,
+                    -> refreshCircle()
+                }
+            }
+        }
+    }
+
+    private fun refreshMembers() {
+        viewModelScope.launch {
+            circleRepository.getMembers(circleId).onSuccess { members ->
+                updateState { copy(members = members) }
+            }
+        }
+    }
+
+    private fun refreshCircle() {
+        viewModelScope.launch {
+            circleRepository.getCircle(circleId).onSuccess { circle ->
+                updateState { copy(circle = circle) }
+            }
+        }
+    }
+
+    private fun approve(userId: String) = runMemberAction(userId) { id ->
+        circleRepository.approveJoinRequest(circleId, id)
+    }
+
+    private fun reject(userId: String) = runMemberAction(userId) { id ->
+        circleRepository.rejectJoinRequest(circleId, id)
+    }
+
+    private fun removeMember(userId: String) = runMemberAction(userId) { id ->
+        circleRepository.removeMember(circleId, id)
+    }
+
+    private fun runMemberAction(
+        userId: String,
+        block: suspend (String) -> Result<Unit>,
+    ) {
+        if (currentState.actionInProgress) return
+        updateState { copy(actionInProgress = true) }
+        viewModelScope.launch {
+            block(userId).fold(
+                onSuccess = {
+                    updateState {
+                        copy(
+                            actionInProgress = false,
+                            pendingRequests = pendingRequests.filterNot { it.userId == userId },
+                        )
+                    }
+                    refreshMembers()
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                },
+            )
+        }
+    }
+
+    private fun start() {
+        if (currentState.actionInProgress) return
+        updateState { copy(actionInProgress = true) }
+        viewModelScope.launch {
+            // 1. Tell the server to start the circle.
+            val startResult = circleRepository.startCircle(circleId)
+            startResult.fold(
+                onSuccess = { updatedCircle ->
+                    updateState { copy(actionInProgress = false, circle = updatedCircle) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_started))
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                    return@launch
+                },
+            )
+
+            // 2. Enter the live session. The Agora credentials are fetched there, by the session's
+            // own audio controller — see SheikhCircleManageEffect.OpenSession.
+            sendEffect(SheikhCircleManageEffect.OpenSession(circleId))
+        }
+    }
+
+    /** Re-enters an already-ONGOING circle — the recovery path for a sheikh who navigated away. */
+    private fun joinSession() {
+        if (currentState.actionInProgress) return
+        sendEffect(SheikhCircleManageEffect.OpenSession(circleId))
+    }
+
+    private fun end() {
+        if (currentState.actionInProgress) return
+        updateState { copy(actionInProgress = true) }
+        viewModelScope.launch {
+            circleRepository.endCircle(circleId).fold(
+                onSuccess = {
+                    updateState { copy(actionInProgress = false) }
+                    refreshCircle()
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_ended))
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                },
+            )
+        }
+    }
+
+    private fun cancel() {
+        if (currentState.actionInProgress) return
+        updateState { copy(actionInProgress = true) }
+        viewModelScope.launch {
+            circleRepository.cancelCircle(circleId).fold(
+                onSuccess = {
+                    updateState { copy(actionInProgress = false) }
+                    refreshCircle()
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_cancelled))
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_action_failed))
+                },
+            )
+        }
+    }
+
+    private fun openEdit() {
+        val circle = currentState.circle ?: return
+        updateState {
+            copy(
+                isEditDialogVisible = true,
+                editName = circle.name,
+                editStartDate = circle.startDate,
+                editEndDate = circle.endDate.orEmpty(),
+            )
+        }
+    }
+
+    private fun submitEdit() {
+        if (currentState.actionInProgress) return
+        val state = currentState
+        if (state.editName.isBlank()) {
+            sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_create_circle_error_name))
+            return
+        }
+        updateState { copy(actionInProgress = true, isEditDialogVisible = false) }
+        viewModelScope.launch {
+            circleRepository.updateCircle(
+                circleId,
+                UpdateCircleRequest(
+                    name = state.editName.trim().ifBlank { null },
+                    startDate = state.editStartDate.trim().ifBlank { null },
+                    endDate = state.editEndDate.trim().ifBlank { null },
+                ),
+            ).fold(
+                onSuccess = { updated ->
+                    updateState { copy(actionInProgress = false, circle = updated) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_edit_saved))
+                },
+                onFailure = {
+                    updateState { copy(actionInProgress = false) }
+                    sendEffect(SheikhCircleManageEffect.ShowMessage(R.string.sheikh_circle_edit_error))
+                },
+            )
+        }
+    }
+}

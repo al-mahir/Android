@@ -15,7 +15,9 @@ import org.koin.androidx.compose.koinViewModel
 fun SheikhHomeScreen(
     onOpenProfile: () -> Unit,
     onOpenActiveCall: (String, String, String, String, String?) -> Unit,
+    onOpenCircles: () -> Unit,
     availabilityPanel: @Composable () -> Unit,
+    circlesPanel: @Composable (myCircles: List<com.iti.meeting.domain.model.circle.Circle>, availableCount: Int) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SheikhHomeViewModel = koinViewModel(),
 ) {
@@ -38,7 +40,14 @@ fun SheikhHomeScreen(
         onRetryClick = { viewModel.onIntent(SheikhHomeIntent.Retry) },
         onRejoinActiveCallClick = { viewModel.onIntent(SheikhHomeIntent.RejoinActiveCallClicked) },
         onDismissActiveCallClick = { viewModel.onIntent(SheikhHomeIntent.DismissActiveCallClicked) },
+        onOpenCircles = onOpenCircles,
         availabilityPanel = availabilityPanel,
+        circlesPanel = {
+            circlesPanel(
+                state.myCircles,
+                state.availableCircles.count { available -> state.myCircles.none { it.id == available.id } }
+            )
+        },
         modifier = modifier,
     )
 }

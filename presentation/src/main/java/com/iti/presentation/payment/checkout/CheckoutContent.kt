@@ -26,9 +26,8 @@ import com.example.designsystem.text.asString
 import com.example.designsystem.theme.Theme
 import com.iti.presentation.R
 import com.iti.presentation.payment.checkout.components.PackageSummaryCard
-import com.iti.presentation.payment.checkout.components.CardPaymentSection
 import com.iti.presentation.payment.checkout.components.CheckoutTabs
-import com.iti.presentation.payment.checkout.components.WalletPaymentSection
+import com.iti.presentation.payment.checkout.components.PaymentMethodSection
 import com.iti.presentation.payment.checkout.components.rememberFormattedWholePrice
 
 @Composable
@@ -61,9 +60,8 @@ fun CheckoutContent(
             else -> {
                 val payAmountLabel = stringResource(
                     R.string.checkout_pay_button_pattern,
-                    rememberFormattedWholePrice(pkg.monthlyPriceMinorUnits, pkg.currencyCode),
+                    rememberFormattedWholePrice(pkg.priceAmount, pkg.currencyCode),
                 )
-                val canSubmit = if (state.selectedTabIndex == 0) state.canSubmitWallet else state.canSubmitCard
 
                 // The Pay button is pinned outside the scrollable list (not the last LazyColumn
                 // item) so it stays reachable above the keyboard instead of requiring a scroll
@@ -102,18 +100,14 @@ fun CheckoutContent(
                         }
 
                         item {
-                            if (state.selectedTabIndex == 0) {
-                                WalletPaymentSection(state = state, onIntent = onIntent)
-                            } else {
-                                CardPaymentSection(state = state, onIntent = onIntent)
-                            }
+                            PaymentMethodSection(method = state.selectedMethod)
                         }
                     }
 
                     PrimaryButton(
                         caption = payAmountLabel,
                         onClick = { onIntent(CheckoutIntent.PayClicked) },
-                        isDisabled = !canSubmit,
+                        isDisabled = !state.canSubmit,
                         isLoading = state.isProcessing,
                         iconPainter = painterResource(DesignSystemR.drawable.ic_check),
                         modifier = Modifier

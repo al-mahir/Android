@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.domain.core.fold
 import com.iti.domain.core.getOrNull
-import com.iti.domain.usecase.circle.GetStudyCirclesUseCase
-import com.iti.domain.usecase.circle.JoinStudyCircleUseCase
 import com.iti.domain.usecase.reading.GetAyahOfTheDayUseCase
 import com.iti.domain.usecase.reading.GetReadingProgressUseCase
 import com.iti.domain.usecase.sheikh.GetSheikhsUseCase
 import com.iti.domain.usecase.user.GetCurrentUserUseCase
+import com.iti.meeting.domain.model.circle.CircleStatus
+import com.iti.meeting.domain.repository.CircleRepository
 import com.iti.meeting.domain.repository.MeetingRepository
 import com.iti.presentation.R
 import com.iti.presentation.core.mvi.DefaultEffectPublisher
@@ -20,11 +20,11 @@ import com.iti.presentation.home.state.HomeEffect
 import com.iti.presentation.home.state.HomeIntent
 import com.iti.presentation.home.state.HomeUiState
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 
 
@@ -36,8 +36,7 @@ class HomeViewModel(
     private val getReadingProgress: GetReadingProgressUseCase,
     private val getAyahOfTheDay: GetAyahOfTheDayUseCase,
     private val getSheikhs: GetSheikhsUseCase,
-    private val getStudyCircles: GetStudyCirclesUseCase,
-    private val joinStudyCircle: JoinStudyCircleUseCase,
+    private val circleRepository: CircleRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val meetingRepository: MeetingRepository,
 ) : ViewModel(),
@@ -47,6 +46,7 @@ class HomeViewModel(
     private var contentJob: Job? = null
 
     init {
+        loadSections()
         observeContent()
         observePendingMeetingRequest()
         observeActiveCall()
@@ -54,14 +54,15 @@ class HomeViewModel(
 
     fun onIntent(intent: HomeIntent) {
         when (intent) {
-            HomeIntent.Retry -> observeContent()
+            HomeIntent.Retry -> retry()
+            HomeIntent.Refresh -> refresh()
             HomeIntent.SearchClicked -> sendEffect(HomeEffect.OpenSearch)
             HomeIntent.ProfileClicked -> sendEffect(HomeEffect.OpenProfile)
             HomeIntent.SeeAllSheikhsClicked -> sendEffect(HomeEffect.OpenSheikhList)
             HomeIntent.SeeAllCirclesClicked -> sendEffect(HomeEffect.OpenCircleList)
             HomeIntent.ContinueReadingClicked -> openReadingProgress()
             is HomeIntent.SheikhClicked -> sendEffect(HomeEffect.OpenSheikh(intent.sheikhId))
-            is HomeIntent.JoinCircleClicked -> join(intent.circleId)
+            is HomeIntent.CircleClicked -> sendEffect(HomeEffect.OpenCircle(intent.circleId))
             HomeIntent.ViewPendingMeetingClicked -> viewPendingMeeting()
             HomeIntent.CancelPendingMeetingClicked -> cancelPendingMeeting()
             HomeIntent.RejoinActiveCallClicked -> rejoinActiveCall()
@@ -128,34 +129,98 @@ class HomeViewModel(
         }
     }
 
-    private fun observeContent() {
-        // Cancel any in-flight collection so a retry cannot leave two streams writing state.
-        contentJob?.cancel()
-        updateState { copy(isLoading = true, errorMessageRes = null) }
+    /** Full reload behind the skeleton — the initial load and the error screen's Retry button. */
+    private fun retry() {
+        loadSections()
+        observeContent()
+    }
 
-        // Load sheikhs from real API in parallel (one-shot suspend).
+    /**
+     * Swipe-to-refresh. Unlike [retry] it never raises [HomeUiState.isLoading], so the content the
+     * user is looking at stays put and only the pull indicator spins. Re-entrant pulls are dropped:
+     * the gesture can fire again before `isRefreshing` has reached the UI.
+     */
+    private fun refresh() {
+        if (currentState.isRefreshing) return
+        updateState { copy(isRefreshing = true) }
+
+        // The user/progress/ayah/connectivity stream is local and cheap, so restarting it silently
+        // is what lets a pull clear a stale error screen without flashing the skeleton.
+        observeContent(silent = true)
+
+        viewModelScope.launch {
+            try {
+                loadSections().joinAll()
+            } finally {
+                // Also runs if the ViewModel is cleared mid-refresh, so the flag never sticks.
+                updateState { copy(isRefreshing = false) }
+            }
+        }
+    }
+
+    /**
+     * The one-shot remote sections (teachers, my circles, available circles), fired in parallel.
+     * Returns their [Job]s so [refresh] can keep the indicator up until all of them have settled.
+     */
+    private fun loadSections(): List<Job> = listOf(
         viewModelScope.launch {
             getSheikhs().fold(
                 onSuccess = { sheikhs -> updateState { copy(sheikhs = sheikhs) } },
                 onError = { /* Home shows error only if all sources fail; ignore partial sheikh failure */ },
             )
-        }
+        },
 
-        // Observe user, reading progress, ayah of the day, circles, and connectivity.
+        viewModelScope.launch {
+            circleRepository.getMyCircles().fold(
+                onSuccess = { circles -> updateState { copy(myCircles = circles) } },
+                onFailure = {
+                    /* My circles are a section; a partial failure leaves the previous list in place. */
+                },
+            )
+        },
+
+        viewModelScope.launch {
+            circleRepository.getPublicCircles().fold(
+                onSuccess = { circles ->
+                    updateState {
+                        copy(
+                            availableCircles = circles.filter { circle ->
+                                circle.status == CircleStatus.SCHEDULED ||
+                                    circle.status == CircleStatus.ONGOING
+                            },
+                        )
+                    }
+                },
+                onFailure = {
+                    /* Available circles are a section; a partial failure leaves the previous list in place. */
+                },
+            )
+        },
+    )
+
+    /**
+     * Observes user, reading progress, ayah of the day, and connectivity.
+     *
+     * @param silent skips the skeleton — a refresh restarts the stream in place rather than
+     *   emptying the screen while it re-emits.
+     */
+    private fun observeContent(silent: Boolean = false) {
+        // Cancel any in-flight collection so a retry cannot leave two streams writing state.
+        contentJob?.cancel()
+        if (!silent) updateState { copy(isLoading = true, errorMessageRes = null) }
+
         contentJob = combine(
             getCurrentUser(),
             getReadingProgress(),
             getAyahOfTheDay(),
-            getStudyCircles(),
             connectivityObserver.status
-        ) { userResult, readingProgress, ayahOfTheDay, circlesResult, connectivity ->
+        ) { userResult, readingProgress, ayahOfTheDay, connectivity ->
             val user = userResult.getOrNull()
-            val circles = circlesResult.getOrNull()
-            if (user == null || circles == null) {
+            if (user == null) {
                 null
             } else {
                 val isOffline = connectivity == ConnectivityStatus.Unavailable
-                HomeContentSnapshot(user, readingProgress, ayahOfTheDay, emptyList(), circles, isOffline)
+                HomeContentSnapshot(user, readingProgress, ayahOfTheDay, isOffline)
             }
         }
             .onEach { snapshot ->
@@ -169,7 +234,6 @@ class HomeViewModel(
                             user = snapshot.user,
                             readingProgress = snapshot.readingProgress,
                             ayahOfTheDay = snapshot.ayahOfTheDay,
-                            circles = snapshot.circles.take(2),
                             isOffline = snapshot.isOffline,
                         )
                     }
@@ -182,16 +246,5 @@ class HomeViewModel(
     private fun openReadingProgress() {
         val page = currentState.readingProgress?.pageNumber ?: 1
         sendEffect(HomeEffect.OpenMushafAtPage(page))
-    }
-
-    private fun join(circleId: String) {
-        if (circleId in currentState.joiningCircleIds) return
-        updateState { copy(joiningCircleIds = joiningCircleIds + circleId) }
-
-        viewModelScope.launch {
-            runCatching { joinStudyCircle(circleId) }
-                .onFailure { sendEffect(HomeEffect.ShowMessage(R.string.home_join_failed)) }
-            updateState { copy(joiningCircleIds = joiningCircleIds - circleId) }
-        }
     }
 }

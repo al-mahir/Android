@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.iti.domain.model.LegalDocumentType
 import com.iti.presentation.R
@@ -32,6 +33,8 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit = {},
     onOpenSessions: () -> Unit = {},
     onOpenAttributions: () -> Unit = {},
+    onOpenCircleList: () -> Unit = {},
+    onOpenCircle: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
     viewModel: ProfileViewModel = koinViewModel(),
@@ -91,7 +94,18 @@ fun ProfileScreen(
             ProfileEffect.NavigateToAuth -> onSignedOut()
 
             is ProfileEffect.ShowMessage -> showMessage(effect.messageRes)
+
+            ProfileEffect.OpenCircleList -> onOpenCircleList()
+
+            is ProfileEffect.OpenCircle -> onOpenCircle(effect.circleId)
         }
+    }
+
+    // Checkout is a separate screen, so returning from a successful purchase must re-read the
+    // entitlement; without this the profile keeps the pre-payment status until a cold start.
+    LifecycleResumeEffect(Unit) {
+        viewModel.onIntent(ProfileIntent.Refresh)
+        onPauseOrDispose { }
     }
 
     ProfileContent(
@@ -103,6 +117,8 @@ fun ProfileScreen(
         onMenuOptionClick = { menuType -> viewModel.onIntent(ProfileIntent.MenuOptionClicked(menuType)) },
         onSocialChannelClick = { channel -> viewModel.onIntent(ProfileIntent.SocialChannelClicked(channel)) },
         onRetryClick = { viewModel.onIntent(ProfileIntent.Retry) },
+        onSeeAllCirclesClick = { viewModel.onIntent(ProfileIntent.SeeAllCirclesClicked) },
+        onCircleClick = { circleId -> viewModel.onIntent(ProfileIntent.CircleClicked(circleId)) },
         modifier = modifier,
         visibleMenuItems = visibleMenuItems,
     )

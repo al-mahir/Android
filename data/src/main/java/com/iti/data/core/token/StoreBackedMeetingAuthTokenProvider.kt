@@ -12,7 +12,11 @@ class StoreBackedMeetingAuthTokenProvider(
     private val refresher: TokenRefresher,
 ) : MeetingAuthTokenProvider {
 
-    override suspend fun currentToken(): String? = tokenStore.getTokens()?.accessToken
+    override suspend fun currentToken(): String? {
+        val accessToken = tokenStore.getTokens()?.accessToken ?: return null
+        if (!accessToken.isAccessTokenExpiredOrNearExpiry()) return accessToken
+        return refresher.refresh(rejectedAccessToken = accessToken)?.accessToken ?: accessToken
+    }
 
     override suspend fun refreshToken(rejectedToken: String?): String? =
         refresher.refresh(rejectedAccessToken = rejectedToken)?.accessToken

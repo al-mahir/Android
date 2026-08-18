@@ -20,7 +20,6 @@ import androidx.core.app.Person
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.iti.meeting.presentation.R
-import com.iti.meeting.presentation.call.state.CallUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,7 +32,7 @@ import org.koin.android.ext.android.inject
 @Suppress("InlinedApi")
 class CallForegroundService : Service() {
 
-    private val controller: CallSessionController by inject()
+    private val registry: OngoingCallRegistry by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var observeJob: Job? = null
 
@@ -41,12 +40,12 @@ class CallForegroundService : Service() {
         super.onCreate()
         ensureChannel()
         val type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(controller.currentState), type)
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(registry.display.value), type)
 
-        observeJob = controller.state
-            .onEach { session ->
-                if (session.isLive) {
-                notifySafely(buildNotification(session))
+        observeJob = registry.display
+            .onEach { display ->
+                if (display != null) {
+                    notifySafely(buildNotification(display))
                 } else {
                     stopSelfGracefully()
                 }
@@ -69,9 +68,9 @@ class CallForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_TOGGLE_MIC -> controller.toggleMic()
+            ACTION_TOGGLE_MIC -> registry.toggleMic()
             ACTION_END_CALL -> {
-                controller.endCall()
+                registry.hangUp()
                 stopSelfGracefully()
             }
         }
@@ -104,9 +103,9 @@ class CallForegroundService : Service() {
         manager.createNotificationChannel(channel)
     }
 
-    private fun buildNotification(session: CallSessionState): Notification {
-        val isMuted = (session.callState as? CallUiState.InCall)?.isMicEnabled == false
-        val title = session.remoteDisplayName
+    private fun buildNotification(display: OngoingCallDisplay?): Notification {
+        val isMuted = display?.isMicEnabled == false
+        val title = display?.title
             ?.let { getString(R.string.meeting_call_notification_title_named, it) }
             ?: getString(R.string.meeting_call_notification_title_generic)
 
@@ -125,8 +124,7 @@ class CallForegroundService : Service() {
             .setContentIntent(openAppPendingIntent())
             .setContentTitle(title)
             .setContentText(
-                if (session.callState is CallUiState.InCall) null
-                else getString(R.string.meeting_call_notification_connecting)
+                if (display?.isConnecting == true) getString(R.string.meeting_call_notification_connecting) else null
             )
             .addAction(muteAction)
             .setStyle(

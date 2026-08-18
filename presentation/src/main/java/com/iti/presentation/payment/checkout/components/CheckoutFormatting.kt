@@ -7,14 +7,14 @@ import java.text.NumberFormat
 import java.util.Currency
 
 @Composable
-internal fun rememberFormattedWholePrice(minorUnits: Long, currencyCode: String): String {
+internal fun rememberFormattedWholePrice(amount: Long, currencyCode: String): String {
     val locale = LocalConfiguration.current.locales[0]
-    return remember(minorUnits, currencyCode, locale) {
+    return remember(amount, currencyCode, locale) {
         val format = NumberFormat.getCurrencyInstance(locale).apply {
             currency = Currency.getInstance(currencyCode)
-            minimumFractionDigits = 2
-            maximumFractionDigits = 2
+            minimumFractionDigits = 0
+            maximumFractionDigits = 0
         }
-        format.format(minorUnits / 100.0)
+        format.format(amount)
     }
 }

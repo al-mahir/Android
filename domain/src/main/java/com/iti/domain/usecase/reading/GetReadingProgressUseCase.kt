@@ -1,6 +1,7 @@
 package com.iti.domain.usecase.reading
 
 import com.iti.domain.model.ReadingProgress
+import com.iti.domain.model.quran.SurahNames
 import com.iti.domain.repository.ReadingProgressRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

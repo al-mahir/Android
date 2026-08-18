@@ -7,4 +7,46 @@
     <string name="meeting_call_notification_mute">كتم الصوت</string>
     <string name="meeting_call_notification_unmute">إلغاء الكتم</string>
     <string name="meeting_call_notification_end">إنهاء المكالمة</string>
+
+    <!-- Call screen: status -->
+    <string name="meeting_call_connecting">جارٍ الاتصال…</string>
+    <string name="meeting_call_reconnecting">جارٍ إعادة الاتصال…</string>
+    <string name="meeting_call_waiting_for_participant">في انتظار انضمام الطرف الآخر…</string>
+    <string name="meeting_call_camera_off">الكاميرا مغلقة</string>
+    <string name="meeting_call_participant_generic">مشارك</string>
+    <string name="meeting_call_you">أنت</string>
+
+    <!-- Call screen: errors -->
+    <string name="meeting_call_error_connect_failed">تعذّر الاتصال بالمكالمة. يُرجى المحاولة مرة أخرى.</string>
+    <string name="meeting_call_error_connection_lost">انقطع الاتصال. يُرجى المحاولة مرة أخرى.</string>
+    <string name="meeting_call_error_engine">حدث خطأ ما في المكالمة.</string>
+    <string name="meeting_call_error_code">رمز الخطأ %1$d</string>
+
+    <!-- Call screen: controls -->
+    <string name="meeting_call_mic_mute">كتم الميكروفون</string>
+    <string name="meeting_call_mic_unmute">إلغاء كتم الميكروفون</string>
+    <string name="meeting_call_camera_turn_off">إيقاف الكاميرا</string>
+    <string name="meeting_call_camera_turn_on">تشغيل الكاميرا</string>
+    <string name="meeting_call_switch_camera">تبديل الكاميرا</string>
+    <string name="meeting_call_leave">إنهاء المكالمة</string>
+    <string name="meeting_call_more_options">خيارات إضافية</string>
+    <string name="meeting_call_muted_badge">مكتوم</string>
+    <string name="meeting_call_swap_views">تبديل الفيديو الرئيسي والمصغّر</string>
+
+    <!-- Call screen: audio output picker -->
+    <string name="meeting_call_audio_output">مخرج الصوت</string>
+    <string name="meeting_call_audio_output_title">مخرج الصوت</string>
+    <string name="meeting_call_audio_earpiece">سماعة الهاتف</string>
+    <string name="meeting_call_audio_speaker">مكبر الصوت</string>
+    <string name="meeting_call_audio_wired">سماعات سلكية</string>
+    <string name="meeting_call_audio_bluetooth">بلوتوث</string>
+
+    <!-- Call screen: camera picker -->
+    <string name="meeting_call_camera_title">الكاميرا</string>
+    <string name="meeting_call_camera_front">الكاميرا الأمامية</string>
+    <string name="meeting_call_camera_back">الكاميرا الخلفية</string>
+    <string name="meeting_call_torch">الكشاف</string>
+    <string name="meeting_call_torch_on">مُفعّل</string>
+    <string name="meeting_call_torch_off">مُعطّل</string>
+    <string name="meeting_call_selected">محدد</string>
 </resources>

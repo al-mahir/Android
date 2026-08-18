@@ -71,7 +71,9 @@
 
     <string name="home_section_continue_reading">متابعة القراءة</string>
     <string name="home_section_sheikhs">تعلّم مع شيخ</string>
-    <string name="home_section_circles">الحلقات النشطة</string>
+    <string name="home_circles_title">حلقات القرآن</string>
+    <string name="home_circles_joined">%1$d منضمة · %2$d متاحة</string>
+    <string name="home_circles_available">%1$d حلقات متاحة للانضمام</string>
     <string name="home_see_all">عرض الكل</string>
 
     <string name="home_last_read">آخر قراءة</string>
@@ -121,62 +123,71 @@
 
     <!-- Packages / checkout -->
     <string name="packages_title">اختر باقتك</string>
-    <string name="packages_recommended_badge">الأكثر طلبًا</string>
     <string name="packages_price_period_month">/شهريًا</string>
+    <string name="packages_price_period_year">/سنويًا</string>
+    <plurals name="packages_price_period_days">
+        <item quantity="zero">/%1$d يوم</item>
+        <item quantity="one">/يوم واحد</item>
+        <item quantity="two">/يومين</item>
+        <item quantity="few">/%1$d أيام</item>
+        <item quantity="many">/%1$d يومًا</item>
+        <item quantity="other">/%1$d يوم</item>
+    </plurals>
+    <plurals name="packages_price_period_weeks">
+        <item quantity="zero">/%1$d أسبوع</item>
+        <item quantity="one">/أسبوع واحد</item>
+        <item quantity="two">/أسبوعين</item>
+        <item quantity="few">/%1$d أسابيع</item>
+        <item quantity="many">/%1$d أسبوعًا</item>
+        <item quantity="other">/%1$d أسبوع</item>
+    </plurals>
+    <plurals name="packages_meeting_minutes">
+        <item quantity="zero">%1$d دقيقة من الجلسات المباشرة</item>
+        <item quantity="one">دقيقة واحدة من الجلسات المباشرة</item>
+        <item quantity="two">دقيقتان من الجلسات المباشرة</item>
+        <item quantity="few">%1$d دقائق من الجلسات المباشرة</item>
+        <item quantity="many">%1$d دقيقة من الجلسات المباشرة</item>
+        <item quantity="other">%1$d دقيقة من الجلسات المباشرة</item>
+    </plurals>
+    <plurals name="packages_meeting_hours">
+        <item quantity="zero">%1$d ساعة من الجلسات المباشرة</item>
+        <item quantity="one">ساعة واحدة من الجلسات المباشرة</item>
+        <item quantity="two">ساعتان من الجلسات المباشرة</item>
+        <item quantity="few">%1$d ساعات من الجلسات المباشرة</item>
+        <item quantity="many">%1$d ساعة من الجلسات المباشرة</item>
+        <item quantity="other">%1$d ساعة من الجلسات المباشرة</item>
+    </plurals>
     <string name="packages_select_button">اختر الباقة</string>
     <string name="packages_selecting_button">جارٍ الاختيار…</string>
-    <string name="packages_start_trial_cta">ابدأ تجربة مجانية لمدة 7 أيام</string>
-    <string name="packages_starting_trial">جارٍ بدء التجربة…</string>
     <string name="packages_error_generic">تعذّر تحميل الباقات. حاول مرة أخرى.</string>
-    <string name="packages_purchase_succeeded">أصبحت الآن مشتركًا في الماهر Premium!</string>
-    <string name="packages_purchase_failed">حدث خطأ ما. حاول مرة أخرى.</string>
-    <string name="packages_trial_started">بدأت تجربتك المجانية!</string>
+    <string name="packages_empty_title">لا توجد باقات متاحة</string>
+    <string name="packages_empty_description">لا توجد باقات اشتراك معروضة حاليًا. تفقّد الصفحة لاحقًا.</string>
 
     <!-- Checkout -->
     <string name="checkout_title">الدفع</string>
     <string name="checkout_secured_by_paymob">مؤمَّن بواسطة Paymob</string>
     <string name="checkout_reciter_pass_eyebrow">اشتراك القارئ</string>
-    <string name="checkout_price_period_month">/ شهريًا</string>
     <string name="checkout_purchasing_as_pattern">الشراء باسم %1$s</string>
     <string name="checkout_tab_wallet">محفظة إلكترونية</string>
     <string name="checkout_tab_card">بطاقة ائتمان/خصم</string>
-    <string name="checkout_select_payment_method">اختر طريقة الدفع</string>
     <string name="checkout_wallet_vodafone_cash">فودافون كاش</string>
     <string name="checkout_wallet_orange_cash">أورانج كاش</string>
     <string name="checkout_wallet_etisalat_cash">اتصالات e&amp; money</string>
     <string name="checkout_wallet_we_pay">وي باي</string>
-    <string name="checkout_wallet_hint_pattern">ادفع من محفظة %1$s</string>
-    <string name="checkout_wallet_number_label">رقم المحفظة الإلكترونية</string>
-    <string name="checkout_wallet_number_hint">مثال: 01012345678</string>
-    <string name="checkout_security_note">تتم معالجة دفعتك بأمان. نحن لا نخزّن بيانات محفظتك أبدًا.</string>
-    <string name="checkout_pay_button_pattern">ادفع %1$s</string>
-    <string name="checkout_select_card_brand">اختر نوع البطاقة</string>
     <string name="checkout_card_visa">فيزا</string>
     <string name="checkout_card_mastercard">ماستركارد</string>
-    <string name="checkout_card_details_title">بيانات البطاقة</string>
-    <string name="checkout_card_number_label">رقم البطاقة</string>
-    <string name="checkout_card_number_hint">0000 0000 0000 0000</string>
-    <string name="checkout_expiry_label">تاريخ الانتهاء</string>
-    <string name="checkout_expiry_hint">شهر/سنة</string>
-    <string name="checkout_cvv_label">رمز التحقق CVV</string>
-    <string name="checkout_cvv_hint">123</string>
-    <string name="checkout_cardholder_name_label">اسم حامل البطاقة</string>
-    <string name="checkout_cardholder_name_hint">الاسم كما هو على البطاقة</string>
+    <string name="checkout_secure_entry_title">تدخل بياناتك مرة واحدة فقط</string>
+    <string name="checkout_secure_entry_card_note">اضغط على زر الدفع لفتح شاشة Paymob الآمنة وإدخال بيانات بطاقتك هناك. لا نطّلع على رقم بطاقتك ولا نخزّنه.</string>
+    <string name="checkout_secure_entry_wallet_note">اضغط على زر الدفع لفتح شاشة Paymob الآمنة وإدخال رقم محفظتك هناك. لا نطّلع على بيانات محفظتك ولا نخزّنها.</string>
+    <string name="checkout_accepted_cards">البطاقات المقبولة</string>
+    <string name="checkout_accepted_wallets">المحافظ المقبولة</string>
+    <string name="checkout_pay_button_pattern">ادفع %1$s</string>
     <string name="checkout_load_error">تعذّر تحميل هذه الباقة. حاول مرة أخرى.</string>
+    <string name="checkout_package_unavailable">هذه الباقة لم تعد متاحة. اختر باقة أخرى.</string>
     <string name="checkout_error_intention_failed">تعذّر بدء عملية الدفع. حاول مرة أخرى.</string>
     <string name="checkout_payment_success">تم الدفع بنجاح — اشتراكك أصبح مفعّلًا!</string>
     <string name="checkout_payment_failed">فشلت عملية الدفع. حاول مرة أخرى.</string>
     <string name="checkout_payment_pending">جارٍ معالجة دفعتك. سنُعلمك فور تأكيدها.</string>
-    <string name="checkout_error_wallet_number_invalid">أدخل رقم موبايل مصري صحيح</string>
-    <string name="checkout_error_wallet_prefix_vodafone">أدخل رقم محفظة فودافون كاش</string>
-    <string name="checkout_error_wallet_prefix_orange">أدخل رقم محفظة أورانج كاش</string>
-    <string name="checkout_error_wallet_prefix_etisalat">أدخل رقم محفظة اتصالات e&amp; money</string>
-    <string name="checkout_error_wallet_prefix_we">أدخل رقم محفظة وي باي</string>
-    <string name="checkout_error_card_number_invalid">أدخل رقم بطاقة صحيح</string>
-    <string name="checkout_error_card_brand_mismatch">هذه البطاقة لا تطابق النوع المختار</string>
-    <string name="checkout_error_expiry_invalid">أدخل تاريخ انتهاء صحيحًا وغير منتهٍ</string>
-    <string name="checkout_error_cvv_invalid">أدخل رمز CVV صحيحًا</string>
-    <string name="checkout_error_cardholder_name_required">أدخل الاسم كما هو على البطاقة</string>
 
     <!-- My subscription -->
     <string name="subscription_details_title">اشتراكي</string>
@@ -335,23 +346,143 @@
     <string name="sheikh_stat_circles">الحلقات</string>
     <string name="sheikh_section_bio">نبذة</string>
     <string name="sheikh_section_active_circles">الحلقات النشطة</string>
+    <string name="sheikh_reviews_count">%1$d تقييم</string>
+    <string name="sheikh_details_no_circles">لا توجد حلقات نشطة حاليًا.</string>
+    <string name="sheikh_details_about_empty">لم يضف هذا المعلم نبذة بعد.</string>
+    <string name="sheikh_cd_avatar">صورة %1$s</string>
 
     <!-- ===== Circle List ===== -->
     <string name="circle_list_title">الحلقات النشطة</string>
     <string name="circle_search_hint">ابحث بالسورة أو الشيخ…</string>
+    <string name="circle_count">%1$d حلقة</string>
+    <string name="circle_joined">منضم</string>
     <string name="circle_join">انضم</string>
+    <string name="circle_enter">دخول الحلقة</string>
     <string name="circle_waiting">بانتظار القبول</string>
-    <string name="circle_participants_label">%1$d/%2$d · %3$s</string>
-    <string name="circle_difficulty_beginner">مبتدئ</string>
-    <string name="circle_difficulty_intermediate">متوسط</string>
-    <string name="circle_difficulty_advanced">متقدم</string>
+    <string name="circle_participants_label">%1$d/%2$d</string>
+    <string name="circle_row_members">%1$d/%2$d أعضاء</string>
+    <string name="circle_filter_all">الكل</string>
+    <string name="circle_status_scheduled">مجدولة</string>
+    <string name="circle_status_ongoing">جارية</string>
+    <string name="circle_status_completed">مكتملة</string>
+    <string name="circle_status_cancelled">ملغاة</string>
+    <string name="circle_type_public">عامة</string>
+    <string name="circle_type_private">خاصة</string>
+    <string name="current_circle_title">حلقتك الحالية</string>
+
+    <!-- ===== Circle Details ===== -->
+    <string name="circle_details_title">تفاصيل الحلقة</string>
+    <string name="circle_details_date">مجدولة: %1$s</string>
+    <string name="circle_waiting_approval">في انتظار موافقة المضيف</string>
+    <string name="circle_password_hint">كلمة مرور الحلقة (إن وجدت)</string>
+    <string name="circle_password_confirm">تأكيد والانضمام</string>
+    <string name="circle_password_dismiss">إلغاء</string>
+    <string name="circle_join_error_full">هذه الحلقة ممتلئة.</string>
+    <string name="circle_join_error_conflict">تتداخل هذه الحلقة مع حلقة أخرى انضممت إليها.</string>
+    <string name="circle_join_error_password">كلمة المرور غير صحيحة.</string>
+    <string name="circle_join_error_already_member">أنت عضو بالفعل في هذه الحلقة.</string>
+    <string name="circle_join_error_generic">تعذّر الانضمام إلى الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== الانضمام إلى حلقة خاصة ===== -->
+    <string name="circle_join_private">انضم إلى حلقة خاصة</string>
+    <string name="circle_join_private_sheet_title">الانضمام إلى حلقة خاصة</string>
+    <string name="circle_join_id_hint">أدخل معرّف الحلقة</string>
+    <string name="circle_join_id_required">أدخل معرّف الحلقة</string>
+    <string name="circle_join_confirm">انضم</string>
+    <string name="circle_join_cancel">إلغاء</string>
+    <string name="circle_join_success">انضممت إلى الحلقة.</string>
+    <string name="circle_join_request_sent">تم إرسال طلب الانضمام. في انتظار موافقة المضيف.</string>
+    <!-- رابط الدعوة -->
+    <string name="circle_join_mode_by_id">بالرقم</string>
+    <string name="circle_join_via_link">برابط الدعوة</string>
+    <string name="circle_join_token_hint">الصق رمز الدعوة هنا</string>
+    <string name="circle_join_token_required">أدخل رمز الدعوة</string>
+
+    <!-- ===== مغادرة الحلقة ===== -->
+    <string name="circle_leave">مغادرة الحلقة</string>
+    <string name="circle_leave_title">مغادرة هذه الحلقة؟</string>
+    <string name="circle_leave_message">سيتم إخراجك من الحلقة وجلساتها.</string>
+    <string name="circle_leave_confirm">مغادرة</string>
+    <string name="circle_leave_cancel">إلغاء</string>
+    
+    <string name="circle_end_title">إنهاء الحلقة؟</string>
+    <string name="circle_end_message">سيؤدي هذا إلى إنهاء الحلقة لجميع المشاركين.</string>
+    <string name="circle_end_confirm">إنهاء الحلقة</string>
+    <string name="circle_end_error">تعذّر إنهاء الحلقة. يرجى المحاولة مرة أخرى.</string>
+
+    <string name="circle_cancel_title">إلغاء الحلقة؟</string>
+    <string name="circle_cancel_message">سيؤدي هذا إلى إلغاء الحلقة بالكامل.</string>
+    <string name="circle_cancel_confirm">إلغاء الحلقة</string>
+    <string name="circle_cancel_error">تعذّر إلغاء الحلقة. يرجى المحاولة مرة أخرى.</string>
+
+    <string name="circle_leave_success">غادرت الحلقة.</string>
+    <string name="circle_leave_success_title">غادرت الحلقة</string>
+    <string name="circle_leave_success_message">لم تعد عضواً في هذه الحلقة.</string>
+    <string name="circle_leave_success_done">تم</string>
+
+    <!-- ===== In Session ===== -->
+    <string name="in_session_pending_requests">%1$d طلبات</string>
+    <string name="in_session_approve">قبول</string>
+    <string name="in_session_reject">رفض</string>
+    <string name="circle_leave_error">تعذّر مغادرة الحلقة. حاول مرة أخرى.</string>
+
+    <!-- Circle live audio -->
+    <string name="circle_session_ended">انتهت هذه الحلقة.</string>
+    <string name="circle_audio_connecting">جارٍ الاتصال بصوت الحلقة…</string>
+    <string name="circle_audio_not_started">لم يبدأ المُضيف هذه الحلقة بعد.</string>
+    <string name="circle_audio_connect_failed">تعذّر الاتصال بصوت الحلقة.</string>
+    <string name="circle_audio_connection_lost">انقطع الاتصال الصوتي.</string>
+    <string name="circle_audio_mic_denied">إذن الميكروفون غير مُفعّل، لذا لا يمكن لأحد سماعك.</string>
+    <string name="circle_audio_listen_only">استماع فقط — إذن الميكروفون غير مُفعّل.</string>
+    <string name="circle_audio_retry">إعادة المحاولة</string>
+    
+    <!-- ===== Create Circle ===== -->
+    <string name="create_circle_title">إنشاء حلقة</string>
+    <string name="create_circle_subtitle">أنشئ حلقة دراستك الخاصة</string>
+    <string name="create_circle_user_role_note">كمستخدم عادي، يمكنك إنشاء حلقات خاصة فقط. يمكن للشيوخ المعتمدين إنشاء حلقات عامة.</string>
+    <string name="create_circle_details_section">تفاصيل الحلقة</string>
+    <string name="create_circle_title_label">عنوان الحلقة</string>
+    <string name="create_circle_title_hint">مثال: مراجعة الفجر اليومية</string>
+    <string name="create_circle_goals_label">الأهداف والوصف</string>
+    <string name="create_circle_goals_hint">على ماذا ستركّز هذه الحلقة؟</string>
+    <string name="create_circle_start_date_label">تاريخ ووقت البدء</string>
+    <string name="create_circle_start_date_hint">مثال: 2026-08-10T18:00:00Z</string>
+    <string name="create_circle_end_date_label">تاريخ ووقت الانتهاء</string>
+    <string name="create_circle_end_date_hint">يجب أن يكون بعد تاريخ البدء</string>
+    <string name="create_circle_error_start_date">يجب أن يكون تاريخ البدء في المستقبل.</string>
+    <string name="create_circle_error_end_date">يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.</string>
+    <string name="create_circle_password_label">كود الوصول</string>
+    <string name="create_circle_password_hint">مثال: A7B29X</string>
+    <string name="create_circle_privacy_label">الخصوصية</string>
+    <string name="create_circle_privacy_private">خاصة</string>
+    <string name="create_circle_privacy_private_desc">ينضم الأعضاء عبر كود وصول تشاركه.</string>
+    <string name="create_circle_privacy_public">عامة</string>
+    <string name="create_circle_privacy_public_desc">يمكن لأي شخص الانضمام إلى الحلقة.</string>
+    <string name="create_circle_privacy_public_badge">للشيخ فقط</string>
+    <string name="create_circle_cta">إنشاء وإنشاء رابط</string>
+    <string name="create_circle_error_generic">تعذّر إنشاء الحلقة. حاول مرة أخرى.</string>
+    <string name="create_circle_error_title_required">أدخل عنوان الحلقة.</string>
+    <string name="create_circle_error_password_required">الحلقات الخاصة تتطلب كود وصول.</string>
+    <string name="create_circle_success_title">تم إنشاء الحلقة!</string>
+    <string name="create_circle_success_message">شارك هذه التفاصيل مع الأعضاء ليتمكنوا من الانضمام.</string>
+    <string name="create_circle_success_session_label">معرّف الجلسة</string>
+    <string name="create_circle_success_password_label">كلمة المرور</string>
+    <string name="create_circle_success_token_label">رمز الدعوة</string>
+    <string name="create_circle_success_done">تم</string>
+    <string name="create_circle_copied">تم النسخ!</string>
+    <string name="create_circle_copy">نسخ</string>
+    <string name="create_circle_date_next">التالي</string>
+    <string name="create_circle_time_done">تم</string>
+    <string name="create_circle_time_label">اختر الوقت</string>
+    <string name="create_circle_cancel">إلغاء</string>
 
     <!-- ===== Joining Circle ===== -->
     <string name="joining_circle_title">الانضمام للحلقة</string>
     <string name="joining_circle_waiting_title">في انتظار الموافقة…</string>
     <string name="joining_circle_waiting_body">يتحقق المضيف من طلبك للانضمام إلى حلقة %1$s.</string>
     <string name="joining_circle_cancel">إلغاء الطلب</string>
-
+    <string name="joining_circle_rejected">تم رفض طلبك من قبل المضيف.</string>
+    <string name="joining_circle_wait_failed">تعذّر الوصول إلى الحلقة. حاول مرة أخرى.</string>
     <!-- ===== In Session ===== -->
     <string name="session_leave">مغادرة</string>
     <string name="session_host_speaking">المضيف · يتحدث</string>
@@ -506,4 +637,37 @@
     <string name="exam_timer_pause">إيقاف</string>
     <string name="exam_timer_skip">تخطي</string>
     <string name="exam_reveal_next_word">الكلمة التالية</string>
+
+    <!-- Subscription quota (profile + meeting request) -->
+    <plurals name="profile_minutes_remaining">
+        <item quantity="zero">%1$d دقيقة متبقية</item>
+        <item quantity="one">دقيقة واحدة متبقية</item>
+        <item quantity="two">دقيقتان متبقيتان</item>
+        <item quantity="few">%1$d دقائق متبقية</item>
+        <item quantity="many">%1$d دقيقة متبقية</item>
+        <item quantity="other">%1$d دقيقة متبقية</item>
+    </plurals>
+    <string name="profile_minutes_used_pattern">تم استخدام %1$d من %2$d دقيقة</string>
+    <string name="profile_subscription_renews_pattern">سارٍ حتى %1$s</string>
+    <string name="profile_subscription_running_low">دقائقك المتبقية أوشكت على النفاد.</string>
+    <string name="profile_subscription_expired">انتهت صلاحية باقتك.</string>
+    <string name="profile_subscription_depleted">لقد استهلكت كل دقائقك.</string>
+    <string name="profile_subscription_renew_cta">جدّد الاشتراك</string>
+    <string name="profile_no_subscription_title">لا يوجد اشتراك نشط</string>
+    <string name="profile_no_subscription_description">اشترك في إحدى الباقات لحجز جلسات مباشرة مع الشيخ.</string>
+    <string name="profile_no_subscription_cta">عرض الباقات</string>
+    <string name="meetingrequest_quota_checking">جارٍ التحقق من دقائقك المتبقية…</string>
+    <string name="meetingrequest_quota_none_title">الاشتراك مطلوب</string>
+    <string name="meetingrequest_quota_none_subtitle">اشترك في إحدى الباقات أولًا لتتمكن من حجز جلسات مباشرة مع الشيخ.</string>
+    <string name="meetingrequest_quota_expired_title">انتهت صلاحية باقتك</string>
+    <string name="meetingrequest_quota_expired_subtitle">جدّد اشتراكك لمواصلة حجز الجلسات.</string>
+    <string name="meetingrequest_quota_expired_subtitle_named">انتهت صلاحية باقة %1$s الخاصة بك. جدّدها لمواصلة حجز الجلسات.</string>
+    <string name="meetingrequest_quota_depleted_title">لا توجد دقائق متبقية</string>
+    <string name="meetingrequest_quota_depleted_subtitle">لقد استهلكت كل دقائق باقتك. اشحن رصيدك لحجز جلسة أخرى.</string>
+    <string name="meetingrequest_quota_low_title">الدقائق غير كافية</string>
+    <string name="meetingrequest_quota_low_subtitle">لديك %1$d دقيقة متبقية، بينما تحتاج الجلسة إلى %2$d على الأقل. اشحن رصيدك للمتابعة.</string>
+    <string name="meetingrequest_quota_browse_packages">عرض الباقات</string>
+    <!-- Swipe-to-refresh -->
+    <string name="refresh_failed">تعذّر التحديث. تحقق من اتصالك وحاول مجددًا.</string>
+    <string name="filters_clear">مسح عوامل التصفية</string>
 </resources>

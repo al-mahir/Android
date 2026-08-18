@@ -68,8 +68,25 @@ class AudioFrameTest {
         assertEquals(16_000, RecitationAudioFormat.SAMPLE_RATE_HZ)
         assertEquals(1, RecitationAudioFormat.CHANNEL_COUNT)
         assertEquals(16, RecitationAudioFormat.BITS_PER_SAMPLE)
-        assertEquals(1_600, RecitationAudioFormat.FRAME_SAMPLES)
-        assertEquals(3_200, RecitationAudioFormat.FRAME_BYTES)
+        // 512 samples, a third of the server's 1536-sample VAD window, so three frames fill one
+        // window exactly and the endpoint decision is never waiting on a partial one.
+        assertEquals(512, RecitationAudioFormat.FRAME_SAMPLES)
+        assertEquals(1_024, RecitationAudioFormat.FRAME_BYTES)
+    }
+
+    @Test
+    fun `frames for a duration always cover it`() {
+        assertEquals(0, RecitationAudioFormat.framesFor(0))
+        assertEquals(1, RecitationAudioFormat.framesFor(1))
+        assertEquals(1, RecitationAudioFormat.framesFor(RecitationAudioFormat.FRAME_DURATION_MS))
+        assertEquals(2, RecitationAudioFormat.framesFor(RecitationAudioFormat.FRAME_DURATION_MS + 1))
+
+        // The property the callers actually depend on: a tail sized through this is never short of
+        // what was asked for, which is what keeps SpeechGateConfig's waqf-threshold check honest.
+        for (durationMs in listOf(1, 99, 300, 500, 600, 800, 8_000)) {
+            val covered = RecitationAudioFormat.framesFor(durationMs) * RecitationAudioFormat.FRAME_DURATION_MS
+            assertTrue("framesFor($durationMs) covers only ${covered}ms", covered >= durationMs)
+        }
     }
 
     private companion object {

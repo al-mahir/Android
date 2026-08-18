@@ -247,6 +247,14 @@ onClick)` is the same field rendered as a button: a transparent lid swallows tou
 text field never takes focus and the keyboard never opens. Use it on screens where tapping
 search navigates to a dedicated search screen rather than editing in place.
 
+### Filter — `components/filter/`
+
+`FilterChips(options, selectedValue, onValueSelected)` is a horizontally-scrolling, single-
+select chip bar: the chip whose value matches `selectedValue` fills with
+`Theme.colors.primary`/`onPrimary`, the others sit on `surface` with `secondaryFont` text.
+Generic over the option value so features pass their own enums — or `null` for an "All"
+option. RTL-safe by default.
+
 ### Tabs — `components/tab/`
 
 `DayTabRow(labels, selectedIndex, onSelect)` is a horizontally-scrollable row of pill-

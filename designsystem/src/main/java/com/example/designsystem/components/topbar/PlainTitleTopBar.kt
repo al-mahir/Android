@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -46,6 +49,7 @@ fun PlainTitleTopBar(
         modifier = modifier
             .fillMaxWidth()
             .background(Theme.colors.backGround)
+            .windowInsetsPadding(WindowInsets.statusBars)
             .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small)
             .height(PlainTopBarHeight),
         verticalAlignment = Alignment.CenterVertically,

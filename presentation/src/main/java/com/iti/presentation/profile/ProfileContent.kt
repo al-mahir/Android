@@ -18,13 +18,19 @@ import androidx.compose.ui.unit.dp
 import com.example.designsystem.R as DesignSystemR
 import com.example.designsystem.components.bottomnav.bottomNavBarHeight
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.domain.model.circle.CircleStatus
 import com.iti.presentation.R
+import com.iti.presentation.circle.CurrentCircleCard
+import com.iti.presentation.home.components.CirclesSummaryCard
 import com.iti.presentation.profile.components.AccountActionsBlock
 import com.iti.presentation.profile.components.ProfileHeader
 import com.iti.presentation.profile.components.ProfileMenuRow
 import com.iti.presentation.profile.components.ProfileSkeleton
 import com.iti.presentation.profile.components.SocialMediaChannelsRow
+import com.iti.presentation.profile.components.NoSubscriptionCard
+import com.iti.presentation.profile.components.SubscriptionQuotaCard
 import com.iti.presentation.profile.components.SubscriptionStatusRow
 import com.iti.presentation.profile.model.ProfileMenuType
 import com.iti.presentation.profile.model.SocialChannel
@@ -41,6 +47,8 @@ fun ProfileContent(
     onMenuOptionClick: (ProfileMenuType) -> Unit,
     onSocialChannelClick: (SocialChannel) -> Unit,
     onRetryClick: () -> Unit,
+    onSeeAllCirclesClick: () -> Unit,
+    onCircleClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     visibleMenuItems: Set<ProfileMenuType> = ProfileMenuType.entries.toSet(),
 ) {
@@ -66,6 +74,7 @@ fun ProfileContent(
                 modifier = rootModifier,
                 contentPadding = PaddingValues(
                     bottom = Theme.spacing.large + bottomNavBarHeight(),
+                    top = Theme.spacing.large
                 ),
             ) {
                 item(key = "profile-header") {
@@ -84,17 +93,36 @@ fun ProfileContent(
                             modifier = gutter,
                         )
 
-                        SubscriptionStatusRow(
-                            isPremium = state.isPremium,
-                            joinedAtEpochMillis = user.joinedAtEpochMillis,
-                            modifier = gutter,
-                        )
+                        // The entire subscription section is student-only; the sheikh app has no
+                        // payment graph and its users are paid rather than paying.
+                        if (state.isSubscriptionSupported) {
+                            SubscriptionStatusRow(
+                                isPremium = state.isPremium,
+                                joinedAtEpochMillis = user.joinedAtEpochMillis,
+                                modifier = gutter,
+                            )
+
+                            // Subscribed students see their live minute balance; everyone else
+                            // sees the packages pitch. `onPremiumClick` opens the packages list in
+                            // both cases — a lapsed student renews by buying a package again.
+                            val minutes = state.subscriptionMinutes
+                            when {
+                                minutes != null -> SubscriptionQuotaCard(
+                                    minutes = minutes,
+                                    nowEpochMillis = state.nowEpochMillis,
+                                    onRenewClick = onPremiumClick,
+                                    modifier = gutter,
+                                )
+
+                                !state.isLoadingMinutes && !state.isOffline -> NoSubscriptionCard(
+                                    onBrowsePackagesClick = onPremiumClick,
+                                    modifier = gutter,
+                                )
+                            }
+                        }
 
                         if (!state.isOffline) {
                             AccountActionsBlock(
-                                isPremium = state.isPremium,
-                                onPremiumClick = onPremiumClick,
-                                onMySubscriptionClick = onMySubscriptionClick,
                                 onLogoutClick = onLogoutClick,
                                 modifier = gutter,
                             )
@@ -102,6 +130,40 @@ fun ProfileContent(
                             SocialMediaChannelsRow(
                                 onChannelClick = onSocialChannelClick,
                                 modifier = gutter,
+                            )
+                        }
+                    }
+                }
+
+                if (!state.isOffline) {
+                    val joinedCircleIds = state.myCircles.mapTo(mutableSetOf()) { it.id }
+                    val availableCount = state.availableCircles.count { it.id !in joinedCircleIds }
+
+                    val current = state.myCircles.firstOrNull { it.status == CircleStatus.ONGOING }
+                        ?: state.myCircles.firstOrNull()
+                    if (current != null) {
+                        item(key = "circles-header") {
+                            SectionHeader(
+                                title = stringResource(R.string.home_circles_title),
+                                actionLabel = stringResource(R.string.home_see_all),
+                                onActionClick = onSeeAllCirclesClick,
+                                modifier = gutter,
+                            )
+                        }
+                        item(key = "current-circle") {
+                            CurrentCircleCard(
+                                circle = current,
+                                onClick = { onCircleClick(current.id) },
+                                modifier = gutter.padding(bottom = Theme.spacing.large),
+                            )
+                        }
+                    } else {
+                        item(key = "circles-summary") {
+                            CirclesSummaryCard(
+                                joinedCount = state.myCircles.size,
+                                availableCount = availableCount,
+                                onClick = onSeeAllCirclesClick,
+                                modifier = gutter.padding(bottom = Theme.spacing.large),
                             )
                         }
                     }

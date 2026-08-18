@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
+import com.iti.meeting.presentation.call.audio.AudioOutputDevice
 import com.iti.meeting.presentation.call.session.CallSessionController
 import com.iti.meeting.presentation.call.state.CallUiState
 import com.iti.meeting.presentation.core.mvi.DefaultStateHolder
@@ -18,6 +19,9 @@ class CallViewModel(
 ) : ViewModel(), StateHolder<CallUiState> by DefaultStateHolder(controller.currentState.callState) {
 
     val engine: AgoraEngineWrapper? get() = controller.engine
+
+    /** The name of whoever is on the other end, for the placeholder tile and top bar. */
+    val remoteDisplayName: String? get() = controller.currentState.remoteDisplayName
 
     init {
         controller.state
@@ -54,7 +58,11 @@ class CallViewModel(
 
     fun toggleCamera() = controller.toggleCamera()
 
-    fun toggleSpeaker() = controller.toggleSpeaker()
+    fun selectAudioDevice(device: AudioOutputDevice) = controller.selectAudioDevice(device)
 
     fun switchCamera() = controller.switchCamera()
+
+    fun setCameraFacing(front: Boolean) = controller.setCameraFacing(front)
+
+    fun toggleTorch() = controller.toggleTorch()
 }

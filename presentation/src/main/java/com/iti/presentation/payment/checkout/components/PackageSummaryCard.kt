@@ -18,10 +18,11 @@ import com.example.designsystem.components.card.GradientCard
 import com.example.designsystem.theme.Theme
 import com.iti.domain.model.SubscriptionPackage
 import com.iti.presentation.R
+import com.iti.presentation.subscription.components.billingPeriodLabel
 
 @Composable
 internal fun PackageSummaryCard(pkg: SubscriptionPackage, modifier: Modifier = Modifier) {
-    val priceText = rememberFormattedWholePrice(pkg.monthlyPriceMinorUnits, pkg.currencyCode)
+    val priceText = rememberFormattedWholePrice(pkg.priceAmount, pkg.currencyCode)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -55,10 +56,10 @@ internal fun PackageSummaryCard(pkg: SubscriptionPackage, modifier: Modifier = M
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(text = priceText, style = Theme.typography.title.copy(fontWeight = FontWeight.Bold))
-                    Text(
-                        text = stringResource(R.string.checkout_price_period_month),
-                        style = Theme.typography.body.small,
-                    )
+                    val periodLabel = billingPeriodLabel(pkg.durationDays)
+                    if (periodLabel.isNotBlank()) {
+                        Text(text = periodLabel, style = Theme.typography.body.small)
+                    }
                 }
             }
 

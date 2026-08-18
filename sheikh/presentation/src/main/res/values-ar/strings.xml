@@ -28,6 +28,94 @@
     <string name="meetingrequest_availability_busy_subtitle">في لقاء حالياً.</string>
     <string name="meetingrequest_availability_busy_rejoin">الانضمام مجدداً</string>
 
+    <!-- Home — Circles entry -->
+    <string name="sheikh_home_open_circles">إدارة الحلقات</string>
+
+    <!-- Circles — list -->
+    <string name="sheikh_circle_list_title">حلقاتي</string>
+    <string name="sheikh_circle_list_create">إنشاء حلقة</string>
+    <string name="sheikh_circle_list_empty_title">لا توجد حلقات بعد</string>
+    <string name="sheikh_circle_list_empty_description">أنشئ أول حلقة دراسية لك لبدء استضافة الجلسات.</string>
+    <string name="sheikh_circle_participants_label">%1$d/%2$d مشارك</string>
+    <string name="sheikh_circle_live">مباشر</string>
+    <string name="sheikh_circle_status_scheduled">مجدولة</string>
+    <string name="sheikh_circle_status_ongoing">جارية</string>
+    <string name="sheikh_circle_status_completed">مكتملة</string>
+    <string name="sheikh_circle_status_cancelled">ملغاة</string>
+    <string name="sheikh_circle_type_public">عامة</string>
+    <string name="sheikh_circle_type_private">خاصة</string>
+
+    <!-- Circles — create -->
+    <string name="sheikh_create_circle_title">إنشاء حلقة</string>
+    <string name="sheikh_create_circle_name_label">اسم الحلقة</string>
+    <string name="sheikh_create_circle_name_hint">مثال: حلقة القرآن المسائية</string>
+    <string name="sheikh_create_circle_type_label">نوع الحلقة</string>
+    <string name="sheikh_create_circle_approval_label">الموافقة على طلبات الانضمام</string>
+    <string name="sheikh_create_circle_approval_no">لا</string>
+    <string name="sheikh_create_circle_approval_yes">نعم</string>
+    <string name="sheikh_create_circle_capacity_label">الحد الأقصى للمشاركين</string>
+    <string name="sheikh_create_circle_capacity_hint">مثال: 10</string>
+    <string name="sheikh_create_circle_password_label">كلمة المرور</string>
+    <string name="sheikh_create_circle_password_hint">مطلوبة للحلقات الخاصة</string>
+    <string name="sheikh_create_circle_start_date_label">تاريخ ووقت البدء</string>
+    <string name="sheikh_create_circle_end_date_label">تاريخ ووقت الانتهاء (اختياري)</string>
+    <string name="sheikh_create_circle_date_hint">تاريخ ISO، مثال: 2026-08-03T18:00:00Z</string>
+    <string name="sheikh_create_circle_cta">إنشاء حلقة</string>
+    <string name="sheikh_create_circle_error_name">أدخل اسم الحلقة.</string>
+    <string name="sheikh_create_circle_error_start_date">أدخل تاريخ البدء.</string>
+    <string name="sheikh_create_circle_error_capacity">أدخل سعة لا تقل عن 1.</string>
+    <string name="sheikh_create_circle_error_password">الحلقات الخاصة تتطلب كلمة مرور.</string>
+    <string name="sheikh_create_circle_error_generic">تعذّر إنشاء الحلقة. حاول مرة أخرى.</string>
+    <string name="sheikh_create_circle_date_next">التالي</string>
+    <string name="sheikh_create_circle_time_done">تم</string>
+    <string name="sheikh_create_circle_time_label">اختر الوقت</string>
+    <string name="sheikh_create_circle_cancel">إلغاء</string>
+
+    <!-- Circles — manage -->
+    <string name="sheikh_circle_manage_title">الحلقة</string>
+    <string name="sheikh_circle_manage_capacity">%1$d/%2$d مشارك</string>
+    <string name="sheikh_circle_manage_start_date">تبدأ: %1$s</string>
+    <string name="sheikh_circle_pending_requests_header">طلبات الانضمام (%1$d)</string>
+    <string name="sheikh_circle_members_header">الأعضاء (%1$d)</string>
+    <string name="sheikh_circle_members_empty">لا يوجد أعضاء بعد.</string>
+    <string name="sheikh_circle_role_host">المضيف</string>
+    <string name="sheikh_circle_approve">موافقة</string>
+    <string name="sheikh_circle_reject">رفض</string>
+    <string name="sheikh_circle_remove">إزالة</string>
+    <string name="sheikh_circle_start">بدء الحلقة</string>
+    <string name="sheikh_circle_end">إنهاء الحلقة</string>
+    <string name="sheikh_circle_cancel">إلغاء الحلقة</string>
+    <string name="sheikh_circle_closed_note">هذه الحلقة مغلقة.</string>
+    <string name="sheikh_circle_end_confirm_title">إنهاء هذه الحلقة؟</string>
+    <string name="sheikh_circle_end_confirm_message">سيتم إغلاق الجلسة لجميع المشاركين.</string>
+    <string name="sheikh_circle_end_confirm">إنهاء</string>
+    <string name="sheikh_circle_cancel_confirm_title">إلغاء هذه الحلقة؟</string>
+    <string name="sheikh_circle_cancel_confirm_message">لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="sheikh_circle_cancel_confirm">إلغاء</string>
+    <string name="sheikh_circle_confirm_dismiss">ليس الآن</string>
+    <string name="sheikh_circle_started">بدأت الحلقة.</string>
+    <string name="sheikh_circle_token_error">بدأت الحلقة. اضغط على "الانضمام للجلسة" للدخول.</string>
+    <string name="sheikh_circle_join_session">الانضمام للجلسة</string>
+    <string name="sheikh_circle_ended">انتهت الحلقة.</string>
+    <string name="sheikh_circle_cancelled">تم إلغاء الحلقة.</string>
+    <string name="sheikh_circle_request_approved">تمت الموافقة على الطلب.</string>
+    <string name="sheikh_circle_action_failed">حدث خطأ ما. حاول مرة أخرى.</string>
+
+    <!-- ===== تعديل الحلقة ===== -->
+    <string name="sheikh_circle_edit">تعديل الحلقة</string>
+    <string name="sheikh_circle_edit_title">تعديل الحلقة</string>
+    <string name="sheikh_circle_edit_name_label">اسم الحلقة</string>
+    <string name="sheikh_circle_edit_start_date">تاريخ البدء (ISO-8601)</string>
+    <string name="sheikh_circle_edit_end_date">تاريخ الانتهاء (ISO-8601)</string>
+    <string name="sheikh_circle_edit_save">حفظ التغييرات</string>
+    <string name="sheikh_circle_edit_saved">تم تحديث الحلقة بنجاح.</string>
+    <string name="sheikh_circle_edit_error">تعذّر تحديث الحلقة. حاول مرة أخرى.</string>
+
+    <!-- ===== رابط الدعوة ===== -->
+    <string name="sheikh_circle_invite_token_title">مشاركة رابط الدعوة</string>
+    <string name="sheikh_circle_invite_token_copy">نسخ الرمز</string>
+    <string name="sheikh_circle_invite_token_copied">تم نسخ رمز الدعوة!</string>
+    <string name="sheikh_circle_invite_token_share">مشاركة</string>
     <!-- Availability foreground service — persistent "online" status notification -->
     <string name="sheikh_availability_notification_channel_online_name">حالة التواجد</string>
     <string name="sheikh_availability_notification_online_title">أنت متصل الآن</string>

@@ -6,7 +6,15 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,53 +23,71 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CallEnd
-import androidx.compose.material.icons.filled.FlipCameraAndroid
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.SignalWifiOff
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material.icons.filled.WifiCalling3
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.designsystem.components.avatar.InitialsAvatar
 import com.example.designsystem.theme.Theme
+import com.iti.meeting.presentation.R
 import com.iti.meeting.presentation.agora.AgoraEngineWrapper
 import com.iti.meeting.presentation.agora.AgoraLocalVideo
 import com.iti.meeting.presentation.agora.AgoraRemoteVideo
+import com.iti.meeting.presentation.call.audio.AudioOutputDevice
+import com.iti.meeting.presentation.call.components.AudioOutputSheet
+import com.iti.meeting.presentation.call.components.CallColors
+import com.iti.meeting.presentation.call.components.CallControlsBar
+import com.iti.meeting.presentation.call.components.CallStatusPill
+import com.iti.meeting.presentation.call.components.CameraOptionsSheet
+import com.iti.meeting.presentation.call.state.CallErrorReason
 import com.iti.meeting.presentation.call.state.CallUiState
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-private val CallBackground = Color(0xFF121317)
-private val SurfaceScrim = Color(0xFF2A2C33)
-private val DangerRed = Color(0xFFE94235)
+/**
+ * Runs [block] once per [requestId], **synchronously during composition**.
+ *
+ * The Unit-returning `remember` is deliberate, not an oversight — the reset it performs has to land
+ * before the caller first reads `state`. Every lint-approved alternative (`SideEffect`,
+ * `LaunchedEffect`) runs *after* composition, which lets one frame of the previous call's terminal
+ * `Ended` state through; that single frame is enough for [CallScreen]'s own `state is Ended` watcher
+ * to pop a brand-new call's screen straight back out. See the reused-ViewModel entries in
+ * `docs/Meeting-Call-Lifecycle-Status.md` for the two field reports this prevents.
+ */
+@Composable
+@Suppress("RememberReturnType")
+private fun PrepareForRequest(requestId: String, block: () -> Unit) {
+    remember(requestId) { block() }
+}
 
 @Composable
 fun CallScreen(
@@ -73,19 +99,18 @@ fun CallScreen(
     onLeave: () -> Unit,
     viewModel: CallViewModel = koinViewModel(),
 ) {
-    remember(requestId) { viewModel.prepareForRequest(requestId) }
+    PrepareForRequest(requestId) { viewModel.prepareForRequest(requestId) }
 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     android.util.Log.d("MeetingLifecycle", "CallScreen: composed requestId=$requestId state=$state")
-        val handleLeave: () -> Unit = {
+
+    val handleLeave: () -> Unit = {
         android.util.Log.d("MeetingLifecycle", "CallScreen: handleLeave requestId=$requestId")
         viewModel.endCall()
     }
 
-       BackHandler(enabled = state !is CallUiState.Ended) {
-        handleLeave()
-    }
+    BackHandler(enabled = state !is CallUiState.Ended) { handleLeave() }
 
     val micPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.toggleMic()
@@ -93,12 +118,24 @@ fun CallScreen(
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.toggleCamera()
     }
+    val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) viewModel.selectAudioDevice(AudioOutputDevice.BLUETOOTH)
+    }
+    val selectAudioDevice: (AudioOutputDevice) -> Unit = { device ->
+        val needsBluetoothConsent = device == AudioOutputDevice.BLUETOOTH &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !context.hasPermission(Manifest.permission.BLUETOOTH_CONNECT)
+        if (needsBluetoothConsent) {
+            bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            viewModel.selectAudioDevice(device)
+        }
+    }
     val joinPermissionsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { _ ->
-        // Permissions are requested so the in-call mic/camera buttons won't need to prompt later,
-        // but a grant must never be treated as consent to publish — join muted/camera-off for
-        // privacy and let the user opt in per-call via the in-call toggles.
         viewModel.joinChannel(
             context = context,
             requestId = requestId,
@@ -126,181 +163,417 @@ fun CallScreen(
         LaunchedEffect(Unit) { onLeave() }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(CallBackground)) {
+    Box(modifier = Modifier.fillMaxSize().background(CallColors.background)) {
         when (val current = state) {
-            is CallUiState.Idle, is CallUiState.Connecting -> ConnectingContent()
+            is CallUiState.Idle, is CallUiState.Connecting ->
+                ConnectingContent(remoteDisplayName = remoteDisplayName)
 
             is CallUiState.InCall -> InCallContent(
                 state = current,
                 engine = viewModel.engine,
+                remoteDisplayName = remoteDisplayName,
                 onToggleMic = {
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    if (context.hasPermission(Manifest.permission.RECORD_AUDIO)) {
                         viewModel.toggleMic()
                     } else {
                         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     }
                 },
                 onToggleCamera = {
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                    if (context.hasPermission(Manifest.permission.CAMERA)) {
                         viewModel.toggleCamera()
                     } else {
                         cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                     }
                 },
-                onToggleSpeaker = viewModel::toggleSpeaker,
+                onSelectAudioDevice = selectAudioDevice,
+                onSelectCameraFacing = viewModel::setCameraFacing,
+                onToggleTorch = viewModel::toggleTorch,
                 onSwitchCamera = viewModel::switchCamera,
                 onLeave = handleLeave,
             )
 
-            CallUiState.Ended -> ConnectingContent()
+            CallUiState.Ended -> ConnectingContent(remoteDisplayName = remoteDisplayName)
 
-            is CallUiState.Error -> ErrorContent(message = current.message, onLeave = handleLeave)
+            is CallUiState.Error -> ErrorContent(state = current, onLeave = handleLeave)
         }
     }
 }
 
 @Composable
-private fun ConnectingContent() {
+private fun ConnectingContent(remoteDisplayName: String?) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().padding(Theme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        CircularProgressIndicator(color = Color.White)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Connecting…", color = Color.White, style = Theme.typography.body.large)
+        ParticipantAvatar(name = remoteDisplayName, size = 96.dp)
+        Spacer(modifier = Modifier.height(Theme.spacing.large))
+        Text(
+            text = remoteDisplayName ?: stringResource(R.string.meeting_call_participant_generic),
+            style = Theme.typography.title,
+            color = CallColors.textPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(modifier = Modifier.height(Theme.spacing.medium))
+        Text(
+            text = stringResource(R.string.meeting_call_connecting),
+            style = Theme.typography.body.medium,
+            color = CallColors.textSecondary,
+        )
+        Spacer(modifier = Modifier.height(Theme.spacing.large))
+        CircularProgressIndicator(color = Theme.colors.primary, strokeWidth = 3.dp)
     }
 }
 
 @Composable
-private fun ErrorContent(message: String, onLeave: () -> Unit) {
+private fun ErrorContent(state: CallUiState.Error, onLeave: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(Theme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Filled.SignalWifiOff, contentDescription = null, tint = Theme.colors.error, modifier = Modifier.size(48.dp))
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(message, color = Color.White, style = Theme.typography.body.large)
-        Spacer(modifier = Modifier.height(24.dp))
-        IconButton(
-            onClick = onLeave,
-            modifier = Modifier.size(56.dp).background(DangerRed, CircleShape)
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .background(Theme.colors.error.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.CallEnd, contentDescription = "Leave", tint = Color.White)
+            Icon(
+                Icons.Filled.SignalWifiOff,
+                contentDescription = null,
+                tint = Theme.colors.error,
+                modifier = Modifier.size(Theme.size.iconLarge),
+            )
+        }
+        Spacer(modifier = Modifier.height(Theme.spacing.large))
+        Text(
+            text = stringResource(state.reason.messageRes),
+            style = Theme.typography.body.large,
+            color = CallColors.textPrimary,
+            textAlign = TextAlign.Center,
+        )
+        state.agoraErrorCode?.let { code ->
+            Spacer(modifier = Modifier.height(Theme.spacing.small))
+            Text(
+                text = stringResource(R.string.meeting_call_error_code, code),
+                style = Theme.typography.body.small,
+                color = CallColors.textSecondary,
+            )
+        }
+        Spacer(modifier = Modifier.height(Theme.spacing.extraLarge))
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(CallColors.danger)
+                .clickable(onClick = onLeave),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Filled.CallEnd,
+                contentDescription = stringResource(R.string.meeting_call_leave),
+                tint = CallColors.onDanger,
+            )
         }
     }
 }
+
+private val CallErrorReason.messageRes: Int
+    get() = when (this) {
+        CallErrorReason.CONNECT_FAILED -> R.string.meeting_call_error_connect_failed
+        CallErrorReason.CONNECTION_LOST -> R.string.meeting_call_error_connection_lost
+        CallErrorReason.ENGINE_ERROR -> R.string.meeting_call_error_engine
+    }
 
 @Composable
 private fun InCallContent(
     state: CallUiState.InCall,
     engine: AgoraEngineWrapper?,
+    remoteDisplayName: String?,
     onToggleMic: () -> Unit,
     onToggleCamera: () -> Unit,
-    onToggleSpeaker: () -> Unit,
+    onSelectAudioDevice: (AudioOutputDevice) -> Unit,
+    onSelectCameraFacing: (Boolean) -> Unit,
+    onToggleTorch: () -> Unit,
     onSwitchCamera: () -> Unit,
     onLeave: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Remote tile - fills the screen, Meet-style.
-        if (engine != null && state.remoteUid != null && state.isRemoteCameraEnabled) {
-            AgoraRemoteVideo(
-                engine = engine.engine,
-                uid = state.remoteUid,
-                modifier = Modifier.fillMaxSize(),
-            )
-        } else {
-            ParticipantPlaceholder(
-                label = if (state.remoteUid == null) "Waiting for the other participant to join…" else "Camera is off",
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+    var showAudioSheet by remember { mutableStateOf(false) }
+    var showCameraSheet by remember { mutableStateOf(false) }
+    var isPipSwapped by remember { mutableStateOf(false) }
+    var controlsVisible by remember { mutableStateOf(true) }
 
-        if (state.remoteUid != null && !state.isRemoteMicEnabled) {
-            MutedBadge(modifier = Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 110.dp))
+    LaunchedEffect(controlsVisible, showAudioSheet, showCameraSheet, state.remoteUid) {
+        if (controlsVisible && !showAudioSheet && !showCameraSheet && state.remoteUid != null) {
+            delay(CONTROLS_AUTO_HIDE_MS)
+            controlsVisible = false
         }
+    }
 
-        // Local PIP tile - always present, like Meet's "you" tile.
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 16.dp, end = 16.dp)
-                .size(100.dp, 140.dp)
-                .clip(Theme.shapes.medium)
-                .background(SurfaceScrim)
-        ) {
-            if (engine != null && state.isCameraEnabled) {
-                AgoraLocalVideo(engine = engine.engine, modifier = Modifier.fillMaxSize())
-            } else {
-                ParticipantPlaceholder(label = null, avatarSize = 40.dp, modifier = Modifier.fillMaxSize())
-            }
-            if (!state.isMicEnabled) {
-                Icon(
-                    Icons.Filled.MicOff,
-                    contentDescription = "You are muted",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(6.dp)
-                        .size(16.dp)
-                )
-            }
-        }
+    val remoteIsVisible = engine != null && state.remoteUid != null && state.isRemoteCameraEnabled
+    val localIsVisible = engine != null && state.isCameraEnabled
 
-        CallTopBar(
-            durationSeconds = state.callDurationSeconds,
-            isReconnecting = state.isReconnecting,
-            modifier = Modifier.align(Alignment.TopStart),
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { controlsVisible = !controlsVisible }
+    ) {
+        // Tapping the PiP swaps which stream is on the main stage. Exactly one composable renders
+        // each stream at a time, which matters: Agora binds one canvas per stream, so having both
+        // tiles render the same stream would leave whichever registered first showing black.
+        MainStage(
+            showLocal = isPipSwapped,
+            engine = engine,
+            state = state,
+            remoteDisplayName = remoteDisplayName,
+            remoteIsVisible = remoteIsVisible,
+            localIsVisible = localIsVisible,
         )
 
-        CallControlsBar(
-            isMicEnabled = state.isMicEnabled,
-            isCameraEnabled = state.isCameraEnabled,
-            isSpeakerEnabled = state.isSpeakerEnabled,
-            onToggleMic = onToggleMic,
-            onToggleCamera = onToggleCamera,
-            onToggleSpeaker = onToggleSpeaker,
-            onSwitchCamera = onSwitchCamera,
-            onLeave = onLeave,
+        if (state.remoteUid != null && !state.isRemoteMicEnabled && !isPipSwapped) {
+            MutedBadge(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .navigationBarsPadding()
+                    .padding(start = Theme.spacing.large, bottom = 132.dp),
+            )
+        }
+
+        PipTile(
+            showLocal = !isPipSwapped,
+            engine = engine,
+            state = state,
+            remoteDisplayName = remoteDisplayName,
+            remoteIsVisible = remoteIsVisible,
+            localIsVisible = localIsVisible,
+            onClick = { isPipSwapped = !isPipSwapped },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(top = 64.dp, end = Theme.spacing.medium),
+        )
+
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(tween(CHROME_ANIM_MS)) + slideInVertically(tween(CHROME_ANIM_MS)) { -it },
+            exit = fadeOut(tween(CHROME_ANIM_MS)) + slideOutVertically(tween(CHROME_ANIM_MS)) { -it },
+            modifier = Modifier.align(Alignment.TopStart),
+        ) {
+            CallTopBar(
+                title = remoteDisplayName ?: stringResource(R.string.meeting_call_participant_generic),
+                durationSeconds = state.callDurationSeconds,
+                isReconnecting = state.isReconnecting,
+                isWaitingForRemote = state.remoteUid == null,
+            )
+        }
+
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(tween(CHROME_ANIM_MS)) + slideInVertically(tween(CHROME_ANIM_MS)) { it },
+            exit = fadeOut(tween(CHROME_ANIM_MS)) + slideOutVertically(tween(CHROME_ANIM_MS)) { it },
             modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            CallControlsBar(
+                isMicEnabled = state.isMicEnabled,
+                isCameraEnabled = state.isCameraEnabled,
+                audioDevice = state.audioDevice,
+                onToggleMic = onToggleMic,
+                onToggleCamera = onToggleCamera,
+                onOpenAudioOutput = { showAudioSheet = true },
+                onOpenCameraOptions = { showCameraSheet = true },
+                onSwitchCamera = onSwitchCamera,
+                onLeave = onLeave,
+            )
+        }
+    }
+
+    if (showAudioSheet) {
+        AudioOutputSheet(
+            available = state.availableAudioDevices,
+            selected = state.audioDevice,
+            onSelect = onSelectAudioDevice,
+            onDismiss = { showAudioSheet = false },
+        )
+    }
+
+    if (showCameraSheet) {
+        CameraOptionsSheet(
+            isFrontCamera = state.isFrontCamera,
+            isTorchAvailable = state.isTorchAvailable,
+            isTorchOn = state.isTorchOn,
+            onSelectFacing = onSelectCameraFacing,
+            onToggleTorch = onToggleTorch,
+            onDismiss = { showCameraSheet = false },
         )
     }
 }
 
 @Composable
+private fun MainStage(
+    showLocal: Boolean,
+    engine: AgoraEngineWrapper?,
+    state: CallUiState.InCall,
+    remoteDisplayName: String?,
+    remoteIsVisible: Boolean,
+    localIsVisible: Boolean,
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            showLocal && localIsVisible ->
+                AgoraLocalVideo(engine = engine!!.engine, modifier = Modifier.fillMaxSize())
+
+            showLocal ->
+                ParticipantPlaceholder(
+                    name = stringResource(R.string.meeting_call_you),
+                    label = stringResource(R.string.meeting_call_camera_off),
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+            remoteIsVisible ->
+                AgoraRemoteVideo(
+                    engine = engine!!.engine,
+                    uid = state.remoteUid!!,
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+            else ->
+                ParticipantPlaceholder(
+                    name = remoteDisplayName,
+                    label = stringResource(
+                        if (state.remoteUid == null) R.string.meeting_call_waiting_for_participant
+                        else R.string.meeting_call_camera_off
+                    ),
+                    modifier = Modifier.fillMaxSize(),
+                )
+        }
+    }
+}
+
+@Composable
+private fun PipTile(
+    showLocal: Boolean,
+    engine: AgoraEngineWrapper?,
+    state: CallUiState.InCall,
+    remoteDisplayName: String?,
+    remoteIsVisible: Boolean,
+    localIsVisible: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .size(width = 108.dp, height = 152.dp)
+            .clip(Theme.shapes.large)
+            .background(CallColors.tile)
+            .clickable(onClick = onClick),
+    ) {
+        when {
+            showLocal && localIsVisible ->
+                AgoraLocalVideo(engine = engine!!.engine, modifier = Modifier.fillMaxSize())
+
+            showLocal ->
+                ParticipantPlaceholder(
+                    name = stringResource(R.string.meeting_call_you),
+                    label = null,
+                    avatarSize = 44.dp,
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+            remoteIsVisible ->
+                AgoraRemoteVideo(
+                    engine = engine!!.engine,
+                    uid = state.remoteUid!!,
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+            else ->
+                ParticipantPlaceholder(
+                    name = remoteDisplayName,
+                    label = null,
+                    avatarSize = 44.dp,
+                    modifier = Modifier.fillMaxSize(),
+                )
+        }
+
+        // The mic indicator always belongs to whoever is in this tile, not always to "you".
+        val tileIsMuted = if (showLocal) !state.isMicEnabled else !state.isRemoteMicEnabled
+        if (tileIsMuted) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(Theme.spacing.small)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(CallColors.scrim),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.MicOff,
+                    contentDescription = stringResource(R.string.meeting_call_muted_badge),
+                    tint = CallColors.textPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun ParticipantPlaceholder(
+    name: String?,
     label: String?,
     modifier: Modifier = Modifier,
-    avatarSize: Dp = 72.dp,
+    avatarSize: Dp = 88.dp,
 ) {
     Column(
-        modifier = modifier.background(CallBackground),
+        modifier = modifier.background(CallColors.background).padding(Theme.spacing.medium),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        ParticipantAvatar(name = name, size = avatarSize)
+        if (label != null) {
+            Spacer(modifier = Modifier.height(Theme.spacing.medium))
+            Text(
+                text = label,
+                color = CallColors.textSecondary,
+                style = Theme.typography.body.medium,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ParticipantAvatar(name: String?, size: Dp) {
+    val initials = name?.initials()
+    if (initials.isNullOrBlank()) {
         Box(
-            modifier = Modifier
-                .size(avatarSize)
-                .clip(CircleShape)
-                .background(SurfaceScrim),
+            modifier = Modifier.size(size).clip(CircleShape).background(CallColors.tile),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Filled.Person,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.size(avatarSize / 2),
+                tint = CallColors.textSecondary,
+                modifier = Modifier.size(size / 2),
             )
         }
-        if (label != null) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = label,
-                color = Color.White.copy(alpha = 0.85f),
-                style = Theme.typography.body.medium,
-            )
-        }
+    } else {
+        InitialsAvatar(
+            initials = initials,
+            contentDescription = name,
+            containerColor = Theme.colors.primary,
+            contentColor = Theme.colors.onPrimary,
+            textStyle = Theme.typography.title,
+            modifier = Modifier.size(size),
+        )
     }
 }
 
@@ -308,124 +581,88 @@ private fun ParticipantPlaceholder(
 private fun MutedBadge(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
-            .clip(Theme.shapes.large)
-            .background(Color.Black.copy(alpha = 0.55f))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .clip(Theme.shapes.circle)
+            .background(CallColors.scrim)
+            .padding(horizontal = Theme.spacing.small + Theme.spacing.extraSmall, vertical = Theme.spacing.small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.MicOff, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Icon(
+            Icons.Filled.MicOff,
+            contentDescription = null,
+            tint = CallColors.textPrimary,
+            modifier = Modifier.size(Theme.size.iconSemiMedium),
+        )
+        Spacer(modifier = Modifier.width(Theme.spacing.small))
+        Text(
+            text = stringResource(R.string.meeting_call_muted_badge),
+            style = Theme.typography.body.small,
+            color = CallColors.textPrimary,
+        )
     }
 }
 
 @Composable
 private fun CallTopBar(
+    title: String,
     durationSeconds: Long,
     isReconnecting: Boolean,
-    modifier: Modifier = Modifier,
+    isWaitingForRemote: Boolean,
 ) {
-    Row(
-        modifier = modifier
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
             .statusBarsPadding()
-            .padding(16.dp)
-            .clip(Theme.shapes.large)
-            .background(Color.Black.copy(alpha = 0.4f))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (isReconnecting) {
-            Icon(Icons.Filled.WifiCalling3, contentDescription = null, tint = Theme.colors.warning, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("Reconnecting…", color = Color.White, style = Theme.typography.body.small)
-        } else {
-            Text(
+        Text(
+            text = title,
+            style = Theme.typography.body.large,
+            fontWeight = FontWeight.SemiBold,
+            color = CallColors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(modifier = Modifier.height(Theme.spacing.small))
+        when {
+            isReconnecting -> CallStatusPill(
+                text = stringResource(R.string.meeting_call_reconnecting),
+                accent = Theme.colors.warning,
+            )
+
+            isWaitingForRemote -> CallStatusPill(
+                text = stringResource(R.string.meeting_call_connecting),
+                accent = Theme.colors.amber,
+            )
+
+            else -> CallStatusPill(
                 text = formatDuration(durationSeconds),
-                color = Color.White,
-                style = Theme.typography.body.small,
-                fontWeight = FontWeight.Medium,
+                accent = Theme.colors.success,
             )
         }
     }
 }
 
-@Composable
-private fun CallControlsBar(
-    isMicEnabled: Boolean,
-    isCameraEnabled: Boolean,
-    isSpeakerEnabled: Boolean,
-    onToggleMic: () -> Unit,
-    onToggleCamera: () -> Unit,
-    onToggleSpeaker: () -> Unit,
-    onSwitchCamera: () -> Unit,
-    onLeave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .navigationBarsPadding()
-            .padding(bottom = 20.dp, start = 12.dp, end = 12.dp)
-            .fillMaxWidth()
-            .clip(Theme.shapes.extraLarge)
-            .background(Color.Black.copy(alpha = 0.45f))
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-    ) {
-        CallControlButton(
-            icon = if (isMicEnabled) Icons.Filled.Mic else Icons.Filled.MicOff,
-            contentDescription = if (isMicEnabled) "Mute microphone" else "Unmute microphone",
-            isActive = isMicEnabled,
-            onClick = onToggleMic,
-        )
-        CallControlButton(
-            icon = if (isCameraEnabled) Icons.Filled.Videocam else Icons.Filled.VideocamOff,
-            contentDescription = if (isCameraEnabled) "Turn camera off" else "Turn camera on",
-            isActive = isCameraEnabled,
-            onClick = onToggleCamera,
-        )
-        CallControlButton(
-            icon = Icons.Filled.FlipCameraAndroid,
-            contentDescription = "Switch camera",
-            isActive = true,
-            onClick = onSwitchCamera,
-        )
-        CallControlButton(
-            icon = if (isSpeakerEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-            contentDescription = if (isSpeakerEnabled) "Switch to earpiece" else "Switch to speaker",
-            isActive = isSpeakerEnabled,
-            onClick = onToggleSpeaker,
-        )
-        CallControlButton(
-            icon = Icons.Filled.CallEnd,
-            contentDescription = "Leave call",
-            isActive = true,
-            containerColor = DangerRed,
-            onClick = onLeave,
-        )
-    }
-}
+private fun android.content.Context.hasPermission(permission: String): Boolean =
+    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-@Composable
-private fun CallControlButton(
-    icon: ImageVector,
-    contentDescription: String,
-    isActive: Boolean,
-    onClick: () -> Unit,
-    containerColor: Color? = null,
-) {
-    val background = containerColor
-        ?: if (isActive) Color.White.copy(alpha = 0.16f) else Color.White
-    val tint = if (containerColor != null || isActive) Color.White else Color.Black
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .size(52.dp)
-            .background(background, CircleShape)
-    ) {
-        Icon(icon, contentDescription = contentDescription, tint = tint)
-    }
-}
+/** First letters of the first two words — "Ahmed Al Sayed" reads better as "AA" than "AAS". */
+private fun String.initials(): String =
+    trim().split(WHITESPACE)
+        .filter { it.isNotBlank() }
+        .take(2)
+        .joinToString("") { it.first().uppercase() }
 
 private fun formatDuration(totalSeconds: Long): String {
-    val minutes = totalSeconds / 60
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return "%02d:%02d".format(minutes, seconds)
+    return if (hours > 0) "%d:%02d:%02d".format(hours, minutes, seconds)
+    else "%02d:%02d".format(minutes, seconds)
 }
+
+/** Regular spaces plus NBSP — Arabic names routinely carry the latter. */
+private val WHITESPACE = Regex("\\s+")
+
+private const val CONTROLS_AUTO_HIDE_MS = 5_000L
+private const val CHROME_ANIM_MS = 220

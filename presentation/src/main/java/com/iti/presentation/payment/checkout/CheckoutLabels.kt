@@ -14,14 +14,6 @@ internal fun WalletProvider.labelRes(): Int = when (this) {
 }
 
 @StringRes
-internal fun WalletProvider.prefixErrorRes(): Int = when (this) {
-    WalletProvider.VODAFONE_CASH -> R.string.checkout_error_wallet_prefix_vodafone
-    WalletProvider.ORANGE_CASH -> R.string.checkout_error_wallet_prefix_orange
-    WalletProvider.ETISALAT_CASH -> R.string.checkout_error_wallet_prefix_etisalat
-    WalletProvider.WE_PAY -> R.string.checkout_error_wallet_prefix_we
-}
-
-@StringRes
 internal fun CardBrand.labelRes(): Int = when (this) {
     CardBrand.VISA -> R.string.checkout_card_visa
     CardBrand.MASTERCARD -> R.string.checkout_card_mastercard

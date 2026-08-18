@@ -55,8 +55,7 @@ fun CheckoutScreen(
                                 viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Pending))
                             }
                             override fun onCancelled() {
-                                // Treat cancellation as a failure from the checkout flow perspective
-                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Failure("Payment cancelled by user")))
+                                viewModel.onIntent(CheckoutIntent.PaymobSdkResult(PaymobSdkOutcome.Cancelled))
                             }
                         }
                     ).build().start()

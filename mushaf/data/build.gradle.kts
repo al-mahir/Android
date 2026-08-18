@@ -62,7 +62,7 @@ val aiServiceToken: String = run {
 // against a plaintext server and every live-correction session failed until reconnects exhausted.
 val aiServiceIsLocal: Boolean =
     aiServiceAuthority.contains("192.168") ||
-        aiServiceAuthority.contains("10.0.2.2") ||
+        aiServiceAuthority.startsWith("10.") ||
         aiServiceAuthority.contains("localhost") ||
         aiServiceAuthority.contains("127.0.0.1")
 
