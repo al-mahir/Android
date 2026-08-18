@@ -363,14 +363,25 @@ private fun rememberSlidingHighlight(target: Rect?, lineHeightPx: Float): Slidin
     return highlight
 }
 
-/** Fast enough to stay under the reciter rather than trail them, damped enough not to overshoot
+/**
+ * Fast enough to stay under the reciter rather than trail them, damped enough not to overshoot
  * into the neighbouring word — an overshoot on a word-sized target reads as the wrong word being
- * highlighted for a frame or two. */
+ * highlighted for a frame or two.
+ *
+ * `StiffnessHigh`, not the `StiffnessMediumLow` this used to be. The web mushaf highlights by
+ * toggling a CSS class, which costs nothing; a medium-low spring settles in roughly 300-400ms, so
+ * the whole of that was latency we were adding after the feedback event had already arrived — most
+ * of the gap the AI team measured against the web, and none of it in the audio path they were
+ * looking at. High settles in well under 100ms, which still reads as travel rather than a jump.
+ * See docs/features/06-taahud-highlight-latency-mobile-plan.md §3.1.
+ */
 private val HIGHLIGHT_MOVE_SPEC = spring<Float>(
     dampingRatio = Spring.DampingRatioNoBouncy,
-    stiffness = Spring.StiffnessMediumLow,
+    stiffness = Spring.StiffnessHigh,
 )
-private const val HIGHLIGHT_FADE_MS = 140
+
+/** Same reasoning as [HIGHLIGHT_MOVE_SPEC]: long enough to not flicker, short enough to not lag. */
+private const val HIGHLIGHT_FADE_MS = 60
 
 private fun DrawScope.drawMarkUnderline(
     token: PageToken,
