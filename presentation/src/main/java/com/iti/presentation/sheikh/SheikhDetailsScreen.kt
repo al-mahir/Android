@@ -1,37 +1,38 @@
 package com.iti.presentation.sheikh
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.designsystem.components.button.PrimaryButton
+import com.example.designsystem.components.loading.shimmer
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
+import com.example.designsystem.components.rating.RatingLabel
+import com.example.designsystem.components.section.SectionHeader
 import com.example.designsystem.components.topbar.BackTitleTopBar
 import com.example.designsystem.theme.Theme
 import com.iti.domain.model.Sheikh
@@ -45,8 +46,9 @@ import com.iti.presentation.sheikh.state.SheikhDetailsUiState
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** Compact height of the app bar content (below the status bar) on this screen. */
-private val SheikhDetailsTopBarHeight: Dp = 64.dp
+/** Room left under the scrolling body so the pinned meeting CTA never covers content — the bar
+ * is a button plus its padding, and it carries the navigation-bar inset on gesture devices. */
+private val BodyBottomInset = 120.dp
 
 @Composable
 fun SheikhDetailsScreen(
@@ -88,36 +90,38 @@ private fun SheikhDetailsContent(
     onRequestMeeting: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(Theme.colors.backGround),
     ) {
         BackTitleTopBar(
-            title = state.sheikh?.name ?: stringResource(R.string.sheikh_details_title),
+            title = stringResource(R.string.sheikh_details_title),
             onBackClick = onBack,
-            height = SheikhDetailsTopBarHeight,
-            extendsUnderStatusBar = true,
-            modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = SheikhDetailsTopBarHeight),
-        ) {
-            when {
-                state.isLoading -> SheikhDetailsSkeleton()
-                state.isError || state.sheikh == null -> NetworkErrorScreen(
-                    modifier = Modifier.fillMaxSize(),
-                    onRetry = onRetry,
-                )
-                else -> SheikhDetailsBody(
-                    sheikh = state.sheikh,
-                    circles = state.circles,
-                    onCircleClick = onCircleClick,
-                    onRequestMeeting = { onRequestMeeting(state.sheikh.id, state.sheikh.name) },
-                )
+        when {
+            state.isLoading -> SheikhDetailsSkeleton(modifier = Modifier.weight(1f))
+            state.isError || state.sheikh == null -> NetworkErrorScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                onRetry = onRetry,
+            )
+            else -> {
+                val sheikh = state.sheikh
+                Box(modifier = Modifier.weight(1f)) {
+                    SheikhDetailsBody(
+                        sheikh = sheikh,
+                        circles = state.circles,
+                        onCircleClick = onCircleClick,
+                    )
+                    // The one action this screen exists for stays reachable at any scroll depth.
+                    RequestMeetingBar(
+                        onClick = { onRequestMeeting(sheikh.id, sheikh.name) },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
     }
@@ -128,119 +132,258 @@ private fun SheikhDetailsBody(
     sheikh: Sheikh,
     circles: List<Circle>,
     onCircleClick: (String) -> Unit,
-    onRequestMeeting: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = Theme.spacing.medium,
+            end = Theme.spacing.medium,
+            top = Theme.spacing.medium,
+            bottom = BodyBottomInset,
+        ),
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            SheikhInitialsAvatar(
-                initials = sheikh.initials,
-                sheikhId = sheikh.id,
-                size = 96,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = sheikh.name,
-                style = Theme.typography.title,
-                color = Theme.colors.primaryFont,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = sheikh.specialization,
-                style = Theme.typography.body.medium,
-                color = Theme.colors.secondaryFont,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            SheikhStatusChip(availability = sheikh.availability)
-            Spacer(modifier = Modifier.height(16.dp))
-            PrimaryButton(
-                caption = stringResource(R.string.sheikh_details_request_meeting),
-                onClick = onRequestMeeting,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        item(key = "profile") { SheikhProfileCard(sheikh = sheikh) }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            SheikhStat(label = stringResource(R.string.sheikh_stat_rating), value = sheikh.rating.toString())
-            SheikhStat(label = stringResource(R.string.sheikh_stat_reviews), value = sheikh.reviewCount.toString())
-            SheikhStat(label = stringResource(R.string.sheikh_stat_students), value = sheikh.totalStudents.toString())
-            SheikhStat(label = stringResource(R.string.sheikh_stat_circles), value = sheikh.activeCircleCount.toString())
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-        HorizontalDivider(color = Theme.colors.surface, modifier = Modifier.padding(horizontal = 16.dp))
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (sheikh.bio.isNotBlank()) {
-            Text(
-                text = stringResource(R.string.sheikh_section_bio),
-                style = Theme.typography.body.large,
-                color = Theme.colors.primaryFont,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = sheikh.bio,
-                style = Theme.typography.body.medium,
-                color = Theme.colors.secondaryFont,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        if (circles.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.sheikh_section_active_circles),
-                style = Theme.typography.body.large,
-                color = Theme.colors.primaryFont,
-                modifier = Modifier.padding(horizontal = 20.dp),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            circles.forEach { circle ->
-                CircleCard(
-                    circle = circle,
-                    onClick = { onCircleClick(circle.id) },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+        item(key = "bio") {
+            SheikhSectionCard(title = stringResource(R.string.sheikh_section_bio)) {
+                BasicText(
+                    text = sheikh.bio.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.sheikh_details_about_empty),
+                    style = Theme.typography.body.medium.copy(color = Theme.colors.secondaryFont),
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        item(key = "circles-header") {
+            SectionHeader(title = stringResource(R.string.sheikh_section_active_circles))
+        }
+
+        if (circles.isEmpty()) {
+            item(key = "circles-empty") {
+                BasicText(
+                    text = stringResource(R.string.sheikh_details_no_circles),
+                    style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
+                )
+            }
+        } else {
+            items(circles, key = { it.id }) { circle ->
+                CircleCard(
+                    circle = circle,
+                    onClick = { onCircleClick(circle.id) },
+                )
+            }
+        }
+    }
+}
+
+/** Identity block: avatar, name, specialization, availability and the headline numbers. */
+@Composable
+private fun SheikhProfileCard(
+    sheikh: Sheikh,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(Theme.shapes.large)
+            .background(Theme.colors.surface)
+            .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = Theme.shapes.large)
+            .padding(Theme.spacing.large),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+    ) {
+        SheikhInitialsAvatar(
+            initials = sheikh.initials,
+            sheikhId = sheikh.id,
+            size = 88,
+            avatarUrl = sheikh.avatarUrl,
+            contentDescription = stringResource(R.string.sheikh_cd_avatar, sheikh.name),
+        )
+
+        BasicText(
+            text = sheikh.name,
+            style = Theme.typography.title.copy(
+                color = Theme.colors.primaryFont,
+                textAlign = TextAlign.Center,
+            ),
+        )
+
+        sheikh.specialization.takeIf { it.isNotBlank() }?.let { specialization ->
+            BasicText(
+                text = specialization,
+                style = Theme.typography.body.medium.copy(
+                    color = Theme.colors.secondaryFont,
+                    textAlign = TextAlign.Center,
+                ),
+            )
+        }
+
+        SheikhStatusChip(availability = sheikh.availability)
+
+        Spacer(modifier = Modifier.height(Theme.spacing.small))
+        HorizontalDivider(thickness = 1.dp, color = Theme.colors.surfaceVariant)
+        Spacer(modifier = Modifier.height(Theme.spacing.small))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SheikhStat(
+                label = stringResource(R.string.sheikh_stat_rating),
+                modifier = Modifier.weight(1f),
+            ) {
+                RatingLabel(
+                    rating = sheikh.rating,
+                    contentDescription = stringResource(R.string.sheikh_stat_rating),
+                    textColor = Theme.colors.primaryFont,
+                )
+            }
+            StatSeparator()
+            SheikhStat(
+                label = stringResource(R.string.sheikh_stat_reviews),
+                value = sheikh.reviewCount.toString(),
+                modifier = Modifier.weight(1f),
+            )
+            StatSeparator()
+            SheikhStat(
+                label = stringResource(R.string.sheikh_stat_students),
+                value = sheikh.totalStudents.toString(),
+                modifier = Modifier.weight(1f),
+            )
+            StatSeparator()
+            SheikhStat(
+                label = stringResource(R.string.sheikh_stat_circles),
+                value = sheikh.activeCircleCount.toString(),
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
 @Composable
-private fun SheikhStat(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, style = Theme.typography.body.large, color = Theme.colors.primary)
-        Text(text = label, style = Theme.typography.body.small, color = Theme.colors.secondaryFont)
+private fun StatSeparator() {
+    VerticalDivider(
+        thickness = 1.dp,
+        color = Theme.colors.surfaceVariant,
+        modifier = Modifier.height(28.dp),
+    )
+}
+
+@Composable
+private fun SheikhStat(
+    label: String,
+    modifier: Modifier = Modifier,
+    value: String? = null,
+    valueSlot: @Composable () -> Unit = {},
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        if (value != null) {
+            BasicText(
+                text = value,
+                style = Theme.typography.body.large.copy(
+                    color = Theme.colors.primaryFont,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            )
+        } else {
+            valueSlot()
+        }
+        BasicText(
+            text = label,
+            style = Theme.typography.body.small.copy(
+                color = Theme.colors.secondaryFont,
+                textAlign = TextAlign.Center,
+            ),
+        )
+    }
+}
+
+@Composable
+private fun SheikhSectionCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(Theme.shapes.large)
+            .background(Theme.colors.surface)
+            .border(width = 1.dp, color = Theme.colors.surfaceVariant, shape = Theme.shapes.large)
+            .padding(Theme.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+    ) {
+        BasicText(
+            text = title,
+            style = Theme.typography.body.large.copy(
+                color = Theme.colors.primaryFont,
+                fontWeight = FontWeight.SemiBold,
+            ),
+        )
+        content()
+    }
+}
+
+/** Pinned action bar holding the screen's primary call to action. */
+@Composable
+private fun RequestMeetingBar(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Theme.colors.backGround),
+    ) {
+        HorizontalDivider(thickness = 1.dp, color = Theme.colors.surfaceVariant)
+        PrimaryButton(
+            caption = stringResource(R.string.sheikh_details_request_meeting),
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Theme.spacing.medium)
+                .navigationBarsPadding(),
+        )
     }
 }
 
 @Composable
 private fun SheikhDetailsSkeleton(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(modifier = Modifier.size(96.dp).clip(RoundedCornerShape(16.dp)).background(Theme.colors.surface))
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(modifier = Modifier.width(160.dp).height(20.dp).clip(RoundedCornerShape(8.dp)).background(Theme.colors.surface))
-        Spacer(modifier = Modifier.height(48.dp))
-        repeat(3) {
-            Box(modifier = Modifier.fillMaxWidth().height(72.dp).clip(RoundedCornerShape(16.dp)).background(Theme.colors.surface))
-            Spacer(modifier = Modifier.height(12.dp))
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(Theme.spacing.medium),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.medium),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .clip(Theme.shapes.large)
+                .shimmer(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .clip(Theme.shapes.large)
+                .shimmer(),
+        )
+        repeat(2) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(112.dp)
+                    .clip(Theme.shapes.large)
+                    .shimmer(),
+            )
         }
     }
 }

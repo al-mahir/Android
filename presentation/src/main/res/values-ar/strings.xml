@@ -346,6 +346,10 @@
     <string name="sheikh_stat_circles">الحلقات</string>
     <string name="sheikh_section_bio">نبذة</string>
     <string name="sheikh_section_active_circles">الحلقات النشطة</string>
+    <string name="sheikh_reviews_count">%1$d تقييم</string>
+    <string name="sheikh_details_no_circles">لا توجد حلقات نشطة حاليًا.</string>
+    <string name="sheikh_details_about_empty">لم يضف هذا المعلم نبذة بعد.</string>
+    <string name="sheikh_cd_avatar">صورة %1$s</string>
 
     <!-- ===== Circle List ===== -->
     <string name="circle_list_title">الحلقات النشطة</string>
@@ -665,4 +669,5 @@
     <string name="meetingrequest_quota_browse_packages">عرض الباقات</string>
     <!-- Swipe-to-refresh -->
     <string name="refresh_failed">تعذّر التحديث. تحقق من اتصالك وحاول مجددًا.</string>
+    <string name="filters_clear">مسح عوامل التصفية</string>
 </resources>

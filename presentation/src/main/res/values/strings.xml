@@ -328,6 +328,10 @@
     <string name="sheikh_stat_circles">Circles</string>
     <string name="sheikh_section_bio">About</string>
     <string name="sheikh_section_active_circles">Active Circles</string>
+    <string name="sheikh_reviews_count">%1$d reviews</string>
+    <string name="sheikh_details_no_circles">No active circles right now.</string>
+    <string name="sheikh_details_about_empty">This teacher hasn\'t added a bio yet.</string>
+    <string name="sheikh_cd_avatar">%1$s\'s photo</string>
 
     <!-- ===== Circle List ===== -->
     <string name="circle_list_title">Active Circles</string>
@@ -643,4 +647,5 @@
     <string name="meetingrequest_quota_browse_packages">See packages</string>
     <!-- Swipe-to-refresh -->
     <string name="refresh_failed">Couldn’t refresh. Check your connection and try again.</string>
+    <string name="filters_clear">Clear filters</string>
 </resources>

@@ -1,33 +1,48 @@
 package com.iti.presentation.circle
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -36,6 +51,7 @@ import com.example.designsystem.components.bottomsheet.AppBottomSheet
 import com.example.designsystem.components.button.PrimaryButton
 import com.example.designsystem.components.button.SecondaryButton
 import com.example.designsystem.components.filter.FilterChips
+import com.example.designsystem.components.loading.shimmer
 import com.example.designsystem.components.placeholderscreens.EmptyDataScreen
 import com.example.designsystem.components.placeholderscreens.EmptySearchScreen
 import com.example.designsystem.components.placeholderscreens.NetworkErrorScreen
@@ -53,7 +69,8 @@ import com.iti.presentation.circle.state.CircleListUiState
 import com.iti.presentation.core.mvi.ObserveEffect
 import org.koin.androidx.compose.koinViewModel
 
-
+/** Room left under the last card so the floating action button never covers it. */
+private val ListBottomInset = 96.dp
 
 @Composable
 fun CircleListScreen(
@@ -124,17 +141,51 @@ private fun CircleListContent(
     onDismissJoinSheet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val listState = rememberLazyListState()
+    // Drives both the header separator and the FAB collapse — the header is pinned, so it needs an
+    // edge of its own once content slides underneath it.
+    val isScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+    val clearFilters = {
+        onSearchChanged("")
+        onStatusSelected(null)
+    }
+
+    // A new query or status rebuilds the list under the reader's finger; put them back at the top
+    // so the first result is the one they see.
+    LaunchedEffect(state.searchQuery, state.selectedStatus) {
+        if (listState.firstVisibleItemIndex > 0) listState.animateScrollToItem(0)
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Theme.colors.backGround,
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = onCreateCircle,
+                // Labelled while the list is at rest, shrinking to the icon once the user scrolls.
+                expanded = !isScrolled,
                 containerColor = Theme.colors.primary,
                 contentColor = Theme.colors.onPrimary,
-            ) {
-                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-            }
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.create_circle_title),
+                    )
+                },
+                text = {
+                    BasicText(
+                        text = stringResource(R.string.create_circle_title),
+                        style = Theme.typography.body.medium.copy(
+                            color = Theme.colors.onPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    )
+                },
+            )
         },
     ) { innerPadding ->
         Column(
@@ -145,6 +196,20 @@ private fun CircleListContent(
             BackTitleTopBar(
                 title = stringResource(R.string.circle_list_title),
                 onBackClick = onBack,
+            )
+
+            // Search and status chips are how the user drives the list, so they stay pinned
+            // instead of scrolling away with the results they control.
+            CircleListHeader(
+                query = state.searchQuery,
+                selectedStatus = state.selectedStatus,
+                resultCount = state.filteredCircles.size,
+                showResultCount = !state.isLoading && !state.isError,
+                onSearchChanged = onSearchChanged,
+                onStatusSelected = onStatusSelected,
+                onJoinPrivateClick = onJoinPrivateClick,
+                onClearFilters = clearFilters,
+                isScrolled = isScrolled,
             )
 
             AppPullToRefreshBox(
@@ -163,62 +228,42 @@ private fun CircleListContent(
                         NetworkErrorScreen(onRetry = onRetry)
                     }
                     else -> {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = Theme.spacing.medium,
+                                end = Theme.spacing.medium,
+                                top = Theme.spacing.small,
+                                bottom = ListBottomInset,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+                        ) {
                             state.currentCircle?.let { current ->
                                 item(key = "current-circle") {
                                     CurrentCircleCard(
                                         circle = current,
                                         onClick = { onCircleClick(current.id) },
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                                     )
-                                }
-                            }
-
-                            item {
-                                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    SearchBar(
-                                        query = state.searchQuery,
-                                        onQueryChange = onSearchChanged,
-                                        hint = stringResource(R.string.circle_search_hint),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    SecondaryButton(
-                                        caption = stringResource(R.string.circle_join_private),
-                                        onClick = onJoinPrivateClick,
-                                        iconPainter = androidx.compose.ui.graphics.vector.rememberVectorPainter(
-                                            Icons.Outlined.Lock,
-                                        ),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    FilterChips(
-                                        options = listOf(
-                                            null to stringResource(R.string.circle_filter_all),
-                                            CircleStatus.SCHEDULED to stringResource(R.string.circle_status_scheduled),
-                                            CircleStatus.ONGOING to stringResource(R.string.circle_status_ongoing),
-                                            CircleStatus.COMPLETED to stringResource(R.string.circle_status_completed),
-                                            CircleStatus.CANCELLED to stringResource(R.string.circle_status_cancelled),
-                                        ),
-                                        selectedValue = state.selectedStatus,
-                                        onValueSelected = onStatusSelected,
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    BasicText(
-                                        text = stringResource(R.string.circle_count, state.filteredCircles.size),
-                                        style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
                                 }
                             }
 
                             if (state.filteredCircles.isEmpty()) {
-                                item {
-                                    if (state.searchQuery.isBlank()) {
-                                        EmptyDataScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                                item(key = "empty") {
+                                    val hasFilters =
+                                        state.searchQuery.isNotBlank() || state.selectedStatus != null
+                                    if (hasFilters) {
+                                        EmptySearchScreen(
+                                            modifier = Modifier.fillParentMaxSize(),
+                                            actionButtonText = stringResource(R.string.filters_clear),
+                                            onActionClick = clearFilters,
+                                        )
                                     } else {
-                                        EmptySearchScreen(modifier = Modifier.fillMaxWidth().padding(top = 48.dp))
+                                        EmptyDataScreen(
+                                            modifier = Modifier.fillParentMaxSize(),
+                                            actionButtonText = stringResource(R.string.create_circle_title),
+                                            onActionClick = onCreateCircle,
+                                        )
                                     }
                                 }
                             } else {
@@ -227,12 +272,9 @@ private fun CircleListContent(
                                         circle = circle,
                                         isJoined = circle.id in state.joinedCircleIds,
                                         onClick = { onCircleClick(circle.id) },
-                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                                     )
                                 }
                             }
-
-                            item { Spacer(modifier = Modifier.height(80.dp)) }
                         }
                     }
                 }
@@ -254,6 +296,137 @@ private fun CircleListContent(
     }
 }
 
+/**
+ * The pinned filter bar: search field, private-circle shortcut, status chips and the result
+ * count. It sits between the top bar and the list and never scrolls, so the controls that drive
+ * the list are always one tap away.
+ */
+@Composable
+private fun CircleListHeader(
+    query: String,
+    selectedStatus: CircleStatus?,
+    resultCount: Int,
+    showResultCount: Boolean,
+    onSearchChanged: (String) -> Unit,
+    onStatusSelected: (CircleStatus?) -> Unit,
+    onJoinPrivateClick: () -> Unit,
+    onClearFilters: () -> Unit,
+    isScrolled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val hasFilters = query.isNotBlank() || selectedStatus != null
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(Theme.colors.backGround),
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = Theme.spacing.medium,
+                    end = Theme.spacing.medium,
+                    top = Theme.spacing.small,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SearchBar(
+                query = query,
+                onQueryChange = onSearchChanged,
+                hint = stringResource(R.string.circle_search_hint),
+                onClear = { onSearchChanged("") },
+                modifier = Modifier.weight(1f),
+            )
+            HeaderIconAction(
+                icon = Icons.Outlined.Lock,
+                contentDescription = stringResource(R.string.circle_join_private),
+                onClick = onJoinPrivateClick,
+            )
+        }
+
+        FilterChips(
+            options = listOf(
+                null to stringResource(R.string.circle_filter_all),
+                CircleStatus.SCHEDULED to stringResource(R.string.circle_status_scheduled),
+                CircleStatus.ONGOING to stringResource(R.string.circle_status_ongoing),
+                CircleStatus.COMPLETED to stringResource(R.string.circle_status_completed),
+                CircleStatus.CANCELLED to stringResource(R.string.circle_status_cancelled),
+            ),
+            selectedValue = selectedStatus,
+            onValueSelected = onStatusSelected,
+            modifier = Modifier.padding(horizontal = Theme.spacing.medium),
+        )
+
+        if (showResultCount) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.extraSmall),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BasicText(
+                    text = stringResource(R.string.circle_count, resultCount),
+                    style = Theme.typography.body.small.copy(color = Theme.colors.secondaryFont),
+                )
+                if (hasFilters) {
+                    BasicText(
+                        text = stringResource(R.string.filters_clear),
+                        style = Theme.typography.body.small.copy(color = Theme.colors.primary),
+                        modifier = Modifier
+                            .clip(Theme.shapes.small)
+                            .clickable(role = Role.Button, onClick = onClearFilters)
+                            .padding(horizontal = Theme.spacing.small, vertical = 2.dp),
+                    )
+                }
+            }
+        } else {
+            Spacer(modifier = Modifier.height(Theme.spacing.extraSmall))
+        }
+
+        // Only drawn once content has slid under the header, so a list at rest stays seamless.
+        val dividerAlpha by animateFloatAsState(
+            targetValue = if (isScrolled) 1f else 0f,
+            label = "circle-header-divider",
+        )
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Theme.colors.surfaceVariant,
+            modifier = Modifier.alpha(dividerAlpha),
+        )
+    }
+}
+
+/** Square, field-height action sitting beside the search bar. */
+@Composable
+private fun HeaderIconAction(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier = modifier
+            .size(Theme.size.componentsNormalHeight)
+            .clip(shape)
+            .background(Theme.colors.primary.copy(alpha = 0.10f))
+            .border(width = 1.dp, color = Theme.colors.primary.copy(alpha = 0.24f), shape = shape)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = Theme.colors.primary,
+            modifier = Modifier.size(Theme.size.iconMedium),
+        )
+    }
+}
+
 @Composable
 private fun JoinPrivateCircleSheet(
     state: CircleListUiState,
@@ -269,7 +442,10 @@ private fun JoinPrivateCircleSheet(
         Spacer(modifier = Modifier.height(8.dp))
         BasicText(
             text = stringResource(R.string.circle_join_private_sheet_title),
-            style = Theme.typography.body.large.copy(color = Theme.colors.primaryFont),
+            style = Theme.typography.body.large.copy(
+                color = Theme.colors.primaryFont,
+                fontWeight = FontWeight.SemiBold,
+            ),
         )
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -357,16 +533,20 @@ private fun JoinPrivateCircleSheet(
 
 @Composable
 private fun CircleListSkeleton(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(16.dp)) {
-        repeat(4) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = Theme.spacing.medium, vertical = Theme.spacing.small),
+        verticalArrangement = Arrangement.spacedBy(Theme.spacing.small),
+    ) {
+        repeat(5) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Theme.colors.surface),
+                    .height(112.dp)
+                    .clip(Theme.shapes.large)
+                    .shimmer(),
             )
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
