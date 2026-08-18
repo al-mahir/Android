@@ -10,7 +10,6 @@ import androidx.annotation.RequiresPermission
 import com.example.mushaf.data.MushafLog
 import com.example.mushaf.domain.model.recite.AudioFrame
 import com.example.mushaf.domain.model.recite.RecitationAudioFormat
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -75,7 +74,7 @@ class AudioRecordPcmRecorder : PcmRecorder {
             recorder.release()
             Log.d(TAG, "Capture stopped, microphone released")
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(AudioCaptureDispatcher.instance)
 
     
 
@@ -114,7 +113,14 @@ class AudioRecordPcmRecorder : PcmRecorder {
 
     private companion object {
         const val TAG = MushafLog.TAG
-        const val FRAME_BUFFER_MULTIPLE = 8
+
+        /**
+         * Frames of slack in `AudioRecord`'s own ring buffer, expressed in frames so that
+         * shrinking [RecitationAudioFormat.FRAME_DURATION_MS] shrinks the *latency* of a read
+         * without also shrinking the headroom that keeps a scheduling hiccup from overrunning the
+         * buffer. Deliberately kept at ~800ms, which is what it was when a frame was 100ms.
+         */
+        val FRAME_BUFFER_MULTIPLE = RecitationAudioFormat.framesFor(800)
 
         const val CAPTURE_DRIFT_WARN_MS = 150L
         const val DRIFT_LOG_INTERVAL_MS = 1_000L

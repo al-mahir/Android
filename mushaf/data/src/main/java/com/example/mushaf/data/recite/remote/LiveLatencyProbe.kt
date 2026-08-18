@@ -4,16 +4,17 @@ import android.os.SystemClock
 import android.util.Log
 import com.example.mushaf.data.MushafLog
 import com.example.mushaf.domain.model.recite.AudioFrame
+import com.example.mushaf.domain.model.recite.RecitationAudioFormat
 
 /**
  * Attributes live-correction latency to the client or the server, so "the feedback is slow" stops
  * being a guess.
  *
  * Every graded chunk carries `audio_span_sec`, the server's own timestamps over the audio it has
- * received. That is the same timeline as the bytes we push into the socket - the speech gate drops
- * silence before it ever reaches the wire, so the server's clock counts *sent* audio, not captured
- * audio. Recording when each millisecond of that timeline left the device turns the span end into
- * an exact answer to "how long did the network and the server take with this audio".
+ * received. That is the same timeline as the bytes we push into the socket: the server's clock
+ * counts *sent* audio, which since the speech gate stopped withholding silence is the same thing as
+ * captured audio. Recording when each millisecond of that timeline left the device turns the span
+ * end into an exact answer to "how long did the network and the server take with this audio".
  *
  * Two numbers come out of it, and they point at different owners:
  *
@@ -39,9 +40,16 @@ internal class LiveLatencyProbe {
     private var sentAudioMs = 0L
 
     /**
-     * Wall clock the capture is estimated to have started at, derived from the first frame's own
-     * position. Later frames are compared against it instead of against a "session started" stamp,
-     * which would fold connection setup into what is meant to measure the audio path alone.
+     * Wall clock the capture is estimated to have started at, derived from the frames' own
+     * positions. Compared against instead of a "session started" stamp, which would fold
+     * connection setup into what is meant to measure the audio path alone.
+     *
+     * Estimated as the *minimum* of `now - frameEnd` rather than taken from the first frame. For
+     * any frame that estimate is `trueEpoch + itsLag`, and lag is never negative, so the smallest
+     * one seen is the best estimate available and the number self-corrects downward. Anchoring on
+     * the first frame was safe only while capture began after the socket ack; it now begins
+     * alongside the handshake, so the first frames are deliberately sent late in a burst and would
+     * otherwise fix the epoch a full handshake too late and under-report every lag after it.
      */
     private var captureEpochMs = UNSET
 
@@ -53,8 +61,11 @@ internal class LiveLatencyProbe {
         val frameEndMs = frame.startMs + frame.durationMs
 
         if (captureEpochMs == UNSET) {
-            captureEpochMs = now - frameEndMs
             lastSummaryAtMs = now
+        }
+        val epochEstimate = now - frameEndMs
+        if (captureEpochMs == UNSET || epochEstimate < captureEpochMs) {
+            captureEpochMs = epochEstimate
         }
 
         val pipelineLagMs = now - (captureEpochMs + frameEndMs)
@@ -109,10 +120,10 @@ internal class LiveLatencyProbe {
         const val TAG = MushafLog.TAG
         const val UNSET = -1L
 
-        const val FRAMES_PER_SECOND = 10
+        val FRAMES_PER_SECOND = RecitationAudioFormat.framesFor(1_000)
 
-        /** ~60s of 100ms frames: comfortably longer than any chunk the server sends back. */
-        const val MAX_MARKS = 600
+        /** ~60s of audio, whatever a frame currently is: longer than any chunk the server sends. */
+        val MAX_MARKS = RecitationAudioFormat.framesFor(60_000)
 
         /**
          * A frame is expected on the wire within roughly one frame of the microphone finishing it.

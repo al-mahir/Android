@@ -11,6 +11,7 @@ import com.example.mushaf.data.recite.remote.LiveSessionEvent
 import com.example.mushaf.domain.model.recite.AudioFrame
 import com.example.mushaf.domain.model.recite.LiveRecitationConfig
 import com.example.mushaf.domain.model.recite.LiveRecitationEvent
+import com.example.mushaf.domain.model.recite.RecitationAudioFormat
 import com.example.mushaf.domain.model.recite.RecitationControl
 import com.example.mushaf.domain.model.recite.SpeechEvent
 import com.example.mushaf.domain.repository.AsrModelRepository
@@ -22,7 +23,6 @@ import com.iti.domain.core.asResult
 import com.iti.domain.core.getOrNull
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicBoolean
 
 class LiveRecitationRepositoryImpl(
     private val capture: RecitationCaptureRepository,
@@ -51,7 +50,11 @@ class LiveRecitationRepositoryImpl(
         asrModelRepository.ensureAvailable()
         localSpeechRecognizer.reset()
 
-        val commands = Channel<LiveSessionCommand>(Channel.BUFFERED)
+        // Deep enough to hold every frame captured while the WebSocket is still handshaking, since
+        // capture now starts before the server has acked (see below). Frames queued here are not
+        // stale audio to be discarded - they are the opening of the reciter's first phrase, and
+        // they reach the server in order the moment the socket is up.
+        val commands = Channel<LiveSessionCommand>(HANDSHAKE_BUFFER_FRAMES)
         // Frames destined for on-device inference go through their own buffer, and the *oldest*
         // are dropped when it fills. The local recognizer used to be called inline from the
         // capture loop, which put its decode latency directly in front of the next
@@ -63,10 +66,16 @@ class LiveRecitationRepositoryImpl(
             capacity = LOCAL_FRAME_BUFFER,
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
-        var audioJob: Job? = null
-        var localTranscriptJob: Job? = null
-        var localDecodeJob: Job? = null
-        val finishing = AtomicBoolean(false)
+        // The microphone opens now, alongside the handshake, instead of waiting for the server's
+        // session ack. Serially those cost DNS + TCP + TLS + upgrade + ack (~200-800ms on WiFi or
+        // LTE) *and then* AudioRecord construction, startRecording() and a first blocking read
+        // (~100-300ms more on many devices) - during all of which a reciter who starts as soon as
+        // they tap the button is not being recorded at all. Run in parallel the session costs the
+        // longer of the two rather than their sum, and nothing of the opening is lost: the frames
+        // wait in `commands` and go out in order once the socket is up.
+        val localTranscriptJob = launch(start = CoroutineStart.UNDISPATCHED) { streamLocalTranscriptInto() }
+        val localDecodeJob = launch { decodeLocally(localFrames) }
+        val audioJob = launch { streamCaptureInto(commands, localFrames, config) }
 
         val controlJob = launch {
             controls.collect { control ->
@@ -80,10 +89,9 @@ class LiveRecitationRepositoryImpl(
                     )
 
                     RecitationControl.Finish -> {
-                        finishing.set(true)
-                        audioJob?.cancelAndJoin()
-                        localDecodeJob?.cancelAndJoin()
-                        localTranscriptJob?.cancelAndJoin()
+                        audioJob.cancelAndJoin()
+                        localDecodeJob.cancelAndJoin()
+                        localTranscriptJob.cancelAndJoin()
                         commands.send(LiveSessionCommand.End)
                         commands.close()
                     }
@@ -93,18 +101,11 @@ class LiveRecitationRepositoryImpl(
 
         try {
             socket.open(RecitationFeedbackMapper.toStartMessage(config), commands.receiveAsFlow())
-                .collect { event ->
-                    send(event.toDomain())
-                    if (event is LiveSessionEvent.Started && audioJob == null && !finishing.get()) {
-                        localTranscriptJob = launch(start = CoroutineStart.UNDISPATCHED) { streamLocalTranscriptInto() }
-                        localDecodeJob = launch { decodeLocally(localFrames) }
-                        audioJob = launch { streamCaptureInto(commands, localFrames, config) }
-                    }
-                }
+                .collect { event -> send(event.toDomain()) }
         } finally {
-            audioJob?.cancel()
-            localDecodeJob?.cancel()
-            localTranscriptJob?.cancel()
+            audioJob.cancel()
+            localDecodeJob.cancel()
+            localTranscriptJob.cancel()
             controlJob.cancel()
             localFrames.close()
             commands.close()
@@ -166,6 +167,14 @@ class LiveRecitationRepositoryImpl(
     private companion object {
         const val TAG = MushafLog.TAG
 
-              const val LOCAL_FRAME_BUFFER = 32
+        val LOCAL_FRAME_BUFFER = RecitationAudioFormat.framesFor(3_000)
+
+        /**
+         * Capture runs ahead of the socket ack, so this has to cover the slowest handshake worth
+         * recovering from. 8s at ~1KB a frame is ~250KB - cheap next to losing the opening of a
+         * recitation. Past that the send suspends and back-pressures capture, which is the right
+         * failure: a handshake that long is a broken session, not a slow one.
+         */
+        val HANDSHAKE_BUFFER_FRAMES = RecitationAudioFormat.framesFor(8_000)
     }
 }
