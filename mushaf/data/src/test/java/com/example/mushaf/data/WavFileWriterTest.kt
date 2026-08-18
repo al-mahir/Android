@@ -86,11 +86,15 @@ class WavFileWriterTest {
         val file = temporaryFolder.newFile("duration.wav")
 
         WavFileWriter(file).use { writer ->
-            
-            repeat(10) {
+            // Roughly a second's worth, but the expectation is derived from the samples actually
+            // written rather than assumed to be a round 1000ms: the frame size is a latency knob
+            // (see RecitationAudioFormat.FRAME_DURATION_MS) and no longer divides a second evenly.
+            val frameCount = RecitationAudioFormat.framesFor(1_000)
+            repeat(frameCount) {
                 writer.write(AudioFrame(ShortArray(RecitationAudioFormat.FRAME_SAMPLES), 0))
             }
-            assertEquals(1_000L, writer.durationMs)
+            val writtenSamples = frameCount.toLong() * RecitationAudioFormat.FRAME_SAMPLES
+            assertEquals(RecitationAudioFormat.durationMsOf(writtenSamples), writer.durationMs)
         }
     }
 
