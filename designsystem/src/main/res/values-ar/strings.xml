@@ -30,4 +30,6 @@
     <string name="audio_player_next">التالي</string>
     <string name="audio_player_play">تشغيل</string>
     <string name="audio_player_pause">إيقاف</string>
+
+    <string name="search_clear_content_description">مسح البحث</string>
 </resources>

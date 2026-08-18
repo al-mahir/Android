@@ -61,6 +61,9 @@ fun TextField(
     isError: Boolean = false,
     leadingIcon: Painter? = null,
     trailingIcon: Painter? = null,
+    /** Spoken label for the trailing icon. Supply it whenever the icon is an action
+     * ([onClickTrailingIcon] non-null) so screen readers announce what it does. */
+    trailingIconContentDescription: String? = null,
     enabled: Boolean = true,
     leadingIconColor: Color = if (!enabled) Theme.colors.onDisable else Theme.colors.hint,
     trailingIconColor: Color = if (!enabled) Theme.colors.onDisable else Theme.colors.hint,
@@ -193,7 +196,7 @@ fun TextField(
                     colorFilter = ColorFilter.tint(
                         color = trailingIconColor
                     ),
-                    contentDescription = "trailing icon",
+                    contentDescription = trailingIconContentDescription ?: "trailing icon",
                     modifier = Modifier
                         .padding(start = Theme.spacing.small)
                         .size(Theme.size.iconMedium)

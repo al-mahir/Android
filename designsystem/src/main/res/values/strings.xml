@@ -30,4 +30,6 @@
     <string name="audio_player_next">Next</string>
     <string name="audio_player_play">Play</string>
     <string name="audio_player_pause">Pause</string>
+
+    <string name="search_clear_content_description">Clear search</string>
 </resources>
