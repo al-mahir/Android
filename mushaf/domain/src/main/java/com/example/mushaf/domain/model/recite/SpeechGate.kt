@@ -2,16 +2,23 @@ package com.example.mushaf.domain.model.recite
 
 data class SpeechGateConfig(
 
+    /**
+     * Whether silence is actually withheld from the caller.
+     *
+     * Off on the live-correction wire path (see `LiveRecitationConfig.speechGate`). Detection runs
+     * either way - [SpeechGate.isSpeechFrame] and [SpeechGate.isOpen] mean the same thing at both
+     * settings - so the mic meter keeps working on a gate that streams continuously.
+     */
     val enabled: Boolean = true,
 
-    val preRollFrames: Int = 3,
+    val preRollFrames: Int = RecitationAudioFormat.framesFor(300),
 
-    val hangoverFrames: Int = 6,
+    val hangoverFrames: Int = RecitationAudioFormat.framesFor(600),
 
-    val onsetFrames: Int = 2,
- 
-    val warmUpFrames: Int = 5,
-     
+    val onsetFrames: Int = RecitationAudioFormat.framesFor(200),
+
+    val warmUpFrames: Int = RecitationAudioFormat.framesFor(500),
+
     val speechFactor: Float = 2.5f,
 
     val absoluteFloor: Float = 0.004f,
@@ -32,10 +39,16 @@ data class SpeechGateConfig(
     }
 
     companion object {
-         
+
         const val MIN_TAIL_MS: Int = 300
 
-         
+        /**
+         * Streams every captured frame, while still reporting speech/silence.
+         *
+         * The default for the live-correction socket: the server's Silero VAD wants the reciter's
+         * real timeline, not one we have edited. Detection stays on because the mic meter, the
+         * `isSpeaking` flag and `SpeechEvent.SpeechEnded` all read it.
+         */
         val Disabled: SpeechGateConfig = SpeechGateConfig(enabled = false)
     }
 }
@@ -77,13 +90,6 @@ class SpeechGate(
     fun process(frame: AudioFrame): List<AudioFrame> {
         framesIn++
 
-        if (!config.enabled) {
-            framesOut++
-            isOpen = true
-            isSpeechFrame = true
-            return listOf(frame)
-        }
-
         val isWarmingUp = framesIn <= config.warmUpFrames
         val rms = frame.rms()
 
@@ -103,15 +109,25 @@ class SpeechGate(
             consecutiveSpeech = 0
         }
 
-        return if (isOpen) passWhileOpen(frame) else considerOpening(frame)
+        // The state machine runs at both settings, so `isOpen`/`isSpeechFrame` mean the same thing
+        // whether or not anything is being withheld. Only what comes back out differs.
+        val gated = if (isOpen) passWhileOpen(frame) else considerOpening(frame)
+
+        // Streaming continuously is what the live-correction path wants: the server runs its own
+        // Silero VAD, and a burst-after-gap - which is exactly what the pre-roll flush looks like
+        // on the wire - is worse for a stateful RNN endpointer than the silence it saves sending.
+        // The gated result is computed and discarded rather than skipped: the pre-roll buffer and
+        // the open/close transitions have to stay live for the meter to read them.
+        val emitted = if (config.enabled) gated else listOf(frame)
+        framesOut += emitted.size
+        return emitted
     }
 
-     
+
     private fun passWhileOpen(frame: AudioFrame): List<AudioFrame> {
         if (consecutiveSilence >= config.hangoverFrames) {
             isOpen = false
         }
-        framesOut++
         return listOf(frame)
     }
 
@@ -122,14 +138,13 @@ class SpeechGate(
         }
 
         isOpen = true
-        
-        
+
+
         val burst = ArrayList<AudioFrame>(preRoll.size + 1).apply {
             addAll(preRoll)
             add(frame)
         }
         preRoll.clear()
-        framesOut += burst.size
         return burst
     }
 
